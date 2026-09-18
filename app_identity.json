@@ -1,0 +1,10 @@
+{
+  "displayName": "Vigia IA",
+  "projectName": "vigiaia",
+  "applicationId": "com.vigiaia.app",
+  "namespace": "com.vigiaia.app",
+  "identityStatus": "full-vigiaia-technical-identity",
+  "notes": "Identidade técnica migrada para vigiaia, incluindo pacote Dart, namespace/applicationId Android, canais nativos, protocolo de pareamento vigiaia://pair e artifacts sem hífen. A 1.0.28 também corrige os avisos do flutter analyze do workflow Android APK 26.",
+  "version": "1.0.28",
+  "build": 28
+}

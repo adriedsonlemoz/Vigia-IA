@@ -1,0 +1,31 @@
+name: vigiaia
+description: Vigia IA para monitoramento local com camera, RTSP e deteccao de objetos offline.
+publish_to: "none"
+version: 1.0.28+28
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.12.1
+  flutter_tts: ^4.2.5
+  image: ^4.10.1
+  flutter_litert: ^3.8.0
+  path_provider: ^2.1.6
+  vlc_player: ^2.1.2
+  mobile_scanner: ^7.4.2
+  qr_flutter: ^4.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/models/ssd_mobilenet_v1.tflite
+    - assets/models/labelmap.txt
