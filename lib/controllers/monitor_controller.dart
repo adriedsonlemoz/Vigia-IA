@@ -11,6 +11,7 @@ import '../models/monitoring_zone.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/rgb_frame.dart';
 import '../models/smart_alert_rules.dart';
+import '../models/system_health.dart';
 import '../models/tracked_detection.dart';
 import '../models/video_source_config.dart';
 import '../services/alert_repeat_guard.dart';

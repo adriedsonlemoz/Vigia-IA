@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.29+29
+# Arquitetura — Vigia IA 1.0.30+30
 
 ## 1. Princípios
 
-A 1.0.29 mantém a identidade técnica **vigiaia** e adiciona uma camada de saúde/diagnóstico baseada em snapshot real do runtime, sem inferir funcionamento apenas pela presença do foreground service.
+A 1.0.30 mantém a identidade técnica **vigiaia** e corrige a integração da camada de saúde/diagnóstico adicionada na 1.0.29, sem alterar sua arquitetura.
 
 Princípios mantidos:
 

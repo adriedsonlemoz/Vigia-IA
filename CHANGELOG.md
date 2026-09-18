@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.30+30
+
+- Corrigidos os 5 erros encontrados pelo `flutter analyze` no log Android APK 2.
+- `MonitorController` agora importa explicitamente `system_health.dart`, tornando `CameraHealthState` visível nos estados de obstrução, deslocamento e câmera offline.
+- `StorageSizeFormatter` passa a usar `0.0` nos caminhos de normalização negativa, evitando inferência `num` ao chamar o formatador que exige `double`.
+- Metadados, tela de mudanças, teste de versão e verificação preventiva sincronizados com `1.0.30+30`.
+- Nenhuma funcionalidade da ETAPA 4 foi removida.
+
+### Validação
+
+- O log Android APK 2 foi revisado e a falha estava limitada aos 5 erros acima durante `flutter analyze`.
+- `tool/verify_project.sh` foi atualizado para validar a correção e a nova versão.
+
 ## 1.0.29+29
 
 - ETAPA 4 concluída para Diagnóstico, Saúde do sistema e armazenamento.

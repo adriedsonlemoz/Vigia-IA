@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.29+29`
+> **Versão atual:** `1.0.30+30`
 
 ## Estado atual
 
-A 1.0.29 conclui a ETAPA 4 de Diagnóstico e Saúde do sistema, com estados reais de câmera/frames/IA/LAN, exportação compartilhável e formatação legível de armazenamento.
+A `1.0.30+30` é uma correção de build da ETAPA 4. Mantém as funcionalidades introduzidas na `1.0.29+29` e corrige os erros detectados pelo `flutter analyze` no Android APK 2.
+
+### Evolução 1.0.30
+
+- corrigido o import do modelo `CameraHealthState` no `MonitorController`;
+- corrigida a inferência `num`/`double` no `StorageSizeFormatter`;
+- metadados, testes de versão e verificações preventivas sincronizados com `1.0.30+30`.
 
 ### Evolução 1.0.29
 

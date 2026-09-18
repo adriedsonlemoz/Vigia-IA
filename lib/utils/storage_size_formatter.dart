@@ -7,7 +7,7 @@ class StorageSizeFormatter {
   static const int _tb = _gb * 1000;
 
   static String formatBytes(num bytes) {
-    final value = bytes < 0 ? 0 : bytes.toDouble();
+    final value = bytes < 0 ? 0.0 : bytes.toDouble();
     if (value >= _tb) return '${_format(value / _tb)} TB';
     if (value >= _gb) return '${_format(value / _gb)} GB';
     if (value >= _mb) return '${_format(value / _mb)} MB';
@@ -16,7 +16,7 @@ class StorageSizeFormatter {
   }
 
   static String formatMebibytes(num mebibytes) {
-    final value = mebibytes < 0 ? 0 : mebibytes.toDouble();
+    final value = mebibytes < 0 ? 0.0 : mebibytes.toDouble();
     if (value >= 1024 * 1024) return '${_format(value / (1024 * 1024))} TB';
     if (value >= 1024) return '${_format(value / 1024)} GB';
     return '${_format(value)} MB';

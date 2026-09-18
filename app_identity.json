@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica migrada para vigiaia, incluindo pacote Dart, namespace/applicationId Android, canais nativos, protocolo de pareamento vigiaia://pair e artifacts sem hífen. A 1.0.29 implementa a Etapa 4 de diagnóstico, saúde real do sistema, exportação e formatação de armazenamento.",
-  "version": "1.0.29",
-  "build": 29
+  "notes": "Identidade técnica migrada para vigiaia, incluindo pacote Dart, namespace/applicationId Android, canais nativos, protocolo de pareamento vigiaia://pair e artifacts sem hífen. A 1.0.29 implementou a Etapa 4; a 1.0.30 corrige os erros de análise estática identificados no build Android APK 2.",
+  "version": "1.0.30",
+  "build": 30
 }

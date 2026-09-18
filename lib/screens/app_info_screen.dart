@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.29',
+          version: '1.0.30',
           current: true,
+          changes: [
+            'Corrigido erro de análise estática causado pela referência a CameraHealthState sem o import do modelo.',
+            'Corrigida a inferência numérica do formatador de armazenamento para manter double em todos os caminhos.',
+            'Versão e verificações preventivas sincronizadas após o log Android APK 2.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.29',
           changes: [
             'Diagnóstico exportável e compartilhável com snapshot único do estado exibido.',
             'Saúde do sistema separa serviço Android, câmera, frames, IA, LAN, clientes, permissões e segundo plano.',
