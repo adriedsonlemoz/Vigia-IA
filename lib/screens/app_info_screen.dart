@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.31',
+          version: '1.0.32',
           current: true,
+          changes: [
+            'Corrigida a expressão Kotlin de canRequest da permissão de rede local, que era interpretada como Pair antes do operador lógico &&.',
+            'A cópia Android e o template de bootstrap foram mantidos idênticos para o workflow não reintroduzir o erro.',
+            'Versão e verificação preventiva sincronizadas após o log Android APK 4.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.31',
           changes: [
             'Corrigida a codificação da chave na URL do visualizador LAN para usar %20 em espaços e percent-encoding seguro nos demais caracteres.',
             'O mesmo formato de chave agora é usado no endereço compartilhado e no stream MJPEG da página local.',

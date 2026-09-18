@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.31+31`
+> **Versão atual:** `1.0.32+32`
 
 ## Estado atual
 
-A `1.0.31+31` mantém a ETAPA 4 e corrige o último bloqueio encontrado pelo Android APK 3: a codificação da chave no endereço do visualizador LAN. O `flutter analyze` já passou sem problemas nesse build.
+A `1.0.32+32` mantém a ETAPA 4 e corrige o bloqueio nativo encontrado no Android APK 4 durante `compileReleaseKotlin`. Nesse log, o `flutter analyze` passou e os 73 testes passaram; a falha estava restrita à expressão Kotlin do campo `canRequest` da permissão de rede local.
+
+### Evolução 1.0.32
+
+- corrigida a precedência da expressão Kotlin em `localNetworkPermissionStatus()`, envolvendo o valor booleano de `canRequest` entre parênteses antes de associá-lo à chave do `mapOf`;
+- `android/.../MainActivity.kt` e `tool/android/MainActivity.kt` permanecem sincronizados, evitando que o bootstrap do workflow restaure a versão incorreta;
+- verificação preventiva agora exige a forma segura da expressão nativa;
+- metadados sincronizados com `1.0.32+32`.
 
 ### Evolução 1.0.31
 

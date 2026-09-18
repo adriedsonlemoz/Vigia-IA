@@ -235,7 +235,7 @@ class MainActivity : FlutterActivity() {
         return mapOf(
             "required" to required,
             "granted" to granted,
-            "canRequest" to !granted && !localNetworkPermissionRequestInFlight,
+            "canRequest" to (!granted && !localNetworkPermissionRequestInFlight),
         )
     }
 

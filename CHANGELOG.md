@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 1.0.32+32
+
+- Corrigido o bloqueio do Android APK 4 em `:app:compileReleaseKotlin`.
+- Em `localNetworkPermissionStatus()`, `"canRequest" to !granted && !localNetworkPermissionRequestInFlight` era interpretado pelo Kotlin com precedência de chamada infixa, produzindo um `Pair<String, Boolean>` antes do `&&`.
+- O valor agora é explicitamente agrupado como `"canRequest" to (!granted && !localNetworkPermissionRequestInFlight)`.
+- A correção foi aplicada tanto à árvore Android quanto ao template `tool/android/MainActivity.kt`, que é restaurado pelo workflow antes do build.
+- A verificação preventiva passou a exigir a expressão parentizada e a sincronização das duas cópias.
+- Metadados, tela de mudanças, teste de versão, README e ARCHITECTURE sincronizados com `1.0.32+32`.
+
+### Validação
+
+- Android APK 4: `flutter analyze` concluiu com **No issues found**.
+- Android APK 4: **73 testes passaram**.
+- A única falha do pipeline ocorreu depois, na compilação Kotlin da linha de `canRequest`, corrigida nesta revisão.
+- O aviso do plugin `flutter_tts` sobre Built-in Kotlin é preventivo/futuro e não foi a causa da falha atual.
+
 ## 1.0.31+31
 
 - Corrigido o único teste que falhou no log Android APK 3 após o `flutter analyze` passar sem problemas.

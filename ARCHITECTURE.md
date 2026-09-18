@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.31+31
+# Arquitetura — Vigia IA 1.0.32+32
 
 ## 1. Princípios
 
-A 1.0.31 mantém a identidade técnica **vigiaia**, a camada de saúde/diagnóstico da ETAPA 4 e o servidor LAN existente. Nesta revisão, apenas a serialização da chave no endereço HTTP foi tornada canônica, sem alterar o fluxo de autenticação ou criar um segundo pipeline de câmera.
+A 1.0.32 mantém a identidade técnica **vigiaia**, a camada de saúde/diagnóstico da ETAPA 4 e o servidor LAN existente. Nesta revisão, a bridge Android corrige a expressão booleana do estado de permissão de rede local e mantém a mesma implementação nas duas cópias usadas pelo projeto e pelo bootstrap do workflow.
 
 Princípios mantidos:
 
