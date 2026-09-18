@@ -1,27 +1,83 @@
+enum SystemOperationalState { idle, healthy, attention }
+
 class SystemHealthSnapshot {
   const SystemHealthSnapshot({
     required this.createdAt,
     this.source = 'Parado',
+    this.monitoringActive = false,
+    this.androidServiceActive = false,
+    this.cameraActive = false,
+    this.framesActive = false,
     this.aiReady = false,
+    this.aiActive = false,
+    this.lanActive = false,
+    this.connectedClients = 0,
+    this.backgroundRequested = false,
+    this.backgroundOperational = false,
+    this.screenInteractive = true,
+    this.cameraPermissionRequired = true,
+    this.cameraPermissionGranted = false,
+    this.localNetworkPermissionRequired = false,
+    this.localNetworkPermissionGranted = true,
+    this.notificationsAllowed = false,
+    this.lastFrameAt,
+    this.lanLastFrameAt,
+    this.lanError,
     this.fps = 0,
     this.batteryPercent,
     this.batteryTemperatureC,
-    this.freeStorageMb,
-    this.totalStorageMb,
-    this.memoryUsedMb,
-    this.backgroundActive = false,
+    this.freeStorageBytes,
+    this.totalStorageBytes,
+    this.memoryUsedBytes,
     this.recentErrors = 0,
+    this.cameraHealth = CameraHealthState.unknown,
   });
 
   final DateTime createdAt;
   final String source;
+  final bool monitoringActive;
+  final bool androidServiceActive;
+  final bool cameraActive;
+  final bool framesActive;
   final bool aiReady;
+  final bool aiActive;
+  final bool lanActive;
+  final int connectedClients;
+  final bool backgroundRequested;
+  final bool backgroundOperational;
+  final bool screenInteractive;
+  final bool cameraPermissionRequired;
+  final bool cameraPermissionGranted;
+  final bool localNetworkPermissionRequired;
+  final bool localNetworkPermissionGranted;
+  final bool notificationsAllowed;
+  final DateTime? lastFrameAt;
+  final DateTime? lanLastFrameAt;
+  final String? lanError;
   final double fps;
   final int? batteryPercent;
   final double? batteryTemperatureC;
-  final int? freeStorageMb;
-  final int? totalStorageMb;
-  final int? memoryUsedMb;
-  final bool backgroundActive;
+  final int? freeStorageBytes;
+  final int? totalStorageBytes;
+  final int? memoryUsedBytes;
   final int recentErrors;
+  final CameraHealthState cameraHealth;
+
+  SystemOperationalState get operationalState {
+    if (!monitoringActive) return SystemOperationalState.idle;
+    final cameraIntegrityOk =
+        cameraHealth != CameraHealthState.obstructed &&
+        cameraHealth != CameraHealthState.moved &&
+        cameraHealth != CameraHealthState.offline;
+    if (cameraActive && framesActive && aiActive && cameraIntegrityOk) {
+      return SystemOperationalState.healthy;
+    }
+    return SystemOperationalState.attention;
+  }
+
+  bool get permissionsReady =>
+      (!cameraPermissionRequired || cameraPermissionGranted) &&
+      (!localNetworkPermissionRequired || localNetworkPermissionGranted);
 }
+
+enum CameraHealthState { unknown, ok, obstructed, moved, offline }

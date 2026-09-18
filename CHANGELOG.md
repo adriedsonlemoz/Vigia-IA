@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 1.0.29+29
+
+- ETAPA 4 concluída para Diagnóstico, Saúde do sistema e armazenamento.
+- Diagnóstico passa a capturar um snapshot único do estado real e dos registros técnicos; a mesma captura alimenta a tela, o TXT exportado, a cópia e o compartilhamento.
+- Adicionados botões **Exportar** e **Compartilhar** no Diagnóstico, com arquivos `vigiaia_diagnostico_*.txt` em documentos/exports/diagnostico.
+- Saúde do sistema separa serviço Android, câmera/fonte, frames, IA, LAN, clientes conectados, permissões e funcionamento em segundo plano.
+- Serviço Android ativo sem frames recentes não é mais tratado como monitoramento funcionando.
+- Frames congelados expiram por heartbeat e derrubam o estado operacional da câmera/IA; LAN também só é considerada transmitindo quando há frames atuais.
+- Valores de armazenamento e memória passam por um formatador único, usando B/KB/MB/GB/TB e vírgula decimal na interface em português.
+- Tela Armazenamento e backup também usa a mesma formatação, inclusive no limite de fotos e vídeos.
+- Botões curtos de ajuda adicionados a Diagnóstico, Saúde do sistema e Armazenamento/backup.
+- Bridge Android adiciona compartilhamento nativo de texto do diagnóstico e métricas de memória/armazenamento passam a trafegar em bytes, evitando números crus em MB.
+- Novos testes cobrem formatação, expiração de frames, estados da Saúde, geração do diagnóstico e exportação do TXT.
+- Versão incrementada para `1.0.29+29`; README, CHANGELOG, ARCHITECTURE, metadados e verificações preventivas sincronizados.
+
+### Validação
+
+- `tool/verify_project.sh` cobre os novos arquivos, testes, identidade técnica e versão.
+- `flutter analyze`, `flutter test` e build APK permanecem no workflow GitHub Actions porque o SDK Flutter não está instalado neste ambiente de edição.
+
 ## 1.0.28+28
 
 - Identidade técnica migrada integralmente para `vigiaia`, sem hífen em protocolo ou identificadores de projeto.

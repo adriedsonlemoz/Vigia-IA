@@ -212,40 +212,92 @@ class NativePlatformService {
     }
   }
 
+  Future<bool> shareText({
+    required String subject,
+    required String text,
+  }) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('shareText', <String, Object?>{
+            'subject': subject,
+            'text': text,
+          }) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<SystemHealthSnapshot> readSystemHealth({
     required String source,
+    required bool monitoringActive,
+    required bool androidServiceActive,
+    required bool cameraActive,
+    required bool framesActive,
     required bool aiReady,
+    required bool aiActive,
+    required bool lanActive,
+    required int connectedClients,
+    required bool backgroundRequested,
+    required bool backgroundOperational,
+    required bool screenInteractive,
+    required bool cameraPermissionRequired,
+    required bool cameraPermissionGranted,
+    required bool localNetworkPermissionRequired,
+    required bool localNetworkPermissionGranted,
+    required bool notificationsAllowed,
+    required DateTime? lastFrameAt,
+    required DateTime? lanLastFrameAt,
+    required String? lanError,
     required double fps,
-    required bool backgroundActive,
     required int recentErrors,
-    int? freeStorageMb,
-    int? totalStorageMb,
+    required CameraHealthState cameraHealth,
+    int? freeStorageBytes,
+    int? totalStorageBytes,
+    int? memoryUsedBytes,
   }) async {
     int? battery;
     double? temperature;
-    int? memory;
     if (Platform.isAndroid) {
       try {
         final data = await _channel.invokeMapMethod<String, Object?>('systemHealth');
         battery = (data?['batteryPercent'] as num?)?.toInt();
         temperature = (data?['batteryTemperatureC'] as num?)?.toDouble();
-        memory = (data?['memoryUsedMb'] as num?)?.toInt();
-        freeStorageMb ??= (data?['freeStorageMb'] as num?)?.toInt();
-        totalStorageMb ??= (data?['totalStorageMb'] as num?)?.toInt();
+        memoryUsedBytes ??= (data?['memoryUsedBytes'] as num?)?.toInt();
+        freeStorageBytes ??= (data?['freeStorageBytes'] as num?)?.toInt();
+        totalStorageBytes ??= (data?['totalStorageBytes'] as num?)?.toInt();
       } catch (_) {}
     }
     return SystemHealthSnapshot(
       createdAt: DateTime.now(),
       source: source,
+      monitoringActive: monitoringActive,
+      androidServiceActive: androidServiceActive,
+      cameraActive: cameraActive,
+      framesActive: framesActive,
       aiReady: aiReady,
+      aiActive: aiActive,
+      lanActive: lanActive,
+      connectedClients: connectedClients,
+      backgroundRequested: backgroundRequested,
+      backgroundOperational: backgroundOperational,
+      screenInteractive: screenInteractive,
+      cameraPermissionRequired: cameraPermissionRequired,
+      cameraPermissionGranted: cameraPermissionGranted,
+      localNetworkPermissionRequired: localNetworkPermissionRequired,
+      localNetworkPermissionGranted: localNetworkPermissionGranted,
+      notificationsAllowed: notificationsAllowed,
+      lastFrameAt: lastFrameAt,
+      lanLastFrameAt: lanLastFrameAt,
+      lanError: lanError,
       fps: fps,
       batteryPercent: battery,
       batteryTemperatureC: temperature,
-      freeStorageMb: freeStorageMb,
-      totalStorageMb: totalStorageMb,
-      memoryUsedMb: memory,
-      backgroundActive: backgroundActive,
+      freeStorageBytes: freeStorageBytes,
+      totalStorageBytes: totalStorageBytes,
+      memoryUsedBytes: memoryUsedBytes,
       recentErrors: recentErrors,
+      cameraHealth: cameraHealth,
     );
   }
 }

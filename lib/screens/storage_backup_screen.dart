@@ -7,6 +7,8 @@ import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/backup_export_service.dart';
 import '../services/storage_management_service.dart';
+import '../utils/storage_size_formatter.dart';
+import '../widgets/help_button.dart';
 
 class StorageBackupScreen extends StatefulWidget {
   const StorageBackupScreen({super.key});
@@ -145,15 +147,23 @@ class _StorageBackupScreenState extends State<StorageBackupScreen> {
   Widget build(BuildContext context) {
     if (_profile == null || _usage == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
-      appBar: AppBar(title: const Text('Armazenamento e backup')),
+      appBar: AppBar(
+        title: const Text('Armazenamento e backup'),
+        actions: const [
+          HelpButton(
+            title: 'Armazenamento e backup',
+            message: 'Veja quanto espaço o Vigia IA usa, defina o limite de fotos e vídeos e crie backups ou exportações locais.',
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
         children: [
-          Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [const Icon(Icons.storage_rounded), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_usage!.mediaMb.toStringAsFixed(1)} MB', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)), Text('${_usage!.files} arquivo(s) de histórico e mídia', style: Theme.of(context).textTheme.bodySmall)]))]))),
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [const Icon(Icons.storage_rounded), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(StorageSizeFormatter.formatBytes(_usage!.mediaBytes), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)), Text('${_usage!.files} arquivo(s) de histórico e mídia', style: Theme.of(context).textTheme.bodySmall)]))]))),
           const SizedBox(height: 12),
           SwitchListTile(value: _policy.autoCleanup, onChanged: (v) => setState(() => _policy = _policy.copyWith(autoCleanup: v)), title: const Text('Limpeza automática', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('Remove eventos antigos respeitando retenção e limite de espaço.')),
           _slider('Reter por', '${_policy.retentionDays} dias', _policy.retentionDays.toDouble(), 1, 365, (v) => setState(() => _policy = _policy.copyWith(retentionDays: v.round()))),
-          _slider('Limite para fotos e vídeos', '${_policy.maxStorageMb} MB', _policy.maxStorageMb.toDouble(), 128, 4096, (v) => setState(() => _policy = _policy.copyWith(maxStorageMb: v.round()))),
+          _slider('Limite para fotos e vídeos', StorageSizeFormatter.formatMebibytes(_policy.maxStorageMb), _policy.maxStorageMb.toDouble(), 128, 4096, (v) => setState(() => _policy = _policy.copyWith(maxStorageMb: v.round()))),
           Row(children: [Expanded(child: FilledButton.icon(onPressed: _busy ? null : _savePolicy, icon: const Icon(Icons.save_outlined), label: const Text('Salvar'))), const SizedBox(width: 8), Expanded(child: OutlinedButton.icon(onPressed: _busy ? null : _cleanup, icon: const Icon(Icons.cleaning_services_outlined), label: const Text('Limpar agora')))]),
           const SizedBox(height: 22),
           const Text('Backup e exportação', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),

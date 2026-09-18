@@ -155,7 +155,17 @@ class MonitorController extends ChangeNotifier {
   Widget buildPreview() =>
       _source?.buildPreview() ?? const SizedBox.expand();
 
+  void _syncLanHealth() {
+    _health.updateLan(
+      active: _lanStream.running,
+      clients: _lanStream.connectedViewers,
+      lastFrameAt: _lanStream.lastFrameAt,
+      error: _lanPermissionError ?? _lanStream.error,
+    );
+  }
+
   void _notify() {
+    _syncLanHealth();
     if (!_disposed) notifyListeners();
   }
 
@@ -234,6 +244,7 @@ class MonitorController extends ChangeNotifier {
       _speech.setEnabled(_settings.alertOutputs.voice);
       if (_disposed) return;
       _baseReady = true;
+      _health.aiReady = _detector.isReady;
       _startScheduleTimer();
       _startBackgroundHealthTimer();
       if (_backgroundMonitoringEnabled) {
@@ -324,6 +335,7 @@ class MonitorController extends ChangeNotifier {
       ]);
       if (_disposed) return;
       _baseReady = true;
+      _health.aiReady = _detector.isReady;
       await _logs.record(
         level: ErrorLogLevel.info,
         source: 'Recuperação',
@@ -424,9 +436,19 @@ class MonitorController extends ChangeNotifier {
     _source = source;
     sourceConfig = config;
     _sourceStatus = const VideoSourceStatus(VideoSourceState.connecting);
+    _health.updateSource(
+      name: _sourceDisplayName,
+      monitoring: true,
+      active: false,
+    );
     _frameSubscription = source.frames.listen(_onFrame);
     _statusSubscription = source.statuses.listen((status) {
       _sourceStatus = status;
+      _health.updateSource(
+        name: _sourceDisplayName,
+        monitoring: _source != null && _scheduleActive,
+        active: status.state == VideoSourceState.streaming,
+      );
       if (status.state == VideoSourceState.error) {
         unawaited(
           _logs.record(
@@ -560,6 +582,8 @@ class MonitorController extends ChangeNotifier {
     _lastFpsSample = frame.capturedAt;
     _health
       ..source = _sourceDisplayName
+      ..monitoringActive = true
+      ..cameraActive = true
       ..aiReady = _detector.isReady
       ..backgroundActive = _backgroundMonitoringEnabled
       ..updateFrame(frame.capturedAt, _fps);
@@ -1282,10 +1306,13 @@ class MonitorController extends ChangeNotifier {
     await _clipRecorder.flushPending();
     await _lanStream.stop();
     _lanPermissionError = null;
+    _health.updateLan(active: false, clients: 0);
 
     final source = _source;
     _source = null;
     _sourceStatus = const VideoSourceStatus(VideoSourceState.stopped);
+    _health.stopMonitoring();
+    _health.aiReady = _detector.isReady;
     _notify();
     if (source == null) return;
 

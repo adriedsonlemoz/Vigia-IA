@@ -182,6 +182,21 @@ class MainActivity : FlutterActivity() {
                 }
             }
             "systemHealth" -> result.success(readSystemHealth())
+            "shareText" -> {
+                val subject = call.argument<String>("subject") ?: "Vigia IA - Diagnóstico"
+                val text = call.argument<String>("text") ?: ""
+                try {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, subject)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    startActivity(Intent.createChooser(shareIntent, "Compartilhar diagnóstico"))
+                    result.success(true)
+                } catch (error: Throwable) {
+                    result.error("share_text", error.message, null)
+                }
+            }
             "encodeMp4" -> {
                 Thread {
                     try {
@@ -444,9 +459,9 @@ class MainActivity : FlutterActivity() {
         return mapOf(
             "batteryPercent" to battery,
             "batteryTemperatureC" to if (rawTemperature == Int.MIN_VALUE) null else rawTemperature / 10.0,
-            "memoryUsedMb" to memoryInfo.totalPss / 1024,
-            "freeStorageMb" to (stat.availableBytes / (1024L * 1024L)).toInt(),
-            "totalStorageMb" to (stat.totalBytes / (1024L * 1024L)).toInt(),
+            "memoryUsedBytes" to memoryInfo.totalPss.toLong() * 1024L,
+            "freeStorageBytes" to stat.availableBytes,
+            "totalStorageBytes" to stat.totalBytes,
         )
     }
 

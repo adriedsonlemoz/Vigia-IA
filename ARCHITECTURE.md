@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.28+28
+# Arquitetura — Vigia IA 1.0.29+29
 
 ## 1. Princípios
 
-A 1.0.28 conclui a identidade técnica **vigiaia**: pacote Dart `vigiaia`, namespace/applicationId `com.vigiaia.app`, canais nativos `vigiaia/*` e protocolo `vigiaia://pair`. O ciclo de vida Android e a transmissão LAN da 1.0.27 permanecem intactos.
+A 1.0.29 mantém a identidade técnica **vigiaia** e adiciona uma camada de saúde/diagnóstico baseada em snapshot real do runtime, sem inferir funcionamento apenas pela presença do foreground service.
 
 Princípios mantidos:
 
@@ -431,3 +431,28 @@ A barra principal contém somente **Início, Histórico, Monitor e Câmeras**. A
 - O workflow mantém a sequência verificação preventiva → `flutter analyze` → `flutter test` → APK release.
 - Testes agora usam reporter expandido e cobertura LCOV, salva como artifact quando gerada.
 - O verificador preventivo valida explicitamente os novos vínculos multicâmera sem substituir os testes Dart.
+
+## Diagnóstico e saúde real 1.0.29
+
+A ETAPA 4 separa coleta, avaliação, apresentação e exportação do estado do aplicativo:
+
+- `RuntimeHealthService` mantém apenas sinais do runtime que vêm do pipeline real: fonte, câmera, último frame, FPS, IA e LAN.
+- `SystemHealthService` combina esses sinais com foreground service, permissões e métricas nativas do Android.
+- `SystemHealthSnapshot` é imutável e representa a captura usada pela interface. O estado geral só é `healthy` quando monitoramento, câmera, frames e IA estão realmente ativos.
+- Serviço Android ativo sem frames fica `idle` ou `attention`, nunca `healthy`.
+- `DiagnosticReportService` captura `SystemHealthSnapshot` + registros técnicos e reutiliza o mesmo objeto para tela, TXT, cópia e compartilhamento.
+- O relatório não abre nova câmera nem executa uma segunda IA; usa apenas estado já publicado pelo pipeline existente.
+- `StorageSizeFormatter` centraliza a apresentação de memória/armazenamento em B/KB/MB/GB/TB. Métricas Android agora chegam em bytes, evitando valores crus como `74930`.
+- `HelpButton` fornece explicações curtas nas telas técnicas sem duplicar diálogos extensos.
+
+### Regras de validade do estado
+
+- **Câmera ativa:** exige fonte ativa e frame recente.
+- **Frames chegando:** o último frame deve estar dentro da janela de heartbeat; frame congelado expira.
+- **IA ativa:** exige modelo pronto, monitoramento ativo e frame recente.
+- **LAN ativa:** exige servidor LAN sem erro e frames recentes; servidor escutando sozinho não equivale a vídeo sendo transmitido.
+- **Segundo plano operacional:** exige opção habilitada, serviço Android ativo, monitoramento ativo e frames recentes.
+
+### Exportação
+
+O TXT é criado em `documents/exports/diagnostico` com nome `vigiaia_diagnostico_<timestamp>.txt`. O compartilhamento usa `Intent.ACTION_SEND` com o mesmo texto do snapshot exibido.

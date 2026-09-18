@@ -9,7 +9,7 @@ fail() {
 }
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.28+28$' pubspec.yaml || fail 'Versao esperada 1.0.28+28 nao encontrada.'
+grep -q '^version: 1\.0\.29+29$' pubspec.yaml || fail 'Versao esperada 1.0.29+29 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -308,12 +308,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.28';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.28.'
-grep -q 'static const int build = 28;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 28.'
-grep -q "version: '1.0.28'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.28.'
+grep -q "static const String version = '1.0.29';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.29.'
+grep -q 'static const int build = 29;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 29.'
+grep -q "version: '1.0.29'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.29.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -479,8 +479,8 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.28+28$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.28+28.'
+grep -q '^version: 1.0.29+29$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.29+29.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
@@ -646,3 +646,24 @@ grep -q 'Interface e domínio de detecção 1.0.24' ARCHITECTURE.md \
   || fail 'ARCHITECTURE nao documenta a fronteira dos tres grupos.'
 
 echo 'Verificacao preventiva concluida com sucesso.'
+
+# Diagnostico e saude real 1.0.29
+[[ -f lib/services/system_health_service.dart ]] || fail 'SystemHealthService nao encontrado.'
+[[ -f lib/services/diagnostic_report_service.dart ]] || fail 'DiagnosticReportService nao encontrado.'
+[[ -f lib/utils/storage_size_formatter.dart ]] || fail 'StorageSizeFormatter nao encontrado.'
+[[ -f lib/widgets/help_button.dart ]] || fail 'HelpButton nao encontrado.'
+[[ -f test/storage_size_formatter_test.dart ]] || fail 'Teste de formatacao de armazenamento nao encontrado.'
+[[ -f test/system_health_state_test.dart ]] || fail 'Teste de estados da Saude nao encontrado.'
+[[ -f test/runtime_health_service_test.dart ]] || fail 'Teste de heartbeat de frames nao encontrado.'
+[[ -f test/diagnostic_report_service_test.dart ]] || fail 'Teste de diagnostico/exportacao nao encontrado.'
+grep -q "label: const Text('Exportar')" lib/screens/error_center_screen.dart || fail 'Botao Exportar do Diagnostico nao encontrado.'
+grep -q "Serviço Android ativo" lib/screens/system_health_screen.dart || fail 'Saude nao separa o servico Android.'
+grep -q "Frames chegando" lib/screens/system_health_screen.dart || fail 'Saude nao exibe o estado de frames.'
+grep -q "Monitoramento IA ativo" lib/screens/system_health_screen.dart || fail 'Saude nao exibe o estado real da IA.'
+grep -q "Transmissão LAN ativa" lib/screens/system_health_screen.dart || fail 'Saude nao exibe a transmissao LAN.'
+grep -q "StorageSizeFormatter.formatBytes" lib/screens/storage_backup_screen.dart || fail 'Armazenamento nao usa o formatador unico.'
+grep -q '"shareText"' tool/android/MainActivity.kt || fail 'Bridge nativa de compartilhamento nao encontrada.'
+grep -q 'freeStorageBytes' tool/android/MainActivity.kt || fail 'Metricas Android nao usam bytes.'
+grep -q '^## 1.0.29+29' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.29.'
+grep -q 'Evolução 1.0.29' README.md || fail 'README nao documenta 1.0.29.'
+grep -q 'Diagnóstico e saúde real 1.0.29' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta a Etapa 4.'

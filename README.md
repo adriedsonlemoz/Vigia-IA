@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.28+28`
+> **Versão atual:** `1.0.29+29`
 
 ## Estado atual
 
-A 1.0.28 conclui a migração da identidade técnica para `vigiaia`, remove o hífen do protocolo/identificadores e corrige os avisos que interrompiam o `flutter analyze` no workflow Android APK 26.
+A 1.0.29 conclui a ETAPA 4 de Diagnóstico e Saúde do sistema, com estados reais de câmera/frames/IA/LAN, exportação compartilhável e formatação legível de armazenamento.
+
+### Evolução 1.0.29
+
+- Diagnóstico passa a usar um snapshot único do estado e dos registros técnicos; tela, TXT exportado, cópia e compartilhamento usam a mesma captura;
+- botão **Exportar** gera `vigiaia_diagnostico_*.txt` e o compartilhamento usa a folha nativa do Android;
+- Saúde do sistema separa serviço Android, câmera, frames, monitoramento IA, transmissão LAN, clientes, permissões e segundo plano;
+- serviço Android ativo sem frames não é considerado monitoramento funcionando;
+- frames congelados expiram por heartbeat, derrubando corretamente câmera/IA e a transmissão LAN operacional;
+- memória e armazenamento usam formatação única em B/KB/MB/GB/TB;
+- Armazenamento e backup também usa os valores formatados;
+- telas técnicas receberam ajuda curta pelo botão **?**;
+- testes novos cobrem formatação, estados da Saúde, expiração de frames, diagnóstico e exportação.
 
 ### Evolução 1.0.28
 

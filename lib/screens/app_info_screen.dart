@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.28',
+          version: '1.0.29',
           current: true,
+          changes: [
+            'Diagnóstico exportável e compartilhável com snapshot único do estado exibido.',
+            'Saúde do sistema separa serviço Android, câmera, frames, IA, LAN, clientes, permissões e segundo plano.',
+            'Serviço ativo sem frames não é mais apresentado como monitoramento funcionando.',
+            'Armazenamento formatado em KB, MB, GB ou TB e botões de ajuda adicionados às telas técnicas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.28',
           changes: [
             'Identidade técnica migrada integralmente para vigiaia, sem hífen.',
             'Pareamento QR atualizado para vigiaia://pair.',
