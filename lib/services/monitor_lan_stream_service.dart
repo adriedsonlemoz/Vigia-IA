@@ -40,7 +40,7 @@ class MonitorLanStreamService extends ChangeNotifier {
     final base = baseAddress.endsWith('/')
         ? baseAddress.substring(0, baseAddress.length - 1)
         : baseAddress;
-    return '$base/?key=${Uri.encodeQueryComponent(accessKey)}';
+    return '$base/?key=${Uri.encodeComponent(accessKey)}';
   }
 
   Future<bool> start({int port = 8766}) async {
@@ -154,7 +154,7 @@ class MonitorLanStreamService extends ChangeNotifier {
   }
 
   Future<void> _serveViewerPage(HttpRequest request) async {
-    final key = Uri.encodeQueryComponent(_accessKey);
+    final key = Uri.encodeComponent(_accessKey);
     request.response.headers.contentType = ContentType.html;
     request.response.write('''<!doctype html>
 <html lang="pt-BR">

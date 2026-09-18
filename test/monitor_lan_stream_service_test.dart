@@ -21,4 +21,15 @@ void main() {
       'http://10.0.0.8:8766/?key=CHAVE123',
     );
   });
+
+  test('URL do visualizador codifica caracteres reservados sem perder a chave', () {
+    const key = 'A&B=? /+#';
+    final url = MonitorLanStreamService.buildViewerUrl(
+      'http://192.168.0.20:8766',
+      key,
+    );
+
+    expect(url, 'http://192.168.0.20:8766/?key=A%26B%3D%3F%20%2F%2B%23');
+    expect(Uri.parse(url).queryParameters['key'], key);
+  });
 }

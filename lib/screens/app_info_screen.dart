@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.30',
+          version: '1.0.31',
           current: true,
+          changes: [
+            'Corrigida a codificação da chave na URL do visualizador LAN para usar %20 em espaços e percent-encoding seguro nos demais caracteres.',
+            'O mesmo formato de chave agora é usado no endereço compartilhado e no stream MJPEG da página local.',
+            'Versão e verificações preventivas sincronizadas após o log Android APK 3.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.30',
           changes: [
             'Corrigido erro de análise estática causado pela referência a CameraHealthState sem o import do modelo.',
             'Corrigida a inferência numérica do formatador de armazenamento para manter double em todos os caminhos.',

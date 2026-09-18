@@ -9,7 +9,7 @@ fail() {
 }
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.30+30$' pubspec.yaml || fail 'Versao esperada 1.0.30+30 nao encontrada.'
+grep -q '^version: 1\.0\.31+31$' pubspec.yaml || fail 'Versao esperada 1.0.31+31 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -308,12 +308,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.30';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.30.'
-grep -q 'static const int build = 30;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 30.'
-grep -q "version: '1.0.30'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.30.'
+grep -q "static const String version = '1.0.31';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.31.'
+grep -q 'static const int build = 31;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 31.'
+grep -q "version: '1.0.31'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.31.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -479,8 +479,8 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.30+30$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.30+30.'
+grep -q '^version: 1.0.31+31$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.31+31.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
@@ -667,6 +667,15 @@ grep -q "Transmissão LAN ativa" lib/screens/system_health_screen.dart || fail '
 grep -q "StorageSizeFormatter.formatBytes" lib/screens/storage_backup_screen.dart || fail 'Armazenamento nao usa o formatador unico.'
 grep -q '"shareText"' tool/android/MainActivity.kt || fail 'Bridge nativa de compartilhamento nao encontrada.'
 grep -q 'freeStorageBytes' tool/android/MainActivity.kt || fail 'Metricas Android nao usam bytes.'
-grep -q '^## 1.0.30+30' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.30.'
-grep -q 'Evolução 1.0.30' README.md || fail 'README nao documenta 1.0.30.'
+grep -q '^## 1.0.31+31' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.31.'
+grep -q 'Evolução 1.0.31' README.md || fail 'README nao documenta 1.0.31.'
 grep -q 'Diagnóstico e saúde real 1.0.29' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta a Etapa 4.'
+
+# Regressão Android APK 3: a chave LAN deve usar percent-encoding canônico (%20),
+# não application/x-www-form-urlencoded (+), para manter o contrato do endereço exibido.
+grep -q 'Uri.encodeComponent(accessKey)' lib/services/monitor_lan_stream_service.dart \
+  || fail 'URL LAN nao usa Uri.encodeComponent para a chave compartilhada.'
+grep -q 'Uri.encodeComponent(_accessKey)' lib/services/monitor_lan_stream_service.dart \
+  || fail 'Pagina LAN nao usa a mesma codificacao da chave no stream MJPEG.'
+! grep -q 'Uri.encodeQueryComponent(accessKey)' lib/services/monitor_lan_stream_service.dart \
+  || fail 'Codificacao antiga da chave LAN ainda esta presente.'

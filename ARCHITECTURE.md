@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.30+30
+# Arquitetura — Vigia IA 1.0.31+31
 
 ## 1. Princípios
 
-A 1.0.30 mantém a identidade técnica **vigiaia** e corrige a integração da camada de saúde/diagnóstico adicionada na 1.0.29, sem alterar sua arquitetura.
+A 1.0.31 mantém a identidade técnica **vigiaia**, a camada de saúde/diagnóstico da ETAPA 4 e o servidor LAN existente. Nesta revisão, apenas a serialização da chave no endereço HTTP foi tornada canônica, sem alterar o fluxo de autenticação ou criar um segundo pipeline de câmera.
 
 Princípios mantidos:
 

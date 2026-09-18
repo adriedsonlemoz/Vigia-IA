@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.30+30`
+> **Versão atual:** `1.0.31+31`
 
 ## Estado atual
 
-A `1.0.30+30` é uma correção de build da ETAPA 4. Mantém as funcionalidades introduzidas na `1.0.29+29` e corrige os erros detectados pelo `flutter analyze` no Android APK 2.
+A `1.0.31+31` mantém a ETAPA 4 e corrige o último bloqueio encontrado pelo Android APK 3: a codificação da chave no endereço do visualizador LAN. O `flutter analyze` já passou sem problemas nesse build.
+
+### Evolução 1.0.31
+
+- chave da URL LAN usa percent-encoding canônico, com espaços como `%20` em vez de `+`;
+- o mesmo formato é usado no endereço compartilhado e no stream MJPEG interno;
+- a validação da chave no servidor permanece equivalente, pois os parâmetros são decodificados antes da comparação;
+- verificações preventivas e metadados sincronizados com `1.0.31+31`.
 
 ### Evolução 1.0.30
 

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.31+31
+
+- Corrigido o único teste que falhou no log Android APK 3 após o `flutter analyze` passar sem problemas.
+- `MonitorLanStreamService` passa a usar `Uri.encodeComponent` para a chave do visualizador LAN, gerando `%20` para espaços e percent-encoding para caracteres reservados.
+- A mesma codificação é aplicada ao endereço compartilhado e à URL do stream MJPEG embutida na página local.
+- A leitura no servidor continua usando `request.uri.queryParameters`, portanto a chave é decodificada antes da comparação e o controle de acesso permanece inalterado.
+- Metadados, tela de mudanças, teste de versão e verificação preventiva sincronizados com `1.0.31+31`.
+
+### Validação
+
+- Android APK 3: `flutter analyze` concluiu com **No issues found**.
+- Android APK 3: 71 testes passaram e somente `monitor_lan_stream_service_test.dart` falhou por esperar `%20` e receber `+`; a causa foi corrigida na origem.
+- `tool/verify_project.sh` foi ampliado para validar o uso da codificação canônica da chave LAN.
+
 ## 1.0.30+30
 
 - Corrigidos os 5 erros encontrados pelo `flutter analyze` no log Android APK 2.
