@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.35+35
+
+- Corrigido o único bloqueio mostrado pelo Android-APK-7: `flutter analyze` apontava `unnecessary_import` em `lib/services/shared_local_camera_service.dart`.
+- Removido `import 'dart:typed_data';` desse serviço; `Uint8List` continua disponível por `package:flutter/services.dart`, portanto não há mudança funcional na câmera compartilhada.
+- Pipeline de detecção da 1.0.34 preservado: EfficientDet-Lite0, fallback SSD, letterbox, confiança adaptativa, confirmação temporal e segunda passagem localizada continuam inalterados.
+- `tool/verify_project.sh` passa a impedir a volta desse import redundante.
+- Versão, metadados, tela de mudanças, README e ARCHITECTURE sincronizados em `1.0.35+35`.
+
+### Validação disponível
+
+- O log Android-APK-7 confirmou download correto dos dois modelos e `tool/verify_project.sh` aprovado antes do analisador.
+- O ambiente local desta correção não contém Flutter SDK; `flutter analyze`, `flutter test` e build do APK devem ser confirmados pelo próximo workflow.
+
 ## 1.0.34+34
 
 - Detector principal atualizado para **EfficientDet-Lite0**, mantendo **SSD MobileNet V1** como fallback automático e preservando o mesmo pipeline local/offline.

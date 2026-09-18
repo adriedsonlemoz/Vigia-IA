@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.34+34
+# Arquitetura — Vigia IA 1.0.35+35
 
 ## 1. Princípios
 
-A 1.0.34 mantém a câmera física compartilhada e adiciona uma camada de detecção mais robusta. O pipeline prioriza EfficientDet-Lite0 com fallback SSD, preserva a geometria da imagem antes da inferência, estabiliza candidatas fracas no tempo e usa uma segunda passagem apenas quando o movimento localizado justifica o custo.
+A 1.0.35 mantém integralmente a arquitetura de detecção da 1.0.34 e corrige somente o aviso de análise estática no serviço de câmera compartilhada. O pipeline continua priorizando EfficientDet-Lite0 com fallback SSD, preservando a geometria da imagem antes da inferência, estabilizando candidatas fracas no tempo e usando uma segunda passagem apenas quando o movimento localizado justifica o custo.
 
 Princípios mantidos:
 

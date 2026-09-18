@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.34',
+          version: '1.0.35',
           current: true,
+          changes: [
+            'Corrigido o único aviso restante do flutter analyze em SharedLocalCameraService.',
+            'Removido import redundante de dart:typed_data sem alterar câmera compartilhada ou detecção.',
+            'Verificador preventivo ampliado para impedir a regressão desse aviso em builds futuros.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.34',
           changes: [
             'Detecção principal com EfficientDet-Lite0 e fallback automático para SSD MobileNet V1.',
             'Pré-processamento por letterbox preserva a proporção da câmera e evita deformar pessoas, animais e veículos.',

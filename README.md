@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.34+34`
+> **Versão atual:** `1.0.35+35`
 
 ## Estado atual
 
-A `1.0.34+34` melhora o reconhecimento de pessoas, veículos e animais sem criar um segundo pipeline de câmera: usa detector móvel mais preciso com fallback, preserva a proporção da imagem, confirma detecções fracas no tempo e mantém presença visível mesmo quando o objeto para de se mover.
+A `1.0.35+35` é uma correção de build da evolução de detecção 1.0.34: remove o único aviso restante do `flutter analyze` sem modificar o comportamento da câmera, do EfficientDet-Lite0, do fallback SSD ou do rastreamento.
+
+### Evolução 1.0.35
+
+- removido o import redundante de `dart:typed_data` em `SharedLocalCameraService`;
+- mantido integralmente o pipeline de detecção aprimorado da 1.0.34;
+- `tool/verify_project.sh` passa a bloquear a reintrodução desse import redundante;
+- versão, metadados e tela de mudanças sincronizados em `1.0.35+35`.
 
 ### Evolução 1.0.34
 

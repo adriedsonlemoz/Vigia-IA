@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.34 melhora a detecção com EfficientDet-Lite0 e fallback SSD, letterbox sem deformação, confirmação temporal, atualização de presença sem movimento e segunda passagem ampliada para objetos pequenos.",
-  "version": "1.0.34",
-  "build": 34
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.35 corrige o único aviso restante do flutter analyze da 1.0.34 sem alterar o pipeline de detecção aprimorado.",
+  "version": "1.0.35",
+  "build": 35
 }
