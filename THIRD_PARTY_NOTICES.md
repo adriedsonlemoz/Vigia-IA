@@ -2,7 +2,7 @@
 
 Este projeto usa pacotes Flutter e bibliotecas nativas de terceiros. Antes de distribuir publicamente o APK, revise e cumpra as licencas de todas as dependencias resolvidas pelo `pub` e, em especial, os requisitos de redistribuicao do VLC/libVLC usados por `vlc_player`.
 
-O modelo inicial e o SSD MobileNet V1 com metadata publicado pelo Google para TensorFlow Lite Task Library e e obtido pelo script `tool/fetch_model.sh`.
+Os modelos de detecção usados pelo projeto são o EfficientDet-Lite0 com metadata, como opção principal, e o SSD MobileNet V1 com metadata como fallback. Ambos são obtidos de artefatos publicados pelo Google para TensorFlow Lite/LiteRT por `tool/fetch_model.sh`.
 
 A inferencia local usa o pacote `flutter_litert`, mantendo compatibilidade com modelos `.tflite` e a API Interpreter usada pelo projeto.
 

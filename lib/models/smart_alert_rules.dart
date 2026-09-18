@@ -4,9 +4,9 @@ class SmartAlertRules {
   const SmartAlertRules({
     this.enabled = true,
     this.personMinimumPresence = Duration.zero,
-    this.vehicleMinimumPresence = const Duration(seconds: 1),
-    this.animalMinimumPresence = const Duration(seconds: 3),
-    this.otherMinimumPresence = const Duration(seconds: 2),
+    this.vehicleMinimumPresence = const Duration(milliseconds: 600),
+    this.animalMinimumPresence = const Duration(milliseconds: 800),
+    this.otherMinimumPresence = const Duration(milliseconds: 1200),
     this.ignoreStationaryVehicles = true,
   });
 

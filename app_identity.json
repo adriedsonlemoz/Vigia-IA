@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.33 corrige concorrência CameraX com câmera compartilhada, visualizador LAN com sessão temporária e estado real, latência de alertas/TTS, watchdog e heartbeat de segundo plano, além de edge-to-edge/tela imersiva.",
-  "version": "1.0.33",
-  "build": 33
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.34 melhora a detecção com EfficientDet-Lite0 e fallback SSD, letterbox sem deformação, confirmação temporal, atualização de presença sem movimento e segunda passagem ampliada para objetos pequenos.",
+  "version": "1.0.34",
+  "build": 34
 }

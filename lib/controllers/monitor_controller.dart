@@ -19,6 +19,8 @@ import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/camera_integrity_service.dart';
 import '../services/clip_recorder_service.dart';
+import '../services/detection_confidence_policy.dart';
+import '../services/detection_merger.dart';
 import '../services/error_log_service.dart';
 import '../services/event_history_service.dart';
 import '../services/motion_detection_service.dart';
@@ -29,6 +31,7 @@ import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
 import '../services/object_tracker.dart';
 import '../services/smart_alert_rule_engine.dart';
+import '../services/temporal_detection_filter.dart';
 import '../services/shared_local_camera_service.dart';
 import '../services/runtime_health_service.dart';
 import '../services/speech_service.dart';
@@ -61,6 +64,7 @@ class MonitorController extends ChangeNotifier {
   ObjectDetectionService _detector = ObjectDetectionService();
   final SpeechService _speech = SpeechService();
   final MotionDetectionService _motion = MotionDetectionService();
+  final TemporalDetectionFilter _detectionFilter = TemporalDetectionFilter();
   final CameraIntegrityService _cameraIntegrity = CameraIntegrityService();
   final NativePlatformService _native = NativePlatformService.instance;
   final RuntimeHealthService _health = RuntimeHealthService.instance;
@@ -112,6 +116,8 @@ class MonitorController extends ChangeNotifier {
   bool _appInBackground = false;
   bool _backgroundRecoveryInProgress = false;
   double _fps = 0;
+  DateTime? _lastIdleInferenceAt;
+  final Map<int, DateTime> _recentMotionByTrackId = <int, DateTime>{};
   String? _lanPermissionError;
 
   List<Detection> get detections => _detections;
@@ -618,39 +624,66 @@ class MonitorController extends ChangeNotifier {
       _motionActive = !_settings.motionOnly || motionResult.hasMotion;
       final now = DateTime.now();
 
+      const idlePresenceRefresh = Duration(milliseconds: 800);
       if (_settings.motionOnly && !motionResult.hasMotion) {
-        _detections = const [];
-        _trackedDetections = const [];
-        final tracking = _trackingEnabled
-            ? _tracker.update(
-                detections: const <Detection>[],
-                zones: _trackingZones(activeZones),
-                now: now,
-              )
-            : const TrackingResult(
-                active: <TrackedDetection>[],
-                transitions: <ZoneTransition>[],
-              );
-        if (_announceEntryExit && tracking.transitions.isNotEmpty) {
-          unawaited(_recordTransitions(frame, tracking.transitions));
+        final lastIdle = _lastIdleInferenceAt;
+        if (lastIdle != null && now.difference(lastIdle) < idlePresenceRefresh) {
+          // Mantém a última presença confirmada entre verificações silenciosas.
+          // Isso evita que uma pessoa/animal parado desapareça só porque o
+          // filtro de movimento deixou de disparar.
+          return;
         }
-        _smartRuleEngine.evaluate(
-          visibleLabels: const <String>{},
-          movingLabels: const <String>{},
-          now: now,
-        );
-        _alertGuard.evaluate(const <String>{}, now);
-        return;
+        _lastIdleInferenceAt = now;
+      } else {
+        _lastIdleInferenceAt = now;
       }
 
-      final detected = await _detector.detect(
+      final candidateThreshold =
+          DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
+      final primaryDetected = await _detector.detect(
         analysisFrame,
-        threshold: _settings.confidenceThreshold,
+        threshold: candidateThreshold,
         maxResults: _settings.maxResults,
       );
       if (_shouldDiscardFrameResult(session)) return;
 
-      final selected = ObjectFilterPolicy.apply(detected, _alertLabels);
+      var candidates = ObjectFilterPolicy.apply(primaryDetected, _alertLabels);
+      final hasUsefulPrimary = candidates.any(
+        (item) => DetectionConfidencePolicy.isCandidate(
+          item,
+          _settings.confidenceThreshold,
+        ),
+      );
+
+      // Se houve movimento localizado mas a primeira passagem não encontrou
+      // nada útil, amplia somente aquela região e tenta uma segunda vez. Isso
+      // ajuda objetos pequenos/distantes sem dobrar o custo em todos os frames.
+      final focusBox = motionResult.focusRegion();
+      if (motionResult.hasMotion && focusBox != null && !hasUsefulPrimary) {
+        final focusZone = MonitoringZone(
+          xMin: focusBox.xMin,
+          yMin: focusBox.yMin,
+          xMax: focusBox.xMax,
+          yMax: focusBox.yMax,
+        );
+        final focusedFrame = MonitoringZoneService.crop(analysisFrame, focusZone);
+        final focusedDetected = await _detector.detect(
+          focusedFrame,
+          threshold: candidateThreshold,
+          maxResults: _settings.maxResults,
+        );
+        if (_shouldDiscardFrameResult(session)) return;
+        final focusedCandidates = ObjectFilterPolicy
+            .apply(focusedDetected, _alertLabels)
+            .map((item) => MonitoringZoneService.remapDetection(item, focusZone));
+        candidates = DetectionMerger.merge(candidates, focusedCandidates);
+      }
+
+      final selected = _detectionFilter.apply(
+        candidates: candidates,
+        baseThreshold: _settings.confidenceThreshold,
+        now: now,
+      );
       final movingSelected = selected
           .where((item) => motionResult.isBoxMoving(item.box))
           .toList(growable: false);
@@ -682,9 +715,11 @@ class MonitorController extends ChangeNotifier {
               movingGlobal,
               activeZones.map((profile) => profile.zone),
             );
-      _detections = _settings.motionOnly
-          ? zoneFilteredMoving
-          : zoneFilteredSelected;
+
+      // Movimento passa a ser um gatilho de economia/alerta, não um motivo para
+      // apagar uma detecção ainda visível. Isso estabiliza pessoas paradas e
+      // veículos/animais que interrompem o movimento por alguns instantes.
+      _detections = zoneFilteredSelected;
 
       if (_error?.startsWith('Falha na detecção') == true) _error = null;
 
@@ -703,8 +738,26 @@ class MonitorController extends ChangeNotifier {
         unawaited(_recordTransitions(frame, tracking.transitions));
       }
 
+      bool isMovingDetection(Detection detection) => zoneFilteredMoving.any(
+            (moving) => _sameDetectionRegion(detection, moving),
+          );
+      for (final tracked in _trackedDetections) {
+        if (isMovingDetection(tracked.detection)) {
+          _recentMotionByTrackId[tracked.trackId] = now;
+        }
+      }
+      _recentMotionByTrackId.removeWhere(
+        (_, lastMotion) =>
+            now.difference(lastMotion) > const Duration(milliseconds: 1400),
+      );
+
       final visibleLabels = zoneFilteredSelected.map((item) => item.label).toSet();
-      final movingLabels = zoneFilteredMoving.map((item) => item.label).toSet();
+      final movingLabels = <String>{...zoneFilteredMoving.map((item) => item.label)};
+      for (final tracked in _trackedDetections) {
+        if (_recentMotionByTrackId.containsKey(tracked.trackId)) {
+          movingLabels.add(tracked.detection.label);
+        }
+      }
       final ruleEligibleLabels = _smartRuleEngine.evaluate(
         visibleLabels: visibleLabels,
         movingLabels: movingLabels,
@@ -713,8 +766,18 @@ class MonitorController extends ChangeNotifier {
       final alertTargets = <String, Detection>{};
       for (final detection in _detections) {
         if (!ruleEligibleLabels.contains(detection.label)) continue;
-        final tracked = _trackedDetections.where((item) => identical(item.detection, detection)).firstOrNull;
-        final key = tracked == null ? detection.label : '${detection.label}#${tracked.trackId}';
+        final tracked = _trackedDetections
+            .where((item) => identical(item.detection, detection))
+            .firstOrNull;
+        if (_settings.motionOnly) {
+          final recentlyMoved = tracked != null
+              ? _recentMotionByTrackId.containsKey(tracked.trackId)
+              : isMovingDetection(detection);
+          if (!recentlyMoved) continue;
+        }
+        final key = tracked == null
+            ? detection.label
+            : '${detection.label}#${tracked.trackId}';
         final existing = alertTargets[key];
         if (existing == null || detection.confidence > existing.confidence) {
           alertTargets[key] = detection;
@@ -747,6 +810,15 @@ class MonitorController extends ChangeNotifier {
       if (identical(_processingDone, processingDone)) _processingDone = null;
       _notify();
     }
+  }
+
+  bool _sameDetectionRegion(Detection a, Detection b) {
+    if (a.label != b.label) return false;
+    final ax = (a.box.xMin + a.box.xMax) / 2;
+    final ay = (a.box.yMin + a.box.yMax) / 2;
+    final bx = (b.box.xMin + b.box.xMax) / 2;
+    final by = (b.box.yMin + b.box.yMax) / 2;
+    return (ax - bx).abs() <= 0.07 && (ay - by).abs() <= 0.07;
   }
 
   List<MonitoringZoneProfile> _trackingZones(
@@ -1210,6 +1282,9 @@ class MonitorController extends ChangeNotifier {
     _trackingEnabled = enabled;
     _settings = _settings.copyWith(trackingEnabled: enabled);
     _tracker.reset();
+    _detectionFilter.reset();
+    _recentMotionByTrackId.clear();
+    _lastIdleInferenceAt = null;
     _seenTrackIds.clear();
     _trackedDetections = const <TrackedDetection>[];
     _notify();
@@ -1245,6 +1320,9 @@ class MonitorController extends ChangeNotifier {
       _smartRuleEngine.reset();
     }
     _tracker.reset();
+    _detectionFilter.reset();
+    _recentMotionByTrackId.clear();
+    _lastIdleInferenceAt = null;
     _seenTrackIds.clear();
     _trackedDetections = const <TrackedDetection>[];
   }
@@ -1257,6 +1335,9 @@ class MonitorController extends ChangeNotifier {
       _smartRuleEngine.reset();
     }
     _tracker.reset();
+    _detectionFilter.reset();
+    _recentMotionByTrackId.clear();
+    _lastIdleInferenceAt = null;
     _seenTrackIds.clear();
     _motion.reset();
     _motionActive = false;

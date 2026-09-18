@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.33+33
+# Arquitetura — Vigia IA 1.0.34+34
 
 ## 1. Princípios
 
-A 1.0.33 mantém a identidade técnica **vigiaia** e passa a tratar a câmera física como recurso compartilhado. Monitor, Modo Câmera e recuperação usam um único pipeline CameraX; a LAN usa sessão web baseada em frames reais; alertas priorizam baixa latência; e o Foreground Service possui heartbeat para distinguir serviço Android vivo de monitoramento Dart operacional.
+A 1.0.34 mantém a câmera física compartilhada e adiciona uma camada de detecção mais robusta. O pipeline prioriza EfficientDet-Lite0 com fallback SSD, preserva a geometria da imagem antes da inferência, estabiliza candidatas fracas no tempo e usa uma segunda passagem apenas quando o movimento localizado justifica o custo.
 
 Princípios mantidos:
 
@@ -52,8 +52,12 @@ Todas entregam `RgbFrame` e `VideoSourceStatus` ao mesmo controlador.
 
 Serviços principais:
 
-- `ObjectDetectionService` — inferência local;
-- `MotionDetectionService` — filtro de movimento;
+- `ObjectDetectionService` — inferência local com EfficientDet-Lite0 e fallback SSD;
+- `DetectorImageTransform` — letterbox e remapeamento de caixas;
+- `DetectionConfidencePolicy` — limiares de candidatura por grupo;
+- `TemporalDetectionFilter` — confirmação temporal/hold curto;
+- `DetectionMerger` — união sem duplicatas da passagem normal e focada;
+- `MotionDetectionService` — movimento e região de foco;
 - `MonitoringZoneService` — áreas e recortes;
 - `ObjectTracker` — IDs e entrada/saída;
 - `SmartAlertRuleEngine` — permanência e regras por grupo;
@@ -88,18 +92,27 @@ RemotePhoneCameraSource ----/       |
                                    |
                                    v
                           MotionDetectionService
-                                   |
-                                   v
-                         união das áreas ativas
-                                   |
-                                   v
-                         ObjectDetectionService
-                                   |
-                                   v
-                  remapeamento + filtro por zonas
-                                   |
-                                   v
-                         ObjectFilterPolicy
+                           /               \
+                          v                 v
+                 união das áreas       região de foco
+                          |                 |
+                          v                 |
+                ObjectDetectionService <---+ (2ª passagem só se necessária)
+                          |
+                          v
+           letterbox/remapeamento + DetectionMerger
+                          |
+                          v
+              DetectionConfidencePolicy
+                          |
+                          v
+                TemporalDetectionFilter
+                          |
+                          v
+              remapeamento + filtro por zonas
+                          |
+                          v
+                  ObjectFilterPolicy
                               /          \
                              v            v
                        ObjectTracker   SmartAlertRuleEngine
@@ -192,7 +205,7 @@ Sem rastreamento disponível, o comportamento legado por classe é mantido.
 
 `AppSettingsService` usa um único `PersistedMonitorProfile`.
 
-Schema atual: `version: 6`.
+Schema atual: `version: 7`.
 
 Compatibilidade:
 
@@ -371,6 +384,21 @@ Testes não devem ser alterados apenas para esconder falhas.
 - `PARTIAL_WAKE_LOCK` mantém CPU disponível sem manter a tela ligada.
 - `MonitorRecoveryReceiver` continua sendo recuperação assistida; não abre câmera silenciosamente após boot.
 
+
+## Detecção adaptativa 1.0.34
+
+`ObjectDetectionService` tenta carregar `efficientdet_lite0.tflite` primeiro e só recorre a `ssd_mobilenet_v1.tflite` se o modelo principal não puder ser usado. Ambos precisam expor entrada RGB `[1,H,W,3]` e as quatro saídas de `DetectionPostProcess` (caixas, classes, scores e quantidade). O diagnóstico registra qual modelo foi realmente inicializado.
+
+Antes da inferência, `DetectorImageTransform` redimensiona preservando proporção e centraliza o conteúdo no tensor do modelo. As caixas retornadas são convertidas de volta ao espaço normalizado do frame original; detecções que caiam apenas no padding são descartadas.
+
+O limiar configurado pelo usuário continua sendo o nível de confiança forte. `DetectionConfidencePolicy` permite candidatas ligeiramente abaixo dele por grupo, e `TemporalDetectionFilter` exige recorrência espacial antes de promovê-las. Assim, o ganho de sensibilidade não equivale a aceitar diretamente qualquer score baixo.
+
+Quando **Somente movimento** está ativo, uma cena sem movimento não zera mais as detecções. O controller faz uma inferência de presença a cada 800 ms e preserva brevemente uma detecção confirmada entre falhas transitórias. Movimento recente continua sendo necessário para gerar alertas nesse modo.
+
+Se houver movimento localizado e a passagem principal não encontrar candidato útil, `focusRegion()` produz um recorte limitado da cena. Esse recorte é ampliado para uma segunda inferência e depois remapeado/mesclado, favorecendo objetos pequenos ou distantes sem dobrar permanentemente o custo de CPU.
+
+O schema 7 reduz apenas os antigos tempos padrão das Regras Inteligentes (veículo 600 ms, animal 800 ms e outros 1,2 s). Valores personalizados salvos pelo usuário não são substituídos.
+
 ## Identidade e aparência 1.0.25
 
 - `AppMetadata.name`, `MaterialApp.title`, `android:label` e textos nativos usam **Vigia IA**.
@@ -381,7 +409,7 @@ Testes não devem ser alterados apenas para esconder falhas.
 
 ## Interface e domínio de detecção 1.0.24
 
-`ObjectFilterCatalog` define a fronteira entre as classes internas do SSD MobileNet e o domínio exposto ao usuário:
+`ObjectFilterCatalog` define a fronteira entre as classes internas dos detectores COCO (EfficientDet-Lite0 principal e SSD MobileNet fallback) e o domínio exposto ao usuário:
 
 - `person` → **Pessoa**;
 - `car`, `motorcycle`, `bus`, `truck` → **Automóvel**;

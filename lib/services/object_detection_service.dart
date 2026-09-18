@@ -8,10 +8,12 @@ import 'package:image/image.dart' as img;
 
 import '../models/detection.dart';
 import '../models/rgb_frame.dart';
+import 'detector_image_transform.dart';
 import 'label_translator.dart';
 
 class ObjectDetectionService {
-  static const _modelAsset = 'assets/models/ssd_mobilenet_v1.tflite';
+  static const _primaryModelAsset = 'assets/models/efficientdet_lite0.tflite';
+  static const _fallbackModelAsset = 'assets/models/ssd_mobilenet_v1.tflite';
   static const _labelsAsset = 'assets/models/labelmap.txt';
 
   Isolate? _worker;
@@ -33,10 +35,25 @@ class ObjectDetectionService {
     if (isReady) return;
     if (_disposed) throw StateError('Detector ja descartado.');
 
-    final modelData = await rootBundle.load(_modelAsset);
-    if (modelData.lengthInBytes < 1024 * 1024) {
+    final models = <Map<String, Object>>[];
+    for (final entry in const <(String, String)>[
+      ('EfficientDet-Lite0', _primaryModelAsset),
+      ('SSD MobileNet V1', _fallbackModelAsset),
+    ]) {
+      final modelData = await rootBundle.load(entry.$2);
+      if (modelData.lengthInBytes < 1024 * 1024) continue;
+      final bytes = modelData.buffer.asUint8List(
+        modelData.offsetInBytes,
+        modelData.lengthInBytes,
+      );
+      models.add(<String, Object>{
+        'name': entry.$1,
+        'bytes': TransferableTypedData.fromList([bytes]),
+      });
+    }
+    if (models.isEmpty) {
       throw StateError(
-        'Modelo TensorFlow Lite ausente. Execute tool/fetch_model.sh antes de compilar.',
+        'Modelos TensorFlow Lite ausentes. Execute tool/fetch_model.sh antes de compilar.',
       );
     }
 
@@ -47,10 +64,6 @@ class ObjectDetectionService {
         .where((line) => line.isNotEmpty)
         .toList(growable: false);
 
-    final modelBytes = modelData.buffer.asUint8List(
-      modelData.offsetInBytes,
-      modelData.lengthInBytes,
-    );
     final responses = ReceivePort();
     final ready = Completer<void>();
     final workerDone = Completer<void>();
@@ -63,7 +76,7 @@ class ObjectDetectionService {
       _detectorWorkerMain,
       <String, Object>{
         'replyPort': responses.sendPort,
-        'model': TransferableTypedData.fromList([modelBytes]),
+        'models': models,
         'labels': labels,
       },
       debugName: 'object-detector-worker',
@@ -135,17 +148,19 @@ class ObjectDetectionService {
       for (final rawRow in rawResults) {
         if (rawRow is! List<Object?> || rawRow.length < 6) continue;
         final label = rawRow[0]! as String;
-        detections.add(Detection(
-          label: label,
-          displayLabel: LabelTranslator.ptBr(label),
-          confidence: (rawRow[1]! as num).toDouble(),
-          box: NormalizedBox(
-            yMin: (rawRow[2]! as num).toDouble(),
-            xMin: (rawRow[3]! as num).toDouble(),
-            yMax: (rawRow[4]! as num).toDouble(),
-            xMax: (rawRow[5]! as num).toDouble(),
+        detections.add(
+          Detection(
+            label: label,
+            displayLabel: LabelTranslator.ptBr(label),
+            confidence: (rawRow[1]! as num).toDouble(),
+            box: NormalizedBox(
+              yMin: (rawRow[2]! as num).toDouble(),
+              xMin: (rawRow[3]! as num).toDouble(),
+              yMax: (rawRow[4]! as num).toDouble(),
+              xMax: (rawRow[5]! as num).toDouble(),
+            ),
           ),
-        ));
+        );
       }
       completer.complete(List<Detection>.unmodifiable(detections));
     } catch (error, stackTrace) {
@@ -219,57 +234,43 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
   ReceivePort? commands;
 
   try {
-    final modelTransfer = bootstrap['model']! as TransferableTypedData;
     final labels = bootstrap['labels']! as List<String>;
-    final modelBytes = modelTransfer.materialize().asUint8List();
+    final rawModels = (bootstrap['models']! as List<Object?>)
+        .cast<Map<String, Object>>();
+    final failures = <String>[];
+    _DetectorRuntime? runtime;
 
-    final options = InterpreterOptions()..threads = 4;
-    final activeInterpreter = Interpreter.fromBuffer(modelBytes, options: options);
-    interpreter = activeInterpreter;
+    for (final model in rawModels) {
+      final name = model['name']! as String;
+      final transfer = model['bytes']! as TransferableTypedData;
+      final modelBytes = transfer.materialize().asUint8List();
+      Interpreter? candidate;
+      try {
+        final options = InterpreterOptions()..threads = 4;
+        candidate = Interpreter.fromBuffer(modelBytes, options: options);
+        final inspected = _inspectInterpreter(candidate, name);
+        interpreter = candidate;
+        runtime = inspected;
+        break;
+      } catch (error) {
+        candidate?.close();
+        failures.add('$name: $error');
+      }
+    }
 
-    final inputTensor = activeInterpreter.getInputTensor(0);
-    final inputShape = inputTensor.shape;
-    final inputType = inputTensor.type;
-    if (inputShape.length != 4 || inputShape.last != 3) {
+    final activeInterpreter = interpreter;
+    final activeRuntime = runtime;
+    if (activeInterpreter == null || activeRuntime == null) {
       throw StateError(
-        'Modelo incompativel: entrada esperada [1,H,W,3], encontrada $inputShape.',
+        'Nenhum modelo de detecção compatível pôde ser iniciado. ${failures.join(' | ')}',
       );
     }
-    if (inputType != TensorType.uint8 && inputType != TensorType.float32) {
-      throw StateError(
-        'Modelo incompativel: tipo de entrada $inputType nao suportado.',
-      );
-    }
-    final inputHeight = inputShape[1];
-    final inputWidth = inputShape[2];
-
-    final outputs = activeInterpreter.getOutputTensors();
-    final outputSummary = outputs.asMap().entries.map((entry) {
-      return '${entry.key}:${entry.value.shape}/${entry.value.type}';
-    }).join(', ');
-    if (outputs.length != 4) {
-      throw StateError(
-        'Modelo incompativel: sao esperadas 4 saidas SSD. '
-        'Encontradas ${outputs.length}: $outputSummary',
-      );
-    }
-    final boxesShape = outputs[0].shape;
-    if (boxesShape.length != 3 || boxesShape.last != 4) {
-      throw StateError(
-        'Modelo incompativel: saida de caixas nao reconhecida. '
-        'Saidas: $outputSummary',
-      );
-    }
-    final maxDetections = boxesShape[1];
-    final diagnostics =
-        'entrada=$inputShape/$inputType; saidas=$outputSummary; '
-        'maxDetections=$maxDetections';
 
     commands = ReceivePort();
     replyPort.send(<String, Object>{
       'type': 'ready',
       'port': commands.sendPort,
-      'diagnostics': diagnostics,
+      'diagnostics': activeRuntime.diagnostics,
     });
 
     await for (final rawMessage in commands) {
@@ -288,16 +289,13 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         final transfer = message['bytes']! as TransferableTypedData;
         final rgbBytes = transfer.materialize().asUint8List();
 
-        final results = _runSsdDetection(
+        final results = _runDetection(
           interpreter: activeInterpreter,
+          runtime: activeRuntime,
           labels: labels,
           rgbBytes: rgbBytes,
           width: width,
           height: height,
-          inputWidth: inputWidth,
-          inputHeight: inputHeight,
-          inputType: inputType,
-          maxDetections: maxDetections,
           threshold: threshold,
           maxResults: maxResults,
         );
@@ -326,16 +324,53 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
   }
 }
 
-List<List<Object>> _runSsdDetection({
+_DetectorRuntime _inspectInterpreter(Interpreter interpreter, String modelName) {
+  final inputTensor = interpreter.getInputTensor(0);
+  final inputShape = inputTensor.shape;
+  final inputType = inputTensor.type;
+  if (inputShape.length != 4 || inputShape.last != 3) {
+    throw StateError(
+      'entrada esperada [1,H,W,3], encontrada $inputShape.',
+    );
+  }
+  if (inputType != TensorType.uint8 && inputType != TensorType.float32) {
+    throw StateError('tipo de entrada $inputType não suportado.');
+  }
+
+  final outputs = interpreter.getOutputTensors();
+  final outputSummary = outputs.asMap().entries.map((entry) {
+    return '${entry.key}:${entry.value.shape}/${entry.value.type}';
+  }).join(', ');
+  if (outputs.length != 4) {
+    throw StateError(
+      'são esperadas 4 saídas DetectionPostProcess. Encontradas ${outputs.length}: $outputSummary',
+    );
+  }
+  final boxesShape = outputs[0].shape;
+  if (boxesShape.length != 3 || boxesShape.last != 4) {
+    throw StateError(
+      'saída de caixas não reconhecida. Saídas: $outputSummary',
+    );
+  }
+
+  return _DetectorRuntime(
+    inputWidth: inputShape[2],
+    inputHeight: inputShape[1],
+    inputType: inputType,
+    maxDetections: boxesShape[1],
+    diagnostics: 'modelo=$modelName; entrada=$inputShape/$inputType; '
+        'saidas=$outputSummary; maxDetections=${boxesShape[1]}; '
+        'preprocessamento=letterbox',
+  );
+}
+
+List<List<Object>> _runDetection({
   required Interpreter interpreter,
+  required _DetectorRuntime runtime,
   required List<String> labels,
   required Uint8List rgbBytes,
   required int width,
   required int height,
-  required int inputWidth,
-  required int inputHeight,
-  required TensorType inputType,
-  required int maxDetections,
   required double threshold,
   required int maxResults,
 }) {
@@ -346,21 +381,38 @@ List<List<Object>> _runSsdDetection({
     numChannels: 3,
     order: img.ChannelOrder.rgb,
   );
+  final transform = DetectorImageTransform.fit(
+    sourceWidth: width,
+    sourceHeight: height,
+    inputWidth: runtime.inputWidth,
+    inputHeight: runtime.inputHeight,
+  );
   final resized = img.copyResize(
     source,
-    width: inputWidth,
-    height: inputHeight,
+    width: transform.resizedWidth,
+    height: transform.resizedHeight,
     interpolation: img.Interpolation.linear,
+  );
+  final letterboxed = img.Image(
+    width: runtime.inputWidth,
+    height: runtime.inputHeight,
+    numChannels: 3,
+  );
+  img.compositeImage(
+    letterboxed,
+    resized,
+    dstX: transform.offsetX,
+    dstY: transform.offsetY,
   );
 
   late final Object batchedInput;
-  if (inputType == TensorType.uint8) {
+  if (runtime.inputType == TensorType.uint8) {
     final matrix = List<List<List<int>>>.generate(
-      inputHeight,
+      runtime.inputHeight,
       (y) => List<List<int>>.generate(
-        inputWidth,
+        runtime.inputWidth,
         (x) {
-          final pixel = resized.getPixel(x, y);
+          final pixel = letterboxed.getPixel(x, y);
           return <int>[
             pixel.r.toInt().clamp(0, 255).toInt(),
             pixel.g.toInt().clamp(0, 255).toInt(),
@@ -374,11 +426,11 @@ List<List<Object>> _runSsdDetection({
     batchedInput = <List<List<List<int>>>>[matrix];
   } else {
     final matrix = List<List<List<double>>>.generate(
-      inputHeight,
+      runtime.inputHeight,
       (y) => List<List<double>>.generate(
-        inputWidth,
+        runtime.inputWidth,
         (x) {
-          final pixel = resized.getPixel(x, y);
+          final pixel = letterboxed.getPixel(x, y);
           return <double>[
             (pixel.r.toDouble() - 127.5) / 127.5,
             (pixel.g.toDouble() - 127.5) / 127.5,
@@ -394,20 +446,19 @@ List<List<Object>> _runSsdDetection({
 
   final boxes = <List<List<double>>>[
     List.generate(
-      maxDetections,
+      runtime.maxDetections,
       (_) => List<double>.filled(4, 0.0),
       growable: false,
     ),
   ];
-  final classes = <List<double>>[List<double>.filled(maxDetections, 0.0)];
-  final scores = <List<double>>[List<double>.filled(maxDetections, 0.0)];
+  final classes = <List<double>>[
+    List<double>.filled(runtime.maxDetections, 0.0),
+  ];
+  final scores = <List<double>>[
+    List<double>.filled(runtime.maxDetections, 0.0),
+  ];
   final count = <double>[0.0];
-  final output = <int, Object>{
-    0: boxes,
-    1: classes,
-    2: scores,
-    3: count,
-  };
+  final output = <int, Object>{0: boxes, 1: classes, 2: scores, 3: count};
 
   interpreter.runForMultipleInputs(<Object>[batchedInput], output);
 
@@ -415,9 +466,9 @@ List<List<Object>> _runSsdDetection({
   final classList = classes.first;
   final scoreList = scores.first;
   final reportedCount = count.first.round();
-  final candidateCount = reportedCount > 0 ? reportedCount : maxDetections;
+  final candidateCount = reportedCount > 0 ? reportedCount : runtime.maxDetections;
   final usableCount = math.min(
-    math.min(candidateCount, maxDetections),
+    math.min(candidateCount, runtime.maxDetections),
     math.min(classList.length, scoreList.length),
   );
 
@@ -432,21 +483,43 @@ List<List<Object>> _runSsdDetection({
     final boxValues = boxList[i];
     if (boxValues.length < 4) continue;
 
+    final mapped = transform.mapBoxFromInput(
+      NormalizedBox(
+        yMin: boxValues[0].toDouble().clamp(0.0, 1.0).toDouble(),
+        xMin: boxValues[1].toDouble().clamp(0.0, 1.0).toDouble(),
+        yMax: boxValues[2].toDouble().clamp(0.0, 1.0).toDouble(),
+        xMax: boxValues[3].toDouble().clamp(0.0, 1.0).toDouble(),
+      ),
+    );
+    if (mapped == null) continue;
+
     results.add(<Object>[
       label,
       score,
-      boxValues[0].toDouble().clamp(0.0, 1.0).toDouble(),
-      boxValues[1].toDouble().clamp(0.0, 1.0).toDouble(),
-      boxValues[2].toDouble().clamp(0.0, 1.0).toDouble(),
-      boxValues[3].toDouble().clamp(0.0, 1.0).toDouble(),
+      mapped.yMin,
+      mapped.xMin,
+      mapped.yMax,
+      mapped.xMax,
     ]);
   }
 
-  results.sort(
-    (a, b) => (b[1] as double).compareTo(a[1] as double),
-  );
-  if (results.length > maxResults) {
-    return results.sublist(0, maxResults);
-  }
+  results.sort((a, b) => (b[1] as double).compareTo(a[1] as double));
+  if (results.length > maxResults) return results.sublist(0, maxResults);
   return results;
+}
+
+class _DetectorRuntime {
+  const _DetectorRuntime({
+    required this.inputWidth,
+    required this.inputHeight,
+    required this.inputType,
+    required this.maxDetections,
+    required this.diagnostics,
+  });
+
+  final int inputWidth;
+  final int inputHeight;
+  final TensorType inputType;
+  final int maxDetections;
+  final String diagnostics;
 }

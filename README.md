@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.33+33`
+> **Versão atual:** `1.0.34+34`
 
 ## Estado atual
 
-A `1.0.33+33` corrige os problemas observados no teste real: disputa por câmera, visualizador web sem imagem, estado LAN falso, atraso de alertas, watchdog lento e comportamento de segundo plano. Também ativa edge-to-edge/tela imersiva nas telas de câmera.
+A `1.0.34+34` melhora o reconhecimento de pessoas, veículos e animais sem criar um segundo pipeline de câmera: usa detector móvel mais preciso com fallback, preserva a proporção da imagem, confirma detecções fracas no tempo e mantém presença visível mesmo quando o objeto para de se mover.
+
+### Evolução 1.0.34
+
+- `EfficientDet-Lite0` passa a ser o detector principal; `SSD MobileNet V1` permanece como fallback automático quando o modelo principal não estiver disponível ou não for compatível com o runtime do aparelho;
+- o pré-processamento passa a usar **letterbox**, preservando a proporção do frame em vez de esticar 720×480 para um tensor quadrado; as caixas são remapeadas de volta para o frame original;
+- a confiança configurada pelo usuário continua sendo a referência, mas Pessoa, Automóvel e principalmente Animal recebem uma pequena margem de candidatura; detecções abaixo do limiar principal só avançam depois de confirmação temporal em frames coerentes;
+- detecções fortes continuam entrando imediatamente, evitando acrescentar atraso artificial quando a IA está segura;
+- o modo **Somente movimento** deixa de apagar objetos apenas porque ficaram parados: a presença é revalidada periodicamente e o movimento passa a controlar principalmente economia e elegibilidade de alerta;
+- quando existe movimento localizado e a primeira inferência não encontra objeto útil, o Vigia IA recorta e amplia somente aquela região para uma segunda tentativa, reduzindo o custo em comparação com duas inferências permanentes;
+- resultados da passagem normal e ampliada são mesclados com supressão de duplicatas;
+- tempos padrão das Regras Inteligentes foram reduzidos para 600 ms em veículos, 800 ms em animais e 1,2 s em outros objetos; Pessoa continua sem espera adicional; perfis personalizados são preservados;
+- novos testes cobrem letterbox/remapeamento, limiares adaptativos, confirmação temporal, mesclagem de passagens e região de foco do movimento.
 
 ### Evolução 1.0.33
 

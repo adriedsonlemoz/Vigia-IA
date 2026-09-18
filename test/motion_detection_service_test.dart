@@ -116,4 +116,30 @@ void main() {
     expect(result.cameraMotion, isTrue);
     expect(result.hasMotion, isFalse);
   });
+
+  test('regiao de foco amplia movimento localizado sem usar a tela inteira', () {
+    final mask = Uint8List(100);
+    for (var y = 4; y <= 5; y++) {
+      for (var x = 4; x <= 5; x++) {
+        mask[y * 10 + x] = 1;
+      }
+    }
+    final result = MotionDetectionResult(
+      hasMotion: true,
+      cameraMotion: false,
+      changedRatio: 0.04,
+      gridWidth: 10,
+      gridHeight: 10,
+      mask: mask,
+    );
+    final focus = result.focusRegion();
+    expect(focus, isNotNull);
+    expect(focus!.xMax - focus.xMin, greaterThanOrEqualTo(0.35));
+    expect(focus.yMax - focus.yMin, greaterThanOrEqualTo(0.35));
+    expect(
+      (focus.xMax - focus.xMin) * (focus.yMax - focus.yMin),
+      lessThan(0.62),
+    );
+  });
+
 }

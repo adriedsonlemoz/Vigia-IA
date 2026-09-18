@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 1.0.34+34
+
+- Detector principal atualizado para **EfficientDet-Lite0**, mantendo **SSD MobileNet V1** como fallback automático e preservando o mesmo pipeline local/offline.
+- Pré-processamento do detector passa a preservar a proporção do frame com letterbox e remapeamento das caixas, evitando deformação geométrica antes da inferência.
+- Adicionada política de confiança por grupo: detecções um pouco abaixo do limiar principal podem virar candidatas para Pessoa, Automóvel e Animal, mas precisam de confirmação temporal; detecções fortes continuam imediatas.
+- Adicionado `TemporalDetectionFilter`, que exige dois frames coerentes para candidatas fracas e mantém uma detecção confirmada por uma queda curta de frame, reduzindo piscadas e falsos negativos transitórios.
+- O modo Somente movimento passa a executar atualização silenciosa de presença a cada 800 ms mesmo em cena parada, evitando que pessoas, animais ou veículos desapareçam apenas por terem parado de se mover.
+- `MotionDetectionResult.focusRegion()` identifica movimento localizado. Quando a primeira passagem não encontra objeto útil, uma segunda inferência é feita apenas no recorte ampliado dessa região.
+- `DetectionMerger` combina passagem normal e focada sem duplicar o mesmo objeto.
+- Regras Inteligentes padrão ficam mais responsivas: veículo 600 ms, animal 800 ms e outros 1.200 ms; Pessoa permanece em 0 ms. Migração do schema para `version: 7` altera somente valores antigos ainda iguais aos padrões, preservando ajustes personalizados.
+- `tool/fetch_model.sh` baixa EfficientDet-Lite0 oficial e mantém o SSD como fallback obrigatório; falha apenas no download do modelo principal não impede o build de usar o fallback.
+- Testes adicionados para transformação de imagem, confiança adaptativa, confirmação temporal, mesclagem de resultados e região de foco do movimento.
+- Versão, metadados, tela de mudanças, README, ARCHITECTURE e verificador preventivo sincronizados em `1.0.34+34`.
+
+### Validação local
+
+- `tool/verify_project.sh` cobre os novos componentes e invariantes da detecção.
+- Este ambiente não contém Flutter SDK; `flutter analyze`, `flutter test` e a geração do APK precisam ser confirmados pelo workflow Android APK.
+
 ## 1.0.33+33
 
 - Corrigido o conflito de câmera revelado pelo Diagnóstico (`No supported surface combination`): `LocalCameraSource` e Modo Câmera agora usam `SharedLocalCameraService`, mantendo um único `CameraController`/pipeline CameraX e múltiplos consumidores de frames.

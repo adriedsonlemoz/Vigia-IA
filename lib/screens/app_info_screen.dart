@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.33',
+          version: '1.0.34',
           current: true,
+          changes: [
+            'Detecção principal com EfficientDet-Lite0 e fallback automático para SSD MobileNet V1.',
+            'Pré-processamento por letterbox preserva a proporção da câmera e evita deformar pessoas, animais e veículos.',
+            'Candidatas difíceis usam confiança adaptativa com confirmação temporal e retenção curta contra falhas de um frame.',
+            'Modo por movimento mantém presença e faz segunda análise ampliada quando há movimento localizado sem objeto encontrado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.33',
           changes: [
             'Câmera local compartilhada entre Monitor e Modo Câmera para impedir conflito CameraX por múltiplos controladores.',
             'Visualizador LAN com endereço limpo, sessão temporária, estado real dos frames e atualização por JPEG.',

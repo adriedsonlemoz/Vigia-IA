@@ -174,7 +174,7 @@ class AppSettingsService {
       }
     }
     return <String, Object?>{
-      'version': 6,
+      'version': 7,
       'source': source,
       'settings': <String, Object?>{
         'confidenceThreshold': settings.confidenceThreshold,
@@ -230,16 +230,31 @@ class AppSettingsService {
     final storedLabels = (settingsJson['alertLabels'] as List?)?.whereType<String>().toSet() ?? const MonitorSettings().alertLabels;
     final labels = ObjectFilterCatalog.normalizeSelection(storedLabels);
 
+    final profileVersion = (json['version'] as num?)?.toInt() ?? 0;
+    final storedVehicleMs = (rulesJson['vehicleMs'] as num?)?.toInt();
+    final storedAnimalMs = (rulesJson['animalMs'] as num?)?.toInt();
+    final storedOtherMs = (rulesJson['otherMs'] as num?)?.toInt();
     final rules = SmartAlertRules(
       enabled: rulesJson['enabled'] as bool? ?? true,
       personMinimumPresence: Duration(milliseconds: (rulesJson['personMs'] as num?)?.toInt() ?? 0),
-      vehicleMinimumPresence: Duration(milliseconds: (rulesJson['vehicleMs'] as num?)?.toInt() ?? 1000),
-      animalMinimumPresence: Duration(milliseconds: (rulesJson['animalMs'] as num?)?.toInt() ?? 3000),
-      otherMinimumPresence: Duration(milliseconds: (rulesJson['otherMs'] as num?)?.toInt() ?? 2000),
+      vehicleMinimumPresence: Duration(
+        milliseconds: profileVersion < 7 && storedVehicleMs == 1000
+            ? 600
+            : (storedVehicleMs ?? 600),
+      ),
+      animalMinimumPresence: Duration(
+        milliseconds: profileVersion < 7 && storedAnimalMs == 3000
+            ? 800
+            : (storedAnimalMs ?? 800),
+      ),
+      otherMinimumPresence: Duration(
+        milliseconds: profileVersion < 7 && storedOtherMs == 2000
+            ? 1200
+            : (storedOtherMs ?? 1200),
+      ),
       ignoreStationaryVehicles: rulesJson['ignoreStationaryVehicles'] as bool? ?? true,
     );
 
-    final profileVersion = (json['version'] as num?)?.toInt() ?? 0;
     var source = VideoSourceConfig.fromJson(sourceJson);
     if (profileVersion < 6 && source.analysisInterval == const Duration(milliseconds: 800)) {
       source = source.copyWith(analysisInterval: const Duration(milliseconds: 400));

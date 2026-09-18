@@ -90,6 +90,83 @@ class MotionDetectionResult {
     // tende a ter movimento interno, mas bordas estaveis.
     return ratio >= strongLocalRatio || edgeRatio >= minimumEdgeRatio;
   }
+
+  /// Região de atenção derivada somente das células que realmente mudaram.
+  /// Serve como segunda tentativa ampliada da IA quando a primeira passagem
+  /// não encontra um objeto monitorado.
+  NormalizedBox? focusRegion({
+    double padding = 0.12,
+    double minimumSpan = 0.36,
+    double maximumArea = 0.62,
+  }) {
+    if (!hasMotion || cameraMotion || mask.isEmpty || gridWidth <= 0 || gridHeight <= 0) {
+      return null;
+    }
+
+    var minX = gridWidth;
+    var minY = gridHeight;
+    var maxX = -1;
+    var maxY = -1;
+    for (var y = 0; y < gridHeight; y++) {
+      final row = y * gridWidth;
+      for (var x = 0; x < gridWidth; x++) {
+        if (mask[row + x] == 0) continue;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (maxX < minX || maxY < minY) return null;
+
+    var xMin = minX / gridWidth;
+    var yMin = minY / gridHeight;
+    var xMax = (maxX + 1) / gridWidth;
+    var yMax = (maxY + 1) / gridHeight;
+
+    xMin = (xMin - padding).clamp(0.0, 1.0).toDouble();
+    yMin = (yMin - padding).clamp(0.0, 1.0).toDouble();
+    xMax = (xMax + padding).clamp(0.0, 1.0).toDouble();
+    yMax = (yMax + padding).clamp(0.0, 1.0).toDouble();
+
+    double expandMinSpan(double min, double max) {
+      final span = max - min;
+      if (span >= minimumSpan) return min;
+      final center = (min + max) / 2;
+      return (center - minimumSpan / 2).clamp(0.0, 1.0).toDouble();
+    }
+
+    double expandMaxSpan(double min, double max) {
+      final span = max - min;
+      if (span >= minimumSpan) return max;
+      final center = (min + max) / 2;
+      return (center + minimumSpan / 2).clamp(0.0, 1.0).toDouble();
+    }
+
+    var expandedXMin = expandMinSpan(xMin, xMax);
+    var expandedXMax = expandMaxSpan(xMin, xMax);
+    var expandedYMin = expandMinSpan(yMin, yMax);
+    var expandedYMax = expandMaxSpan(yMin, yMax);
+
+    // Se o clamp numa borda encolheu a janela, compensa para o lado oposto.
+    if (expandedXMax - expandedXMin < minimumSpan) {
+      if (expandedXMin <= 0) expandedXMax = minimumSpan.clamp(0.0, 1.0).toDouble();
+      if (expandedXMax >= 1) expandedXMin = (1 - minimumSpan).clamp(0.0, 1.0).toDouble();
+    }
+    if (expandedYMax - expandedYMin < minimumSpan) {
+      if (expandedYMin <= 0) expandedYMax = minimumSpan.clamp(0.0, 1.0).toDouble();
+      if (expandedYMax >= 1) expandedYMin = (1 - minimumSpan).clamp(0.0, 1.0).toDouble();
+    }
+
+    final area = (expandedXMax - expandedXMin) * (expandedYMax - expandedYMin);
+    if (area <= 0 || area > maximumArea) return null;
+    return NormalizedBox(
+      xMin: expandedXMin,
+      yMin: expandedYMin,
+      xMax: expandedXMax,
+      yMax: expandedYMax,
+    );
+  }
 }
 
 class MotionDetectionService {

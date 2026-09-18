@@ -9,7 +9,7 @@ fail() {
 }
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.33+33$' pubspec.yaml || fail 'Versao esperada 1.0.33+33 nao encontrada.'
+grep -q '^version: 1\.0\.34+34$' pubspec.yaml || fail 'Versao esperada 1.0.34+34 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -39,8 +39,10 @@ grep -q "package:flutter_litert/flutter_litert.dart" lib/services/object_detecti
   || fail 'ObjectDetectionService nao esta usando flutter_litert.'
 grep -q "flutter_litert/flutter_litert.dart' hide Detection" lib/services/object_detection_service.dart \
   || fail 'Import do flutter_litert deve ocultar Detection para evitar conflito com o modelo local.'
+grep -q "efficientdet_lite0.tflite" lib/services/object_detection_service.dart \
+  || fail 'Detector principal EfficientDet-Lite0 nao esta configurado.'
 grep -q "ssd_mobilenet_v1.tflite" lib/services/object_detection_service.dart \
-  || fail 'Detector nao esta apontando para o SSD MobileNet V1 compativel.'
+  || fail 'Fallback SSD MobileNet V1 nao esta configurado.'
 grep -q 'TensorType.uint8' lib/services/object_detection_service.dart \
   || fail 'Pre-processamento uint8 do modelo SSD nao foi encontrado.'
 
@@ -153,15 +155,17 @@ if [[ -f test/widget_test.dart ]] && grep -q 'MyApp' test/widget_test.dart; then
   fail 'Teste padrao MyApp reapareceu.'
 fi
 
-[[ -f assets/models/ssd_mobilenet_v1.tflite ]] || fail 'Modelo .tflite nao encontrado.'
-MODEL_SIZE=$(wc -c < assets/models/ssd_mobilenet_v1.tflite)
-if (( MODEL_SIZE < 1048576 )); then
-  if grep -qx 'MODEL_DOWNLOADED_IN_CI' assets/models/ssd_mobilenet_v1.tflite; then
-    echo 'Modelo em modo fonte: sera baixado por tool/fetch_model.sh antes do build.'
-  else
-    fail 'Modelo .tflite parece incompleto.'
+for MODEL_FILE in assets/models/efficientdet_lite0.tflite assets/models/ssd_mobilenet_v1.tflite; do
+  [[ -f "$MODEL_FILE" ]] || fail "Modelo .tflite nao encontrado: $MODEL_FILE"
+  MODEL_SIZE=$(wc -c < "$MODEL_FILE")
+  if (( MODEL_SIZE < 1048576 )); then
+    if grep -qx 'MODEL_DOWNLOADED_IN_CI' "$MODEL_FILE"; then
+      echo "Modelo em modo fonte: $MODEL_FILE sera baixado por tool/fetch_model.sh antes do build."
+    else
+      fail "Modelo .tflite parece incompleto: $MODEL_FILE"
+    fi
   fi
-fi
+done
 
 
 # Recursos 1.0.14
@@ -308,12 +312,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.33';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.33.'
-grep -q 'static const int build = 33;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 33.'
-grep -q "version: '1.0.33'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.33.'
+grep -q "static const String version = '1.0.34';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.34.'
+grep -q 'static const int build = 34;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 34.'
+grep -q "version: '1.0.34'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.34.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -479,18 +483,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.33+33$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.33+33.'
+grep -q '^version: 1.0.34+34$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.34+34.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.33"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.33.'
-grep -q '"build": 33' app_identity.json \
-  || fail 'app_identity.json nao esta no build 33.'
+grep -q '"version": "1.0.34"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.34.'
+grep -q '"build": 34' app_identity.json \
+  || fail 'app_identity.json nao esta no build 34.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -722,8 +726,8 @@ grep -q 'const Duration(milliseconds: 400)' lib/models/video_source_config.dart 
   || fail 'Intervalo local padrao de 400 ms nao encontrado.'
 grep -q 'const Duration(seconds: 1)' lib/models/video_source_config.dart \
   || fail 'Ausencia padrao de 1 s nao encontrada.'
-grep -q "'version': 6" lib/services/app_settings_service.dart \
-  || fail 'Schema de configuracoes nao foi migrado para version 6.'
+grep -q "'version': 7" lib/services/app_settings_service.dart \
+  || fail 'Schema de configuracoes nao foi migrado para version 7.'
 grep -q 'profileVersion < 6' lib/services/app_settings_service.dart \
   || fail 'Migracao dos antigos defaults nao encontrada.'
 grep -q 'SpeechPriority.high' lib/controllers/monitor_controller.dart \
@@ -763,8 +767,44 @@ grep -q 'SystemUiService.immersive' lib/screens/camera_mode_screen.dart \
 
 grep -q '^## 1.0.33+33' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.33.'
 grep -q 'Evolução 1.0.33' README.md || fail 'README nao documenta 1.0.33.'
-grep -q 'Vigia IA 1.0.33+33' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.33+33.'
-grep -q 'Schema atual: `version: 6`.' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta schema 6.'
+grep -q 'Schema atual: `version: 7`.' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta schema 7.'
+
+# Evolucao da deteccao 1.0.34
+[[ -f lib/services/detector_image_transform.dart ]] \
+  || fail 'Transformacao letterbox do detector nao encontrada.'
+[[ -f lib/services/detection_confidence_policy.dart ]] \
+  || fail 'Politica adaptativa de confianca nao encontrada.'
+[[ -f lib/services/temporal_detection_filter.dart ]] \
+  || fail 'Filtro temporal de deteccoes nao encontrado.'
+[[ -f lib/services/detection_merger.dart ]] \
+  || fail 'Mesclagem das duas passagens de deteccao nao encontrada.'
+grep -q 'DetectorImageTransform.fit' lib/services/object_detection_service.dart \
+  || fail 'Inferencia nao usa letterbox preservando proporcao.'
+grep -q 'EfficientDet-Lite0' lib/services/object_detection_service.dart \
+  || fail 'EfficientDet-Lite0 nao e o detector principal.'
+grep -q 'SSD MobileNet V1' lib/services/object_detection_service.dart \
+  || fail 'Fallback SSD MobileNet nao foi preservado.'
+grep -q 'focusRegion()' lib/controllers/monitor_controller.dart \
+  || fail 'Segunda passagem focada em movimento nao esta ligada ao pipeline.'
+grep -q 'idlePresenceRefresh' lib/controllers/monitor_controller.dart \
+  || fail 'Atualizacao periodica de presenca sem movimento nao foi encontrada.'
+grep -q 'TemporalDetectionFilter' lib/controllers/monitor_controller.dart \
+  || fail 'Confirmacao temporal nao esta ligada ao controller.'
+grep -q "'version': 7" lib/services/app_settings_service.dart \
+  || fail 'Schema 7 das regras de deteccao nao encontrado.'
+grep -q 'vehicleMinimumPresence = const Duration(milliseconds: 600)' lib/models/smart_alert_rules.dart \
+  || fail 'Tempo padrao de veiculo nao foi reduzido para 600 ms.'
+grep -q 'animalMinimumPresence = const Duration(milliseconds: 800)' lib/models/smart_alert_rules.dart \
+  || fail 'Tempo padrao de animal nao foi reduzido para 800 ms.'
+grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_model.sh \
+  || fail 'Download do EfficientDet-Lite0 nao esta configurado.'
+[[ -f test/detector_image_transform_test.dart ]] || fail 'Teste de letterbox nao encontrado.'
+[[ -f test/detection_confidence_policy_test.dart ]] || fail 'Teste da confianca adaptativa nao encontrado.'
+[[ -f test/temporal_detection_filter_test.dart ]] || fail 'Teste da confirmacao temporal nao encontrado.'
+[[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
+grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
+grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
+grep -q 'Vigia IA 1.0.34+34' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.34+34.'
 
 # Nomes tecnicos antigos nao podem voltar ao projeto atual.
 for legacy in 'Monitor IA' 'monitor-ia' 'camera_guard_offline' 'vigia-ia'; do
