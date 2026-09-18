@@ -7,9 +7,11 @@ import 'package:flutter/services.dart';
 import 'app/app.dart';
 import 'services/appearance_settings_service.dart';
 import 'services/error_log_service.dart';
+import 'services/system_ui_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemUiService.edgeToEdge();
   await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,

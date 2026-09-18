@@ -30,4 +30,20 @@ void main() {
     expect(json['rtspUrl'], isNull);
     expect(json['remoteAccessKey'], isNull);
   });
+
+  test('padroes locais priorizam reacao rapida sem zerar confirmacao', () {
+    const source = VideoSourceConfig(type: VideoSourceType.localCamera);
+    const settings = MonitorSettings();
+
+    expect(source.analysisInterval, const Duration(milliseconds: 400));
+    expect(settings.absenceReset, const Duration(seconds: 1));
+  });
+
+  test('fonte antiga sem intervalo recebe o novo default de 400 ms', () {
+    final restored = VideoSourceConfig.fromJson(<String, dynamic>{
+      'type': VideoSourceType.localCamera.name,
+    });
+    expect(restored.analysisInterval, const Duration(milliseconds: 400));
+  });
+
 }

@@ -152,11 +152,26 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
                     : _TileState.neutral,
           ),
           _HealthTile(
-            icon: Icons.wifi_tethering_rounded,
-            title: 'Transmissão LAN ativa',
-            value: snapshot.lanActive ? 'Ativa' : 'Inativa',
+            icon: Icons.lan_outlined,
+            title: 'Servidor LAN',
+            value: snapshot.lanServerActive ? 'Ativo' : 'Inativo',
             subtitle: snapshot.lanError,
             state: snapshot.lanError != null
+                ? _TileState.warning
+                : snapshot.lanServerActive
+                    ? _TileState.good
+                    : _TileState.neutral,
+          ),
+          _HealthTile(
+            icon: Icons.wifi_tethering_rounded,
+            title: 'Transmissão LAN',
+            value: snapshot.lanActive
+                ? 'Operacional'
+                : snapshot.lanServerActive && !snapshot.lanFramesActive
+                    ? 'Sem frames'
+                    : 'Inativa',
+            subtitle: _lastLanFrameText(snapshot.lanLastFrameAt),
+            state: snapshot.lanServerActive && !snapshot.lanActive
                 ? _TileState.warning
                 : snapshot.lanActive
                     ? _TileState.good
@@ -175,7 +190,9 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
             title: 'Funcionamento em segundo plano',
             value: _backgroundLabel(snapshot),
             subtitle: snapshot.backgroundRequested
-                ? 'Requer serviço ativo e frames atuais durante o monitoramento.'
+                ? snapshot.flutterHeartbeatFresh
+                    ? 'Serviço, processo Flutter e frames são verificados separadamente.'
+                    : 'Serviço Android sem heartbeat recente do Vigia IA.'
                 : 'Opção de segundo plano desativada.',
             state: snapshot.backgroundOperational
                 ? _TileState.good
@@ -303,9 +320,19 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
     return 'Último frame: ${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
   }
 
+  String _lastLanFrameText(DateTime? value) {
+    if (value == null) return 'Nenhum JPEG recente enviado pela LAN';
+    final local = value.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return 'Último JPEG LAN: ${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
+  }
+
   String _backgroundLabel(SystemHealthSnapshot snapshot) {
     if (!snapshot.backgroundRequested) return 'Desativado';
     if (snapshot.backgroundOperational) return 'Operacional';
+    if (snapshot.androidServiceActive && !snapshot.flutterHeartbeatFresh) {
+      return 'App sem resposta';
+    }
     if (snapshot.androidServiceActive && !snapshot.monitoringActive) {
       return 'Aguardando captura';
     }

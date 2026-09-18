@@ -27,6 +27,16 @@ class RuntimeHealthService {
     return !age.isNegative && age <= staleAfter;
   }
 
+  bool lanFramesAreFresh(
+    DateTime now, {
+    Duration staleAfter = const Duration(seconds: 6),
+  }) {
+    final last = lanLastFrameAt;
+    if (last == null) return false;
+    final age = now.difference(last);
+    return !age.isNegative && age <= staleAfter;
+  }
+
   void updateFrame(DateTime at, double currentFps) {
     lastFrameAt = at;
     fps = currentFps;

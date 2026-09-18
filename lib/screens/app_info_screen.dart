@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.32',
+          version: '1.0.33',
           current: true,
+          changes: [
+            'Câmera local compartilhada entre Monitor e Modo Câmera para impedir conflito CameraX por múltiplos controladores.',
+            'Visualizador LAN com endereço limpo, sessão temporária, estado real dos frames e atualização por JPEG.',
+            'Alertas mais rápidos, TTS sem fila obsoleta, watchdog menor e heartbeat real do segundo plano.',
+            'Aplicativo edge-to-edge e telas de câmera em modo imersivo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.32',
           changes: [
             'Corrigida a expressão Kotlin de canRequest da permissão de rede local, que era interpretada como Pair antes do operador lógico &&.',
             'A cópia Android e o template de bootstrap foram mantidos idênticos para o workflow não reintroduzir o erro.',

@@ -174,7 +174,7 @@ class AppSettingsService {
       }
     }
     return <String, Object?>{
-      'version': 5,
+      'version': 6,
       'source': source,
       'settings': <String, Object?>{
         'confidenceThreshold': settings.confidenceThreshold,
@@ -239,7 +239,11 @@ class AppSettingsService {
       ignoreStationaryVehicles: rulesJson['ignoreStationaryVehicles'] as bool? ?? true,
     );
 
+    final profileVersion = (json['version'] as num?)?.toInt() ?? 0;
     var source = VideoSourceConfig.fromJson(sourceJson);
+    if (profileVersion < 6 && source.analysisInterval == const Duration(milliseconds: 800)) {
+      source = source.copyWith(analysisInterval: const Duration(milliseconds: 400));
+    }
     if (allowProtectedSecrets) {
       final protectedRtsp = sourceJson['rtspSecret'] as String?;
       final protectedRemoteKey = sourceJson['remoteAccessKeySecret'] as String?;
@@ -269,7 +273,12 @@ class AppSettingsService {
       settings: MonitorSettings(
         confidenceThreshold: (settingsJson['confidenceThreshold'] as num?)?.toDouble() ?? 0.55,
         repeatInterval: Duration(milliseconds: (settingsJson['repeatIntervalMs'] as num?)?.toInt() ?? 60000),
-        absenceReset: Duration(milliseconds: (settingsJson['absenceResetMs'] as num?)?.toInt() ?? 3000),
+        absenceReset: Duration(
+          milliseconds: _migratedAbsenceResetMs(
+            profileVersion,
+            (settingsJson['absenceResetMs'] as num?)?.toInt(),
+          ),
+        ),
         maxResults: (settingsJson['maxResults'] as num?)?.toInt() ?? 10,
         motionOnly: settingsJson['motionOnly'] as bool? ?? true,
         motionConfirmationHits: (settingsJson['motionConfirmationHits'] as num?)?.toInt() ?? 2,
@@ -292,4 +301,10 @@ class AppSettingsService {
       ),
     );
   }
+  int _migratedAbsenceResetMs(int profileVersion, int? stored) {
+    final value = stored ?? 1000;
+    if (profileVersion < 6 && value == 3000) return 1000;
+    return value.clamp(500, 30000).toInt();
+  }
+
 }

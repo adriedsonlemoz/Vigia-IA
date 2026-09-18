@@ -18,6 +18,8 @@ DiagnosticReport buildReport() {
       framesActive: false,
       aiReady: true,
       aiActive: false,
+      lanServerActive: true,
+      lanFramesActive: false,
       lanActive: false,
       connectedClients: 0,
       backgroundRequested: true,
@@ -48,6 +50,9 @@ void main() {
     expect(text, contains('Serviço Android: ativo'));
     expect(text, contains('Frames chegando: não'));
     expect(text, contains('IA processando: não'));
+    expect(text, contains('Servidor LAN: ativo'));
+    expect(text, contains('Frames LAN recentes: não'));
+    expect(text, contains('Transmissão LAN operacional: não'));
     expect(text, contains('Rede local: não concedida'));
     expect(text, contains('Armazenamento livre: 74,5 GB'));
     expect(text, contains('Frames congelados'));

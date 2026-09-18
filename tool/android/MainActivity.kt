@@ -78,15 +78,18 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, backgroundChannelName)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "start" -> {
+                    "acquire", "start" -> {
                         val usesCamera = call.argument<Boolean>("usesCamera") ?: true
                         if (usesCamera && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                             result.success(false)
                             return@setMethodCallHandler
                         }
+                        val owner = call.argument<String>("owner")?.takeIf { it.isNotBlank() } ?: "legacy"
                         val statusText = call.argument<String>("statusText")
                             ?: if (usesCamera) "Preparando câmera e IA…" else "Preparando monitoramento…"
                         val serviceIntent = Intent(this, MonitoringForegroundService::class.java).apply {
+                            action = MonitoringForegroundService.actionAcquire
+                            putExtra(MonitoringForegroundService.extraOwner, owner)
                             putExtra(MonitoringForegroundService.extraUsesCamera, usesCamera)
                             putExtra(MonitoringForegroundService.extraStatusText, statusText)
                         }
@@ -97,9 +100,28 @@ class MainActivity : FlutterActivity() {
                             result.error("foreground_service", error.message, null)
                         }
                     }
+                    "release" -> {
+                        val owner = call.argument<String>("owner")?.takeIf { it.isNotBlank() } ?: "legacy"
+                        if (MonitoringForegroundService.isRunning) {
+                            startService(Intent(this, MonitoringForegroundService::class.java).apply {
+                                action = MonitoringForegroundService.actionRelease
+                                putExtra(MonitoringForegroundService.extraOwner, owner)
+                            })
+                        }
+                        result.success(true)
+                    }
                     "stop" -> {
-                        stopService(Intent(this, MonitoringForegroundService::class.java))
+                        if (MonitoringForegroundService.isRunning) {
+                            startService(Intent(this, MonitoringForegroundService::class.java).apply {
+                                action = MonitoringForegroundService.actionRelease
+                                putExtra(MonitoringForegroundService.extraOwner, "legacy")
+                            })
+                        }
                         result.success(null)
+                    }
+                    "heartbeat" -> {
+                        MonitoringForegroundService.recordFlutterHeartbeat(this)
+                        result.success(true)
                     }
                     "updateStatus" -> {
                         val text = call.argument<String>("text") ?: MonitoringForegroundService.defaultStatusText
@@ -114,6 +136,9 @@ class MainActivity : FlutterActivity() {
                             "statusText" to MonitoringForegroundService.lastStatusText,
                             "startedAtElapsedRealtime" to MonitoringForegroundService.startedAtElapsedRealtime,
                             "screenInteractive" to powerManager.isInteractive,
+                            "flutterHeartbeatFresh" to MonitoringForegroundService.flutterHeartbeatFresh(),
+                            "lastFlutterHeartbeatElapsedRealtime" to MonitoringForegroundService.lastFlutterHeartbeatElapsedRealtime,
+                            "leaseCount" to MonitoringForegroundService.leaseCount,
                         ))
                     }
                     "isRunning" -> result.success(MonitoringForegroundService.isRunning)

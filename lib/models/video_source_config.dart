@@ -18,7 +18,7 @@ class VideoSourceConfig {
     this.remoteAccessKey,
     this.displayName,
     this.cameraId,
-    this.analysisInterval = const Duration(milliseconds: 800),
+    this.analysisInterval = const Duration(milliseconds: 400),
   });
 
   final VideoSourceType type;
@@ -73,7 +73,7 @@ class VideoSourceConfig {
       displayName: json['displayName'] as String?,
       cameraId: json['cameraId'] as String?,
       analysisInterval: Duration(
-        milliseconds: ((json['analysisIntervalMs'] as num?)?.toInt() ?? 800)
+        milliseconds: ((json['analysisIntervalMs'] as num?)?.toInt() ?? 400)
             .clamp(250, 5000)
             .toInt(),
       ),
@@ -85,7 +85,7 @@ class MonitorSettings {
   const MonitorSettings({
     this.confidenceThreshold = 0.55,
     this.repeatInterval = const Duration(seconds: 60),
-    this.absenceReset = const Duration(seconds: 3),
+    this.absenceReset = const Duration(seconds: 1),
     this.maxResults = 10,
     this.motionOnly = true,
     this.motionConfirmationHits = 2,

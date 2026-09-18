@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica migrada para vigiaia, incluindo pacote Dart, namespace/applicationId Android, canais nativos, protocolo de pareamento vigiaia://pair e artifacts sem hífen. A 1.0.29 implementou a Etapa 4; a 1.0.30 corrigiu a análise estática do Android APK 2; a 1.0.31 corrige a codificação da chave LAN identificada pelo teste do Android APK 3. A 1.0.32 corrige a precedência da expressão Kotlin de canRequest encontrada no Android APK 4.",
-  "version": "1.0.32",
-  "build": 32
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.33 corrige concorrência CameraX com câmera compartilhada, visualizador LAN com sessão temporária e estado real, latência de alertas/TTS, watchdog e heartbeat de segundo plano, além de edge-to-edge/tela imersiva.",
+  "version": "1.0.33",
+  "build": 33
 }

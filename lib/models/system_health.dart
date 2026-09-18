@@ -6,10 +6,14 @@ class SystemHealthSnapshot {
     this.source = 'Parado',
     this.monitoringActive = false,
     this.androidServiceActive = false,
+    this.flutterHeartbeatFresh = false,
+    this.androidServiceLeaseCount = 0,
     this.cameraActive = false,
     this.framesActive = false,
     this.aiReady = false,
     this.aiActive = false,
+    this.lanServerActive = false,
+    this.lanFramesActive = false,
     this.lanActive = false,
     this.connectedClients = 0,
     this.backgroundRequested = false,
@@ -37,10 +41,15 @@ class SystemHealthSnapshot {
   final String source;
   final bool monitoringActive;
   final bool androidServiceActive;
+  final bool flutterHeartbeatFresh;
+  final int androidServiceLeaseCount;
   final bool cameraActive;
   final bool framesActive;
   final bool aiReady;
   final bool aiActive;
+  final bool lanServerActive;
+  final bool lanFramesActive;
+  /// LAN operacional: servidor ativo, JPEG recente e nenhuma falha atual.
   final bool lanActive;
   final int connectedClients;
   final bool backgroundRequested;

@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.32+32
+# Arquitetura — Vigia IA 1.0.33+33
 
 ## 1. Princípios
 
-A 1.0.32 mantém a identidade técnica **vigiaia**, a camada de saúde/diagnóstico da ETAPA 4 e o servidor LAN existente. Nesta revisão, a bridge Android corrige a expressão booleana do estado de permissão de rede local e mantém a mesma implementação nas duas cópias usadas pelo projeto e pelo bootstrap do workflow.
+A 1.0.33 mantém a identidade técnica **vigiaia** e passa a tratar a câmera física como recurso compartilhado. Monitor, Modo Câmera e recuperação usam um único pipeline CameraX; a LAN usa sessão web baseada em frames reais; alertas priorizam baixa latência; e o Foreground Service possui heartbeat para distinguir serviço Android vivo de monitoramento Dart operacional.
 
 Princípios mantidos:
 
@@ -21,7 +21,7 @@ Princípios mantidos:
 
 Implementa `VideoSource`:
 
-- `LocalCameraSource` — câmera do aparelho;
+- `LocalCameraSource` — cliente da câmera compartilhada do aparelho;
 - `RtspCameraSource` — stream RTSP;
 - `RemotePhoneCameraSource` — JPEGs do Modo Câmera na rede local.
 
@@ -62,10 +62,13 @@ Serviços principais:
 - `EventHistoryService` — persistência de eventos/mídias;
 - `AlertDeliveryService`/`SpeechService`/`NativePlatformService` — canais de alerta;
 - `AppSettingsService` — perfil persistente e migração;
-- `RemoteCameraServerService` — servidor do Modo Câmera;
-- `MonitorLanStreamService` — visualização MJPEG do monitor ativo para navegador na mesma rede;
+- `SharedLocalCameraService` — único proprietário do `CameraController`, com múltiplos clientes e reinício coordenado;
+- `RemoteCameraServerService` — servidor do Modo Câmera, reutilizando a câmera compartilhada;
+- `MonitorLanStreamService` — servidor web do monitor ativo com sessão temporária, status real e quadros JPEG na mesma rede;
+- a Saúde/Diagnóstico tratam servidor HTTP, frame LAN recente e transmissão operacional como estados diferentes;
 - `CameraRegistryService` — Central multicâmera;
-- `BackgroundMonitorService` — bridge do Foreground Service/recuperação;
+- `BackgroundMonitorService` — bridge do Foreground Service/recuperação e heartbeat Flutter;
+- `SystemUiService` — edge-to-edge global e modo imersivo nas telas de câmera;
 - `StorageManagementService` — uso e limpeza;
 - `BackupExportService` — backup/restauração/exportação;
 - `StatisticsService` — agregações locais;
@@ -189,7 +192,7 @@ Sem rastreamento disponível, o comportamento legado por classe é mantido.
 
 `AppSettingsService` usa um único `PersistedMonitorProfile`.
 
-Schema atual: `version: 5`.
+Schema atual: `version: 6`.
 
 Compatibilidade:
 
@@ -214,7 +217,9 @@ Backups portáteis usam `exportPortableProfile()` e removem credenciais.
 
 ## 9. Segundo plano e recuperação
 
-`MonitoringForegroundService` representa a sessão ativa de segundo plano e retorna `START_NOT_STICKY`, evitando que o Android recrie apenas a notificação sem o pipeline Flutter/IA. Usa `FOREGROUND_SERVICE_TYPE_CAMERA` para câmera local e `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` para outras fontes.
+`MonitoringForegroundService` representa a sessão nativa de segundo plano e retorna `START_STICKY`. A presença do serviço, porém, não é considerada prova de monitoramento: um heartbeat vindo do Flutter expira após 15 s e a Saúde ainda exige frames recentes. Se o processo Dart deixar de responder, a notificação passa para estado de atenção e aciona recuperação assistida; após 1 minuto sem heartbeat, o serviço órfão usa `stopSelf()` e libera o wake lock.
+
+`BackgroundMonitorService` mantém leases em memória para Monitor e Modo Câmera. O serviço só é encerrado quando nenhum consumidor precisa dele; o tipo efetivo é `FOREGROUND_SERVICE_TYPE_CAMERA` enquanto houver ao menos um consumidor de câmera e `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` quando restarem apenas fontes sem câmera. Isso evita que uma tela derrube o foreground service pertencente à outra.
 
 `AppSettingsService.saveProfile()` sincroniza `backgroundMonitoringEnabled` e a agenda com a camada nativa.
 

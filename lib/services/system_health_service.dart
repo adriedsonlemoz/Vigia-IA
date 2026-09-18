@@ -38,19 +38,25 @@ class SystemHealthService {
     final backgroundRequested = profile.settings.backgroundMonitoringEnabled;
     final backgroundOperational = backgroundRequested &&
         background.running &&
+        background.flutterHeartbeatFresh &&
         monitoringActive &&
         framesActive;
+    final lanFramesActive = _runtime.lanFramesAreFresh(collectedAt);
     final lanOperational =
-        _runtime.lanActive && framesActive && _runtime.lanError == null;
+        _runtime.lanActive && lanFramesActive && _runtime.lanError == null;
 
     return _native.readSystemHealth(
       source: _runtime.source,
       monitoringActive: monitoringActive,
       androidServiceActive: background.running,
+      flutterHeartbeatFresh: background.flutterHeartbeatFresh,
+      androidServiceLeaseCount: background.leaseCount,
       cameraActive: cameraActive,
       framesActive: framesActive,
       aiReady: _runtime.aiReady,
       aiActive: aiActive,
+      lanServerActive: _runtime.lanActive,
+      lanFramesActive: lanFramesActive,
       lanActive: lanOperational,
       connectedClients: _runtime.lanClients,
       backgroundRequested: backgroundRequested,

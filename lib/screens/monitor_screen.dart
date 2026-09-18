@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controllers/monitor_controller.dart';
+import '../services/system_ui_service.dart';
 import '../core/video_source_status.dart';
 import '../models/monitoring_zone.dart';
 import '../models/video_source_config.dart';
@@ -40,6 +41,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(SystemUiService.immersive());
     _controller = MonitorController(
       sourceConfig: widget.initialSource,
       settings: widget.settings,
@@ -63,6 +65,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(SystemUiService.immersive());
       unawaited(_controller.resume());
       return;
     }
@@ -78,6 +81,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_refresh);
     _controller.dispose();
+    unawaited(SystemUiService.edgeToEdge());
     super.dispose();
   }
 
@@ -458,6 +462,7 @@ class _MonitorScreenState extends State<MonitorScreen>
         builder: (sheetContext, _) {
           final running = _controller.lanStreamRunning;
           final viewerUrl = _controller.lanViewerUrl;
+          final baseAddress = _controller.lanBaseAddress;
           final error = _controller.lanStreamError;
           final viewers = _controller.lanConnectedViewers;
           return SafeArea(
@@ -493,38 +498,41 @@ class _MonitorScreenState extends State<MonitorScreen>
                     'Outro celular conectado à mesma rede pode abrir o endereço abaixo no navegador. '
                     'A transmissão usa os mesmos quadros do monitor e não abre uma segunda câmera.',
                   ),
-                  if (running && viewerUrl != null) ...[
+                  if (running && viewerUrl != null && baseAddress != null) ...[
                     const SizedBox(height: 14),
                     const Text(
-                      'Endereço para assistir',
+                      'Abrir manualmente',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: SelectableText(viewerUrl),
+                    _LanValueRow(
+                      label: 'Endereço',
+                      value: baseAddress,
+                      onCopy: () => Clipboard.setData(
+                        ClipboardData(text: baseAddress),
                       ),
                     ),
                     const SizedBox(height: 8),
+                    _LanValueRow(
+                      label: 'Chave',
+                      value: _controller.lanAccessKey,
+                      onCopy: () => Clipboard.setData(
+                        ClipboardData(text: _controller.lanAccessKey),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     FilledButton.tonalIcon(
                       onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: viewerUrl));
                         if (!sheetContext.mounted) return;
                         ScaffoldMessenger.of(sheetContext).showSnackBar(
                           const SnackBar(
-                            content: Text('Endereço da transmissão copiado.'),
+                            content: Text('Link automático copiado.'),
                           ),
                         );
                       },
-                      icon: const Icon(Icons.copy_rounded),
-                      label: const Text('Copiar endereço'),
+                      icon: const Icon(Icons.link_rounded),
+                      label: const Text('Copiar link automático'),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -536,7 +544,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'A chave de acesso já está incluída no endereço. Ela muda quando a sessão de monitoramento é reiniciada.',
+                      'O link automático usa a chave apenas para criar a sessão do navegador e depois remove o segredo da barra. A chave muda quando a transmissão é reiniciada.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -582,6 +590,15 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
+  Future<void> _openStandardScreen(Widget screen) async {
+    await SystemUiService.edgeToEdge();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => screen),
+    );
+    if (mounted) await SystemUiService.immersive();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -614,15 +631,15 @@ class _MonitorScreenState extends State<MonitorScreen>
           ),
           IconButton(
             tooltip: 'Eventos',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const EventsScreen()),
+            onPressed: () => unawaited(
+              _openStandardScreen(const EventsScreen()),
             ),
             icon: const Icon(Icons.notifications_none_rounded),
           ),
           IconButton(
             tooltip: 'Configurações',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            onPressed: () => unawaited(
+              _openStandardScreen(const SettingsScreen()),
             ),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -1286,6 +1303,51 @@ class _CountBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+class _LanValueRow extends StatelessWidget {
+  const _LanValueRow({
+    required this.label,
+    required this.value,
+    required this.onCopy,
+  });
+
+  final String label;
+  final String value;
+  final Future<void> Function() onCopy;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 2),
+                    SelectableText(
+                      value,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Copiar $label',
+                onPressed: () => unawaited(onCopy()),
+                icon: const Icon(Icons.copy_rounded),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _StatusDot extends StatelessWidget {

@@ -39,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   double _confidence = 0.55;
   bool _motionOnly = true;
-  double _analysisMs = 800;
+  double _analysisMs = 400;
   double _repeatSeconds = 60;
-  double _absenceSeconds = 3;
+  double _absenceSeconds = 1;
   int _maxResults = 10;
   int _motionConfirmationHits = 2;
   Set<String> _alertLabels = <String>{...ObjectFilterCatalog.recommended};

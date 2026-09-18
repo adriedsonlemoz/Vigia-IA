@@ -29,6 +29,7 @@ import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
 import '../services/object_tracker.dart';
 import '../services/smart_alert_rule_engine.dart';
+import '../services/shared_local_camera_service.dart';
 import '../services/runtime_health_service.dart';
 import '../services/speech_service.dart';
 import '../sources/local_camera_source.dart';
@@ -138,6 +139,7 @@ class MonitorController extends ChangeNotifier {
   bool get lanStreamRunning => _lanStream.running;
   bool get lanStreamStarting => _lanStream.starting;
   String? get lanViewerUrl => _lanStream.viewerUrl;
+  String? get lanBaseAddress => _lanStream.baseAddress;
   String get lanAccessKey => _lanStream.accessKey;
   int get lanConnectedViewers => _lanStream.connectedViewers;
   String? get lanStreamError => _lanPermissionError ?? _lanStream.error;
@@ -401,12 +403,15 @@ class MonitorController extends ChangeNotifier {
         await _startSourceUnlocked(sourceConfig);
       });
     } catch (error, stackTrace) {
+      final scheduled = _schedule.enabled;
       unawaited(
         _logs.recordException(
-          source: 'Agendamento',
+          source: scheduled ? 'Agendamento' : 'Inicialização da fonte',
           error: error,
           stackTrace: stackTrace,
-          message: 'Falha ao iniciar monitoramento pelo horário programado.',
+          message: scheduled
+              ? 'Falha ao iniciar monitoramento pelo horário programado.'
+              : 'Falha ao iniciar a fonte de vídeo.',
           context: _diagnosticContext(),
         ),
       );
@@ -444,13 +449,15 @@ class MonitorController extends ChangeNotifier {
     );
     _frameSubscription = source.frames.listen(_onFrame);
     _statusSubscription = source.statuses.listen((status) {
+      final previousState = _sourceStatus.state;
       _sourceStatus = status;
       _health.updateSource(
         name: _sourceDisplayName,
         monitoring: _source != null && _scheduleActive,
         active: status.state == VideoSourceState.streaming,
       );
-      if (status.state == VideoSourceState.error) {
+      if (status.state == VideoSourceState.error &&
+          previousState == VideoSourceState.streaming) {
         unawaited(
           _logs.record(
             level: ErrorLogLevel.error,
@@ -504,16 +511,9 @@ class MonitorController extends ChangeNotifier {
       try {
         await source.dispose();
       } catch (_) {}
-      unawaited(
-        _logs.recordException(
-          source: 'Fonte de vídeo',
-          error: error,
-          stackTrace: stackTrace,
-          message: 'Não foi possível iniciar a fonte de vídeo.',
-          context: _diagnosticContext(),
-        ),
-      );
-      rethrow;
+      // O chamador registra a falha uma única vez com o contexto correto
+      // (inicialização, troca, agendamento ou recuperação).
+      Error.throwWithStackTrace(error, stackTrace);
     }
     _notify();
   }
@@ -780,6 +780,12 @@ class MonitorController extends ChangeNotifier {
         _trackingZones(activeMonitoringZones),
       );
       final zone = zones.firstOrNull;
+      final message = _settings.alertMessages.resolve(
+        label: detection.label,
+        displayLabel: detection.displayLabel,
+        zoneName: zone?.name,
+      );
+      unawaited(_deliverAlert(message));
       final event = await _eventHistory.addEvent(
         detection: detection,
         frame: frame,
@@ -791,12 +797,6 @@ class MonitorController extends ChangeNotifier {
         cameraId: sourceConfig.cameraId,
       );
       if (event != null) eventIds.add(event.id);
-      final message = _settings.alertMessages.resolve(
-        label: detection.label,
-        displayLabel: detection.displayLabel,
-        zoneName: zone?.name,
-      );
-      unawaited(_deliverAlert(message));
     }
 
     if (_clipRecordingEnabled && eventIds.isNotEmpty) {
@@ -830,6 +830,20 @@ class MonitorController extends ChangeNotifier {
         continue;
       }
       _seenTrackIds.add(transition.trackId);
+      if (_announceEntryExit) {
+        final eventName = transition.type == ZoneTransitionType.entered
+            ? 'entered'
+            : 'exited';
+        final message = _settings.alertMessages.resolve(
+          label: transition.label,
+          displayLabel: transition.displayLabel,
+          zoneName: transition.zoneName,
+          event: eventName,
+        );
+        unawaited(
+          _deliverAlert(message, priority: SpeechPriority.high),
+        );
+      }
       await _eventHistory.addEvent(
         detection: detection,
         frame: frame,
@@ -842,16 +856,6 @@ class MonitorController extends ChangeNotifier {
         zoneName: transition.zoneName,
         cameraId: sourceConfig.cameraId,
       );
-      if (_announceEntryExit) {
-        final eventName = transition.type == ZoneTransitionType.entered ? 'entered' : 'exited';
-        final message = _settings.alertMessages.resolve(
-          label: transition.label,
-          displayLabel: transition.displayLabel,
-          zoneName: transition.zoneName,
-          event: eventName,
-        );
-        unawaited(_deliverAlert(message));
-      }
     }
   }
 
@@ -861,20 +865,27 @@ class MonitorController extends ChangeNotifier {
         VideoSourceType.remotePhone => 'Celular remoto',
       };
 
-  Future<void> _deliverAlert(String message) async {
+  Future<void> _deliverAlert(
+    String message, {
+    SpeechPriority priority = SpeechPriority.normal,
+  }) async {
+    final futures = <Future<void>>[];
     if (_settings.alertOutputs.voice) {
       _speech.setEnabled(true);
-      await _speech.speakMessage(message);
+      futures.add(_speech.speakMessage(message, priority: priority));
     }
     if (_settings.alertOutputs.androidNotification ||
         _settings.alertOutputs.sound ||
         _settings.alertOutputs.vibration) {
-      await _native.showAlertNotification(
-        title: 'Vigia IA',
-        message: message,
-        outputs: _settings.alertOutputs,
+      futures.add(
+        _native.showAlertNotification(
+          title: 'Vigia IA',
+          message: message,
+          outputs: _settings.alertOutputs,
+        ),
       );
     }
+    if (futures.isNotEmpty) await Future.wait(futures);
   }
 
   Future<void> _handleCameraIntegrityIssue(
@@ -890,6 +901,7 @@ class MonitorController extends ChangeNotifier {
       displayLabel: 'Câmera',
       event: isObstructed ? 'cameraObstructed' : 'cameraMoved',
     );
+    unawaited(_deliverAlert(message, priority: SpeechPriority.high));
     await _logs.record(
       level: ErrorLogLevel.warning,
       source: 'Integridade da câmera',
@@ -898,7 +910,6 @@ class MonitorController extends ChangeNotifier {
     );
     // Integridade da câmera é informação técnica: fica no Diagnóstico e
     // não entra no Histórico de passagem de pessoas/automóveis/animais.
-    await _deliverAlert(message);
   }
 
   bool _shouldDiscardFrameResult(int session) =>
@@ -1070,27 +1081,20 @@ class MonitorController extends ChangeNotifier {
 
   Future<bool> _ensureBackgroundService({String? statusText}) async {
     if (!_backgroundMonitoringEnabled || _disposed) return false;
-    final usesCamera = sourceConfig.type == VideoSourceType.localCamera;
-    final current = await BackgroundMonitorService.status();
-    if (current.running && current.usesCamera == usesCamera) {
-      _health.backgroundActive = true;
-      if (statusText != null) {
-        await BackgroundMonitorService.updateStatus(statusText);
-      }
-      return true;
-    }
-    final started = await BackgroundMonitorService.start(
-      usesCamera: usesCamera,
+    final started = await BackgroundMonitorService.acquire(
+      owner: BackgroundMonitorService.monitorOwner,
+      usesCamera: sourceConfig.type == VideoSourceType.localCamera,
       statusText: statusText,
     );
-    _health.backgroundActive = started;
+    final status = await BackgroundMonitorService.status();
+    _health.backgroundActive = started && status.flutterHeartbeatFresh;
     return started;
   }
 
   void _startBackgroundHealthTimer() {
     _backgroundHealthTimer?.cancel();
     _backgroundHealthTimer = Timer.periodic(
-      const Duration(seconds: 8),
+      const Duration(seconds: 3),
       (_) => unawaited(_checkBackgroundHealth()),
     );
   }
@@ -1098,7 +1102,7 @@ class MonitorController extends ChangeNotifier {
   Future<void> _checkBackgroundHealth() async {
     if (_disposed || !_backgroundMonitoringEnabled || !_baseReady) return;
     final status = await BackgroundMonitorService.status();
-    _health.backgroundActive = status.running;
+    _health.backgroundActive = status.running && status.flutterHeartbeatFresh;
     if (!status.running) {
       if (!_appInBackground) {
         await _ensureBackgroundService(
@@ -1114,8 +1118,8 @@ class MonitorController extends ChangeNotifier {
     }
     final last = _lastFrameReceivedAt;
     final staleAfter = Duration(
-      milliseconds: (sourceConfig.analysisInterval.inMilliseconds * 6)
-          .clamp(8000, 20000)
+      milliseconds: (sourceConfig.analysisInterval.inMilliseconds * 4)
+          .clamp(4000, 8000)
           .toInt(),
     );
     final stale = last == null || DateTime.now().difference(last) > staleAfter;
@@ -1125,23 +1129,24 @@ class MonitorController extends ChangeNotifier {
     await BackgroundMonitorService.updateStatus(
       'Serviço ativo • câmera sem imagens recentes; tentando recuperar.',
     );
-    if (sourceConfig.type != VideoSourceType.localCamera ||
-        _backgroundRecoveryInProgress) {
-      return;
-    }
+    if (_backgroundRecoveryInProgress) return;
     final previousAttempt = _lastRecoveryAttemptAt;
     if (previousAttempt != null &&
-        DateTime.now().difference(previousAttempt) < const Duration(seconds: 30)) {
+        DateTime.now().difference(previousAttempt) < const Duration(seconds: 12)) {
       return;
     }
     _lastRecoveryAttemptAt = DateTime.now();
     _backgroundRecoveryInProgress = true;
     try {
-      await _enqueueTransition(() async {
-        if (_disposed || !_backgroundMonitoringEnabled || !_scheduleActive) return;
-        await _stopSourceUnlocked();
-        await _startSourceUnlocked(sourceConfig);
-      });
+      if (sourceConfig.type == VideoSourceType.localCamera) {
+        await SharedLocalCameraService.instance.restartPipeline();
+      } else {
+        await _enqueueTransition(() async {
+          if (_disposed || !_backgroundMonitoringEnabled || !_scheduleActive) return;
+          await _stopSourceUnlocked();
+          await _startSourceUnlocked(sourceConfig);
+        });
+      }
     } catch (error, stackTrace) {
       unawaited(
         _logs.recordException(
@@ -1185,7 +1190,7 @@ class MonitorController extends ChangeNotifier {
     } else {
       _backgroundMonitoringEnabled = false;
       _health.backgroundActive = false;
-      await BackgroundMonitorService.stop();
+      await BackgroundMonitorService.release(BackgroundMonitorService.monitorOwner);
     }
     _settings = _settings.copyWith(backgroundMonitoringEnabled: enabled);
     _notify();
@@ -1435,7 +1440,7 @@ class MonitorController extends ChangeNotifier {
     await _enqueueTransition(_stopSourceUnlocked);
     await _waitForProcessing();
     await _clipRecorder.flushPending();
-    await BackgroundMonitorService.stop();
+    await BackgroundMonitorService.release(BackgroundMonitorService.monitorOwner);
     await _detector.dispose();
     await _speech.dispose();
   }

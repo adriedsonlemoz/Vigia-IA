@@ -2,11 +2,27 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.32+32`
+> **Versão atual:** `1.0.33+33`
 
 ## Estado atual
 
-A `1.0.32+32` mantém a ETAPA 4 e corrige o bloqueio nativo encontrado no Android APK 4 durante `compileReleaseKotlin`. Nesse log, o `flutter analyze` passou e os 73 testes passaram; a falha estava restrita à expressão Kotlin do campo `canRequest` da permissão de rede local.
+A `1.0.33+33` corrige os problemas observados no teste real: disputa por câmera, visualizador web sem imagem, estado LAN falso, atraso de alertas, watchdog lento e comportamento de segundo plano. Também ativa edge-to-edge/tela imersiva nas telas de câmera.
+
+### Evolução 1.0.33
+
+- um único pipeline `SharedLocalCameraService` atende Monitor e Modo Câmera, evitando múltiplos `CameraController` e o erro CameraX de combinação de superfícies;
+- visualizador web abre pelo endereço limpo e autentica com chave separada; link automático usa fragmento `#key`, cria sessão por cookie e limpa a barra do navegador;
+- página web não depende mais de MJPEG: consulta estado real e carrega `/frame.jpg` somente quando a sequência muda;
+- status web diferencia servidor ativo de frames ativos e mostra FPS/clientes reais;
+- Diagnóstico e Saúde do sistema também separam servidor LAN ativo de frames LAN recentes, evitando indicar transmissão funcional quando a página abre sem imagem;
+- reação padrão da câmera local passa a 400 ms e saída de rastreamento a 1 s, com migração apenas dos antigos valores padrão;
+- TTS descarta mensagens antigas, prioriza o alerta mais recente e protege transições/alertas de câmera contra falas genéricas; alertas são emitidos antes da gravação do Histórico;
+- watchdog verifica o fluxo a cada 3 s e reinicia o pipeline compartilhado se a câmera congelar;
+- Foreground Service recebe heartbeat do Flutter e sinaliza quando o serviço Android ficou vivo sem o monitor Dart;
+- segundo plano operacional exige serviço + heartbeat + frames reais;
+- Monitor ao vivo e Modo Câmera usam tela imersiva; demais telas permanecem edge-to-edge;
+- Monitor e Modo Câmera usam leases do Foreground Service; desligar um deles não derruba o serviço ainda necessário pelo outro.
+- voz, som/vibração e notificação são disparados em paralelo, sem esperar a fala terminar.
 
 ### Evolução 1.0.32
 
@@ -283,7 +299,9 @@ Backups portáteis removem credenciais. Ao restaurar um backup no mesmo aparelho
 
 ## Segundo plano e recuperação
 
-O Foreground Service continua opt-in e usa notificação persistente + `PARTIAL_WAKE_LOCK`. Na 1.0.26 ele usa o tipo `camera` quando a câmera local está ativa e `specialUse` para fontes sem câmera. O serviço usa `START_NOT_STICKY` para não renascer sozinho sem o pipeline Flutter/IA.
+O Foreground Service continua opt-in e usa notificação persistente + `PARTIAL_WAKE_LOCK`. Ele usa o tipo `camera` quando algum recurso ativo precisa da câmera local e `specialUse` quando somente fontes sem câmera permanecem. Monitor e Modo Câmera mantêm leases independentes para que um recurso não encerre o serviço necessário pelo outro.
+
+Na 1.0.33 o serviço usa `START_STICKY`, mas um heartbeat do Flutter impede que a simples existência do serviço seja confundida com monitoramento funcional. Se o processo Dart deixar de responder ou os frames congelarem, a notificação informa a falha e solicita reabertura quando a recuperação automática não conseguir restabelecer a câmera. Um serviço nativo órfão sem heartbeat por 1 minuto se encerra para não manter wake lock indefinidamente.
 
 O estado do monitoramento e da agenda é registrado para recuperação. Após reinício do aparelho, atualização do pacote ou encerramento da tarefa, o app avalia se o perfil/horário permitem retomada.
 

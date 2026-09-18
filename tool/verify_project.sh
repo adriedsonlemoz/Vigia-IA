@@ -9,7 +9,7 @@ fail() {
 }
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.32+32$' pubspec.yaml || fail 'Versao esperada 1.0.32+32 nao encontrada.'
+grep -q '^version: 1\.0\.33+33$' pubspec.yaml || fail 'Versao esperada 1.0.33+33 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -140,8 +140,8 @@ grep -q 'repeatWhilePresent: false' lib/controllers/monitor_controller.dart \
   || fail 'TTS ainda pode repetir durante o mesmo evento.'
 grep -q 'motionConfirmationHits' lib/models/video_source_config.dart \
   || fail 'Confirmacao de movimento nao esta configurada.'
-grep -q 'return Center(child: CameraPreview(controller));' lib/sources/local_camera_source.dart \
-  || fail 'Preview local deve deixar CameraPreview controlar a proporcao nativa.'
+grep -q 'return Center(child: CameraPreview(controller));' lib/services/shared_local_camera_service.dart \
+  || fail 'Preview compartilhado deve deixar CameraPreview controlar a proporcao nativa.'
 grep -q '_waitForProcessing' lib/controllers/monitor_controller.dart \
   || fail 'Encerramento nao aguarda inferencia em andamento.'
 [[ -f lib/services/motion_detection_service.dart ]] \
@@ -308,12 +308,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.32';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.32.'
-grep -q 'static const int build = 32;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 32.'
-grep -q "version: '1.0.32'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.32.'
+grep -q "static const String version = '1.0.33';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.33.'
+grep -q 'static const int build = 33;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 33.'
+grep -q "version: '1.0.33'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.33.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -380,8 +380,8 @@ grep -q 'MonitoringPreset.away' lib/services/monitoring_preset_service.dart \
   || fail 'Preset Ausente nao encontrado.'
 
 # Segundo plano autonomo dentro dos limites do Android
-grep -q 'START_NOT_STICKY' tool/android/MonitoringForegroundService.kt \
-  || fail 'Foreground Service deve evitar reinicio orfao sem o pipeline Flutter.'
+grep -q 'return START_STICKY' tool/android/MonitoringForegroundService.kt \
+  || fail 'Foreground Service nao esta configurado para recuperacao sticky com heartbeat.'
 [[ -f tool/android/MonitorRecoveryReceiver.kt ]] || fail 'Receiver de recuperacao nao encontrado.'
 grep -q 'BOOT_COMPLETED' tool/AndroidManifest.xml \
   || fail 'Recuperacao apos boot nao esta declarada.'
@@ -479,18 +479,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.32+32$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.32+32.'
+grep -q '^version: 1.0.33+33$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.33+33.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.32"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.32.'
-grep -q '"build": 32' app_identity.json \
-  || fail 'app_identity.json nao esta no build 32.'
+grep -q '"version": "1.0.33"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.33.'
+grep -q '"build": 33' app_identity.json \
+  || fail 'app_identity.json nao esta no build 33.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -544,8 +544,8 @@ grep -q 'camera|specialUse' tool/AndroidManifest.xml \
   || fail 'Tipos camera/specialUse nao declarados no servico.'
 grep -q 'FOREGROUND_SERVICE_TYPE_CAMERA' tool/android/MonitoringForegroundService.kt \
   || fail 'Foreground service nao promove sessao local como camera.'
-grep -q 'START_NOT_STICKY' tool/android/MonitoringForegroundService.kt \
-  || fail 'Foreground service pode renascer orfao.'
+grep -q 'return START_STICKY' tool/android/MonitoringForegroundService.kt \
+  || fail 'Foreground service nao usa START_STICKY para recuperacao assistida.'
 grep -q '_checkBackgroundHealth' lib/controllers/monitor_controller.dart \
   || fail 'Watchdog de frames em segundo plano nao encontrado.'
 grep -q 'App minimizado • monitoramento continua ativo.' lib/controllers/monitor_controller.dart \
@@ -560,8 +560,10 @@ grep -q 'Permissões e segundo plano 1.0.26' ARCHITECTURE.md \
 # Transmissao LAN do monitor 1.0.27
 [[ -f lib/services/monitor_lan_stream_service.dart ]] \
   || fail 'MonitorLanStreamService nao encontrado.'
-grep -q "case '/stream.mjpg'" lib/services/monitor_lan_stream_service.dart \
-  || fail 'Endpoint MJPEG do monitor nao encontrado.'
+grep -q "case '/frame.jpg'" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Endpoint JPEG do visualizador LAN nao encontrado.'
+grep -q "case '/status'" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Endpoint de estado real do visualizador LAN nao encontrado.'
 grep -q 'publishFrame(frame)' lib/controllers/monitor_controller.dart \
   || fail 'Frames do monitor nao sao publicados na LAN.'
 grep -q 'await ensureLanStreaming();' lib/controllers/monitor_controller.dart \
@@ -652,8 +654,6 @@ grep -q 'Evolução 1.0.24' README.md || fail 'README nao documenta 1.0.24.'
 grep -q 'Interface e domínio de detecção 1.0.24' ARCHITECTURE.md \
   || fail 'ARCHITECTURE nao documenta a fronteira dos tres grupos.'
 
-echo 'Verificacao preventiva concluida com sucesso.'
-
 # Diagnostico e saude real 1.0.29
 [[ -f lib/services/system_health_service.dart ]] || fail 'SystemHealthService nao encontrado.'
 grep -q "import '../models/system_health.dart';" lib/controllers/monitor_controller.dart || fail 'MonitorController nao importa CameraHealthState.'
@@ -670,7 +670,8 @@ grep -q "label: const Text('Exportar')" lib/screens/error_center_screen.dart || 
 grep -q "Serviço Android ativo" lib/screens/system_health_screen.dart || fail 'Saude nao separa o servico Android.'
 grep -q "Frames chegando" lib/screens/system_health_screen.dart || fail 'Saude nao exibe o estado de frames.'
 grep -q "Monitoramento IA ativo" lib/screens/system_health_screen.dart || fail 'Saude nao exibe o estado real da IA.'
-grep -q "Transmissão LAN ativa" lib/screens/system_health_screen.dart || fail 'Saude nao exibe a transmissao LAN.'
+grep -q "title: 'Transmissão LAN'" lib/screens/system_health_screen.dart || fail 'Saude nao exibe a transmissao LAN.'
+grep -q "title: 'Servidor LAN'" lib/screens/system_health_screen.dart || fail 'Saude nao separa servidor LAN de frames enviados.'
 grep -q "StorageSizeFormatter.formatBytes" lib/screens/storage_backup_screen.dart || fail 'Armazenamento nao usa o formatador unico.'
 grep -q '"shareText"' tool/android/MainActivity.kt || fail 'Bridge nativa de compartilhamento nao encontrada.'
 grep -q 'freeStorageBytes' tool/android/MainActivity.kt || fail 'Metricas Android nao usam bytes.'
@@ -682,7 +683,95 @@ grep -q 'Diagnóstico e saúde real 1.0.29' ARCHITECTURE.md || fail 'ARCHITECTUR
 # não application/x-www-form-urlencoded (+), para manter o contrato do endereço exibido.
 grep -q 'Uri.encodeComponent(accessKey)' lib/services/monitor_lan_stream_service.dart \
   || fail 'URL LAN nao usa Uri.encodeComponent para a chave compartilhada.'
-grep -q 'Uri.encodeComponent(_accessKey)' lib/services/monitor_lan_stream_service.dart \
-  || fail 'Pagina LAN nao usa a mesma codificacao da chave no stream MJPEG.'
 ! grep -q 'Uri.encodeQueryComponent(accessKey)' lib/services/monitor_lan_stream_service.dart \
   || fail 'Codificacao antiga da chave LAN ainda esta presente.'
+
+
+# Integracao corretiva 1.0.33
+[[ -f lib/services/shared_local_camera_service.dart ]] \
+  || fail 'SharedLocalCameraService nao encontrado.'
+grep -q 'CameraController(' lib/services/shared_local_camera_service.dart \
+  || fail 'CameraController compartilhado nao foi encontrado.'
+if grep -q 'CameraController(' lib/sources/local_camera_source.dart; then
+  fail 'LocalCameraSource voltou a criar CameraController proprio.'
+fi
+grep -q 'SharedLocalCameraService.instance' lib/sources/local_camera_source.dart \
+  || fail 'LocalCameraSource nao usa a camera compartilhada.'
+grep -q 'LocalCameraSource(' lib/services/remote_camera_server_service.dart \
+  || fail 'Modo Camera nao reutiliza LocalCameraSource compartilhada.'
+grep -q 'restartPipeline' lib/controllers/monitor_controller.dart \
+  || fail 'Watchdog nao reinicia o pipeline compartilhado.'
+
+grep -q "return '\$base/#key=\${Uri.encodeComponent(accessKey)}';" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Link automatico LAN nao usa fragmento protegido.'
+grep -q "path == '/session'" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Sessao temporaria do navegador LAN nao encontrada.'
+grep -q "Cookie('vigia_session'" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Cookie temporario LAN nao encontrado.'
+grep -q "history.replaceState" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Pagina LAN nao remove a chave da barra apos autenticar.'
+grep -q "fetch('/status'" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Pagina LAN nao consulta o estado real.'
+grep -q "img.src='/frame.jpg" lib/services/monitor_lan_stream_service.dart \
+  || fail 'Pagina LAN nao carrega quadros JPEG por sequencia.'
+if grep -q '/stream.mjpg' lib/services/monitor_lan_stream_service.dart; then
+  fail 'MJPEG legado reapareceu no visualizador LAN principal.'
+fi
+
+grep -q 'const Duration(milliseconds: 400)' lib/models/video_source_config.dart \
+  || fail 'Intervalo local padrao de 400 ms nao encontrado.'
+grep -q 'const Duration(seconds: 1)' lib/models/video_source_config.dart \
+  || fail 'Ausencia padrao de 1 s nao encontrada.'
+grep -q "'version': 6" lib/services/app_settings_service.dart \
+  || fail 'Schema de configuracoes nao foi migrado para version 6.'
+grep -q 'profileVersion < 6' lib/services/app_settings_service.dart \
+  || fail 'Migracao dos antigos defaults nao encontrada.'
+grep -q 'SpeechPriority.high' lib/controllers/monitor_controller.dart \
+  || fail 'Alertas prioritarios de entrada/saida/integridade nao encontrados.'
+grep -q 'await _tts.stop();' lib/services/speech_service.dart \
+  || fail 'TTS nao descarta fala anterior antes do alerta atual.'
+grep -q 'Duration(seconds: 3)' lib/controllers/monitor_controller.dart \
+  || fail 'Watchdog rapido de 3 s nao encontrado.'
+
+grep -q "owner: BackgroundMonitorService.monitorOwner" lib/controllers/monitor_controller.dart \
+  || fail 'Lease do Monitor nao encontrado.'
+grep -q "owner: BackgroundMonitorService.cameraModeOwner" lib/services/remote_camera_server_service.dart \
+  || fail 'Lease do Modo Camera nao encontrado.'
+grep -q "'heartbeat'" lib/services/background_monitor_service.dart \
+  || fail 'Heartbeat Flutter do foreground service nao encontrado.'
+grep -q 'flutterHeartbeatFresh' lib/services/system_health_service.dart \
+  || fail 'Saude do sistema nao valida heartbeat Flutter.'
+grep -q 'lanServerActive' lib/models/system_health.dart \
+  || fail 'Saude nao distingue servidor LAN de transmissao com frames.'
+grep -q 'Frames LAN recentes:' lib/services/diagnostic_report_service.dart \
+  || fail 'Diagnostico nao registra frescor dos frames LAN.'
+grep -q 'heartbeatStaleMs = 15_000L' tool/android/MonitoringForegroundService.kt \
+  || fail 'Timeout nativo do heartbeat nao encontrado.'
+grep -q 'orphanStopMs = 60_000L' tool/android/MonitoringForegroundService.kt \
+  || fail 'Encerramento do servico orfao nao encontrado.'
+grep -q 'return START_STICKY' tool/android/MonitoringForegroundService.kt \
+  || fail 'Recuperacao START_STICKY nao encontrada.'
+
+grep -q 'SystemUiMode.edgeToEdge' lib/services/system_ui_service.dart \
+  || fail 'Modo edge-to-edge global nao encontrado.'
+grep -q 'SystemUiMode.immersiveSticky' lib/services/system_ui_service.dart \
+  || fail 'Modo imersivo das telas de camera nao encontrado.'
+grep -q 'SystemUiService.immersive' lib/screens/monitor_screen.dart \
+  || fail 'Monitor ao vivo nao entra em tela imersiva.'
+grep -q 'SystemUiService.immersive' lib/screens/camera_mode_screen.dart \
+  || fail 'Modo Camera nao entra em tela imersiva.'
+
+grep -q '^## 1.0.33+33' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.33.'
+grep -q 'Evolução 1.0.33' README.md || fail 'README nao documenta 1.0.33.'
+grep -q 'Vigia IA 1.0.33+33' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.33+33.'
+grep -q 'Schema atual: `version: 6`.' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta schema 6.'
+
+# Nomes tecnicos antigos nao podem voltar ao projeto atual.
+for legacy in 'Monitor IA' 'monitor-ia' 'camera_guard_offline' 'vigia-ia'; do
+  if grep -R -F -I -n --exclude-dir=.git --exclude='*.zip' --exclude='verify_project.sh' -- "$legacy" \
+      lib android tool test pubspec.yaml app_identity.json README.md CHANGELOG.md ARCHITECTURE.md >/dev/null 2>&1; then
+    fail "Referencia antiga reapareceu: $legacy"
+  fi
+done
+
+echo 'Verificacao preventiva concluida com sucesso.'

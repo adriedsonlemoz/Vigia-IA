@@ -16,9 +16,9 @@ class _AdvancedSettingsScreenState extends State<AdvancedSettingsScreen> {
   final _service = AppSettingsService.instance;
   PersistedMonitorProfile? _profile;
   double _confidence = 0.55;
-  double _analysisMs = 800;
+  double _analysisMs = 400;
   double _repeatSeconds = 60;
-  double _absenceSeconds = 3;
+  double _absenceSeconds = 1;
   double _maxResults = 10;
   double _confirmationHits = 2;
 

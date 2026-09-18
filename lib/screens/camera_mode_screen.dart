@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../services/background_monitor_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../services/remote_camera_server_service.dart';
+import '../services/system_ui_service.dart';
 
 class CameraModeScreen extends StatefulWidget {
   const CameraModeScreen({super.key});
@@ -23,12 +23,14 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(SystemUiService.immersive());
     _server.addListener(_refresh);
   }
 
   @override
   void dispose() {
     _server.removeListener(_refresh);
+    unawaited(SystemUiService.edgeToEdge());
     super.dispose();
   }
 
@@ -39,7 +41,6 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
   Future<void> _toggle() async {
     if (_server.running) {
       await _server.stop();
-      await BackgroundMonitorService.stop();
       return;
     }
 
@@ -92,28 +93,11 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
       );
     }
 
-    final foregroundStarted = await BackgroundMonitorService.start(
-      usesCamera: true,
-      statusText: 'Modo Câmera ativo • transmissão local em andamento.',
-    );
-    if (!mounted) return;
-    if (!foregroundStarted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'O Android não permitiu iniciar o serviço de câmera em segundo plano.',
-          ),
-        ),
-      );
-      return;
-    }
-
     await _server.start();
-    if (!_server.running) {
-      await BackgroundMonitorService.stop();
-    } else {
-      await BackgroundMonitorService.updateStatus(
-        'Modo Câmera ativo • transmissão local recebendo imagens.',
+    if (!mounted) return;
+    if (!_server.running && _server.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_server.error!)),
       );
     }
   }

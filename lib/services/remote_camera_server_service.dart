@@ -45,8 +45,18 @@ class RemoteCameraServerService extends ChangeNotifier {
     _port = port.clamp(1024, 65535).toInt();
     notifyListeners();
     try {
+      final foregroundStarted = await BackgroundMonitorService.acquire(
+        owner: BackgroundMonitorService.cameraModeOwner,
+        usesCamera: true,
+        statusText: 'Modo Câmera ativo • preparando transmissão local.',
+      );
+      if (!foregroundStarted) {
+        throw StateError('O Android não permitiu iniciar o serviço de câmera em primeiro plano.');
+      }
       _accessKey = _generateKey();
-      final source = LocalCameraSource(analysisInterval: const Duration(milliseconds: 500));
+      final source = LocalCameraSource(
+        analysisInterval: const Duration(milliseconds: 400),
+      );
       _source = source;
       _subscription = source.frames.listen(_onFrame);
       await source.start();
@@ -145,6 +155,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     _lastNotificationUpdateAt = null;
     _address = null;
     _accessKey = '';
+    await BackgroundMonitorService.release(BackgroundMonitorService.cameraModeOwner);
     notifyListeners();
   }
 

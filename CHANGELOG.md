@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 1.0.33+33
+
+- Corrigido o conflito de câmera revelado pelo Diagnóstico (`No supported surface combination`): `LocalCameraSource` e Modo Câmera agora usam `SharedLocalCameraService`, mantendo um único `CameraController`/pipeline CameraX e múltiplos consumidores de frames.
+- A recuperação de câmera em segundo plano reinicia o pipeline compartilhado, evitando que outro consumidor mantenha uma instância travada.
+- Visualizador LAN reformulado: o endereço manual fica limpo (`http://IP:8766`), a chave é digitada separadamente e o acesso automático usa `#key=...`, que não é enviado na requisição HTTP.
+- O navegador troca a chave por cookie temporário, remove o segredo da barra e passa a atualizar imagem por `/frame.jpg`, evitando dependência do suporte MJPEG do navegador.
+- Estado web agora é real: `/status` informa servidor, frames recentes, sequência, FPS e clientes; a página exibe conexão, ausência de frames ou interrupção em vez de manter “transmissão ativa” fixo.
+- Contagem de clientes LAN passou a usar sessões ativas recentes; sessão de autenticação permanece válida por até uma hora sem contar abas inativas como conectadas.
+- Frames LAN só são marcados como recentes depois que o JPEG é codificado com sucesso; Saúde do sistema exige frame LAN recente para considerar transmissão operacional.
+- Diagnóstico passa a distinguir explicitamente **Servidor LAN**, **Frames LAN recentes** e **Transmissão LAN operacional**, cobrindo o caso em que a página HTTP abre mas nenhuma imagem chega.
+- Padrão da câmera local alterado de 800 ms para 400 ms e ausência padrão de 3 s para 1 s. Perfis antigos que ainda usam exatamente os padrões anteriores são migrados automaticamente; ajustes personalizados são preservados.
+- Alertas TTS usam política “mais recente primeiro”: uma fala nova interrompe a anterior em vez de manter fila obsoleta, e transições/integridade de alta prioridade ficam protegidas por 5 s contra alertas genéricos.
+- Alertas de entrada/saída e detecção confirmada são disparados antes da persistência do evento, evitando que escrita em disco atrase a voz/notificação. Voz e alerta nativo também são iniciados em paralelo, sem esperar o TTS terminar.
+- Watchdog Flutter passou de 8 s para 3 s; frames são considerados travados em 4–8 s, conforme o intervalo de análise, e a tentativa de recuperação pode ocorrer novamente após 12 s.
+- Foreground Service ganhou heartbeat do Flutter. Se o processo Dart parar de responder por 15 s, a notificação deixa claro que apenas o serviço Android está vivo e solicita reabertura; `START_STICKY` mantém a recuperação disponível após recriação; se só o serviço nativo sobreviver sem heartbeat por 1 minuto, ele se encerra para não manter wake lock/notificação órfãos.
+- Saúde do sistema só considera segundo plano operacional quando serviço, heartbeat Flutter, monitoramento e frames estão ativos.
+- Monitor e Modo Câmera agora mantêm leases independentes do Foreground Service: desligar um consumidor não encerra o serviço ainda necessário pelo outro, e o tipo `camera`/`specialUse` acompanha os consumidores restantes.
+- Aplicativo passa a usar edge-to-edge globalmente; Monitor ao vivo e Modo Câmera usam modo imersivo, restaurando edge-to-edge ao abrir telas comuns.
+- Mensagem de erro de inicialização deixa de atribuir falha a “Agendamento” quando o agendamento está desativado; a mesma falha de `start()` deixa de ser registrada em duplicidade como erro da fonte e do chamador.
+- Testes de URL LAN e padrões de reação atualizados; verificação preventiva ampliada para câmera compartilhada, sessão web, heartbeat, tela cheia e versão.
+
+### Validação local
+
+- `tool/verify_project.sh` valida identidade, sincronização Android/template, câmera compartilhada, sessão LAN, heartbeat, defaults rápidos, tela cheia e documentação.
+- O ambiente de edição não contém Flutter SDK; `flutter analyze`, `flutter test` e o APK devem ser confirmados pelo workflow Android APK.
+
 ## 1.0.32+32
 
 - Corrigido o bloqueio do Android APK 4 em `:app:compileReleaseKotlin`.
