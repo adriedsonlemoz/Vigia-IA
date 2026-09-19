@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.42',
+          version: '1.0.43',
           current: true,
+          changes: [
+            'Buildfix da Etapa 3 do Modo Bike após validação no Flutter 3.44.9.',
+            'Removidos dois casts desnecessários que faziam o flutter analyze encerrar o workflow.',
+            'Painel remoto, telemetria, transmissão e alertas do Modo Bike foram preservados sem mudança funcional.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.42',
           changes: [
             'Etapa 3 do Modo Bike concluída: o celular da frente recebe e exibe a telemetria do aparelho traseiro.',
             'Novo painel remoto mostra bateria/carga, temperatura, brilho, CPU, memória, FPS da captura e latência da telemetria.',

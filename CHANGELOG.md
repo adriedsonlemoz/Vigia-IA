@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.43+43
+
+- Buildfix da Etapa 3 do Modo Bike após validação real no GitHub Actions com Flutter 3.44.9.
+- Removidos dois casts desnecessários em `lib/models/remote_phone_status.dart` e `lib/sources/remote_phone_camera_source.dart`.
+- O workflow da 1.0.42 chegava à análise estática, mas encerrava com `unnecessary_cast`; a correção preserva o mesmo comportamento de parsing e telemetria.
+- Teste de metadados atualizado para a nova versão e verificações preventivas ampliadas para impedir a reintrodução dos dois casts.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.43+43`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a sincronização da versão e os dois pontos que bloquearam o `flutter analyze` da 1.0.42.
+- O workflow anterior confirmou que dependências e verificação preventiva da 1.0.42 passavam; `flutter analyze`, `flutter test` e build da 1.0.43 ainda precisam ser confirmados no próximo workflow.
+
 ## 1.0.42+42
 
 - Etapa 3 do Modo Bike concluída com painel remoto no celular que recebe a imagem.

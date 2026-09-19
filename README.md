@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.42+42`
+> **Versão atual:** `1.0.43+43`
 
 ## Estado atual
 
-A `1.0.42+42` conclui a Etapa 3 do Modo Bike: o celular da frente agora recebe, exibe e acompanha as condições do aparelho traseiro junto do monitoramento ao vivo.
+A `1.0.43+43` é um buildfix da Etapa 3 do Modo Bike: remove dois casts desnecessários apontados pelo Flutter 3.44, preservando o painel remoto e liberando a análise estática do workflow.
+
+### Evolução 1.0.43
+
+- removidos dois casts redundantes em `RemotePhoneStatus.fromJson` e `RemotePhoneCameraSource._pollStatus`;
+- correção direcionada ao `flutter analyze` do Flutter 3.44, que tratava esses avisos como falha do workflow;
+- nenhuma funcionalidade do painel remoto, telemetria ou transmissão do Modo Bike foi removida ou alterada;
+- versionamento, metadados, documentação, tela de mudanças, testes e verificadores sincronizados em `1.0.43+43`.
 
 ### Evolução 1.0.42
 

@@ -122,7 +122,7 @@ class RemotePhoneCameraSource implements VideoSource {
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map) return;
       remoteStatusNotifier.value = RemotePhoneStatus.fromJson(
-        Map<String, dynamic>.from(decoded as Map),
+        Map<String, dynamic>.from(decoded),
         receivedAt: DateTime.now(),
         networkLatencyMs: DateTime.now().difference(startedAt).inMilliseconds,
       );

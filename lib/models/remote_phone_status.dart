@@ -57,7 +57,7 @@ class RemotePhoneStatus {
       bikeProfile: json['bikeProfile'] as String?,
       device: rawDevice is Map
           ? DeviceTelemetrySnapshot.fromJson(
-              Map<String, dynamic>.from(rawDevice as Map),
+              Map<String, dynamic>.from(rawDevice),
             )
           : null,
       alertLowBattery: json['alertLowBattery'] as bool? ?? true,

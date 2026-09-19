@@ -1,8 +1,15 @@
-# Arquitetura — Vigia IA 1.0.42+42
+# Arquitetura — Vigia IA 1.0.43+43
 
 ## 1. Princípios
 
-A 1.0.42 mantém o pipeline local/offline e completa o caminho de ida da telemetria do Modo Bike: o mesmo servidor do Modo Câmera publica estado e o mesmo cliente de celular remoto o consome, sem um segundo protocolo.
+A 1.0.43 mantém integralmente a arquitetura da Etapa 3 do Modo Bike e aplica apenas um buildfix de compatibilidade com a análise estática do Flutter 3.44, removendo casts redundantes no parsing do status remoto.
+
+## Evolução 1.0.43
+
+- `RemotePhoneStatus.fromJson` usa diretamente o `Map` já promovido pelo teste de tipo, sem cast redundante;
+- `RemotePhoneCameraSource._pollStatus` faz o mesmo após validar o JSON decodificado;
+- não há mudança de contrato no `/status`, no frame JPEG, nos avisos do Modo Bike ou na persistência;
+- o buildfix existe para manter o workflow limpo sob `flutter analyze` no Flutter 3.44.9.
 
 ## Evolução 1.0.42
 

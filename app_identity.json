@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.42 conclui a Etapa 3 do Modo Bike com telemetria recebida no celular da frente, painel remoto, FPS/latência e avisos do aparelho traseiro.",
-  "version": "1.0.42",
-  "build": 42
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.43 corrige os dois avisos de cast desnecessário identificados pelo Flutter 3.44 na Etapa 3 do Modo Bike, liberando novamente a análise estática do workflow.",
+  "version": "1.0.43",
+  "build": 43
 }
