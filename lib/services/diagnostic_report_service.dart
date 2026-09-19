@@ -62,10 +62,25 @@ class DiagnosticReport {
       ..writeln('=== DISPOSITIVO ===')
       ..writeln('Bateria: ${h.batteryPercent == null ? 'indisponível' : '${h.batteryPercent}%'}')
       ..writeln(
+        'Carregamento: ${h.batteryCharging == null ? 'indisponível' : h.batteryCharging! ? '${h.batteryPowerSource ?? 'carregando'}${h.batteryCurrentMa == null ? '' : ' • ${h.batteryCurrentMa!.toStringAsFixed(0)} mA'}' : 'usando bateria'}',
+      )
+      ..writeln(
         'Temperatura da bateria: ${h.batteryTemperatureC == null ? 'indisponível' : '${h.batteryTemperatureC!.toStringAsFixed(1)} °C'}',
       )
       ..writeln(
+        'Tela/brilho: ${h.screenBrightnessPercent == null ? 'indisponível' : '${h.screenBrightnessPercent}%'}${h.screenDimmedByBike ? ' • reduzido pelo Modo Bike' : ''}',
+      )
+      ..writeln(
+        'CPU do Vigia IA: ${h.appCpuPercent == null ? 'indisponível' : '${h.appCpuPercent!.toStringAsFixed(1)}%'}',
+      )
+      ..writeln(
         'Memória do processo: ${_formatBytes(h.memoryUsedBytes)}',
+      )
+      ..writeln(
+        'Memória disponível no aparelho: ${_formatBytes(h.memoryAvailableBytes)}',
+      )
+      ..writeln(
+        'Memória total do aparelho: ${_formatBytes(h.memoryTotalBytes)}',
       )
       ..writeln(
         'Armazenamento livre: ${_formatBytes(h.freeStorageBytes)}',

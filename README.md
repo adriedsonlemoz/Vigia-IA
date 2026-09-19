@@ -2,11 +2,34 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.40+40`
+> **Versão atual:** `1.0.42+42`
 
 ## Estado atual
 
-A `1.0.40+40` inicia o Modo Bike com configuração persistente e perfis de energia para preparar o Vigia IA para uso de um celular na traseira da bicicleta.
+A `1.0.42+42` conclui a Etapa 3 do Modo Bike: o celular da frente agora recebe, exibe e acompanha as condições do aparelho traseiro junto do monitoramento ao vivo.
+
+### Evolução 1.0.42
+
+- `RemotePhoneCameraSource` consulta também `/status` do aparelho traseiro, sem criar protocolo paralelo e sem interromper o vídeo caso a telemetria falhe;
+- o celular da frente recebe bateria/carga, temperatura, brilho/tela, CPU, memória e estado do Modo Bike;
+- o Modo Câmera passa a informar FPS aproximado da captura e o receptor mede a latência da consulta de telemetria;
+- o monitor Ao vivo ganhou um atalho de bicicleta e um resumo compacto com bateria/temperatura do aparelho traseiro;
+- painel remoto detalhado mostra energia, processamento, memória, FPS, latência e perfil energético;
+- avisos visuais destacam bateria baixa, temperatura elevada, CPU alta, pouca RAM e telemetria desatualizada;
+- o limite de bateria baixa configurado no aparelho traseiro é enviado ao receptor para que os dois celulares usem o mesmo critério;
+- a telemetria continua sendo complementar: falha do endpoint `/status` não derruba a transmissão de imagem.
+
+### Evolução 1.0.41
+
+- Modo Bike passa a aplicar os perfis Normal, Economia e Economia extrema ao pipeline real de monitoramento e ao Modo Câmera;
+- intervalo de captura/análise é limitado conforme o perfil, sem aumentar a frequência configurada pelo usuário;
+- transmissão LAN recebe teto de FPS e compressão JPEG adaptativa, com menor resolução/qualidade nos perfis econômicos;
+- brilho do Vigia IA no celular traseiro pode ser reduzido durante a operação e é restaurado ao finalizar;
+- telemetria local passa a reunir bateria, estado/origem/corrente aproximada de carga, temperatura, brilho, CPU, núcleos e memória;
+- a própria tela Modo Bike mostra essas condições em tempo real;
+- Saúde do sistema e relatório de diagnóstico foram ampliados com as mesmas métricas;
+- status LAN e status do Modo Câmera já podem carregar a telemetria quando a opção de envio estiver ativa, preparando a Etapa 3;
+- bateria baixa gera aviso local durante a operação, sem repetir continuamente.
 
 ### Evolução 1.0.40
 

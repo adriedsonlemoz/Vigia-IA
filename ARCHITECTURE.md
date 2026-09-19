@@ -1,8 +1,30 @@
-# Arquitetura — Vigia IA 1.0.40+40
+# Arquitetura — Vigia IA 1.0.42+42
 
 ## 1. Princípios
 
-A 1.0.40 mantém o pipeline local/offline e adiciona a primeira camada do Modo Bike: configuração persistente e perfis de energia, sem criar um pipeline paralelo de IA.
+A 1.0.42 mantém o pipeline local/offline e completa o caminho de ida da telemetria do Modo Bike: o mesmo servidor do Modo Câmera publica estado e o mesmo cliente de celular remoto o consome, sem um segundo protocolo.
+
+## Evolução 1.0.42
+
+- `RemoteCameraServerService` acrescenta FPS aproximado, limite/estado do alerta de bateria e telemetria ao `/status` autenticado já existente;
+- `RemotePhoneCameraSource` mantém polling independente de frame e status; indisponibilidade de telemetria é não fatal para o vídeo;
+- `RemotePhoneStatus` normaliza o estado recebido e concentra critérios de aviso para bateria, temperatura, CPU, RAM e atualização atrasada;
+- `DeviceTelemetrySnapshot.fromJson` preserva `capturedAt`, permitindo diferenciar o instante da coleta no traseiro do instante em que o receptor recebeu o status;
+- `MonitorController` observa a telemetria da fonte remota e propaga mudanças ao mesmo `ChangeNotifier` usado pelo monitor;
+- `RemoteBikeStatusPanel` apresenta energia, brilho, CPU, memória, FPS, latência, perfil e alertas no celular da frente;
+- `MonitorScreen` exibe resumo compacto e badge de avisos, mantendo os detalhes sob demanda para não ocupar permanentemente a imagem.
+
+## Evolução 1.0.41
+
+- `BikeModeConfig` passa a calcular intervalo efetivo, teto de FPS, frequência de telemetria, brilho e política JPEG por perfil;
+- `MonitorController` carrega a política do Modo Bike, reinicia a fonte somente quando o intervalo efetivo muda e mantém o mesmo pipeline de IA/detecção;
+- `MonitorLanStreamService` limita codificações por FPS e recebe largura/qualidade JPEG adaptativas;
+- `RemoteCameraServerService` usa a mesma política no Modo Câmera, incluindo intervalo, compressão, brilho e telemetria;
+- `DeviceTelemetrySnapshot` normaliza a coleta nativa de bateria/carga, temperatura, brilho, CPU e memória;
+- `NativePlatformService` mantém a ponte Android para telemetria e brilho do app sem alterar o brilho global do sistema;
+- `MainActivity` calcula CPU do processo entre amostras, memória disponível/total, corrente aproximada de bateria e estado de tela;
+- endpoints `/status` locais carregam `device`, `bikeMode` e `bikeProfile` quando aplicável, sem mudar o contrato do frame JPEG;
+- alerta de bateria baixa é avaliado de forma periódica e possui histerese simples para não repetir até a carga subir alguns pontos.
 
 ## Evolução 1.0.40
 

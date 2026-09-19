@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/bike_mode_config.dart';
 import 'error_log_service.dart';
 
-class BikeModeService {
+class BikeModeService extends ChangeNotifier {
   BikeModeService._();
 
   static final BikeModeService instance = BikeModeService._();
@@ -51,5 +52,6 @@ class BikeModeService {
     await temporary.writeAsString(jsonEncode(config.toJson()), flush: true);
     if (await file.exists()) await file.delete();
     await temporary.rename(file.path);
+    notifyListeners();
   }
 }

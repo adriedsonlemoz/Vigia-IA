@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
+import '../models/device_telemetry.dart';
 import '../models/rgb_frame.dart';
 
 class MonitorLanStreamService extends ChangeNotifier {
@@ -21,6 +22,13 @@ class MonitorLanStreamService extends ChangeNotifier {
   bool _starting = false;
   bool _encoding = false;
   double _streamFps = 0;
+  int? _maxFps;
+  DateTime? _lastPublishAttemptAt;
+  Map<String, Object?>? _deviceTelemetry;
+  bool _bikeModeEnabled = false;
+  String? _bikeProfile;
+  int _jpegMaxWidth = 960;
+  int _jpegQuality = 76;
   Timer? _sessionCleanupTimer;
   final Map<String, DateTime> _sessions = <String, DateTime>{};
   int _lastReportedViewers = 0;
@@ -39,6 +47,26 @@ class MonitorLanStreamService extends ChangeNotifier {
   int get connectedViewers => _activeSessionCount(DateTime.now());
   int get frameSequence => _frameSequence;
   double get streamFps => _streamFps;
+  int? get maxFps => _maxFps;
+
+  void setMaxFps(int? value) {
+    _maxFps = value?.clamp(1, 30).toInt();
+    _lastPublishAttemptAt = null;
+  }
+
+  void updateDeviceTelemetry(DeviceTelemetrySnapshot? telemetry) {
+    _deviceTelemetry = telemetry?.toJson();
+  }
+
+  void setBikeModeState({required bool enabled, required String profile}) {
+    _bikeModeEnabled = enabled;
+    _bikeProfile = enabled ? profile : null;
+  }
+
+  void setEncodingPolicy({required int maxWidth, required int quality}) {
+    _jpegMaxWidth = maxWidth.clamp(320, 1280).toInt();
+    _jpegQuality = quality.clamp(40, 90).toInt();
+  }
 
   bool get framesFresh {
     final last = _lastFrameAt;
@@ -104,6 +132,16 @@ class MonitorLanStreamService extends ChangeNotifier {
 
   Future<void> publishFrame(RgbFrame frame) async {
     if (!running || _encoding) return;
+    final cap = _maxFps;
+    if (cap != null) {
+      final previousAttempt = _lastPublishAttemptAt;
+      final minimumInterval = Duration(microseconds: (1000000 / cap).round());
+      if (previousAttempt != null &&
+          frame.capturedAt.difference(previousAttempt) < minimumInterval) {
+        return;
+      }
+      _lastPublishAttemptAt = frame.capturedAt;
+    }
     _encoding = true;
     try {
       final jpeg = await compute<Map<String, Object>, Uint8List>(
@@ -112,6 +150,8 @@ class MonitorLanStreamService extends ChangeNotifier {
           'width': frame.width,
           'height': frame.height,
           'bytes': Uint8List.fromList(frame.rgbBytes),
+          'maxWidth': _jpegMaxWidth,
+          'quality': _jpegQuality,
         },
       );
       if (!running) return;
@@ -317,6 +357,9 @@ auth.addEventListener('submit',async e=>{e.preventDefault();authError.textConten
       'sequence': _frameSequence,
       'fps': framesActive ? _streamFps : 0,
       'viewers': connectedViewers,
+      'device': _deviceTelemetry,
+      'bikeMode': _bikeModeEnabled,
+      'bikeProfile': _bikeProfile,
       'name': 'Vigia IA - monitor local',
     }));
     await request.response.close();
@@ -348,6 +391,8 @@ auth.addEventListener('submit',async e=>{e.preventDefault();authError.textConten
     _accessKey = '';
     _frameSequence = 0;
     _streamFps = 0;
+    _lastPublishAttemptAt = null;
+    _deviceTelemetry = null;
     _lastReportedViewers = 0;
     _error = null;
     notifyListeners();
@@ -445,8 +490,10 @@ Uint8List _encodeJpeg(Map<String, Object> data) {
     numChannels: 3,
     order: img.ChannelOrder.rgb,
   );
-  if (image.width > 960) image = img.copyResize(image, width: 960);
-  return Uint8List.fromList(img.encodeJpg(image, quality: 76));
+  final maxWidth = data['maxWidth']! as int;
+  final quality = data['quality']! as int;
+  if (image.width > maxWidth) image = img.copyResize(image, width: maxWidth);
+  return Uint8List.fromList(img.encodeJpg(image, quality: quality));
 }
 
 extension _FirstOrNull<T> on Iterable<T> {

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.40 inicia o Modo Bike com tela dedicada, ativação persistente, perfis Normal/Economia/Economia extrema e preferências preparatórias para economia e telemetria do celular traseiro.",
-  "version": "1.0.40",
-  "build": 40
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.42 conclui a Etapa 3 do Modo Bike com telemetria recebida no celular da frente, painel remoto, FPS/latência e avisos do aparelho traseiro.",
+  "version": "1.0.42",
+  "build": 42
 }

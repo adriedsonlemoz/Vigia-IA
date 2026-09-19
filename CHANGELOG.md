@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 1.0.42+42
+
+- Etapa 3 do Modo Bike concluída com painel remoto no celular que recebe a imagem.
+- `RemotePhoneCameraSource` passa a consultar `/status` em paralelo ao frame JPEG e mantém a transmissão funcionando mesmo quando apenas a telemetria falha.
+- Telemetria remota exibe bateria/carga, temperatura, brilho/tela, CPU do Vigia IA, RAM disponível/total e memória do processo.
+- Modo Câmera informa FPS aproximado da captura; o receptor mede também a latência da resposta de telemetria.
+- Monitor Ao vivo ganhou atalho de bicicleta, resumo compacto sobre o preview e painel detalhado do aparelho traseiro.
+- Avisos visuais cobrem bateria baixa conforme o limite configurado no traseiro, aquecimento, CPU elevada, pouca RAM e telemetria atrasada.
+- `DeviceTelemetrySnapshot.fromJson` preserva o horário de captura recebido do outro aparelho.
+- Testes novos cobrem parsing do status remoto, perfil, FPS/latência, alertas críticos e telemetria atrasada.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.42+42`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` cobre a integração da Etapa 3, os novos modelos/widgets e a sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
+## 1.0.41+41
+
+- Etapa 2 do Modo Bike concluída: os perfis agora alteram o pipeline real em vez de servirem apenas como configuração.
+- O intervalo efetivo de captura/análise passa a respeitar o mínimo de cada perfil: Normal 400 ms, Economia 650 ms e Economia extrema 1000 ms, sem acelerar uma configuração do usuário que já seja mais lenta.
+- A transmissão LAN ganhou limite de FPS por perfil e política de JPEG adaptativa: os modos econômicos reduzem largura/qualidade para diminuir CPU, tráfego e consumo.
+- O Modo Câmera do celular traseiro também respeita os perfis de energia, permitindo usar o telefone apenas como câmera com a mesma estratégia de economia.
+- Brilho do app pode ser reduzido nativamente durante monitoramento/transmissão no Modo Bike e é restaurado quando a operação termina.
+- Telemetria nativa ampliada com percentual/carga da bateria, origem/corrente aproximada de carga, temperatura, brilho/tela, CPU do processo, núcleos e memória do aparelho.
+- A tela Modo Bike passa a mostrar as condições atuais do celular traseiro e Saúde do sistema/Diagnóstico passam a exibir as novas métricas.
+- Telemetria do aparelho é incorporada aos endpoints locais de status do Monitor LAN e do Modo Câmera quando permitido, preparando o painel remoto da Etapa 3.
+- Aviso de bateria baixa passa a funcionar durante operação do Modo Bike, com antirrepetição até a carga se recuperar.
+- Corrigido o teste de metadados que ainda esperava build 39 na base 1.0.40.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.41+41`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` cobre a integração do perfil energético, telemetria, brilho e preparação do status remoto.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.40+40
 
 - Iniciada a implementação do Modo Bike em uma tela própria dentro de Configurações → Monitoramento.

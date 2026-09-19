@@ -29,7 +29,17 @@ class SystemHealthSnapshot {
     this.lanError,
     this.fps = 0,
     this.batteryPercent,
+    this.batteryCharging,
+    this.batteryPowerSource,
+    this.batteryCurrentMa,
     this.batteryTemperatureC,
+    this.screenBrightnessPercent,
+    this.automaticBrightness,
+    this.screenDimmedByBike = false,
+    this.appCpuPercent,
+    this.processorCount,
+    this.memoryAvailableBytes,
+    this.memoryTotalBytes,
     this.freeStorageBytes,
     this.totalStorageBytes,
     this.memoryUsedBytes,
@@ -65,7 +75,17 @@ class SystemHealthSnapshot {
   final String? lanError;
   final double fps;
   final int? batteryPercent;
+  final bool? batteryCharging;
+  final String? batteryPowerSource;
+  final double? batteryCurrentMa;
   final double? batteryTemperatureC;
+  final int? screenBrightnessPercent;
+  final bool? automaticBrightness;
+  final bool screenDimmedByBike;
+  final double? appCpuPercent;
+  final int? processorCount;
+  final int? memoryAvailableBytes;
+  final int? memoryTotalBytes;
   final int? freeStorageBytes;
   final int? totalStorageBytes;
   final int? memoryUsedBytes;

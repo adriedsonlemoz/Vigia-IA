@@ -150,8 +150,30 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.40',
+          version: '1.0.42',
           current: true,
+          changes: [
+            'Etapa 3 do Modo Bike concluída: o celular da frente recebe e exibe a telemetria do aparelho traseiro.',
+            'Novo painel remoto mostra bateria/carga, temperatura, brilho, CPU, memória, FPS da captura e latência da telemetria.',
+            'O monitor Ao vivo ganhou atalho de bicicleta, resumo compacto sobre a imagem e avisos para condições importantes.',
+            'Bateria baixa, aquecimento, CPU elevada, pouca RAM e telemetria atrasada são destacados sem interromper a imagem.',
+            'O Modo Câmera informa também FPS e o limite configurado de bateria baixa, mantendo compatibilidade com o fluxo local existente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.41',
+          changes: [
+            'Perfis do Modo Bike agora controlam o intervalo real de captura/análise e limitam a transmissão LAN.',
+            'Economia e Economia extrema reduzem também resolução/qualidade do JPEG para poupar processamento e rede.',
+            'Brilho do celular traseiro é reduzido durante a operação e restaurado ao parar.',
+            'Telemetria local ganhou bateria/carga, temperatura, brilho, CPU e memória, já exposta no estado da transmissão.',
+            'Modo Câmera também respeita o Modo Bike e o aviso local de bateria baixa passou a funcionar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.40',
           changes: [
             'Novo Modo Bike disponível em Configurações → Monitoramento.',
             'Ativação do modo e perfil de energia ficam persistidos no aparelho.',

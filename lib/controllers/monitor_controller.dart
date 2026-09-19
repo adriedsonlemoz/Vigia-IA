@@ -5,12 +5,14 @@ import 'package:flutter/widgets.dart';
 
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
+import '../models/bike_mode_config.dart';
 import '../models/detection.dart';
 import '../models/monitor_event.dart';
 import '../models/monitor_schedule.dart';
 import '../models/monitoring_zone.dart';
 import '../models/object_appearance.dart';
 import '../models/object_filter_catalog.dart';
+import '../models/remote_phone_status.dart';
 import '../models/rgb_frame.dart';
 import '../models/smart_alert_rules.dart';
 import '../models/system_health.dart';
@@ -19,6 +21,7 @@ import '../models/video_source_config.dart';
 import '../services/alert_repeat_guard.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
+import '../services/bike_mode_service.dart';
 import '../services/camera_integrity_service.dart';
 import '../services/clip_recorder_service.dart';
 import '../services/detection_confidence_policy.dart';
@@ -66,6 +69,7 @@ class MonitorController extends ChangeNotifier {
           identityRetention: const Duration(seconds: 12),
         ) {
     _lanStream.addListener(_onLanStreamChanged);
+    _bikeMode.addListener(_onBikeModeChanged);
   }
 
   MonitorSettings _settings;
@@ -81,6 +85,7 @@ class MonitorController extends ChangeNotifier {
   final ErrorLogService _logs = ErrorLogService.instance;
   final EventHistoryService _eventHistory = EventHistoryService.instance;
   final AppSettingsService _appSettings = AppSettingsService.instance;
+  final BikeModeService _bikeMode = BikeModeService.instance;
   final ClipRecorderService _clipRecorder = ClipRecorderService();
   final MonitorLanStreamService _lanStream = MonitorLanStreamService();
   late AlertRepeatGuard _alertGuard;
@@ -104,6 +109,7 @@ class MonitorController extends ChangeNotifier {
   StreamSubscription<VideoSourceStatus>? _statusSubscription;
   Timer? _scheduleTimer;
   Timer? _backgroundHealthTimer;
+  Timer? _bikeTelemetryTimer;
   List<Detection> _detections = const [];
   VideoSourceStatus _sourceStatus =
       const VideoSourceStatus(VideoSourceState.idle);
@@ -133,6 +139,9 @@ class MonitorController extends ChangeNotifier {
   final Map<String, DateTime> _lastTransitionSpeechAt = <String, DateTime>{};
   final Map<String, _RecentAlertMemory> _recentAlertMemory = <String, _RecentAlertMemory>{};
   String? _lanPermissionError;
+  BikeModeConfig _bikeConfig = const BikeModeConfig();
+  bool _bikeLowBatteryAlerted = false;
+  bool _bikePolicyChangeInProgress = false;
 
   List<Detection> get detections => _detections;
   List<TrackedDetection> get trackedDetections => _trackedDetections;
@@ -174,6 +183,16 @@ class MonitorController extends ChangeNotifier {
   ClipFormatPreference get clipFormatPreference => _settings.clipFormatPreference;
   bool get cameraIntegrityEnabled => _settings.cameraIntegrityEnabled;
   MonitorSettings get currentSettings => _runtimeSettings();
+  BikeModeConfig get bikeModeConfig => _bikeConfig;
+  bool get isRemotePhoneSource => sourceConfig.type == VideoSourceType.remotePhone;
+  RemotePhoneStatus? get remotePhoneStatus {
+    final source = _source;
+    return source is RemotePhoneCameraSource ? source.remoteStatus : null;
+  }
+  int get remotePhoneWarningCount => remotePhoneStatus?.warnings().length ?? 0;
+
+  Duration get effectiveAnalysisInterval =>
+      _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
 
   Widget buildPreview() =>
       _source?.buildPreview() ?? const SizedBox.expand();
@@ -193,6 +212,93 @@ class MonitorController extends ChangeNotifier {
   }
 
   void _onLanStreamChanged() => _notify();
+
+  void _onRemotePhoneStatusChanged() => _notify();
+
+  void _onBikeModeChanged() {
+    if (_disposed || _bikePolicyChangeInProgress) return;
+    unawaited(_applyBikeModeChange());
+  }
+
+  Future<void> _applyBikeModeChange() async {
+    if (_disposed || _bikePolicyChangeInProgress) return;
+    _bikePolicyChangeInProgress = true;
+    try {
+      final previous = _bikeConfig;
+      final next = _bikeMode.config;
+      final previousInterval = previous.effectiveAnalysisInterval(sourceConfig.analysisInterval);
+      final nextInterval = next.effectiveAnalysisInterval(sourceConfig.analysisInterval);
+      _bikeConfig = next;
+      _lanStream
+        ..setMaxFps(next.streamFpsCap)
+        ..setBikeModeState(enabled: next.enabled, profile: next.powerProfile.name)
+        ..setEncodingPolicy(
+          maxWidth: next.enabled ? next.powerProfile.targetJpegWidth : 960,
+          quality: next.enabled ? next.powerProfile.targetJpegQuality : 76,
+        );
+      await _applyBikeScreenPolicy();
+      _configureBikeTelemetryTimer();
+      if (previousInterval != nextInterval &&
+          _source != null &&
+          _scheduleActive &&
+          !_suspended) {
+        await _enqueueTransition(() async {
+          if (_disposed || _source == null || !_scheduleActive || _suspended) return;
+          await _stopSourceUnlocked();
+          await _startSourceUnlocked(sourceConfig);
+        });
+      }
+      _notify();
+    } finally {
+      _bikePolicyChangeInProgress = false;
+    }
+  }
+
+  Future<void> _applyBikeScreenPolicy() => _native.setBikeScreenBrightness(
+        _source != null ? _bikeConfig.rearScreenBrightness : null,
+      );
+
+  void _configureBikeTelemetryTimer() {
+    _bikeTelemetryTimer?.cancel();
+    _bikeTelemetryTimer = null;
+    if (!_bikeConfig.enabled || !_bikeConfig.keepRemoteTelemetry || _disposed) {
+      _lanStream.updateDeviceTelemetry(null);
+      return;
+    }
+    unawaited(_refreshBikeTelemetry());
+    _bikeTelemetryTimer = Timer.periodic(
+      _bikeConfig.powerProfile.telemetryInterval,
+      (_) => unawaited(_refreshBikeTelemetry()),
+    );
+  }
+
+  Future<void> _refreshBikeTelemetry() async {
+    if (_disposed || !_bikeConfig.enabled || !_bikeConfig.keepRemoteTelemetry) return;
+    final telemetry = await _native.readDeviceTelemetry();
+    if (_disposed) return;
+    _lanStream.updateDeviceTelemetry(telemetry);
+    final battery = telemetry.batteryPercent;
+    if (battery == null || !_bikeConfig.alertLowBattery) return;
+    if (battery > _bikeConfig.lowBatteryPercent + 3) {
+      _bikeLowBatteryAlerted = false;
+      return;
+    }
+    if (battery <= _bikeConfig.lowBatteryPercent && !_bikeLowBatteryAlerted) {
+      _bikeLowBatteryAlerted = true;
+      unawaited(
+        _native.showAlertNotification(
+          title: 'Modo Bike • bateria baixa',
+          message: 'Celular traseiro em $battery%. Verifique a alimentação.',
+          outputs: _settings.alertOutputs.copyWith(
+            voice: false,
+            sound: false,
+            vibration: false,
+            androidNotification: true,
+          ),
+        ),
+      );
+    }
+  }
 
   Future<bool> ensureLanStreaming({bool requestPermission = false}) async {
     if (_disposed || _source == null || !_scheduleActive) return false;
@@ -255,6 +361,15 @@ class MonitorController extends ChangeNotifier {
     );
 
     try {
+      _bikeConfig = await _bikeMode.initialize();
+      _lanStream
+        ..setMaxFps(_bikeConfig.streamFpsCap)
+        ..setBikeModeState(enabled: _bikeConfig.enabled, profile: _bikeConfig.powerProfile.name)
+        ..setEncodingPolicy(
+          maxWidth: _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegWidth : 960,
+          quality: _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 76,
+        );
+      _configureBikeTelemetryTimer();
       _clipRecorder.configure(
         clipDuration: _settings.clipDuration,
         format: _settings.clipFormatPreference,
@@ -445,22 +560,28 @@ class MonitorController extends ChangeNotifier {
     }
     if (!_scheduleActive) return;
 
+    final analysisInterval = _bikeConfig.effectiveAnalysisInterval(
+      config.analysisInterval,
+    );
     final source = switch (config.type) {
       VideoSourceType.localCamera => LocalCameraSource(
-          analysisInterval: config.analysisInterval,
+          analysisInterval: analysisInterval,
         ),
       VideoSourceType.rtsp => RtspCameraSource(
           url: config.rtspUrl ?? '',
-          analysisInterval: config.analysisInterval,
+          analysisInterval: analysisInterval,
         ),
       VideoSourceType.remotePhone => RemotePhoneCameraSource(
           baseUrl: config.remoteBaseUrl ?? '',
           accessKey: config.remoteAccessKey ?? '',
-          analysisInterval: config.analysisInterval,
+          analysisInterval: analysisInterval,
         ),
     };
     _source = source;
     sourceConfig = config;
+    if (source is RemotePhoneCameraSource) {
+      source.remoteStatusNotifier.addListener(_onRemotePhoneStatusChanged);
+    }
     _sourceStatus = const VideoSourceStatus(VideoSourceState.connecting);
     _health.updateSource(
       name: _sourceDisplayName,
@@ -513,7 +634,11 @@ class MonitorController extends ChangeNotifier {
         }
       }
       await source.start();
+      await _applyBikeScreenPolicy();
       await ensureLanStreaming();
+      if (_bikeConfig.enabled && _bikeConfig.keepRemoteTelemetry) {
+        unawaited(_refreshBikeTelemetry());
+      }
       if (_backgroundMonitoringEnabled) {
         await BackgroundMonitorService.updateStatus(
           config.type == VideoSourceType.localCamera
@@ -1427,7 +1552,7 @@ class MonitorController extends ChangeNotifier {
     }
     final last = _lastFrameReceivedAt;
     final staleAfter = Duration(
-      milliseconds: (sourceConfig.analysisInterval.inMilliseconds * 4)
+      milliseconds: (effectiveAnalysisInterval.inMilliseconds * 4)
           .clamp(4000, 8000)
           .toInt(),
     );
@@ -1642,7 +1767,11 @@ class MonitorController extends ChangeNotifier {
     _health.updateLan(active: false, clients: 0);
 
     final source = _source;
+    if (source is RemotePhoneCameraSource) {
+      source.remoteStatusNotifier.removeListener(_onRemotePhoneStatusChanged);
+    }
     _source = null;
+    await _native.setBikeScreenBrightness(null);
     _sourceStatus = const VideoSourceStatus(VideoSourceState.stopped);
     _health.stopMonitoring();
     _health.aiReady = _detector.isReady;
@@ -1732,6 +1861,9 @@ class MonitorController extends ChangeNotifier {
   Map<String, Object?> _diagnosticContext() => <String, Object?>{
         'fonte': sourceConfig.type.name,
         'intervaloAnaliseMs': sourceConfig.analysisInterval.inMilliseconds,
+        'intervaloEfetivoMs': effectiveAnalysisInterval.inMilliseconds,
+        'modoBike': _bikeConfig.enabled,
+        'perfilBike': _bikeConfig.powerProfile.name,
         'confiança': _settings.confidenceThreshold,
         'somenteMovimento': _settings.motionOnly,
         'movimento': _motionScore.toStringAsFixed(3),
@@ -1758,6 +1890,8 @@ class MonitorController extends ChangeNotifier {
     _suspended = true;
     _scheduleTimer?.cancel();
     _backgroundHealthTimer?.cancel();
+    _bikeTelemetryTimer?.cancel();
+    _bikeMode.removeListener(_onBikeModeChanged);
     _lanStream.removeListener(_onLanStreamChanged);
     unawaited(_disposeAsync());
     super.dispose();
@@ -1768,6 +1902,7 @@ class MonitorController extends ChangeNotifier {
     await _waitForProcessing();
     await _clipRecorder.flushPending();
     await BackgroundMonitorService.release(BackgroundMonitorService.monitorOwner);
+    await _native.setBikeScreenBrightness(null);
     await _detector.dispose();
     await _speech.dispose();
   }

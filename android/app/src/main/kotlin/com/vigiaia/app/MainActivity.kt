@@ -21,6 +21,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Debug
 import android.os.PowerManager
+import android.os.SystemClock
 import android.os.StatFs
 import android.os.VibratorManager
 import android.os.Vibrator
@@ -30,6 +31,7 @@ import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -41,6 +43,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -54,6 +57,9 @@ class MainActivity : FlutterActivity() {
     private var localNetworkPermissionRequestInFlight: Boolean = false
     private var resumeMonitorRequested: Boolean = false
     private var customAlertPlayer: MediaPlayer? = null
+    private var bikeBrightnessOverride: Float? = null
+    private var lastCpuWallMs: Long? = null
+    private var lastCpuProcessMs: Long? = null
 
     private val notificationPermissionRequestCode = 4412
     private val cameraPermissionRequestCode = 4413
@@ -222,6 +228,11 @@ class MainActivity : FlutterActivity() {
                 }
             }
             "systemHealth" -> result.success(readSystemHealth())
+            "setBikeScreenBrightness" -> {
+                val value = call.argument<Number>("value")?.toFloat()
+                setBikeScreenBrightness(value)
+                result.success(true)
+            }
             "shareText" -> {
                 val subject = call.argument<String>("subject") ?: "Vigia IA - Diagnóstico"
                 val text = call.argument<String>("text") ?: ""
@@ -518,17 +529,95 @@ class MainActivity : FlutterActivity() {
         return String(cipher.doFinal(encrypted), Charsets.UTF_8)
     }
 
+    private fun setBikeScreenBrightness(value: Float?) {
+        val normalized = value?.coerceIn(0.01f, 1.0f)
+        bikeBrightnessOverride = normalized
+        runOnUiThread {
+            val attributes = window.attributes
+            attributes.screenBrightness = normalized ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            window.attributes = attributes
+        }
+    }
+
     private fun readSystemHealth(): Map<String, Any?> {
         val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it >= 0 }
         val intent = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val rawTemperature = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE) ?: Int.MIN_VALUE
-        val memoryInfo = Debug.MemoryInfo().also { Debug.getMemoryInfo(it) }
+        val batteryStatus = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)
+            ?: BatteryManager.BATTERY_STATUS_UNKNOWN
+        val batteryCharging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING ||
+            batteryStatus == BatteryManager.BATTERY_STATUS_FULL
+        val plugged = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+        val powerSource = when {
+            plugged and BatteryManager.BATTERY_PLUGGED_USB != 0 -> "USB"
+            plugged and BatteryManager.BATTERY_PLUGGED_AC != 0 -> "Carregador"
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 &&
+                plugged and BatteryManager.BATTERY_PLUGGED_WIRELESS != 0 -> "Sem fio"
+            batteryCharging -> "Carregando"
+            else -> "Bateria"
+        }
+        val currentMicroAmps = batteryManager
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+            .takeIf { it != Int.MIN_VALUE && it != 0 }
+        val batteryCurrentMa = currentMicroAmps?.let { abs(it.toDouble()) / 1000.0 }
+
+        val processMemory = Debug.MemoryInfo().also { Debug.getMemoryInfo(it) }
+        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val deviceMemory = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
         val stat = StatFs(filesDir.absolutePath)
+
+        val overrideBrightness = bikeBrightnessOverride
+        val systemBrightness = try {
+            Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS).coerceIn(0, 255)
+        } catch (_: Throwable) {
+            null
+        }
+        val brightnessPercent = overrideBrightness?.let { (it * 100f).toInt().coerceIn(1, 100) }
+            ?: systemBrightness?.let { ((it / 255.0) * 100.0).toInt().coerceIn(0, 100) }
+        val automaticBrightness = if (overrideBrightness != null) {
+            false
+        } else {
+            try {
+                Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE) ==
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+            } catch (_: Throwable) {
+                null
+            }
+        }
+        val screenInteractive = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+
+        val wallNow = SystemClock.elapsedRealtime()
+        val processNow = android.os.Process.getElapsedCpuTime()
+        val cores = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+        val previousWall = lastCpuWallMs
+        val previousProcess = lastCpuProcessMs
+        val appCpuPercent = if (previousWall != null && previousProcess != null && wallNow > previousWall) {
+            val processDelta = (processNow - previousProcess).coerceAtLeast(0L)
+            val wallDelta = wallNow - previousWall
+            ((processDelta.toDouble() / wallDelta.toDouble()) * 100.0 / cores.toDouble())
+                .coerceIn(0.0, 100.0)
+        } else {
+            null
+        }
+        lastCpuWallMs = wallNow
+        lastCpuProcessMs = processNow
+
         return mapOf(
             "batteryPercent" to battery,
+            "batteryCharging" to batteryCharging,
+            "batteryPowerSource" to powerSource,
+            "batteryCurrentMa" to batteryCurrentMa,
             "batteryTemperatureC" to if (rawTemperature == Int.MIN_VALUE) null else rawTemperature / 10.0,
-            "memoryUsedBytes" to memoryInfo.totalPss.toLong() * 1024L,
+            "screenBrightnessPercent" to brightnessPercent,
+            "automaticBrightness" to automaticBrightness,
+            "screenInteractive" to screenInteractive,
+            "screenDimmedByBike" to (overrideBrightness != null),
+            "appCpuPercent" to appCpuPercent,
+            "processorCount" to cores,
+            "memoryUsedBytes" to processMemory.totalPss.toLong() * 1024L,
+            "memoryAvailableBytes" to deviceMemory.availMem,
+            "memoryTotalBytes" to deviceMemory.totalMem,
             "freeStorageBytes" to stat.availableBytes,
             "totalStorageBytes" to stat.totalBytes,
         )

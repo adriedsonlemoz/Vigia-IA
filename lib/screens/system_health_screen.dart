@@ -220,11 +220,18 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
                 : 'Sem amostra',
           ),
           _HealthTile(
-            icon: Icons.battery_5_bar_outlined,
+            icon: snapshot.batteryCharging == true
+                ? Icons.battery_charging_full_rounded
+                : Icons.battery_5_bar_outlined,
             title: 'Bateria',
             value: snapshot.batteryPercent == null
                 ? 'Indisponível'
                 : '${snapshot.batteryPercent}%',
+            subtitle: snapshot.batteryCharging == null
+                ? null
+                : snapshot.batteryCharging!
+                    ? '${snapshot.batteryPowerSource ?? 'Carregando'}${snapshot.batteryCurrentMa == null ? '' : ' • ${snapshot.batteryCurrentMa!.toStringAsFixed(0)} mA'}'
+                    : 'Usando bateria',
           ),
           _HealthTile(
             icon: Icons.device_thermostat_outlined,
@@ -234,11 +241,36 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
                 : '${snapshot.batteryTemperatureC!.toStringAsFixed(1)} °C',
           ),
           _HealthTile(
+            icon: Icons.brightness_6_outlined,
+            title: 'Tela / brilho',
+            value: snapshot.screenBrightnessPercent == null
+                ? 'Indisponível'
+                : '${snapshot.screenBrightnessPercent}%',
+            subtitle: snapshot.screenDimmedByBike
+                ? 'Brilho reduzido pelo Modo Bike'
+                : snapshot.automaticBrightness == true
+                    ? 'Brilho automático'
+                    : null,
+          ),
+          _HealthTile(
+            icon: Icons.speed_rounded,
+            title: 'CPU do Vigia IA',
+            value: snapshot.appCpuPercent == null
+                ? 'Calculando…'
+                : '${snapshot.appCpuPercent!.toStringAsFixed(1)}%',
+            subtitle: snapshot.processorCount == null
+                ? 'Uso do processo do app'
+                : '${snapshot.processorCount} núcleos disponíveis',
+          ),
+          _HealthTile(
             icon: Icons.memory_rounded,
             title: 'Memória do processo',
             value: snapshot.memoryUsedBytes == null
                 ? 'Indisponível'
                 : StorageSizeFormatter.formatBytes(snapshot.memoryUsedBytes!),
+            subtitle: snapshot.memoryAvailableBytes == null || snapshot.memoryTotalBytes == null
+                ? null
+                : '${StorageSizeFormatter.formatBytes(snapshot.memoryAvailableBytes!)} livres de ${StorageSizeFormatter.formatBytes(snapshot.memoryTotalBytes!)} no aparelho',
           ),
           _HealthTile(
             icon: Icons.storage_outlined,

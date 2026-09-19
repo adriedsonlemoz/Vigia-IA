@@ -13,6 +13,7 @@ import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
+import '../widgets/remote_bike_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
@@ -691,6 +692,26 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
+  Future<void> _showRemoteBikeStatus() async {
+    if (!_controller.isRemotePhoneSource) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: 0.82,
+        child: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => RemoteBikeStatusPanel(
+            status: _controller.remotePhoneStatus,
+            sourceOnline:
+                _controller.sourceStatus.state == VideoSourceState.streaming,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openStandardScreen(Widget screen) async {
     await SystemUiService.edgeToEdge();
     if (!mounted) return;
@@ -730,6 +751,17 @@ class _MonitorScreenState extends State<MonitorScreen>
                         : Icons.lan_outlined,
                   ),
           ),
+          if (_controller.isRemotePhoneSource)
+            IconButton(
+              tooltip: 'Condições do celular traseiro',
+              onPressed: _showRemoteBikeStatus,
+              icon: _controller.remotePhoneWarningCount > 0
+                  ? Badge(
+                      label: Text('${_controller.remotePhoneWarningCount}'),
+                      child: const Icon(Icons.directions_bike_rounded),
+                    )
+                  : const Icon(Icons.directions_bike_rounded),
+            ),
           IconButton(
             tooltip: 'Eventos',
             onPressed: () => unawaited(
@@ -860,6 +892,7 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   Widget _buildCameraStage(BuildContext context) {
     final status = _controller.sourceStatus;
+    final remoteStatus = _controller.remotePhoneStatus;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -904,6 +937,15 @@ class _MonitorScreenState extends State<MonitorScreen>
                       label: _controller.processing ? 'IA analisando' : 'IA ativa',
                       active: !_controller.initializing,
                     ),
+                    if (_controller.isRemotePhoneSource)
+                      _HudPill(
+                        icon: remoteStatus?.device?.batteryCharging == true
+                            ? Icons.battery_charging_full_rounded
+                            : Icons.directions_bike_rounded,
+                        label: remoteBikeCompactSummary(remoteStatus),
+                        active: remoteStatus != null && remoteStatus.warnings().isEmpty,
+                        onTap: _showRemoteBikeStatus,
+                      ),
                     _HudPill(
                       icon: _hudExpanded
                           ? Icons.expand_less_rounded
@@ -914,6 +956,13 @@ class _MonitorScreenState extends State<MonitorScreen>
                     ),
                   ],
                 ),
+                if (remoteStatus != null && remoteStatus.warnings().isNotEmpty) ...[
+                  const SizedBox(height: 7),
+                  RemoteBikeWarningBanner(
+                    status: remoteStatus,
+                    onTap: _showRemoteBikeStatus,
+                  ),
+                ],
                 if (_hudExpanded) ...[
                   const SizedBox(height: 7),
                   Wrap(

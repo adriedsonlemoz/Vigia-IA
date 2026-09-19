@@ -27,6 +27,24 @@ extension BikePowerProfileUi on BikePowerProfile {
         BikePowerProfile.economy => 6,
         BikePowerProfile.extremeEconomy => 3,
       };
+
+  Duration get telemetryInterval => switch (this) {
+        BikePowerProfile.normal => const Duration(seconds: 4),
+        BikePowerProfile.economy => const Duration(seconds: 6),
+        BikePowerProfile.extremeEconomy => const Duration(seconds: 10),
+      };
+
+  int get targetJpegWidth => switch (this) {
+        BikePowerProfile.normal => 960,
+        BikePowerProfile.economy => 720,
+        BikePowerProfile.extremeEconomy => 540,
+      };
+
+  int get targetJpegQuality => switch (this) {
+        BikePowerProfile.normal => 76,
+        BikePowerProfile.economy => 68,
+        BikePowerProfile.extremeEconomy => 58,
+      };
 }
 
 class BikeModeConfig {
@@ -45,6 +63,23 @@ class BikeModeConfig {
   final bool keepRemoteTelemetry;
   final bool alertLowBattery;
   final int lowBatteryPercent;
+
+  Duration effectiveAnalysisInterval(Duration configured) {
+    if (!enabled) return configured;
+    final target = Duration(milliseconds: powerProfile.targetAnalysisIntervalMs);
+    return configured >= target ? configured : target;
+  }
+
+  int? get streamFpsCap => enabled ? powerProfile.targetStreamFps : null;
+
+  double? get rearScreenBrightness {
+    if (!enabled || !dimRearScreen) return null;
+    return switch (powerProfile) {
+      BikePowerProfile.normal => 0.08,
+      BikePowerProfile.economy => 0.035,
+      BikePowerProfile.extremeEconomy => 0.01,
+    };
+  }
 
   BikeModeConfig copyWith({
     bool? enabled,

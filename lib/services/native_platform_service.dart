@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 import '../models/alert_preferences.dart';
+import '../models/device_telemetry.dart';
 import '../models/system_health.dart';
 
 class CameraPermissionStatus {
@@ -241,6 +242,27 @@ class NativePlatformService {
     }
   }
 
+  Future<DeviceTelemetrySnapshot> readDeviceTelemetry() async {
+    if (!Platform.isAndroid) {
+      return DeviceTelemetrySnapshot(createdAt: DateTime.now());
+    }
+    try {
+      final data = await _channel.invokeMethod<Map<Object?, Object?>>('systemHealth');
+      if (data != null) return DeviceTelemetrySnapshot.fromMap(data);
+    } catch (_) {}
+    return DeviceTelemetrySnapshot(createdAt: DateTime.now());
+  }
+
+  Future<void> setBikeScreenBrightness(double? value) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod<void>(
+        'setBikeScreenBrightness',
+        <String, Object?>{'value': value},
+      );
+    } catch (_) {}
+  }
+
   Future<SystemHealthSnapshot> readSystemHealth({
     required String source,
     required bool monitoringActive,
@@ -273,18 +295,10 @@ class NativePlatformService {
     int? totalStorageBytes,
     int? memoryUsedBytes,
   }) async {
-    int? battery;
-    double? temperature;
-    if (Platform.isAndroid) {
-      try {
-        final data = await _channel.invokeMapMethod<String, Object?>('systemHealth');
-        battery = (data?['batteryPercent'] as num?)?.toInt();
-        temperature = (data?['batteryTemperatureC'] as num?)?.toDouble();
-        memoryUsedBytes ??= (data?['memoryUsedBytes'] as num?)?.toInt();
-        freeStorageBytes ??= (data?['freeStorageBytes'] as num?)?.toInt();
-        totalStorageBytes ??= (data?['totalStorageBytes'] as num?)?.toInt();
-      } catch (_) {}
-    }
+    final telemetry = await readDeviceTelemetry();
+    memoryUsedBytes ??= telemetry.appMemoryUsedBytes;
+    freeStorageBytes ??= telemetry.freeStorageBytes;
+    totalStorageBytes ??= telemetry.totalStorageBytes;
     return SystemHealthSnapshot(
       createdAt: DateTime.now(),
       source: source,
@@ -312,8 +326,18 @@ class NativePlatformService {
       lanLastFrameAt: lanLastFrameAt,
       lanError: lanError,
       fps: fps,
-      batteryPercent: battery,
-      batteryTemperatureC: temperature,
+      batteryPercent: telemetry.batteryPercent,
+      batteryCharging: telemetry.batteryCharging,
+      batteryPowerSource: telemetry.batteryPowerSource,
+      batteryCurrentMa: telemetry.batteryCurrentMa,
+      batteryTemperatureC: telemetry.batteryTemperatureC,
+      screenBrightnessPercent: telemetry.screenBrightnessPercent,
+      automaticBrightness: telemetry.automaticBrightness,
+      screenDimmedByBike: telemetry.screenDimmedByBike,
+      appCpuPercent: telemetry.appCpuPercent,
+      processorCount: telemetry.processorCount,
+      memoryAvailableBytes: telemetry.memoryAvailableBytes,
+      memoryTotalBytes: telemetry.memoryTotalBytes,
       freeStorageBytes: freeStorageBytes,
       totalStorageBytes: totalStorageBytes,
       memoryUsedBytes: memoryUsedBytes,

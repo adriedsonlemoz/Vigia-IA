@@ -25,4 +25,34 @@ void main() {
     expect(const BikeModeConfig().copyWith(lowBatteryPercent: 1).lowBatteryPercent, 5);
     expect(const BikeModeConfig().copyWith(lowBatteryPercent: 99).lowBatteryPercent, 50);
   });
+
+  test('perfil econômico limita análise, stream, JPEG e brilho', () {
+    const config = BikeModeConfig(
+      enabled: true,
+      powerProfile: BikePowerProfile.economy,
+    );
+    expect(
+      config.effectiveAnalysisInterval(const Duration(milliseconds: 250)),
+      const Duration(milliseconds: 650),
+    );
+    expect(
+      config.effectiveAnalysisInterval(const Duration(milliseconds: 900)),
+      const Duration(milliseconds: 900),
+    );
+    expect(config.streamFpsCap, 6);
+    expect(config.powerProfile.targetJpegWidth, 720);
+    expect(config.powerProfile.targetJpegQuality, 68);
+    expect(config.rearScreenBrightness, 0.035);
+  });
+
+  test('modo desativado não altera intervalo, FPS nem brilho', () {
+    const config = BikeModeConfig(enabled: false);
+    expect(
+      config.effectiveAnalysisInterval(const Duration(milliseconds: 250)),
+      const Duration(milliseconds: 250),
+    );
+    expect(config.streamFpsCap, isNull);
+    expect(config.rearScreenBrightness, isNull);
+  });
+
 }

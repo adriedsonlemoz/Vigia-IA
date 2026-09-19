@@ -188,6 +188,21 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                     const SizedBox(height: 8),
                     Text(_server.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                   ],
+                  if (_server.bikeModeEnabled) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.directions_bike_rounded, size: 19),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Modo Bike • ${_server.bikePowerProfileLabel}',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (_server.running && address != null) ...[
                     const SizedBox(height: 12),
                     _CopyRow(label: 'Endereço', value: address, onCopy: () => _copy(address, 'Endereço')),

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.40+40$' pubspec.yaml || fail 'Versao esperada 1.0.40+40 nao encontrada.'
+grep -q '^version: 1\.0\.42+42$' pubspec.yaml || fail 'Versao esperada 1.0.42+42 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.40';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.40.'
-grep -q 'static const int build = 40;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 40.'
-grep -q "version: '1.0.40'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.40.'
+grep -q "static const String version = '1.0.42';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.42.'
+grep -q 'static const int build = 42;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 42.'
+grep -q "version: '1.0.42'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.42.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.40+40$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.40+40.'
+grep -q '^version: 1.0.42+42$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.42+42.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.40"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.40.'
-grep -q '"build": 40' app_identity.json \
-  || fail 'app_identity.json nao esta no build 40.'
+grep -q '"version": "1.0.42"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.42.'
+grep -q '"build": 42' app_identity.json \
+  || fail 'app_identity.json nao esta no build 42.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.40+40' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.40+40.'
+grep -q 'Vigia IA 1.0.42+42' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.42+42.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -936,4 +936,48 @@ test -f lib/screens/bike_mode_screen.dart || fail 'BikeModeScreen ausente.'
 grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart || fail 'Modo Bike nao aparece em Configuracoes.'
 grep -q 'BikePowerProfile.extremeEconomy' lib/models/bike_mode_config.dart || fail 'Perfis do Modo Bike incompletos.'
 test -f test/bike_mode_config_test.dart || fail 'Teste do Modo Bike ausente.'
+
+# Modo Bike - Etapa 2 - 1.0.41
+grep -q '^## 1.0.41+41' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.41.'
+grep -q 'Evolução 1.0.41' README.md || fail 'README nao documenta 1.0.41.'
+grep -q 'Evolução 1.0.41' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.41.'
+test -f lib/models/device_telemetry.dart || fail 'DeviceTelemetrySnapshot ausente.'
+grep -q 'effectiveAnalysisInterval' lib/models/bike_mode_config.dart || fail 'Modo Bike nao calcula intervalo efetivo.'
+grep -q 'targetJpegQuality' lib/models/bike_mode_config.dart || fail 'Modo Bike nao define politica JPEG por perfil.'
+grep -q 'setBikeScreenBrightness' lib/services/native_platform_service.dart || fail 'Ponte de brilho do Modo Bike ausente.'
+grep -q 'setBikeScreenBrightness' tool/android/MainActivity.kt || fail 'Implementacao Android do brilho do Modo Bike ausente.'
+grep -q 'appCpuPercent' tool/android/MainActivity.kt || fail 'Telemetria de CPU do app ausente.'
+grep -q 'batteryCharging' tool/android/MainActivity.kt || fail 'Telemetria de carga da bateria ausente.'
+grep -q 'setEncodingPolicy' lib/services/monitor_lan_stream_service.dart || fail 'Transmissao LAN nao aplica politica de compressao do Modo Bike.'
+grep -q 'updateDeviceTelemetry' lib/services/monitor_lan_stream_service.dart || fail 'Telemetria nao foi conectada ao status LAN.'
+grep -q '_bikeConfig.effectiveAnalysisInterval' lib/controllers/monitor_controller.dart || fail 'MonitorController nao aplica intervalo do Modo Bike.'
+grep -q '_bikeConfig.effectiveAnalysisInterval' lib/services/remote_camera_server_service.dart || fail 'Modo Camera nao aplica intervalo do Modo Bike.'
+grep -q "'device': telemetry?.toJson()" lib/services/remote_camera_server_service.dart || fail 'Modo Camera nao expoe telemetria no status.'
+test -f test/device_telemetry_test.dart || fail 'Teste de telemetria do dispositivo ausente.'
+
+
+# Modo Bike - Etapa 3 - 1.0.42
+grep -q '^## 1.0.42+42' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.42.'
+grep -q 'Evolução 1.0.42' README.md || fail 'README nao documenta 1.0.42.'
+grep -q 'Evolução 1.0.42' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.42.'
+test -f lib/models/remote_phone_status.dart || fail 'RemotePhoneStatus ausente.'
+test -f lib/widgets/remote_bike_status_panel.dart || fail 'Painel remoto do Modo Bike ausente.'
+test -f test/remote_phone_status_test.dart || fail 'Teste do status remoto ausente.'
+grep -q 'Future<void> _pollStatus()' lib/sources/remote_phone_camera_source.dart \
+  || fail 'Fonte de celular remoto nao consulta telemetria.'
+grep -q "request.headers.set('x-monitor-key', accessKey)" lib/sources/remote_phone_camera_source.dart \
+  || fail 'Status remoto nao usa a chave de sessao no header.'
+grep -q "'fps': _streamFps" lib/services/remote_camera_server_service.dart \
+  || fail 'Modo Camera nao publica FPS no status.'
+grep -q "'lowBatteryPercent': _bikeConfig.lowBatteryPercent" lib/services/remote_camera_server_service.dart \
+  || fail 'Modo Camera nao publica o limite de bateria baixa.'
+grep -q 'remoteStatusNotifier.addListener' lib/controllers/monitor_controller.dart \
+  || fail 'MonitorController nao observa telemetria do celular traseiro.'
+grep -q 'RemoteBikeStatusPanel' lib/screens/monitor_screen.dart \
+  || fail 'Monitor nao expoe painel do celular traseiro.'
+grep -q 'RemoteBikeWarningBanner' lib/screens/monitor_screen.dart \
+  || fail 'Monitor nao destaca avisos do celular traseiro.'
+grep -q 'DeviceTelemetrySnapshot.fromJson' test/device_telemetry_test.dart \
+  || fail 'Teste de telemetria remota com capturedAt ausente.'
+
 echo 'Verificacao preventiva concluida com sucesso.'

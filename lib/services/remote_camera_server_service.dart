@@ -7,26 +7,42 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:image/image.dart' as img;
 
+import '../models/alert_preferences.dart';
+import '../models/bike_mode_config.dart';
+import '../models/device_telemetry.dart';
 import '../models/rgb_frame.dart';
 import 'background_monitor_service.dart';
+import 'bike_mode_service.dart';
+import 'native_platform_service.dart';
 import '../sources/local_camera_source.dart';
 
 class RemoteCameraServerService extends ChangeNotifier {
-  RemoteCameraServerService._();
+  RemoteCameraServerService._() {
+    _bikeMode.addListener(_onBikeModeChanged);
+  }
 
   static final RemoteCameraServerService instance = RemoteCameraServerService._();
 
+  final BikeModeService _bikeMode = BikeModeService.instance;
+  final NativePlatformService _native = NativePlatformService.instance;
   LocalCameraSource? _source;
   StreamSubscription<RgbFrame>? _subscription;
   HttpServer? _server;
   Uint8List? _latestJpeg;
   DateTime? _lastFrameAt;
+  DateTime? _lastFpsFrameAt;
   DateTime? _lastNotificationUpdateAt;
+  double _streamFps = 0;
   String _accessKey = '';
   int _port = 8765;
   String? _address;
   String? _error;
   bool _starting = false;
+  bool _bikePolicyChangeInProgress = false;
+  BikeModeConfig _bikeConfig = const BikeModeConfig();
+  DeviceTelemetrySnapshot? _deviceTelemetry;
+  Timer? _bikeTelemetryTimer;
+  bool _bikeLowBatteryAlerted = false;
 
   bool get running => _server != null && _source != null;
   bool get starting => _starting;
@@ -35,6 +51,8 @@ class RemoteCameraServerService extends ChangeNotifier {
   String? get error => _error;
   DateTime? get lastFrameAt => _lastFrameAt;
   int get port => _port;
+  bool get bikeModeEnabled => _bikeConfig.enabled;
+  String get bikePowerProfileLabel => _bikeConfig.powerProfile.label;
 
   Widget buildPreview() => _source?.buildPreview() ?? const SizedBox.expand();
 
@@ -45,6 +63,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     _port = port.clamp(1024, 65535).toInt();
     notifyListeners();
     try {
+      _bikeConfig = await _bikeMode.initialize();
       final foregroundStarted = await BackgroundMonitorService.acquire(
         owner: BackgroundMonitorService.cameraModeOwner,
         usesCamera: true,
@@ -55,13 +74,17 @@ class RemoteCameraServerService extends ChangeNotifier {
       }
       _accessKey = _generateKey();
       final source = LocalCameraSource(
-        analysisInterval: const Duration(milliseconds: 400),
+        analysisInterval: _bikeConfig.effectiveAnalysisInterval(
+          const Duration(milliseconds: 400),
+        ),
       );
       _source = source;
       _subscription = source.frames.listen(_onFrame);
       await source.start();
+      await _native.setBikeScreenBrightness(_bikeConfig.rearScreenBrightness);
       final server = await HttpServer.bind(InternetAddress.anyIPv4, _port, shared: true);
       _server = server;
+      _configureBikeTelemetryTimer();
       _address = await _findLocalAddress();
       unawaited(_serve(server));
     } catch (error) {
@@ -73,7 +96,107 @@ class RemoteCameraServerService extends ChangeNotifier {
     }
   }
 
+  void _onBikeModeChanged() {
+    if (_bikePolicyChangeInProgress) return;
+    unawaited(_applyBikeModeChange());
+  }
+
+  Future<void> _applyBikeModeChange() async {
+    if (_bikePolicyChangeInProgress) return;
+    _bikePolicyChangeInProgress = true;
+    try {
+      final previous = _bikeConfig;
+      final next = _bikeMode.config;
+      final previousInterval = previous.effectiveAnalysisInterval(
+        const Duration(milliseconds: 400),
+      );
+      final nextInterval = next.effectiveAnalysisInterval(
+        const Duration(milliseconds: 400),
+      );
+      _bikeConfig = next;
+      if (running) {
+        await _native.setBikeScreenBrightness(next.rearScreenBrightness);
+        _configureBikeTelemetryTimer();
+        if (previousInterval != nextInterval) await _restartCameraSource();
+      }
+      notifyListeners();
+    } finally {
+      _bikePolicyChangeInProgress = false;
+    }
+  }
+
+  void _configureBikeTelemetryTimer() {
+    _bikeTelemetryTimer?.cancel();
+    _bikeTelemetryTimer = null;
+    if (!_bikeConfig.enabled || !running) {
+      _deviceTelemetry = null;
+      return;
+    }
+    unawaited(_refreshBikeTelemetry());
+    _bikeTelemetryTimer = Timer.periodic(
+      _bikeConfig.powerProfile.telemetryInterval,
+      (_) => unawaited(_refreshBikeTelemetry()),
+    );
+  }
+
+  Future<void> _refreshBikeTelemetry() async {
+    if (!_bikeConfig.enabled || !running) return;
+    final telemetry = await _native.readDeviceTelemetry();
+    if (_bikeConfig.keepRemoteTelemetry) _deviceTelemetry = telemetry;
+    final battery = telemetry.batteryPercent;
+    if (battery == null || !_bikeConfig.alertLowBattery) return;
+    if (battery > _bikeConfig.lowBatteryPercent + 3) {
+      _bikeLowBatteryAlerted = false;
+      return;
+    }
+    if (battery <= _bikeConfig.lowBatteryPercent && !_bikeLowBatteryAlerted) {
+      _bikeLowBatteryAlerted = true;
+      unawaited(
+        _native.showAlertNotification(
+          title: 'Modo Bike • bateria baixa',
+          message: 'Celular traseiro em $battery%. Verifique a alimentação.',
+          outputs: const AlertOutputs(
+            voice: false,
+            sound: false,
+            vibration: false,
+            androidNotification: true,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _restartCameraSource() async {
+    final oldSource = _source;
+    await _subscription?.cancel();
+    _subscription = null;
+    _source = null;
+    try {
+      await oldSource?.dispose();
+    } catch (_) {}
+    if (_server == null) return;
+    final source = LocalCameraSource(
+      analysisInterval: _bikeConfig.effectiveAnalysisInterval(
+        const Duration(milliseconds: 400),
+      ),
+    );
+    _source = source;
+    _subscription = source.frames.listen(_onFrame);
+    await source.start();
+  }
+
   Future<void> _onFrame(RgbFrame frame) async {
+    final previousFrameAt = _lastFpsFrameAt;
+    if (previousFrameAt != null) {
+      final elapsedMs = frame.capturedAt.difference(previousFrameAt).inMilliseconds;
+      if (elapsedMs > 0) {
+        final instant = 1000 / elapsedMs;
+        _streamFps = _streamFps == 0
+            ? instant
+            : (_streamFps * 0.75 + instant * 0.25);
+      }
+    }
+    _lastFpsFrameAt = frame.capturedAt;
     _lastFrameAt = frame.capturedAt;
     final lastUpdate = _lastNotificationUpdateAt;
     if (lastUpdate == null ||
@@ -92,6 +215,8 @@ class RemoteCameraServerService extends ChangeNotifier {
           'width': frame.width,
           'height': frame.height,
           'bytes': Uint8List.fromList(frame.rgbBytes),
+          'maxWidth': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegWidth : 960,
+          'quality': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 78,
         },
       );
     } catch (_) {}
@@ -111,10 +236,19 @@ class RemoteCameraServerService extends ChangeNotifier {
         }
         final path = request.uri.path;
         if (path == '/status') {
+          final telemetry = _bikeConfig.enabled && _bikeConfig.keepRemoteTelemetry
+              ? (_deviceTelemetry ?? await _native.readDeviceTelemetry())
+              : null;
           request.response.headers.contentType = ContentType.json;
           request.response.write(jsonEncode(<String, Object?>{
             'online': running,
             'lastFrameAt': _lastFrameAt?.toIso8601String(),
+            'fps': _streamFps,
+            'bikeMode': _bikeConfig.enabled,
+            'bikeProfile': _bikeConfig.enabled ? _bikeConfig.powerProfile.name : null,
+            'alertLowBattery': _bikeConfig.alertLowBattery,
+            'lowBatteryPercent': _bikeConfig.lowBatteryPercent,
+            'device': telemetry?.toJson(),
             'name': 'Vigia IA - câmera remota',
           }));
         } else if (path == '/frame.jpg') {
@@ -150,11 +284,17 @@ class RemoteCameraServerService extends ChangeNotifier {
       await _server?.close(force: true);
     } catch (_) {}
     _server = null;
+    _bikeTelemetryTimer?.cancel();
+    _bikeTelemetryTimer = null;
+    _deviceTelemetry = null;
     _latestJpeg = null;
     _lastFrameAt = null;
+    _lastFpsFrameAt = null;
+    _streamFps = 0;
     _lastNotificationUpdateAt = null;
     _address = null;
     _accessKey = '';
+    await _native.setBikeScreenBrightness(null);
     await BackgroundMonitorService.release(BackgroundMonitorService.cameraModeOwner);
     notifyListeners();
   }
@@ -222,6 +362,8 @@ Uint8List _encodeJpeg(Map<String, Object> data) {
     numChannels: 3,
     order: img.ChannelOrder.rgb,
   );
-  if (image.width > 960) image = img.copyResize(image, width: 960);
-  return Uint8List.fromList(img.encodeJpg(image, quality: 78));
+  final maxWidth = data['maxWidth']! as int;
+  final quality = data['quality']! as int;
+  if (image.width > maxWidth) image = img.copyResize(image, width: maxWidth);
+  return Uint8List.fromList(img.encodeJpg(image, quality: quality));
 }
