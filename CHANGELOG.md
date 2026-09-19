@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.38+38
+
+- Pacote de voz fornecido pelo usuário em um único WAV foi separado em dez arquivos curtos e incorporado a `custom_audio/`.
+- Incluídos áudios para pessoa/veículo/animal/objeto detectado, pessoa entrou/saiu, veículo entrou/saiu, câmera obstruída e câmera deslocada.
+- Transições de área passam a selecionar slots por família (`person_*`, `vehicle_*`, `animal_*`) antes do fallback `object_*`.
+- `animal_entered` e `animal_exited` permanecem em TTS porque essas duas frases não estavam presentes no WAV recebido; adicionar os arquivos depois não exige mudança de código.
+- Os WAVs atuais também foram copiados para `android/app/src/main/res/raw/`, preservando build direto, enquanto `tool/bootstrap_android.sh` continua sendo a fonte de reconstrução no CI.
+- README, ARCHITECTURE, tela de mudanças, metadados e verificador preventivo sincronizados em `1.0.38+38`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida slots, arquivos incluídos, sincronização Android e versão.
+- Este ambiente não contém Flutter SDK; `flutter analyze`, `flutter test` e o APK precisam ser confirmados pelo workflow Android APK.
+
 ## 1.0.37+37
 
 - Detecção de movimento passa a usar luminância e distância RGB, permitindo reconhecer mudanças relevantes de cor mesmo quando o brilho médio permanece semelhante.

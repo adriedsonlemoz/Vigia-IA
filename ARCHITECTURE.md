@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.37+37
+# Arquitetura — Vigia IA 1.0.38+38
 
 ## 1. Princípios
 
-A 1.0.37 mantém EfficientDet-Lite0 + fallback SSD e acrescenta movimento sensível a cor e reidentificação visual leve. O pipeline continua local/offline; a assinatura de aparência é extraída do próprio frame RGB e só complementa posição, tamanho e velocidade para preservar IDs e reduzir alertas repetidos.
+A 1.0.38 mantém EfficientDet-Lite0 + fallback SSD, movimento sensível a cor e reidentificação visual leve, e acrescenta o pacote de voz personalizado separado por evento. O pipeline continua local/offline; os áudios são recursos Android opcionais e qualquer slot ausente cai para TTS.
 
 Princípios mantidos:
 
@@ -523,3 +523,12 @@ Alertas de detecção usam `grupo#trackId`, não `label#trackId`. Assim, oscila�
 ### Áudio próprio
 
 A pasta `custom_audio/` é a fonte estável, fora de `android/`, porque o workflow recria o projeto Android. `tool/bootstrap_android.sh` valida e copia os arquivos para `android/app/src/main/res/raw/`. `NativePlatformService.playCustomAlertAudio()` chama o método Android homônimo; `MainActivity` procura o recurso dinamicamente e usa `MediaPlayer`. Na ausência do slot, `_deliverAlert()` cai para `SpeechService`/TTS.
+
+
+## Pacote de voz personalizado 1.0.38
+
+O WAV único fornecido pelo usuário é armazenado apenas como fonte externa ao repositório de build; a aplicação usa os recortes individuais em `custom_audio/`. O bootstrap copia esses recursos para `res/raw`, e a árvore Android atual também contém os mesmos arquivos para permitir build direto sem recriação.
+
+`MonitorController` escolhe o slot de transição pela família semântica do objeto: pessoa usa `person_entered/person_exited`, veículo usa `vehicle_entered/vehicle_exited`, animal usa `animal_entered/animal_exited` e outras classes usam `object_entered/object_exited`. `NativePlatformService`/`MainActivity` continuam retornando `false` quando o recurso não existe; `_deliverAlert()` então usa TTS sem alterar o restante do alerta.
+
+A gravação recebida contém dez falas. As duas falas de entrada/saída de animal não estão presentes e, por isso, esses dois slots ficam intencionalmente sem arquivo até nova gravação.

@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.37',
+          version: '1.0.38',
           current: true,
+          changes: [
+            'Pacote de voz personalizado fornecido pelo usuário foi separado e incorporado ao projeto.',
+            'Entrada e saída agora usam slots específicos para pessoa, veículo e animal antes do fallback genérico/TTS.',
+            'Áudios personalizados continuam opcionais: qualquer slot ausente cai automaticamente para a voz TTS.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.37',
           changes: [
             'Movimento passa a considerar diferença de cor RGB, detectando alterações que tons de cinza poderiam perder.',
             'Pessoa, animal e automóvel ganham assinatura visual leve por cores para manter a identidade entre frames e oclusões.',

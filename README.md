@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.37+37`
+> **Versão atual:** `1.0.38+38`
 
 ## Estado atual
 
-A `1.0.37+37` reforça a detecção de movimento e a continuidade de identidade. Além de posição/velocidade, o rastreamento passa a usar uma assinatura visual leve baseada em cores do objeto; pessoas usam pistas separadas do tronco/pernas e automóveis usam a cor predominante do corpo como apoio. Esse sinal nunca substitui a IA de classe e serve principalmente para reduzir trocas de ID e falas repetidas.
+A `1.0.38+38` mantém a detecção aprimorada da 1.0.37 e incorpora o pacote de voz personalizado fornecido pelo usuário. As falas foram separadas em recursos Android individuais, e transições de área agora procuram primeiro slots específicos para pessoa, veículo e animal antes de recorrer ao slot genérico/TTS.
+
+### Evolução 1.0.38
+
+- áudio único fornecido pelo usuário foi separado em dez arquivos WAV curtos e incluído em `custom_audio/`;
+- slots específicos adicionados para `person_entered`, `person_exited`, `vehicle_entered`, `vehicle_exited`, `animal_entered` e `animal_exited`;
+- detecção de pessoa/veículo/animal/objeto e alertas de câmera usam as gravações incluídas quando disponíveis;
+- `animal_entered` e `animal_exited` continuam em fallback TTS porque essas duas frases não estavam presentes na gravação recebida;
+- a cópia Android atual também recebe os WAVs em `res/raw`, enquanto o bootstrap continua reconstruindo esses recursos a partir de `custom_audio/`.
 
 ### Evolução 1.0.37
 
@@ -22,7 +30,7 @@ A `1.0.37+37` reforça a detecção de movimento e a continuidade de identidade.
 
 ### Áudios personalizados
 
-O app continua funcionando sem nenhum arquivo extra. Para usar sua própria voz/gravação, coloque um único `.wav`, `.mp3` ou `.ogg` em `custom_audio/` com um dos nomes: `person_detected`, `vehicle_detected`, `animal_detected`, `object_detected`, `object_entered`, `object_exited`, `camera_obstructed` ou `camera_moved`. O workflow copia esses arquivos para os recursos Android. Se um slot estiver ausente, o Vigia IA usa o TTS do Android. Consulte `custom_audio/README.md` para o passo a passo.
+O app continua funcionando sem nenhum arquivo extra. Para usar sua própria voz/gravação, coloque um único `.wav`, `.mp3` ou `.ogg` em `custom_audio/`. Há slots de detecção (`person_detected`, `vehicle_detected`, `animal_detected`, `object_detected`), entrada/saída por categoria (`person_entered`, `person_exited`, `vehicle_entered`, `vehicle_exited`, `animal_entered`, `animal_exited`) e fallbacks genéricos (`object_entered`, `object_exited`), além de `camera_obstructed` e `camera_moved`. O workflow copia esses arquivos para os recursos Android. Se um slot estiver ausente, o Vigia IA usa o TTS do Android. Consulte `custom_audio/README.md` para o passo a passo.
 
 ### Evolução 1.0.36
 

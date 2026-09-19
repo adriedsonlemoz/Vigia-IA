@@ -998,9 +998,7 @@ class MonitorController extends ChangeNotifier {
           _deliverAlert(
             message,
             priority: SpeechPriority.high,
-            audioSlot: transition.type == ZoneTransitionType.entered
-                ? 'object_entered'
-                : 'object_exited',
+            audioSlot: _audioSlotForTransition(transition),
           ),
         );
       }
@@ -1026,6 +1024,18 @@ class MonitorController extends ChangeNotifier {
         'animal' => 'animal_detected',
         _ => 'object_detected',
       };
+
+  String _audioSlotForTransition(ZoneTransition transition) {
+    final suffix = transition.type == ZoneTransitionType.entered
+        ? 'entered'
+        : 'exited';
+    return switch (ObjectFilterCatalog.groupKeyForLabel(transition.label)) {
+      'person' => 'person_$suffix',
+      'vehicle' => 'vehicle_$suffix',
+      'animal' => 'animal_$suffix',
+      _ => 'object_$suffix',
+    };
+  }
 
   bool _allowTransitionSpeech(ZoneTransition transition) {
     final now = transition.occurredAt;
