@@ -71,8 +71,8 @@ Future<SmartAlertRules?> showSmartAlertRulesDialog({
                       ),
                       title: const Text('Ativar regras inteligentes'),
                       subtitle: const Text(
-                        'Exige permanência mínima antes do alerta e pode '
-                        'ignorar automóveis sem movimento.',
+                        'Define um tempo mínimo antes do alerta e pode '
+                        'evitar avisos de automóveis que estejam parados.',
                       ),
                     ),
                     delaySlider(
@@ -108,14 +108,13 @@ Future<SmartAlertRules?> showSmartAlertRulesDialog({
                           : null,
                       title: const Text('Ignorar automóveis parados'),
                       subtitle: const Text(
-                        'Só libera alerta de automóvel quando houver movimento '
-                        'na região da caixa detectada.',
+                        'Só libera o alerta quando o automóvel mostrar '
+                        'movimento real na área detectada.',
                       ),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'O controle anti-repetição continua ativo depois que '
-                      'essas regras liberam o alerta.',
+                      'Mesmo com essas regras, o controle anti-repetição continua ativo para evitar avisos duplicados.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],

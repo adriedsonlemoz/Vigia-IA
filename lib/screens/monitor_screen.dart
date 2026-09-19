@@ -8,11 +8,14 @@ import '../services/system_ui_service.dart';
 import '../core/video_source_status.dart';
 import '../models/monitoring_zone.dart';
 import '../models/video_source_config.dart';
+import '../services/native_platform_service.dart';
+import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
+import 'phone_pairing_scanner_screen.dart';
 import 'settings_screen.dart';
 
 class MonitorScreen extends StatefulWidget {
@@ -276,7 +279,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.movie_outlined),
                 title: const Text('Clipes automáticos'),
-                subtitle: const Text('MP4 local com GIF de fallback, associado ao evento.'),
+                subtitle: const Text('Salva um clipe local quando houver alerta confirmado.'),
               ),
               SwitchListTile(
                 value: _controller.trackingEnabled,
@@ -286,7 +289,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.track_changes),
                 title: const Text('Rastreamento individual'),
-                subtitle: const Text('Mantém um ID temporário para acompanhar o mesmo objeto entre quadros.'),
+                subtitle: const Text('Mantém um ID temporário para acompanhar o mesmo objeto entre quadros e reduzir repetições.'),
               ),
               SwitchListTile(
                 value: _controller.announceEntryExit,
@@ -298,7 +301,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                     : null,
                 secondary: const Icon(Icons.compare_arrows),
                 title: const Text('Entrada e saída'),
-                subtitle: const Text('Registra quando um objeto entra ou sai de uma área. Isso não é um contador.'),
+                subtitle: const Text('Registra quando um objeto entra ou sai de uma área monitorada. Não é uma contagem acumulada.'),
               ),
               SwitchListTile(
                 value: _controller.backgroundMonitoringEnabled,
@@ -319,13 +322,57 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.phone_android),
                 title: const Text('Segundo plano'),
-                subtitle: const Text('Mantém câmera/IA com notificação persistente.'),
+                subtitle: const Text('Tenta manter câmera e IA ativas com notificação persistente quando você sai da tela.'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _scanRemotePhoneQr(
+    TextEditingController remoteUrlController,
+    TextEditingController remoteKeyController,
+    StateSetter setDialogState,
+  ) async {
+    final native = NativePlatformService.instance;
+    final cameraGranted = await native.requestCameraPermission();
+    if (!mounted) return;
+    if (!cameraGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Permita a câmera para escanear o QR do outro celular.'),
+          action: SnackBarAction(
+            label: 'AJUSTES',
+            onPressed: () => unawaited(native.openAppSettings()),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => const PhonePairingScannerScreen(),
+      ),
+    );
+    if (!mounted || raw == null || raw.trim().isEmpty) return;
+
+    try {
+      final pairing = RemoteCameraPairingService.decode(raw);
+      setDialogState(() {
+        remoteUrlController.text = pairing.address;
+        remoteKeyController.text = pairing.accessKey;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Celular remoto preenchido: ${pairing.name}.')),
+      );
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message.toString())),
+      );
+    }
   }
 
   Future<void> _showSourceSwitcher() async {
@@ -338,34 +385,46 @@ class _MonitorScreenState extends State<MonitorScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Trocar fonte'),
+          title: const Text('Selecionar fonte'),
           content: SizedBox(
-            width: 460,
+            width: 480,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SegmentedButton<VideoSourceType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: VideoSourceType.localCamera,
-                        icon: Icon(Icons.smartphone_rounded),
-                        label: Text('Local'),
-                      ),
-                      ButtonSegment(
-                        value: VideoSourceType.rtsp,
-                        icon: Icon(Icons.router_outlined),
-                        label: Text('RTSP'),
-                      ),
-                      ButtonSegment(
-                        value: VideoSourceType.remotePhone,
-                        icon: Icon(Icons.phone_android_rounded),
-                        label: Text('Celular'),
-                      ),
-                    ],
-                    selected: {type},
-                    onSelectionChanged: (values) =>
-                        setDialogState(() => type = values.first),
+                  const Text(
+                    'Escolha de onde o vídeo será recebido. Os textos abaixo explicam cada opção.',
+                  ),
+                  const SizedBox(height: 14),
+                  _SourceOptionTile(
+                    icon: Icons.smartphone_rounded,
+                    title: 'Este aparelho',
+                    subtitle: 'Usa a câmera do próprio celular.',
+                    selected: type == VideoSourceType.localCamera,
+                    onTap: () => setDialogState(
+                      () => type = VideoSourceType.localCamera,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _SourceOptionTile(
+                    icon: Icons.router_outlined,
+                    title: 'Câmera RTSP',
+                    subtitle: 'Conecta a uma câmera ou DVR pela URL RTSP.',
+                    selected: type == VideoSourceType.rtsp,
+                    onTap: () => setDialogState(
+                      () => type = VideoSourceType.rtsp,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _SourceOptionTile(
+                    icon: Icons.phone_android_rounded,
+                    title: 'Outro celular',
+                    subtitle: 'Recebe vídeo de outro aparelho da mesma rede.',
+                    selected: type == VideoSourceType.remotePhone,
+                    onTap: () => setDialogState(
+                      () => type = VideoSourceType.remotePhone,
+                    ),
                   ),
                   if (type == VideoSourceType.rtsp) ...[
                     const SizedBox(height: 16),
@@ -374,19 +433,50 @@ class _MonitorScreenState extends State<MonitorScreen>
                       autocorrect: false,
                       enableSuggestions: false,
                       decoration: const InputDecoration(
-                        labelText: 'URL RTSP',
+                        labelText: 'Endereço RTSP',
+                        hintText: 'rtsp://usuario:senha@192.168.1.20:554/stream',
                         border: OutlineInputBorder(),
                       ),
                     ),
                   ],
                   if (type == VideoSourceType.remotePhone) ...[
                     const SizedBox(height: 16),
+                    const Text(
+                      'Você pode ler o QR do outro aparelho ou preencher os campos manualmente.',
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.tonalIcon(
+                          onPressed: () => unawaited(
+                            _scanRemotePhoneQr(
+                              remoteUrlController,
+                              remoteKeyController,
+                              setDialogState,
+                            ),
+                          ),
+                          icon: const Icon(Icons.qr_code_scanner_rounded),
+                          label: const Text('Escanear QR'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => setDialogState(() {
+                            remoteUrlController.clear();
+                            remoteKeyController.clear();
+                          }),
+                          icon: const Icon(Icons.clear_rounded),
+                          label: const Text('Limpar'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: remoteUrlController,
                       autocorrect: false,
                       enableSuggestions: false,
                       decoration: const InputDecoration(
-                        labelText: 'Endereço do celular',
+                        labelText: 'Endereço do outro celular',
                         hintText: 'http://192.168.0.20:8765',
                         border: OutlineInputBorder(),
                       ),
@@ -398,6 +488,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                       enableSuggestions: false,
                       decoration: const InputDecoration(
                         labelText: 'Chave de sessão',
+                        helperText: 'A chave aparece no Modo Câmera do aparelho remoto.',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -418,7 +509,12 @@ class _MonitorScreenState extends State<MonitorScreen>
                 final remoteKey = remoteKeyController.text.trim();
                 if (type == VideoSourceType.rtsp) {
                   final uri = Uri.tryParse(rtsp);
-                  if (uri == null || uri.scheme != 'rtsp' || uri.host.isEmpty) return;
+                  if (uri == null || uri.scheme != 'rtsp' || uri.host.isEmpty) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(content: Text('Informe uma URL RTSP válida.')),
+                    );
+                    return;
+                  }
                 }
                 if (type == VideoSourceType.remotePhone) {
                   final uri = Uri.tryParse(remoteUrl);
@@ -426,6 +522,11 @@ class _MonitorScreenState extends State<MonitorScreen>
                       !(uri.scheme == 'http' || uri.scheme == 'https') ||
                       uri.host.isEmpty ||
                       remoteKey.isEmpty) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Preencha o endereço local e a chave do outro celular.'),
+                      ),
+                    );
                     return;
                   }
                 }
@@ -611,7 +712,7 @@ class _MonitorScreenState extends State<MonitorScreen>
           children: [
             _StatusDot(active: _controller.sourceStatus.state == VideoSourceState.streaming),
             const SizedBox(width: 9),
-            const Text('Monitor ao vivo', style: TextStyle(fontWeight: FontWeight.w800)),
+            const Text('Ao vivo', style: TextStyle(fontWeight: FontWeight.w800)),
           ],
         ),
         actions: [
@@ -800,14 +901,14 @@ class _MonitorScreenState extends State<MonitorScreen>
                     ),
                     _HudPill(
                       icon: Icons.psychology_alt_outlined,
-                      label: _controller.processing ? 'IA analisando' : 'IA pronta',
+                      label: _controller.processing ? 'IA analisando' : 'IA ativa',
                       active: !_controller.initializing,
                     ),
                     _HudPill(
                       icon: _hudExpanded
                           ? Icons.expand_less_rounded
                           : Icons.more_horiz_rounded,
-                      label: _hudExpanded ? 'Menos' : 'Status',
+                      label: _hudExpanded ? 'Ocultar' : 'Painel',
                       active: false,
                       onTap: () => setState(() => _hudExpanded = !_hudExpanded),
                     ),
@@ -979,7 +1080,7 @@ class _MonitorScreenState extends State<MonitorScreen>
             text: !_controller.scheduleActive
                 ? 'Pausado pela agenda. O monitor retomará no próximo horário.'
                 : _controller.motionOnly
-                    ? 'Aguardando movimento relevante.'
+                    ? 'Aguardando atividade relevante.'
                     : 'Nenhum objeto acima do limite de confiança.',
           )
         else if (tracked)
@@ -1005,7 +1106,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     return status.message ?? switch (status.state) {
       VideoSourceState.idle => 'Aguardando',
       VideoSourceState.connecting => 'Conectando',
-      VideoSourceState.streaming => 'AO VIVO',
+      VideoSourceState.streaming => 'Ao vivo',
       VideoSourceState.reconnecting => 'Reconectando',
       VideoSourceState.stopped => 'Pausado',
       VideoSourceState.error => 'Erro na câmera',
@@ -1049,6 +1150,80 @@ class _MonitorActionButton extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceOptionTile extends StatelessWidget {
+  const _SourceOptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? scheme.primary.withValues(alpha: 0.10) : scheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? scheme.primary.withValues(alpha: 0.52)
+                  : scheme.outline.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: scheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(subtitle),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Radio<bool>(
+                value: true,
+                groupValue: selected,
+                onChanged: (_) => onTap(),
+              ),
+            ],
           ),
         ),
       ),
@@ -1156,13 +1331,27 @@ class _MiniStatus extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14),
-          const SizedBox(width: 5),
-          Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-        ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 184),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(icon, size: 14),
+            ),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

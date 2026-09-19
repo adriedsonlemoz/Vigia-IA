@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../screens/home_screen.dart';
+import '../screens/access_guide_screen.dart';
 import '../services/appearance_settings_service.dart';
 
 class VigiaIaApp extends StatelessWidget {
@@ -102,7 +102,7 @@ class VigiaIaApp extends StatelessWidget {
         themeMode: appearance.themeMode,
         theme: _theme(brightness: Brightness.light, seed: appearance.seedColor),
         darkTheme: _theme(brightness: Brightness.dark, seed: appearance.seedColor),
-        home: const HomeScreen(),
+        home: const AccessGuideScreen(),
       ),
     );
   }

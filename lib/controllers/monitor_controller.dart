@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
@@ -8,6 +9,7 @@ import '../models/detection.dart';
 import '../models/monitor_event.dart';
 import '../models/monitor_schedule.dart';
 import '../models/monitoring_zone.dart';
+import '../models/object_appearance.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/rgb_frame.dart';
 import '../models/smart_alert_rules.dart';
@@ -32,6 +34,7 @@ import '../services/object_appearance_service.dart';
 import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
 import '../services/object_tracker.dart';
+import '../services/partial_person_detection_service.dart';
 import '../services/smart_alert_rule_engine.dart';
 import '../services/temporal_detection_filter.dart';
 import '../services/shared_local_camera_service.dart';
@@ -128,6 +131,7 @@ class MonitorController extends ChangeNotifier {
   int _detailTileIndex = 0;
   final Map<int, DateTime> _recentMotionByTrackId = <int, DateTime>{};
   final Map<String, DateTime> _lastTransitionSpeechAt = <String, DateTime>{};
+  final Map<String, _RecentAlertMemory> _recentAlertMemory = <String, _RecentAlertMemory>{};
   String? _lanPermissionError;
 
   List<Detection> get detections => _detections;
@@ -775,16 +779,31 @@ class MonitorController extends ChangeNotifier {
                     MonitoringZoneService.remapDetection(item, analysisZone),
               )
               .toList(growable: false);
-      final zoneFilteredSelected = activeZones.isEmpty
-          ? selectedGlobal
-          : MonitoringZoneService.filterToZones(
+      final syntheticPeople = _alertLabels.contains('person')
+          ? PartialPersonDetectionService.infer(
+              frame,
+              motionResult,
               selectedGlobal,
+            )
+          : const <Detection>[];
+      final selectedWithHints = <Detection>[
+        ...selectedGlobal,
+        ...syntheticPeople,
+      ];
+      final movingWithHints = <Detection>[
+        ...movingGlobal,
+        ...syntheticPeople,
+      ];
+      final zoneFilteredSelected = activeZones.isEmpty
+          ? selectedWithHints
+          : MonitoringZoneService.filterToZones(
+              selectedWithHints,
               activeZones.map((profile) => profile.zone),
             );
       final zoneFilteredMoving = activeZones.isEmpty
-          ? movingGlobal
+          ? movingWithHints
           : MonitoringZoneService.filterToZones(
-              movingGlobal,
+              movingWithHints,
               activeZones.map((profile) => profile.zone),
             );
 
@@ -918,6 +937,7 @@ class MonitorController extends ChangeNotifier {
   ) async {
     final source = _sourceDisplayName;
     final eventIds = <String>[];
+    final now = DateTime.now();
     for (final key in alertKeys) {
       final detection = alertTargets[key];
       if (detection == null) continue;
@@ -934,12 +954,18 @@ class MonitorController extends ChangeNotifier {
         displayLabel: detection.displayLabel,
         zoneName: zone?.name,
       );
-      unawaited(
-        _deliverAlert(
-          message,
-          audioSlot: _audioSlotForLabel(detection.label),
-        ),
-      );
+      if (_shouldDeliverRepeatedAlert(
+        detection,
+        trackId: tracked?.trackId,
+        now: now,
+      )) {
+        unawaited(
+          _deliverAlert(
+            message,
+            audioSlot: _audioSlotForLabel(detection.label),
+          ),
+        );
+      }
       final event = await _eventHistory.addEvent(
         detection: detection,
         frame: frame,
@@ -1015,6 +1041,83 @@ class MonitorController extends ChangeNotifier {
         cameraId: sourceConfig.cameraId,
       );
     }
+  }
+
+  bool _shouldDeliverRepeatedAlert(
+    Detection detection, {
+    required DateTime now,
+    int? trackId,
+  }) {
+    final retention = Duration(
+      milliseconds: (_settings.absenceReset.inMilliseconds * 6)
+          .clamp(9000, 18000)
+          .toInt(),
+    );
+    _recentAlertMemory.removeWhere(
+      (_, memory) => now.difference(memory.timestamp) > retention,
+    );
+
+    final group = ObjectFilterCatalog.groupKeyForLabel(detection.label) ?? detection.label;
+    for (final entry in _recentAlertMemory.entries) {
+      final memory = entry.value;
+      if (memory.group != group) continue;
+      if (trackId != null && memory.trackId != null && memory.trackId == trackId) {
+        _recentAlertMemory[entry.key] = memory.copyWith(timestamp: now, box: detection.box, appearance: detection.appearance);
+        return false;
+      }
+
+      final overlap = _iou(memory.box, detection.box);
+      final distance = _centerDistance(memory.box, detection.box);
+      final appearanceSimilarity = ObjectAppearanceService.similarity(
+        memory.appearance,
+        detection.appearance,
+      );
+      final similar = overlap >= 0.34 ||
+          (distance <= 0.16 && appearanceSimilarity >= 0.64) ||
+          (distance <= 0.10 && overlap >= 0.20);
+      if (!similar) continue;
+      _recentAlertMemory[entry.key] = memory.copyWith(
+        timestamp: now,
+        box: detection.box,
+        appearance: detection.appearance,
+        trackId: trackId ?? memory.trackId,
+      );
+      return false;
+    }
+
+    final key = '${group}_${now.microsecondsSinceEpoch}';
+    _recentAlertMemory[key] = _RecentAlertMemory(
+      group: group,
+      timestamp: now,
+      box: detection.box,
+      appearance: detection.appearance,
+      trackId: trackId,
+    );
+    return true;
+  }
+
+  double _centerDistance(NormalizedBox a, NormalizedBox b) {
+    final ax = (a.xMin + a.xMax) / 2;
+    final ay = (a.yMin + a.yMax) / 2;
+    final bx = (b.xMin + b.xMax) / 2;
+    final by = (b.yMin + b.yMax) / 2;
+    final dx = ax - bx;
+    final dy = ay - by;
+    return math.sqrt(dx * dx + dy * dy);
+  }
+
+  double _iou(NormalizedBox a, NormalizedBox b) {
+    final left = a.xMin > b.xMin ? a.xMin : b.xMin;
+    final top = a.yMin > b.yMin ? a.yMin : b.yMin;
+    final right = a.xMax < b.xMax ? a.xMax : b.xMax;
+    final bottom = a.yMax < b.yMax ? a.yMax : b.yMax;
+    final intersectionWidth = (right - left).clamp(0.0, 1.0).toDouble();
+    final intersectionHeight = (bottom - top).clamp(0.0, 1.0).toDouble();
+    final intersection = intersectionWidth * intersectionHeight;
+    final areaA = (a.xMax - a.xMin).clamp(0.0, 1.0) * (a.yMax - a.yMin).clamp(0.0, 1.0);
+    final areaB = (b.xMax - b.xMin).clamp(0.0, 1.0) * (b.yMax - b.yMin).clamp(0.0, 1.0);
+    final union = areaA + areaB - intersection;
+    return union <= 0 ? 0.0 : intersection / union;
   }
 
   String _audioSlotForLabel(String label) =>
@@ -1668,6 +1771,36 @@ class MonitorController extends ChangeNotifier {
     await _detector.dispose();
     await _speech.dispose();
   }
+}
+
+class _RecentAlertMemory {
+  const _RecentAlertMemory({
+    required this.group,
+    required this.timestamp,
+    required this.box,
+    required this.appearance,
+    required this.trackId,
+  });
+
+  final String group;
+  final DateTime timestamp;
+  final NormalizedBox box;
+  final ObjectAppearance? appearance;
+  final int? trackId;
+
+  _RecentAlertMemory copyWith({
+    DateTime? timestamp,
+    NormalizedBox? box,
+    ObjectAppearance? appearance,
+    int? trackId,
+  }) =>
+      _RecentAlertMemory(
+        group: group,
+        timestamp: timestamp ?? this.timestamp,
+        box: box ?? this.box,
+        appearance: appearance ?? this.appearance,
+        trackId: trackId ?? this.trackId,
+      );
 }
 
 extension _FirstOrNullExtension<T> on Iterable<T> {

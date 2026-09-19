@@ -10,6 +10,7 @@ import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/native_platform_service.dart';
+import '../services/remote_camera_pairing_service.dart';
 import '../widgets/main_navigation_bar.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
@@ -17,6 +18,7 @@ import 'events_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
+import 'phone_pairing_scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.startMonitorOnLoad = false});
@@ -308,6 +310,47 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == null || !mounted) return;
     setState(() => _schedule = result);
     _schedulePersist();
+  }
+
+  Future<void> _scanRemotePhoneQr() async {
+    final cameraGranted = await _native.requestCameraPermission();
+    if (!mounted) return;
+    if (!cameraGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Permita a câmera para escanear o QR do outro celular.'),
+          action: SnackBarAction(
+            label: 'AJUSTES',
+            onPressed: () => unawaited(_native.openAppSettings()),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => const PhonePairingScannerScreen(),
+      ),
+    );
+    if (!mounted || raw == null || raw.trim().isEmpty) return;
+
+    try {
+      final pairing = RemoteCameraPairingService.decode(raw);
+      setState(() {
+        _sourceType = VideoSourceType.remotePhone;
+        _remoteUrlController.text = pairing.address;
+        _remoteKeyController.text = pairing.accessKey;
+      });
+      _schedulePersist();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Celular remoto preenchido: ${pairing.name}.')),
+      );
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message.toString())),
+      );
+    }
   }
 
   Future<void> _start() async {
@@ -689,6 +732,30 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           if (_sourceType == VideoSourceType.remotePhone) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Conecte outro aparelho pelo endereço manual ou lendo o QR exibido no Modo Câmera.',
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: _scanRemotePhoneQr,
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: const Text('Escanear QR do outro celular'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => setState(() {
+                    _remoteUrlController.clear();
+                    _remoteKeyController.clear();
+                  }),
+                  icon: const Icon(Icons.clear_rounded),
+                  label: const Text('Limpar campos'),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _remoteUrlController,
