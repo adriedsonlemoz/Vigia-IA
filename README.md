@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.39+39`
+> **Versão atual:** `1.0.40+40`
 
 ## Estado atual
 
-A `1.0.39+39` mantém as melhorias de detecção/áudio e acrescenta a nova experiência de permissões, textos mais claros no monitor, pareamento por QR diretamente na seleção de fonte e compatibilidade com Flutter 3.44 na interface de fonte.
+A `1.0.40+40` inicia o Modo Bike com configuração persistente e perfis de energia para preparar o Vigia IA para uso de um celular na traseira da bicicleta.
+
+### Evolução 1.0.40
+
+- novo item `Modo Bike` em Configurações → Monitoramento;
+- ativação persistente para identificar o aparelho que ficará na traseira da bicicleta;
+- perfis Normal, Economia e Economia extrema com metas de IA/transmissão;
+- preferências para reduzir atividade da tela, manter telemetria remota e avisar bateria baixa;
+- arquitetura preparada para a próxima etapa aplicar os perfis ao pipeline real e transmitir as condições do aparelho traseiro.
 
 ### Evolução 1.0.39
 

@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.39',
+          version: '1.0.40',
           current: true,
+          changes: [
+            'Novo Modo Bike disponível em Configurações → Monitoramento.',
+            'Ativação do modo e perfil de energia ficam persistidos no aparelho.',
+            'Perfis Normal, Economia e Economia extrema definem metas de análise e transmissão para as próximas integrações.',
+            'Preferências para reduzir atividade da tela, telemetria remota e aviso de bateria baixa já fazem parte da configuração.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.39',
           changes: [
             'Compatibilidade da seleção de fonte atualizada para Flutter 3.44 sem APIs Radio obsoletas.',
             'Mantida a nova tela inicial de permissões com atalhos para câmera, notificações e rede local.',

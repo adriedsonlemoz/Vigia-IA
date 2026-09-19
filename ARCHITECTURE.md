@@ -1,8 +1,16 @@
-# Arquitetura — Vigia IA 1.0.39+39
+# Arquitetura — Vigia IA 1.0.40+40
 
 ## 1. Princípios
 
-A 1.0.39 mantém EfficientDet-Lite0 + fallback SSD, movimento sensível a cor, reidentificação visual leve e pacote de voz personalizado. A camada de UI passa a incluir um guia de permissões, pareamento remoto por QR dentro da seleção de fonte e uma pista auxiliar para presença humana parcial. O pipeline principal continua local/offline.
+A 1.0.40 mantém o pipeline local/offline e adiciona a primeira camada do Modo Bike: configuração persistente e perfis de energia, sem criar um pipeline paralelo de IA.
+
+## Evolução 1.0.40
+
+- `BikeModeConfig` concentra ativação, perfil energético e preferências do aparelho traseiro;
+- `BikeModeService` persiste a configuração separadamente no armazenamento privado, sem quebrar perfis antigos do monitor;
+- `BikeModeScreen` é a entrada dedicada em Configurações → Monitoramento e foi construída com layout rolável/responsivo;
+- os perfis expõem metas de intervalo de análise e FPS, mas a 1.0.40 ainda não altera o pipeline em execução; essa integração fica isolada para a próxima etapa;
+- telemetria remota está configurável nesta etapa, mas coleta/transmissão dos dados do aparelho será conectada na próxima evolução.
 
 ## Evolução 1.0.39
 

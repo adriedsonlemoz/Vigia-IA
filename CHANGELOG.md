@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.40+40
+
+- Iniciada a implementação do Modo Bike em uma tela própria dentro de Configurações → Monitoramento.
+- Adicionados perfis `Normal`, `Economia` e `Economia extrema`, com metas explícitas de intervalo da IA e FPS de transmissão para orientar a integração com o pipeline.
+- Ativação, perfil e preferências do Modo Bike são persistidos em armazenamento privado do app.
+- Adicionadas preferências para reduzir atividade da tela traseira, manter telemetria remota e definir alerta de bateria baixa.
+- Estrutura foi separada em `BikeModeConfig`, `BikeModeService` e `BikeModeScreen`, preparando a próxima etapa sem duplicar o pipeline de IA.
+- Novo teste cobre padrão, serialização e limites da configuração do Modo Bike.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.40+40`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a presença da nova estrutura e a sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.39+39
 
 - Corrigido o bloqueio do `flutter analyze` no Flutter 3.44: a seleção visual da fonte deixou de usar `Radio.groupValue` e `Radio.onChanged`, ambos obsoletos.
