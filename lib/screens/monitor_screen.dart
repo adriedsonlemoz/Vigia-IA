@@ -1218,10 +1218,11 @@ class _SourceOptionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Radio<bool>(
-                value: true,
-                groupValue: selected,
-                onChanged: (_) => onTap(),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: selected ? scheme.primary : scheme.onSurfaceVariant,
               ),
             ],
           ),

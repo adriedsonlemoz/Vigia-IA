@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.39+39
+
+- Corrigido o bloqueio do `flutter analyze` no Flutter 3.44: a seleção visual da fonte deixou de usar `Radio.groupValue` e `Radio.onChanged`, ambos obsoletos.
+- Nova tela inicial de permissões explica câmera, notificações e rede local/dispositivos próximos, com ações para solicitar ou abrir os ajustes do Android.
+- Monitor passa a usar o título `Ao vivo`; o chip `Status` foi renomeado para `Painel` e textos longos foram ajustados para reduzir sobreposição.
+- Tela `Fonte` foi reformulada com explicações por tipo de origem e suporte a escanear o QR do outro aparelho.
+- Adicionada pista complementar para presença humana parcial em regiões móveis quando o detector principal não encontra o corpo completo.
+- Adicionada memória visual curta para reduzir fala repetida do mesmo objeto após pequenas perdas de rastreamento.
+- Versionamento, metadados, documentação, tela de mudanças e verificações sincronizados em `1.0.39+39`.
+
+### Validação disponível
+
+- O log Android-APK-11 confirmou que o verificador preventivo passava e que o único bloqueio era o uso das duas propriedades `Radio` obsoletas.
+- Este ambiente não contém Flutter SDK; `flutter analyze`, `flutter test` e a geração do APK precisam ser confirmados pelo próximo workflow Android APK.
+
 ## 1.0.38+38
 
 - Pacote de voz fornecido pelo usuário em um único WAV foi separado em dez arquivos curtos e incorporado a `custom_audio/`.

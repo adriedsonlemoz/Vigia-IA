@@ -150,8 +150,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.38',
+          version: '1.0.39',
           current: true,
+          changes: [
+            'Compatibilidade da seleção de fonte atualizada para Flutter 3.44 sem APIs Radio obsoletas.',
+            'Mantida a nova tela inicial de permissões com atalhos para câmera, notificações e rede local.',
+            'Fonte de vídeo continua com explicações mais claras e leitura de QR do outro celular.',
+            'Textos do monitor foram refinados e o título principal passou a usar Ao vivo.',
+            'Memória visual complementar reduz falas repetidas e a detecção parcial de pessoa permanece ativa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.38',
           changes: [
             'Pacote de voz personalizado fornecido pelo usuário foi separado e incorporado ao projeto.',
             'Entrada e saída agora usam slots específicos para pessoa, veículo e animal antes do fallback genérico/TTS.',

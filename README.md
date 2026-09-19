@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.38+38`
+> **Versão atual:** `1.0.39+39`
 
 ## Estado atual
 
-A `1.0.38+38` mantém a detecção aprimorada da 1.0.37 e incorpora o pacote de voz personalizado fornecido pelo usuário. As falas foram separadas em recursos Android individuais, e transições de área agora procuram primeiro slots específicos para pessoa, veículo e animal antes de recorrer ao slot genérico/TTS.
+A `1.0.39+39` mantém as melhorias de detecção/áudio e acrescenta a nova experiência de permissões, textos mais claros no monitor, pareamento por QR diretamente na seleção de fonte e compatibilidade com Flutter 3.44 na interface de fonte.
+
+### Evolução 1.0.39
+
+- nova tela inicial explica câmera, notificações e rede local/dispositivos próximos, com botões para permitir ou abrir os ajustes do Android;
+- Monitor ao vivo passa a usar o título curto `Ao vivo`, e o chip `Status` foi substituído por `Painel`;
+- textos longos da interface foram ajustados para reduzir sobreposição e melhorar clareza em telas estreitas;
+- seleção de fonte foi redesenhada em cartões explicativos para câmera local, RTSP e outro celular;
+- pareamento com outro celular pode ser preenchido pelo QR do Modo Câmera, além da entrada manual de endereço/chave;
+- pista complementar de presença humana usa movimento + aparência de pele para tentar reconhecer mão/braço muito próximos quando o detector principal perde o corpo completo;
+- memória visual do alerta reduz novas falas para o mesmo objeto após pequenas perdas/reidentificações;
+- seleção visual da fonte não usa mais `Radio.groupValue/onChanged`, removendo os avisos que bloqueavam `flutter analyze` no Flutter 3.44.
 
 ### Evolução 1.0.38
 

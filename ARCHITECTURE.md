@@ -1,8 +1,16 @@
-# Arquitetura — Vigia IA 1.0.38+38
+# Arquitetura — Vigia IA 1.0.39+39
 
 ## 1. Princípios
 
-A 1.0.38 mantém EfficientDet-Lite0 + fallback SSD, movimento sensível a cor e reidentificação visual leve, e acrescenta o pacote de voz personalizado separado por evento. O pipeline continua local/offline; os áudios são recursos Android opcionais e qualquer slot ausente cai para TTS.
+A 1.0.39 mantém EfficientDet-Lite0 + fallback SSD, movimento sensível a cor, reidentificação visual leve e pacote de voz personalizado. A camada de UI passa a incluir um guia de permissões, pareamento remoto por QR dentro da seleção de fonte e uma pista auxiliar para presença humana parcial. O pipeline principal continua local/offline.
+
+## Evolução 1.0.39
+
+- `AccessGuideScreen` concentra a explicação inicial das permissões e consulta os estados reais via `NativePlatformService`;
+- `HomeScreen` e `MonitorScreen` reutilizam `PhonePairingScannerScreen` + `RemoteCameraPairingService` para preencher endereço/chave do outro celular por QR;
+- `PartialPersonDetectionService` é uma heurística auxiliar, nunca substitui o detector TFLite principal e só atua quando não existe pessoa já detectada;
+- `MonitorController` mantém memória visual curta de alertas por família, caixa, aparência e ID para suprimir fala duplicada após reidentificações pequenas;
+- seleção visual da fonte usa ícone de seleção em vez de propriedades `Radio` obsoletas, garantindo compatibilidade com Flutter 3.44.
 
 Princípios mantidos:
 

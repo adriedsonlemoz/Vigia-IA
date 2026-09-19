@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.38 inclui o pacote de voz personalizado fornecido pelo usuário, separa slots de entrada/saída por pessoa, veículo e animal e mantém fallback TTS para qualquer fala ausente.",
-  "version": "1.0.38",
-  "build": 38
+  "notes": "Identidade técnica vigiaia preservada em pacote Dart, namespace/applicationId Android, canais nativos e protocolo vigiaia://pair. A 1.0.39 corrige a compatibilidade com Flutter 3.44 na seleção de fonte, mantém a nova tela de permissões, pareamento por QR, ajustes de textos e as melhorias de detecção/anti-repetição introduzidas na entrega anterior.",
+  "version": "1.0.39",
+  "build": 39
 }
