@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 1.0.44+44
+
+- Corrigida a navegação do Modo Bike conforme o desenho original do produto.
+- `Bike` agora é o quinto destino permanente do menu principal inferior, ao lado de Início, Histórico, Monitor e Câmeras.
+- A tela `BikeModeScreen` mantém a barra principal visível com o destino Bike selecionado.
+- Home, Histórico e Central multicâmera passam a abrir o Modo Bike pelo fluxo principal de navegação.
+- Removido o atalho duplicado de Configurações → Monitoramento para o modo não ficar escondido nem ter duas entradas concorrentes.
+- Funcionalidades de economia, telemetria, painel remoto e alertas da Etapa 3 foram preservadas.
+- Adicionado teste de widget para garantir cinco destinos no menu e o índice 4 reservado para Bike.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.44+44`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida o quinto destino Bike, a seleção correta na tela e a ausência do antigo atalho de Configurações.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.43+43
 
 - Buildfix da Etapa 3 do Modo Bike após validação real no GitHub Actions com Flutter 3.44.9.

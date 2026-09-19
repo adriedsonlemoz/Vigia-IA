@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.43',
+          version: '1.0.44',
           current: true,
+          changes: [
+            'Modo Bike agora aparece como destino próprio Bike no menu principal inferior.',
+            'A tela do Modo Bike mantém a barra principal visível para navegação consistente entre Início, Histórico, Monitor, Câmeras e Bike.',
+            'O acesso deixou de depender de Configurações → Monitoramento; toda a lógica de economia, telemetria e painel remoto foi preservada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.43',
           changes: [
             'Buildfix da Etapa 3 do Modo Bike após validação no Flutter 3.44.9.',
             'Removidos dois casts desnecessários que faziam o flutter analyze encerrar o workflow.',
@@ -184,7 +193,7 @@ class _ChangesPanel extends StatelessWidget {
         _ReleaseCard(
           version: '1.0.40',
           changes: [
-            'Novo Modo Bike disponível em Configurações → Monitoramento.',
+            'Primeira tela do Modo Bike criada, inicialmente acessível por Configurações → Monitoramento.',
             'Ativação do modo e perfil de energia ficam persistidos no aparelho.',
             'Perfis Normal, Economia e Economia extrema definem metas de análise e transmissão para as próximas integrações.',
             'Preferências para reduzir atividade da tela, telemetria remota e aviso de bateria baixa já fazem parte da configuração.',

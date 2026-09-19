@@ -7,6 +7,10 @@ import '../models/device_telemetry.dart';
 import '../services/bike_mode_service.dart';
 import '../services/native_platform_service.dart';
 import '../utils/storage_size_formatter.dart';
+import '../widgets/main_navigation_bar.dart';
+import 'events_screen.dart';
+import 'home_screen.dart';
+import 'multi_camera_screen.dart';
 
 class BikeModeScreen extends StatefulWidget {
   const BikeModeScreen({super.key});
@@ -73,6 +77,21 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
     unawaited(_refreshTelemetry());
   }
 
+  void _navigateMain(int index) {
+    if (index == 4) return;
+    final Widget target = switch (index) {
+      0 => const HomeScreen(),
+      1 => const EventsScreen(),
+      2 => const HomeScreen(startMonitorOnLoad: true),
+      3 => const MultiCameraScreen(),
+      _ => const BikeModeScreen(),
+    };
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => target),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,6 +123,10 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
               ),
             ),
         ],
+      ),
+      bottomNavigationBar: MainNavigationBar(
+        currentIndex: 4,
+        onDestinationSelected: _navigateMain,
       ),
       body: SafeArea(
         child: _loading

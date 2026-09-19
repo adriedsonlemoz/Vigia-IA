@@ -1,8 +1,16 @@
-# Arquitetura — Vigia IA 1.0.43+43
+# Arquitetura — Vigia IA 1.0.44+44
 
 ## 1. Princípios
 
-A 1.0.43 mantém integralmente a arquitetura da Etapa 3 do Modo Bike e aplica apenas um buildfix de compatibilidade com a análise estática do Flutter 3.44, removendo casts redundantes no parsing do status remoto.
+A 1.0.44 mantém a arquitetura da Etapa 3 do Modo Bike e corrige sua exposição na navegação principal: Bike passa a ser um destino operacional de primeira classe, não uma opção escondida em Configurações.
+
+## Evolução 1.0.44
+
+- `MainNavigationBar` ganha um quinto destino `Bike`, mantendo o mesmo componente compartilhado por Início, Histórico e Câmeras;
+- `BikeModeScreen` passa a usar a própria barra principal com `currentIndex: 4`;
+- os manipuladores de navegação das telas principais reconhecem o índice Bike e abrem `BikeModeScreen`;
+- o antigo tile em `SettingsScreen` é removido para não esconder nem duplicar a entrada do modo operacional;
+- a mudança é apenas de navegação/exposição: `BikeModeService`, perfis de energia, telemetria e painel remoto permanecem com o mesmo contrato.
 
 ## Evolução 1.0.43
 

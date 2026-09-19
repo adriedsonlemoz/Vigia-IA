@@ -8,6 +8,7 @@ import '../models/monitor_event.dart';
 import '../models/object_filter_catalog.dart';
 import '../services/event_history_service.dart';
 import '../widgets/main_navigation_bar.dart';
+import 'bike_mode_screen.dart';
 import 'home_screen.dart';
 import 'multi_camera_screen.dart';
 import 'settings_screen.dart';
@@ -84,6 +85,7 @@ class _EventsScreenState extends State<EventsScreen> {
       0 => const HomeScreen(),
       2 => const HomeScreen(startMonitorOnLoad: true),
       3 => const MultiCameraScreen(),
+      4 => const BikeModeScreen(),
       _ => const EventsScreen(),
     };
     Navigator.of(context).pushAndRemoveUntil(

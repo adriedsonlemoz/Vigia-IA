@@ -5,7 +5,6 @@ import 'advanced_settings_screen.dart';
 import 'alerts_clips_screen.dart';
 import 'app_info_screen.dart';
 import 'appearance_settings_screen.dart';
-import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
 import 'multi_camera_screen.dart';
@@ -66,12 +65,6 @@ class SettingsScreen extends StatelessWidget {
                       title: 'Multicâmera',
                       subtitle: 'Cadastre câmera local, RTSP e celulares remotos. Adicionar câmeras não ativa contagem.',
                       onTap: () => _push(context, const MultiCameraScreen()),
-                    ),
-                    _SettingsTile(
-                      icon: Icons.directions_bike_rounded,
-                      title: 'Modo Bike',
-                      subtitle: 'Economia para o celular traseiro e base do painel remoto.',
-                      onTap: () => _push(context, const BikeModeScreen()),
                     ),
                   ],
                 ),

@@ -38,6 +38,11 @@ class MainNavigationBar extends StatelessWidget {
           selectedIcon: Icon(Icons.video_library_rounded),
           label: 'Câmeras',
         ),
+        NavigationDestination(
+          icon: Icon(Icons.directions_bike_outlined),
+          selectedIcon: Icon(Icons.directions_bike_rounded),
+          label: 'Bike',
+        ),
       ],
     );
   }

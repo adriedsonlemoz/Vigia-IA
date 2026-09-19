@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.43+43`
+> **Versão atual:** `1.0.44+44`
 
 ## Estado atual
 
-A `1.0.43+43` é um buildfix da Etapa 3 do Modo Bike: remove dois casts desnecessários apontados pelo Flutter 3.44, preservando o painel remoto e liberando a análise estática do workflow.
+A `1.0.44+44` corrige a navegação do Modo Bike: ele passa a ser um destino próprio e permanente no menu principal, sem depender de Configurações para ser encontrado.
+
+### Evolução 1.0.44
+
+- Modo Bike adicionado como quinto destino da barra principal, com ícone de bicicleta e rótulo `Bike`;
+- a própria tela Bike mantém a barra principal visível e seleciona o novo destino;
+- Início, Histórico e Câmeras passam a navegar diretamente para Bike pelo mesmo fluxo principal;
+- o atalho antigo em Configurações → Monitoramento foi removido para evitar que o modo operacional fique escondido ou duplicado;
+- toda a lógica de economia, telemetria, transmissão e painel remoto permanece inalterada;
+- teste de widget garante que o menu principal tenha cinco destinos e que Bike use o índice 4;
+- versionamento, metadados, documentação, tela de mudanças, testes e verificadores sincronizados em `1.0.44+44`.
 
 ### Evolução 1.0.43
 
