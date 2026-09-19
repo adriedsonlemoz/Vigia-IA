@@ -1,5 +1,6 @@
 import 'package:vigiaia/models/detection.dart';
 import 'package:vigiaia/models/monitoring_zone.dart';
+import 'package:vigiaia/models/object_appearance.dart';
 import 'package:vigiaia/models/tracked_detection.dart';
 import 'package:vigiaia/services/object_tracker.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -108,6 +109,52 @@ void main() {
     );
     expect(movingRight.trackId, leftId);
     expect(movingLeft.trackId, rightId);
+  });
+
+
+  test('reassocia veiculo pela aparencia mesmo com troca car para truck', () {
+    const blue = ObjectAppearance(
+      histogram: <double>[0, 0, 0.05, 0, 0, 0, 0, 0.05, 0.90, 0, 0, 0],
+      dominantColor: 'azul',
+      sampleCount: 100,
+    );
+    Detection vehicle(String label, double xMin, double xMax) => Detection(
+          label: label,
+          displayLabel: 'Automóvel',
+          confidence: 0.82,
+          box: NormalizedBox(
+            xMin: xMin,
+            yMin: 0.35,
+            xMax: xMax,
+            yMax: 0.65,
+          ),
+          appearance: blue,
+        );
+
+    final tracker = ObjectTracker(
+      maxMissing: const Duration(seconds: 1),
+      identityRetention: const Duration(seconds: 12),
+    );
+    final t0 = DateTime(2026, 9, 19, 10);
+    final first = tracker.update(
+      detections: <Detection>[vehicle('car', 0.12, 0.30)],
+      zones: const <MonitoringZoneProfile>[zone],
+      now: t0,
+    );
+    final id = first.active.single.trackId;
+
+    tracker.update(
+      detections: const <Detection>[],
+      zones: const <MonitoringZoneProfile>[zone],
+      now: t0.add(const Duration(seconds: 2)),
+    );
+    final reacquired = tracker.update(
+      detections: <Detection>[vehicle('truck', 0.15, 0.33)],
+      zones: const <MonitoringZoneProfile>[zone],
+      now: t0.add(const Duration(seconds: 3)),
+    );
+
+    expect(reacquired.active.single.trackId, id);
   });
 
 }

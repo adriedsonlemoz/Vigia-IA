@@ -55,4 +55,42 @@ void main() {
     );
     expect(held, hasLength(1));
   });
+  test('objeto muito pequeno e fraco exige tres observacoes', () {
+    final filter = TemporalDetectionFilter();
+    final now = DateTime(2026, 9, 18, 10);
+    Detection tinyDog(double confidence) => Detection(
+          label: 'dog',
+          displayLabel: 'Cachorro',
+          confidence: confidence,
+          box: const NormalizedBox(
+            xMin: 0.2,
+            yMin: 0.2,
+            xMax: 0.30,
+            yMax: 0.30,
+          ),
+        );
+    expect(
+      filter.apply(
+        candidates: [tinyDog(0.40)],
+        baseThreshold: 0.55,
+        now: now,
+      ),
+      isEmpty,
+    );
+    expect(
+      filter.apply(
+        candidates: [tinyDog(0.41)],
+        baseThreshold: 0.55,
+        now: now.add(const Duration(milliseconds: 350)),
+      ),
+      isEmpty,
+    );
+    final confirmed = filter.apply(
+      candidates: [tinyDog(0.42)],
+      baseThreshold: 0.55,
+      now: now.add(const Duration(milliseconds: 700)),
+    );
+    expect(confirmed, hasLength(1));
+  });
+
 }

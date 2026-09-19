@@ -1,16 +1,17 @@
 import 'dart:math' as math;
 
 import '../models/detection.dart';
+import '../models/object_filter_catalog.dart';
 import 'detection_confidence_policy.dart';
 
 /// Estabiliza detecções de baixa confiança sem atrasar detecções fortes.
-/// Candidatas abaixo do limiar global precisam aparecer em dois frames
-/// próximos e em uma posição compatível antes de serem expostas ao restante do
-/// pipeline. Uma detecção confirmada também sobrevive a uma única queda curta.
+/// Candidatas abaixo do limiar global precisam reaparecer em frames próximos
+/// e em posição compatível; objetos muito pequenos podem exigir três observações.
+/// Uma detecção confirmada também sobrevive a uma queda curta/oclusão.
 class TemporalDetectionFilter {
   TemporalDetectionFilter({
-    this.memory = const Duration(milliseconds: 1200),
-    this.holdConfirmedFor = const Duration(milliseconds: 1100),
+    this.memory = const Duration(milliseconds: 1500),
+    this.holdConfirmedFor = const Duration(milliseconds: 1200),
     this.weakConfirmationHits = 2,
   }) : assert(weakConfirmationHits >= 2);
 
@@ -56,8 +57,12 @@ class TemporalDetectionFilter {
           ..detection = detection
           ..lastSeen = now
           ..hits = continuous ? track.hits + 1 : 1;
+        final requiredHits = math.max(
+          weakConfirmationHits,
+          DetectionConfidencePolicy.confirmationHits(detection, baseThreshold),
+        );
         if (DetectionConfidencePolicy.isStrong(detection, baseThreshold) ||
-            track.hits >= weakConfirmationHits) {
+            track.hits >= requiredHits) {
           track.confirmed = true;
         }
       }
@@ -67,7 +72,9 @@ class TemporalDetectionFilter {
 
     for (final track in _tracks.values) {
       if (usedTracks.contains(track.id) || !track.confirmed) continue;
-      if (now.difference(track.lastSeen) <= holdConfirmedFor) {
+      final adaptiveHold = DetectionConfidencePolicy.holdDuration(track.detection);
+      final hold = adaptiveHold > holdConfirmedFor ? adaptiveHold : holdConfirmedFor;
+      if (now.difference(track.lastSeen) <= hold) {
         accepted.add(track.detection);
       }
     }
@@ -119,11 +126,15 @@ class TemporalDetectionFilter {
     final sorted = [...detections]
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
     for (final detection in sorted) {
-      final duplicate = result.any(
-        (existing) =>
-            existing.label == detection.label &&
-            _iou(existing.box, detection.box) >= 0.45,
-      );
+      final duplicate = result.any((existing) {
+        final overlap = _iou(existing.box, detection.box);
+        if (existing.label == detection.label && overlap >= 0.45) return true;
+        final existingGroup = ObjectFilterCatalog.groupKeyForLabel(existing.label);
+        final detectionGroup = ObjectFilterCatalog.groupKeyForLabel(detection.label);
+        return existingGroup != null &&
+            existingGroup == detectionGroup &&
+            overlap >= 0.75;
+      });
       if (!duplicate) result.add(detection);
     }
     return result;

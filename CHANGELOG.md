@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 1.0.37+37
+
+- Detecção de movimento passa a usar luminância e distância RGB, permitindo reconhecer mudanças relevantes de cor mesmo quando o brilho médio permanece semelhante.
+- Adicionado `ObjectAppearanceService`: cada Pessoa, Animal ou Automóvel confirmado recebe histograma de cor leve; pessoas também usam pistas separadas de tronco/pernas e veículos priorizam a região central do corpo.
+- `Detection` passa a carregar `ObjectAppearance` opcional sem alterar o contrato do detector TFLite.
+- `ObjectTracker` combina aparência com IoU, distância, tamanho e velocidade; rótulos diferentes da mesma família podem preservar o mesmo ID quando posição/aparência são compatíveis.
+- Identidade do track pode ser retida por 12 s após perda temporária. A visibilidade/saída continua obedecendo um limite curto, portanto a memória não mantém objetos inexistentes na tela.
+- Chave do anti-repetição passa de `label#trackId` para `grupo#trackId`, evitando nova fala por oscilações como `car↔truck` e `cat↔dog`.
+- Transições de entrada/saída do mesmo ID/área recebem cooldown de voz de 5 s para reduzir chatter; o Histórico continua registrando os eventos.
+- Áudios personalizados opcionais adicionados via `custom_audio/`. Slots ausentes usam TTS automaticamente; o bootstrap copia `.wav`, `.mp3` ou `.ogg` para `res/raw`.
+- `MainActivity` ganha reprodução de slot por `MediaPlayer`, com interrupção/liberação segura do áudio anterior.
+- Novos testes cobrem diferença de cor no movimento, extração de cores de roupa, similaridade visual e reaquisicao de veículo com troca de rótulo.
+- Versão, metadados, tela de mudanças, README, ARCHITECTURE e verificador preventivo sincronizados em `1.0.37+37`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` cobre os novos componentes e invariantes.
+- Este ambiente não contém Flutter SDK; `flutter analyze`, `flutter test` e a geração do APK devem ser confirmados pelo workflow Android APK.
+
+## 1.0.36+36
+
+- Detector passa a filtrar `allowedLabels` dentro do worker antes de aplicar `maxResults`, evitando que classes COCO irrelevantes ocupem as primeiras posições e escondam Pessoa, Animal ou Automóvel selecionado.
+- Limiar bruto de candidatos foi ampliado para permitir objetos pequenos/distantes; a aceitação final agora considera classe e área da caixa. Candidatos pequenos usam confirmação temporal de até 3 observações para controlar falsos positivos.
+- `TemporalDetectionFilter` ganhou retenção adaptativa por classe/tamanho, reduzindo piscadas durante oclusões curtas sem manter objetos desaparecidos por vários segundos.
+- Movimento localizado passa a ser separado em componentes independentes com `focusRegions()`. Dois movimentos distantes deixam de formar um único recorte grande que anulava o ganho de zoom.
+- Adicionado `DetectionScanPlanner`: em intervalos controlados (~1,6 s), o pipeline tenta reaquirir um objeto recém-perdido por recorte local ou alterna dois tiles sobrepostos para aumentar a resolução efetiva de objetos pequenos.
+- A varredura detalhada é limitada a uma inferência extra por ciclo normal; passagens focadas por movimento têm prioridade para evitar aumento permanente de CPU.
+- `DetectionMerger` passa a suprimir duplicatas muito sobrepostas da mesma família (ex.: `car`/`truck`, `cat`/`dog`) mantendo a detecção mais confiante.
+- Novos testes cobrem limiar por tamanho, confirmação de objeto pequeno, tiles, reaquisicao, mesclagem semântica e múltiplas regiões de movimento.
+- Versão, metadados, tela de mudanças, README, ARCHITECTURE e verificador preventivo sincronizados em `1.0.36+36`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida os novos componentes e invariantes da evolução 1.0.36.
+- Este ambiente não contém Flutter SDK; `flutter analyze`, `flutter test` e a geração do APK precisam ser confirmados pelo workflow Android APK.
+
 ## 1.0.35+35
 
 - Corrigido o único bloqueio mostrado pelo Android-APK-7: `flutter analyze` apontava `unnecessary_import` em `lib/services/shared_local_camera_service.dart`.

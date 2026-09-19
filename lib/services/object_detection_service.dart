@@ -172,6 +172,7 @@ class ObjectDetectionService {
     RgbFrame frame, {
     required double threshold,
     required int maxResults,
+    Set<String>? allowedLabels,
   }) async {
     final commands = _commands;
     if (commands == null || _disposed) {
@@ -181,7 +182,7 @@ class ObjectDetectionService {
     final id = _nextRequestId++;
     final completer = Completer<List<Detection>>();
     _pending[id] = completer;
-    commands.send(<String, Object>{
+    final request = <String, Object>{
       'type': 'detect',
       'id': id,
       'width': frame.width,
@@ -189,7 +190,11 @@ class ObjectDetectionService {
       'bytes': TransferableTypedData.fromList([frame.rgbBytes]),
       'threshold': threshold,
       'maxResults': maxResults,
-    });
+    };
+    if (allowedLabels != null) {
+      request['allowedLabels'] = allowedLabels.toList(growable: false);
+    }
+    commands.send(request);
     return completer.future;
   }
 
@@ -286,6 +291,9 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         final height = message['height']! as int;
         final threshold = (message['threshold']! as num).toDouble();
         final maxResults = message['maxResults']! as int;
+        final allowedLabels = (message['allowedLabels'] as List<Object?>?)
+            ?.whereType<String>()
+            .toSet();
         final transfer = message['bytes']! as TransferableTypedData;
         final rgbBytes = transfer.materialize().asUint8List();
 
@@ -298,6 +306,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
           height: height,
           threshold: threshold,
           maxResults: maxResults,
+          allowedLabels: allowedLabels,
         );
         replyPort.send(<String, Object>{
           'type': 'result',
@@ -373,6 +382,7 @@ List<List<Object>> _runDetection({
   required int height,
   required double threshold,
   required int maxResults,
+  Set<String>? allowedLabels,
 }) {
   final source = img.Image.fromBytes(
     width: width,
@@ -480,6 +490,7 @@ List<List<Object>> _runDetection({
     if (classIndex < 0 || classIndex >= labels.length) continue;
     final label = labels[classIndex];
     if (label == '???') continue;
+    if (allowedLabels != null && !allowedLabels.contains(label)) continue;
     final boxValues = boxList[i];
     if (boxValues.length < 4) continue;
 

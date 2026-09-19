@@ -21,12 +21,14 @@ import '../services/camera_integrity_service.dart';
 import '../services/clip_recorder_service.dart';
 import '../services/detection_confidence_policy.dart';
 import '../services/detection_merger.dart';
+import '../services/detection_scan_planner.dart';
 import '../services/error_log_service.dart';
 import '../services/event_history_service.dart';
 import '../services/motion_detection_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/monitoring_zone_service.dart';
 import '../services/monitor_lan_stream_service.dart';
+import '../services/object_appearance_service.dart';
 import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
 import '../services/object_tracker.dart';
@@ -54,7 +56,12 @@ class MonitorController extends ChangeNotifier {
         _clipRecordingEnabled = settings.clipRecordingEnabled,
         _trackingEnabled = settings.trackingEnabled,
         _announceEntryExit = settings.announceEntryExit,
-        _tracker = ObjectTracker(maxMissing: settings.absenceReset) {
+        _tracker = ObjectTracker(
+          maxMissing: settings.absenceReset.inMilliseconds < 1600
+              ? const Duration(milliseconds: 1600)
+              : settings.absenceReset,
+          identityRetention: const Duration(seconds: 12),
+        ) {
     _lanStream.addListener(_onLanStreamChanged);
   }
 
@@ -117,7 +124,10 @@ class MonitorController extends ChangeNotifier {
   bool _backgroundRecoveryInProgress = false;
   double _fps = 0;
   DateTime? _lastIdleInferenceAt;
+  DateTime? _lastDetailScanAt;
+  int _detailTileIndex = 0;
   final Map<int, DateTime> _recentMotionByTrackId = <int, DateTime>{};
+  final Map<String, DateTime> _lastTransitionSpeechAt = <String, DateTime>{};
   String? _lanPermissionError;
 
   List<Detection> get detections => _detections;
@@ -638,45 +648,107 @@ class MonitorController extends ChangeNotifier {
         _lastIdleInferenceAt = now;
       }
 
+      final previousDetections = _detections;
       final candidateThreshold =
           DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
       final primaryDetected = await _detector.detect(
         analysisFrame,
         threshold: candidateThreshold,
         maxResults: _settings.maxResults,
+        allowedLabels: _alertLabels,
       );
       if (_shouldDiscardFrameResult(session)) return;
 
       var candidates = ObjectFilterPolicy.apply(primaryDetected, _alertLabels);
-      final hasUsefulPrimary = candidates.any(
+      var hasUsefulPrimary = candidates.any(
         (item) => DetectionConfidencePolicy.isCandidate(
           item,
           _settings.confidenceThreshold,
         ),
       );
+      var auxiliaryInferenceUsed = false;
 
-      // Se houve movimento localizado mas a primeira passagem não encontrou
-      // nada útil, amplia somente aquela região e tenta uma segunda vez. Isso
-      // ajuda objetos pequenos/distantes sem dobrar o custo em todos os frames.
-      final focusBox = motionResult.focusRegion();
-      if (motionResult.hasMotion && focusBox != null && !hasUsefulPrimary) {
-        final focusZone = MonitoringZone(
-          xMin: focusBox.xMin,
-          yMin: focusBox.yMin,
-          xMax: focusBox.xMax,
-          yMax: focusBox.yMax,
-        );
-        final focusedFrame = MonitoringZoneService.crop(analysisFrame, focusZone);
-        final focusedDetected = await _detector.detect(
-          focusedFrame,
-          threshold: candidateThreshold,
-          maxResults: _settings.maxResults,
-        );
-        if (_shouldDiscardFrameResult(session)) return;
-        final focusedCandidates = ObjectFilterPolicy
-            .apply(focusedDetected, _alertLabels)
-            .map((item) => MonitoringZoneService.remapDetection(item, focusZone));
-        candidates = DetectionMerger.merge(candidates, focusedCandidates);
+      // Movimento separado em componentes evita que dois objetos distantes
+      // virem um único recorte gigante. Tenta no máximo duas regiões e para
+      // assim que uma delas recuperar uma detecção útil.
+      if (motionResult.hasMotion && !hasUsefulPrimary) {
+        final focusBoxes = motionResult.focusRegions(maxRegions: 2);
+        for (final focusBox in focusBoxes) {
+          final focusZone = MonitoringZone(
+            xMin: focusBox.xMin,
+            yMin: focusBox.yMin,
+            xMax: focusBox.xMax,
+            yMax: focusBox.yMax,
+          );
+          final focusedFrame = MonitoringZoneService.crop(analysisFrame, focusZone);
+          final focusedDetected = await _detector.detect(
+            focusedFrame,
+            threshold: candidateThreshold,
+            maxResults: _settings.maxResults,
+            allowedLabels: _alertLabels,
+          );
+          if (_shouldDiscardFrameResult(session)) return;
+          final focusedCandidates = ObjectFilterPolicy
+              .apply(focusedDetected, _alertLabels)
+              .map((item) => MonitoringZoneService.remapDetection(item, focusZone));
+          candidates = DetectionMerger.merge(candidates, focusedCandidates);
+          auxiliaryInferenceUsed = true;
+          hasUsefulPrimary = candidates.any(
+            (item) => DetectionConfidencePolicy.isCandidate(
+              item,
+              _settings.confidenceThreshold,
+            ),
+          );
+          if (hasUsefulPrimary) break;
+        }
+      }
+
+      // Reaquisição/multiescala controlada. Quando um objeto recém-visível
+      // some ou a cena só possui candidatos pequenos/fracos, roda um único
+      // recorte extra a cada ~1,6 s. Isso aumenta a resolução efetiva sem
+      // multiplicar continuamente o custo do detector.
+      const detailScanInterval = Duration(milliseconds: 1600);
+      final lastDetailScan = _lastDetailScanAt;
+      final detailScanDue = lastDetailScan == null ||
+          now.difference(lastDetailScan) >= detailScanInterval;
+      if (!auxiliaryInferenceUsed && detailScanDue) {
+        final missingPrevious = analysisZone.isFullFrame
+            ? DetectionScanPlanner.missingPriorityDetection(
+                previousDetections,
+                candidates,
+              )
+            : null;
+        final shouldDetailScan = missingPrevious != null ||
+            DetectionScanPlanner.needsDetailScan(
+              candidates,
+              _settings.confidenceThreshold,
+            );
+        if (shouldDetailScan) {
+          late final MonitoringZone detailZone;
+          if (missingPrevious != null) {
+            detailZone = DetectionScanPlanner.recoveryZone(missingPrevious);
+          } else {
+            final tiles = DetectionScanPlanner.detailTiles(
+              width: analysisFrame.width,
+              height: analysisFrame.height,
+            );
+            detailZone = tiles[_detailTileIndex % tiles.length];
+            _detailTileIndex = (_detailTileIndex + 1) % tiles.length;
+          }
+          final detailFrame = MonitoringZoneService.crop(analysisFrame, detailZone);
+          final detailDetected = await _detector.detect(
+            detailFrame,
+            threshold: candidateThreshold,
+            maxResults: _settings.maxResults,
+            allowedLabels: _alertLabels,
+          );
+          if (_shouldDiscardFrameResult(session)) return;
+          final detailCandidates = ObjectFilterPolicy
+              .apply(detailDetected, _alertLabels)
+              .map((item) => MonitoringZoneService.remapDetection(item, detailZone));
+          candidates = DetectionMerger.merge(candidates, detailCandidates);
+          _lastDetailScanAt = now;
+        }
       }
 
       final selected = _detectionFilter.apply(
@@ -719,7 +791,10 @@ class MonitorController extends ChangeNotifier {
       // Movimento passa a ser um gatilho de economia/alerta, não um motivo para
       // apagar uma detecção ainda visível. Isso estabiliza pessoas paradas e
       // veículos/animais que interrompem o movimento por alguns instantes.
-      _detections = zoneFilteredSelected;
+      _detections = ObjectAppearanceService.enrichAll(
+        frame,
+        zoneFilteredSelected,
+      );
 
       if (_error?.startsWith('Falha na detecção') == true) _error = null;
 
@@ -775,9 +850,11 @@ class MonitorController extends ChangeNotifier {
               : isMovingDetection(detection);
           if (!recentlyMoved) continue;
         }
+        final groupKey =
+            ObjectFilterCatalog.groupKeyForLabel(detection.label) ?? detection.label;
         final key = tracked == null
-            ? detection.label
-            : '${detection.label}#${tracked.trackId}';
+            ? groupKey
+            : '$groupKey#${tracked.trackId}';
         final existing = alertTargets[key];
         if (existing == null || detection.confidence > existing.confidence) {
           alertTargets[key] = detection;
@@ -857,7 +934,12 @@ class MonitorController extends ChangeNotifier {
         displayLabel: detection.displayLabel,
         zoneName: zone?.name,
       );
-      unawaited(_deliverAlert(message));
+      unawaited(
+        _deliverAlert(
+          message,
+          audioSlot: _audioSlotForLabel(detection.label),
+        ),
+      );
       final event = await _eventHistory.addEvent(
         detection: detection,
         frame: frame,
@@ -902,7 +984,7 @@ class MonitorController extends ChangeNotifier {
         continue;
       }
       _seenTrackIds.add(transition.trackId);
-      if (_announceEntryExit) {
+      if (_announceEntryExit && _allowTransitionSpeech(transition)) {
         final eventName = transition.type == ZoneTransitionType.entered
             ? 'entered'
             : 'exited';
@@ -913,7 +995,13 @@ class MonitorController extends ChangeNotifier {
           event: eventName,
         );
         unawaited(
-          _deliverAlert(message, priority: SpeechPriority.high),
+          _deliverAlert(
+            message,
+            priority: SpeechPriority.high,
+            audioSlot: transition.type == ZoneTransitionType.entered
+                ? 'object_entered'
+                : 'object_exited',
+          ),
         );
       }
       await _eventHistory.addEvent(
@@ -931,6 +1019,29 @@ class MonitorController extends ChangeNotifier {
     }
   }
 
+  String _audioSlotForLabel(String label) =>
+      switch (ObjectFilterCatalog.groupKeyForLabel(label)) {
+        'person' => 'person_detected',
+        'vehicle' => 'vehicle_detected',
+        'animal' => 'animal_detected',
+        _ => 'object_detected',
+      };
+
+  bool _allowTransitionSpeech(ZoneTransition transition) {
+    final now = transition.occurredAt;
+    final key = '${transition.trackId}|${transition.zoneId}';
+    final previous = _lastTransitionSpeechAt[key];
+    _lastTransitionSpeechAt.removeWhere(
+      (_, timestamp) => now.difference(timestamp) > const Duration(minutes: 2),
+    );
+    if (previous != null &&
+        now.difference(previous) < const Duration(seconds: 5)) {
+      return false;
+    }
+    _lastTransitionSpeechAt[key] = now;
+    return true;
+  }
+
   String get _sourceDisplayName => sourceConfig.displayName ?? switch (sourceConfig.type) {
         VideoSourceType.localCamera => 'Câmera do dispositivo',
         VideoSourceType.rtsp => 'Câmera RTSP',
@@ -940,11 +1051,18 @@ class MonitorController extends ChangeNotifier {
   Future<void> _deliverAlert(
     String message, {
     SpeechPriority priority = SpeechPriority.normal,
+    String? audioSlot,
   }) async {
     final futures = <Future<void>>[];
     if (_settings.alertOutputs.voice) {
       _speech.setEnabled(true);
-      futures.add(_speech.speakMessage(message, priority: priority));
+      futures.add(() async {
+        final customPlayed = audioSlot != null &&
+            await _native.playCustomAlertAudio(audioSlot);
+        if (!customPlayed) {
+          await _speech.speakMessage(message, priority: priority);
+        }
+      }());
     }
     if (_settings.alertOutputs.androidNotification ||
         _settings.alertOutputs.sound ||
@@ -973,7 +1091,13 @@ class MonitorController extends ChangeNotifier {
       displayLabel: 'Câmera',
       event: isObstructed ? 'cameraObstructed' : 'cameraMoved',
     );
-    unawaited(_deliverAlert(message, priority: SpeechPriority.high));
+    unawaited(
+      _deliverAlert(
+        message,
+        priority: SpeechPriority.high,
+        audioSlot: isObstructed ? 'camera_obstructed' : 'camera_moved',
+      ),
+    );
     await _logs.record(
       level: ErrorLogLevel.warning,
       source: 'Integridade da câmera',
@@ -1285,7 +1409,10 @@ class MonitorController extends ChangeNotifier {
     _detectionFilter.reset();
     _recentMotionByTrackId.clear();
     _lastIdleInferenceAt = null;
+    _lastDetailScanAt = null;
+    _detailTileIndex = 0;
     _seenTrackIds.clear();
+    _lastTransitionSpeechAt.clear();
     _trackedDetections = const <TrackedDetection>[];
     _notify();
     unawaited(_persistRuntime());
@@ -1323,7 +1450,10 @@ class MonitorController extends ChangeNotifier {
     _detectionFilter.reset();
     _recentMotionByTrackId.clear();
     _lastIdleInferenceAt = null;
+    _lastDetailScanAt = null;
+    _detailTileIndex = 0;
     _seenTrackIds.clear();
+    _lastTransitionSpeechAt.clear();
     _trackedDetections = const <TrackedDetection>[];
   }
 
@@ -1338,7 +1468,10 @@ class MonitorController extends ChangeNotifier {
     _detectionFilter.reset();
     _recentMotionByTrackId.clear();
     _lastIdleInferenceAt = null;
+    _lastDetailScanAt = null;
+    _detailTileIndex = 0;
     _seenTrackIds.clear();
+    _lastTransitionSpeechAt.clear();
     _motion.reset();
     _motionActive = false;
     _cameraMotion = false;

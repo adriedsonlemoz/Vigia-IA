@@ -19,6 +19,7 @@ class ObjectFilterPolicy {
           displayLabel: displayLabel,
           confidence: item.confidence,
           box: item.box,
+          appearance: item.appearance,
         );
       }),
     );

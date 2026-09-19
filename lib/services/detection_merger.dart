@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../models/detection.dart';
+import '../models/object_filter_catalog.dart';
 
 class DetectionMerger {
   const DetectionMerger._();
@@ -14,11 +15,17 @@ class DetectionMerger {
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
     final result = <Detection>[];
     for (final detection in ordered) {
-      final duplicate = result.any(
-        (existing) =>
-            existing.label == detection.label &&
-            _iou(existing.box, detection.box) >= duplicateIou,
-      );
+      final duplicate = result.any((existing) {
+        final overlap = _iou(existing.box, detection.box);
+        if (existing.label == detection.label && overlap >= duplicateIou) {
+          return true;
+        }
+        final existingGroup = ObjectFilterCatalog.groupKeyForLabel(existing.label);
+        final detectionGroup = ObjectFilterCatalog.groupKeyForLabel(detection.label);
+        return existingGroup != null &&
+            existingGroup == detectionGroup &&
+            overlap >= 0.72;
+      });
       if (!duplicate) result.add(detection);
     }
     return List<Detection>.unmodifiable(result);

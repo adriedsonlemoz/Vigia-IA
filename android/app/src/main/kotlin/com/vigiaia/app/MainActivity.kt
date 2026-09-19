@@ -14,6 +14,7 @@ import android.media.MediaCodecInfo
 import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.BatteryManager
 import android.os.Build
@@ -52,6 +53,7 @@ class MainActivity : FlutterActivity() {
     private var cameraPermissionRequestInFlight: Boolean = false
     private var localNetworkPermissionRequestInFlight: Boolean = false
     private var resumeMonitorRequested: Boolean = false
+    private var customAlertPlayer: MediaPlayer? = null
 
     private val notificationPermissionRequestCode = 4412
     private val cameraPermissionRequestCode = 4413
@@ -65,6 +67,15 @@ class MainActivity : FlutterActivity() {
     override fun onPostResume() {
         super.onPostResume()
         maybePromptCameraPermissionOnFirstLaunch()
+    }
+
+    override fun onDestroy() {
+        customAlertPlayer?.let { player ->
+            try { player.stop() } catch (_: Throwable) {}
+            try { player.release() } catch (_: Throwable) {}
+        }
+        customAlertPlayer = null
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -192,6 +203,10 @@ class MainActivity : FlutterActivity() {
             "notificationsAllowed" -> result.success(notificationsAllowed())
             "localNetworkPermissionStatus" -> result.success(localNetworkPermissionStatus())
             "requestLocalNetworkPermission" -> requestLocalNetworkPermission(result)
+            "playCustomAlertAudio" -> {
+                val slot = call.argument<String>("slot") ?: ""
+                result.success(playCustomAlertAudio(slot))
+            }
             "showAlertNotification" -> {
                 try {
                     showAlertNotification(
@@ -382,6 +397,35 @@ class MainActivity : FlutterActivity() {
     private fun notificationsAllowed(): Boolean {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return false
         return (getSystemService(NotificationManager::class.java)).areNotificationsEnabled()
+    }
+
+    private fun playCustomAlertAudio(slot: String): Boolean {
+        val normalized = slot.lowercase().replace(Regex("[^a-z0-9_]"), "")
+        if (normalized.isBlank()) return false
+        val resourceId = resources.getIdentifier(normalized, "raw", packageName)
+        if (resourceId == 0) return false
+        return try {
+            customAlertPlayer?.let { player ->
+                try { player.stop() } catch (_: Throwable) {}
+                try { player.release() } catch (_: Throwable) {}
+            }
+            val player = MediaPlayer.create(this, resourceId) ?: return false
+            customAlertPlayer = player
+            player.setOnCompletionListener { completed ->
+                try { completed.release() } catch (_: Throwable) {}
+                if (customAlertPlayer === completed) customAlertPlayer = null
+            }
+            player.setOnErrorListener { failed, _, _ ->
+                try { failed.release() } catch (_: Throwable) {}
+                if (customAlertPlayer === failed) customAlertPlayer = null
+                true
+            }
+            player.start()
+            true
+        } catch (_: Throwable) {
+            customAlertPlayer = null
+            false
+        }
     }
 
     private fun showAlertNotification(title: String, message: String, notificationEnabled: Boolean, sound: Boolean, vibration: Boolean) {

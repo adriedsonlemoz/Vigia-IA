@@ -2,11 +2,37 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.35+35`
+> **Versão atual:** `1.0.37+37`
 
 ## Estado atual
 
-A `1.0.35+35` é uma correção de build da evolução de detecção 1.0.34: remove o único aviso restante do `flutter analyze` sem modificar o comportamento da câmera, do EfficientDet-Lite0, do fallback SSD ou do rastreamento.
+A `1.0.37+37` reforça a detecção de movimento e a continuidade de identidade. Além de posição/velocidade, o rastreamento passa a usar uma assinatura visual leve baseada em cores do objeto; pessoas usam pistas separadas do tronco/pernas e automóveis usam a cor predominante do corpo como apoio. Esse sinal nunca substitui a IA de classe e serve principalmente para reduzir trocas de ID e falas repetidas.
+
+### Evolução 1.0.37
+
+- o detector de movimento deixa de comparar apenas luminância e passa a considerar também distância RGB, capturando mudanças de cor que poderiam ter brilho semelhante;
+- cada detecção confirmada recebe uma assinatura visual leve de cor extraída do próprio `RgbFrame`;
+- pessoas usam pistas aproximadas de cor no tronco e nas pernas, enquanto veículos/animais usam histograma de cor do recorte interno;
+- `ObjectTracker` combina IoU, distância, tamanho, previsão de movimento, família semântica e semelhança de aparência;
+- a identidade pode permanecer em memória por até 12 s após uma perda do detector, sem manter o objeto como visível, permitindo reaquisicao do mesmo ID;
+- alertas normais passam a usar a família + ID estável (`person/vehicle/animal`) em vez do rótulo bruto, evitando nova fala quando `car` oscila para `truck` ou `cat` para `dog`;
+- falas de entrada/saída do mesmo ID/área recebem uma janela curta antichatter de 5 s; os eventos continuam sendo registrados;
+- áudios próprios podem substituir o TTS por arquivo opcional em `custom_audio/`; se o arquivo não existir, o TTS continua sendo usado automaticamente;
+- testes novos cobrem movimento por diferença de cor, extração de aparência e reaquisicao visual do mesmo objeto.
+
+### Áudios personalizados
+
+O app continua funcionando sem nenhum arquivo extra. Para usar sua própria voz/gravação, coloque um único `.wav`, `.mp3` ou `.ogg` em `custom_audio/` com um dos nomes: `person_detected`, `vehicle_detected`, `animal_detected`, `object_detected`, `object_entered`, `object_exited`, `camera_obstructed` ou `camera_moved`. O workflow copia esses arquivos para os recursos Android. Se um slot estiver ausente, o Vigia IA usa o TTS do Android. Consulte `custom_audio/README.md` para o passo a passo.
+
+### Evolução 1.0.36
+
+- classes monitoradas são filtradas dentro do detector antes do limite de resultados; objetos irrelevantes do COCO não consomem mais as vagas reservadas à saída útil;
+- confiança adaptativa considera também o tamanho da caixa: objetos pequenos podem entrar com score menor, mas precisam de mais confirmação temporal;
+- movimento separado gera focos separados, preservando o zoom da segunda passagem;
+- uma varredura multiescala controlada alterna dois tiles sobrepostos ou tenta um recorte de reaquisicao do objeto recém-perdido;
+- a passagem extra é limitada e espaçada (~1,6 s) para equilibrar alcance e consumo;
+- duplicatas fortemente sobrepostas da mesma família são consolidadas, reduzindo troca `car/truck` ou `cat/dog` sobre o mesmo objeto;
+- novos testes cobrem os planejadores e políticas da detecção 1.0.36.
 
 ### Evolução 1.0.35
 

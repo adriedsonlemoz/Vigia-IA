@@ -2,16 +2,20 @@ import 'dart:math' as math;
 
 import '../models/detection.dart';
 import '../models/monitoring_zone.dart';
+import '../models/object_filter_catalog.dart';
 import '../models/tracked_detection.dart';
+import 'object_appearance_service.dart';
 
 class ObjectTracker {
   ObjectTracker({
     this.maxMissing = const Duration(seconds: 3),
+    this.identityRetention = const Duration(seconds: 12),
     this.maxCenterDistance = 0.28,
     this.minimumIou = 0.02,
   });
 
   final Duration maxMissing;
+  final Duration identityRetention;
   final double maxCenterDistance;
   final double minimumIou;
 
@@ -53,22 +57,31 @@ class ObjectTracker {
     for (final entry in _tracks.entries) {
       final track = entry.value;
       if (assignedTracks.contains(track.id)) continue;
-      if (now.difference(track.lastSeen) <= maxMissing) continue;
-      for (final zoneId in track.zoneIds) {
-        transitions.add(
-          ZoneTransition(
-            type: ZoneTransitionType.exited,
-            trackId: track.id,
-            label: track.detection.label,
-            displayLabel: track.detection.displayLabel,
-            zoneId: zoneId,
-            zoneName: track.zoneNames[zoneId] ?? 'Área',
-            occurredAt: now,
-            detection: track.detection,
-          ),
-        );
+      final missingFor = now.difference(track.lastSeen);
+
+      // A saida da area continua responsiva, mas a identidade visual fica em
+      // memoria por mais tempo. Assim uma perda curta do detector nao cria um
+      // novo ID e nao repete a mesma fala ao reaquirir a pessoa/veiculo/animal.
+      if (missingFor > maxMissing && track.zoneIds.isNotEmpty) {
+        for (final zoneId in track.zoneIds) {
+          transitions.add(
+            ZoneTransition(
+              type: ZoneTransitionType.exited,
+              trackId: track.id,
+              label: track.detection.label,
+              displayLabel: track.detection.displayLabel,
+              zoneId: zoneId,
+              zoneName: track.zoneNames[zoneId] ?? 'Área',
+              occurredAt: now,
+              detection: track.detection,
+            ),
+          );
+        }
+        track
+          ..zoneIds = <String>{}
+          ..zoneNames = <String, String>{};
       }
-      expired.add(entry.key);
+      if (missingFor > identityRetention) expired.add(entry.key);
     }
     for (final id in expired) {
       _tracks.remove(id);
@@ -81,19 +94,47 @@ class ObjectTracker {
   List<_Assignment> _associateGlobally(List<Detection> detections, DateTime now) {
     final candidates = <_Assignment>[];
     for (final track in _tracks.values) {
-      if (now.difference(track.lastSeen) > maxMissing) continue;
+      final missingFor = now.difference(track.lastSeen);
+      if (missingFor > identityRetention) continue;
       for (var i = 0; i < detections.length; i++) {
         final detection = detections[i];
-        if (track.detection.label != detection.label) continue;
+        if (!_compatibleLabels(track.detection.label, detection.label)) continue;
         final predicted = track.predictedBox(now);
         final iou = _iou(predicted, detection.box);
         final distance = _centerDistance(predicted, detection.box);
         final sizeDelta = _sizeDelta(predicted, detection.box);
-        if (iou < minimumIou && distance > maxCenterDistance) continue;
-        if (sizeDelta > 1.25) continue;
-        final agePenalty = math.min(now.difference(track.lastSeen).inMilliseconds / 4000.0, 1.0);
-        final score = iou * 2.8 - distance * 2.1 - sizeDelta * 0.55 - agePenalty * 0.25;
-        candidates.add(_Assignment(trackId: track.id, detectionIndex: i, score: score));
+        final appearance = ObjectAppearanceService.similarity(
+          track.detection.appearance,
+          detection.appearance,
+        );
+        final dormant = missingFor > maxMissing;
+        final allowedDistance = dormant
+            ? (appearance >= 0.68 ? 0.42 : 0.24)
+            : maxCenterDistance;
+        if (iou < minimumIou && distance > allowedDistance) continue;
+        if (sizeDelta > 1.45) continue;
+        if (dormant && appearance < 0.50 && distance > 0.16) continue;
+
+        final agePenalty = math.min(
+          missingFor.inMilliseconds /
+              math.max(1, identityRetention.inMilliseconds).toDouble(),
+          1.0,
+        );
+        final exactLabelBonus =
+            track.detection.label == detection.label ? 0.30 : 0.0;
+        final score = iou * 2.8 -
+            distance * 2.0 -
+            sizeDelta * 0.48 +
+            appearance * 1.65 +
+            exactLabelBonus -
+            agePenalty * 0.55;
+        candidates.add(
+          _Assignment(
+            trackId: track.id,
+            detectionIndex: i,
+            score: score,
+          ),
+        );
       }
     }
     candidates.sort((a, b) => b.score.compareTo(a.score));
@@ -177,6 +218,13 @@ class ObjectTracker {
     final x = (detection.box.xMin + detection.box.xMax) / 2;
     final y = (detection.box.yMin + detection.box.yMax) / 2;
     return zone.contains(x, y);
+  }
+
+  bool _compatibleLabels(String a, String b) {
+    if (a == b) return true;
+    final groupA = ObjectFilterCatalog.groupKeyForLabel(a);
+    final groupB = ObjectFilterCatalog.groupKeyForLabel(b);
+    return groupA != null && groupA == groupB;
   }
 
   double _centerDistance(NormalizedBox a, NormalizedBox b) {

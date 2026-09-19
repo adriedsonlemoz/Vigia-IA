@@ -150,8 +150,29 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.35',
+          version: '1.0.37',
           current: true,
+          changes: [
+            'Movimento passa a considerar diferença de cor RGB, detectando alterações que tons de cinza poderiam perder.',
+            'Pessoa, animal e automóvel ganham assinatura visual leve por cores para manter a identidade entre frames e oclusões.',
+            'Roupas usam pistas de cor do tronco/pernas e veículos usam a cor predominante apenas como apoio ao rastreamento.',
+            'IDs sobrevivem a perdas temporárias e trocas de rótulo da mesma família, reduzindo alertas e falas repetidas.',
+            'Áudios próprios podem substituir o TTS por slots opcionais em custom_audio, com fallback automático para a voz do Android.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.36',
+          changes: [
+            'Objetos pequenos e distantes ganham varredura multiescala controlada e reaquisicao localizada.',
+            'Detector filtra classes monitoradas antes do limite de resultados, evitando que objetos irrelevantes escondam pessoa, animal ou automovel.',
+            'Confianca passa a considerar tamanho do objeto, com confirmacao temporal mais rigorosa para candidatos pequenos.',
+            'Movimentos separados recebem focos separados e rotulos sobrepostos da mesma familia sao mesclados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.35',
           changes: [
             'Corrigido o único aviso restante do flutter analyze em SharedLocalCameraService.',
             'Removido import redundante de dart:typed_data sem alterar câmera compartilhada ou detecção.',

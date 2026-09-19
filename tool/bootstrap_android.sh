@@ -33,6 +33,31 @@ cp "$ROOT/tool/android/MainActivity.kt" "$KOTLIN_DIR/MainActivity.kt"
 cp "$ROOT/tool/android/MonitoringForegroundService.kt" "$KOTLIN_DIR/MonitoringForegroundService.kt"
 cp "$ROOT/tool/android/MonitorRecoveryReceiver.kt" "$KOTLIN_DIR/MonitorRecoveryReceiver.kt"
 
+# Áudios personalizados opcionais. Eles ficam fora de android/ para sobreviver
+# à recriação completa feita por este bootstrap.
+CUSTOM_AUDIO_DIR="$ROOT/custom_audio"
+RAW_DIR="$ROOT/android/app/src/main/res/raw"
+if [[ -d "$CUSTOM_AUDIO_DIR" ]]; then
+  mkdir -p "$RAW_DIR"
+  declare -A AUDIO_SLOTS=()
+  shopt -s nullglob
+  for AUDIO_FILE in "$CUSTOM_AUDIO_DIR"/*.wav "$CUSTOM_AUDIO_DIR"/*.mp3 "$CUSTOM_AUDIO_DIR"/*.ogg; do
+    BASENAME="$(basename "$AUDIO_FILE")"
+    STEM="${BASENAME%.*}"
+    if [[ ! "$STEM" =~ ^[a-z0-9_]+$ ]]; then
+      echo "Nome de áudio inválido para Android: $BASENAME" >&2
+      exit 1
+    fi
+    if [[ -n "${AUDIO_SLOTS[$STEM]:-}" ]]; then
+      echo "Mais de um arquivo para o slot de áudio '$STEM'. Use apenas uma extensão." >&2
+      exit 1
+    fi
+    AUDIO_SLOTS[$STEM]="$BASENAME"
+    cp "$AUDIO_FILE" "$RAW_DIR/$BASENAME"
+  done
+  shopt -u nullglob
+fi
+
 BUILD_FILE="android/app/build.gradle.kts"
 python3 - "$BUILD_FILE" <<'PY'
 import pathlib, re, sys

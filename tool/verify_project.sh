@@ -9,7 +9,7 @@ fail() {
 }
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.35+35$' pubspec.yaml || fail 'Versao esperada 1.0.35+35 nao encontrada.'
+grep -q '^version: 1\.0\.37+37$' pubspec.yaml || fail 'Versao esperada 1.0.37+37 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -312,12 +312,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.35';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.35.'
-grep -q 'static const int build = 35;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 35.'
-grep -q "version: '1.0.35'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.35.'
+grep -q "static const String version = '1.0.37';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.37.'
+grep -q 'static const int build = 37;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 37.'
+grep -q "version: '1.0.37'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.37.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -399,8 +399,8 @@ grep -q '_associateGlobally' lib/services/object_tracker.dart \
   || fail 'Associacao global do rastreador nao encontrada.'
 grep -q 'predictedBox' lib/services/object_tracker.dart \
   || fail 'Predicao de movimento do rastreador nao encontrada.'
-grep -q "'\${detection.label}#\${tracked.trackId}'" lib/controllers/monitor_controller.dart \
-  || fail 'Anti-repeticao nao considera trackId.'
+grep -q "'\$groupKey#\${tracked.trackId}'" lib/controllers/monitor_controller.dart \
+  || fail 'Anti-repeticao nao considera familia + trackId.'
 grep -Eq 'cruzar|cruzamento' test/object_tracker_test.dart \
   || fail 'Teste de regressao para cruzamento de objetos nao encontrado.'
 
@@ -483,18 +483,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.35+35$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.35+35.'
+grep -q '^version: 1.0.37+37$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.37+37.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.35"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.35.'
-grep -q '"build": 35' app_identity.json \
-  || fail 'app_identity.json nao esta no build 35.'
+grep -q '"version": "1.0.37"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.37.'
+grep -q '"build": 37' app_identity.json \
+  || fail 'app_identity.json nao esta no build 37.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -791,8 +791,8 @@ grep -q 'EfficientDet-Lite0' lib/services/object_detection_service.dart \
   || fail 'EfficientDet-Lite0 nao e o detector principal.'
 grep -q 'SSD MobileNet V1' lib/services/object_detection_service.dart \
   || fail 'Fallback SSD MobileNet nao foi preservado.'
-grep -q 'focusRegion()' lib/controllers/monitor_controller.dart \
-  || fail 'Segunda passagem focada em movimento nao esta ligada ao pipeline.'
+grep -q 'focusRegions(maxRegions: 2)' lib/controllers/monitor_controller.dart \
+  || fail 'Focos separados de movimento nao estao ligados ao pipeline.'
 grep -q 'idlePresenceRefresh' lib/controllers/monitor_controller.dart \
   || fail 'Atualizacao periodica de presenca sem movimento nao foi encontrada.'
 grep -q 'TemporalDetectionFilter' lib/controllers/monitor_controller.dart \
@@ -811,7 +811,64 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.35+35' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.35+35.'
+grep -q 'Vigia IA 1.0.37+37' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.37+37.'
+
+# Evolucao da deteccao 1.0.36
+[[ -f lib/services/detection_scan_planner.dart ]] \
+  || fail 'Planejador multiescala da deteccao nao encontrado.'
+grep -q 'allowedLabels' lib/services/object_detection_service.dart \
+  || fail 'Detector nao filtra classes monitoradas antes de maxResults.'
+grep -q 'acceptedThresholdForDetection' lib/services/detection_confidence_policy.dart \
+  || fail 'Confianca nao considera tamanho da deteccao.'
+grep -q 'confirmationHits' lib/services/temporal_detection_filter.dart \
+  || fail 'Filtro temporal nao usa confirmacao adaptativa.'
+grep -q 'focusRegions(maxRegions: 2)' lib/controllers/monitor_controller.dart \
+  || fail 'Controller nao usa focos separados de movimento.'
+grep -q 'detailScanInterval = Duration(milliseconds: 1600)' lib/controllers/monitor_controller.dart \
+  || fail 'Varredura detalhada controlada nao encontrada.'
+grep -q 'DetectionScanPlanner.recoveryZone' lib/controllers/monitor_controller.dart \
+  || fail 'Reaquisicao localizada nao esta conectada ao controller.'
+grep -q 'existingGroup == detectionGroup' lib/services/detection_merger.dart \
+  || fail 'Mesclagem semantica por familia nao encontrada.'
+[[ -f test/detection_scan_planner_test.dart ]] \
+  || fail 'Teste do planejador de varredura nao encontrado.'
+grep -q 'movimentos separados geram regioes de foco separadas' test/motion_detection_service_test.dart \
+  || fail 'Teste de multiplos focos de movimento nao encontrado.'
+grep -q '^## 1.0.36+36' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.36.'
+grep -q 'Evolução 1.0.36' README.md || fail 'README nao documenta 1.0.36.'
+
+# Evolucao de movimento/aparencia e audio 1.0.37
+[[ -f lib/models/object_appearance.dart ]] \
+  || fail 'Modelo ObjectAppearance nao encontrado.'
+[[ -f lib/services/object_appearance_service.dart ]] \
+  || fail 'ObjectAppearanceService nao encontrado.'
+[[ -f test/object_appearance_service_test.dart ]] \
+  || fail 'Testes de aparencia por cor nao encontrados.'
+grep -q 'colorDifferenceThreshold' lib/services/motion_detection_service.dart \
+  || fail 'Movimento nao considera diferenca RGB.'
+grep -q 'ObjectAppearanceService.enrichAll' lib/controllers/monitor_controller.dart \
+  || fail 'Assinatura visual nao esta ligada ao pipeline.'
+grep -q 'ObjectAppearanceService.similarity' lib/services/object_tracker.dart \
+  || fail 'Rastreamento nao usa semelhanca de aparencia.'
+grep -q 'identityRetention = const Duration(seconds: 12)' lib/services/object_tracker.dart \
+  || fail 'Retencao de identidade de 12 s nao encontrada.'
+grep -q "ObjectFilterCatalog.groupKeyForLabel(detection.label)" lib/controllers/monitor_controller.dart \
+  || fail 'Anti-repeticao nao usa familia semantica do objeto.'
+grep -q 'const Duration(seconds: 5)' lib/controllers/monitor_controller.dart \
+  || fail 'Janela antichatter de transicoes nao encontrada.'
+[[ -f custom_audio/README.md ]] || fail 'Guia de audio personalizado nao encontrado.'
+grep -q 'playCustomAlertAudio' lib/services/native_platform_service.dart \
+  || fail 'Bridge Flutter para audio personalizado nao encontrada.'
+grep -q 'playCustomAlertAudio' tool/android/MainActivity.kt \
+  || fail 'Reproducao nativa de audio personalizado nao encontrada.'
+grep -q 'MediaPlayer' tool/android/MainActivity.kt \
+  || fail 'MediaPlayer nativo para audio personalizado nao encontrado.'
+grep -q 'CUSTOM_AUDIO_DIR' tool/bootstrap_android.sh \
+  || fail 'Bootstrap nao copia custom_audio para res/raw.'
+grep -q '^## 1.0.37+37' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.37.'
+grep -q 'Evolução 1.0.37' README.md || fail 'README nao documenta 1.0.37.'
+grep -q 'Reidentificação visual e áudio personalizado 1.0.37' ARCHITECTURE.md \
+  || fail 'ARCHITECTURE nao documenta 1.0.37.'
 
 # Nomes tecnicos antigos nao podem voltar ao projeto atual.
 for legacy in 'Monitor IA' 'monitor-ia' 'camera_guard_offline' 'vigia-ia'; do

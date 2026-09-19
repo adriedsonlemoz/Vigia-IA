@@ -1,8 +1,8 @@
-# Arquitetura — Vigia IA 1.0.35+35
+# Arquitetura — Vigia IA 1.0.37+37
 
 ## 1. Princípios
 
-A 1.0.35 mantém integralmente a arquitetura de detecção da 1.0.34 e corrige somente o aviso de análise estática no serviço de câmera compartilhada. O pipeline continua priorizando EfficientDet-Lite0 com fallback SSD, preservando a geometria da imagem antes da inferência, estabilizando candidatas fracas no tempo e usando uma segunda passagem apenas quando o movimento localizado justifica o custo.
+A 1.0.37 mantém EfficientDet-Lite0 + fallback SSD e acrescenta movimento sensível a cor e reidentificação visual leve. O pipeline continua local/offline; a assinatura de aparência é extraída do próprio frame RGB e só complementa posição, tamanho e velocidade para preservar IDs e reduzir alertas repetidos.
 
 Princípios mantidos:
 
@@ -57,7 +57,8 @@ Serviços principais:
 - `DetectionConfidencePolicy` — limiares de candidatura por grupo;
 - `TemporalDetectionFilter` — confirmação temporal/hold curto;
 - `DetectionMerger` — união sem duplicatas da passagem normal e focada;
-- `MotionDetectionService` — movimento e região de foco;
+- `MotionDetectionService` — movimento por luminância + diferença RGB e regiões de foco;
+- `ObjectAppearanceService` — assinatura visual leve de cor para reidentificação;
 - `MonitoringZoneService` — áreas e recortes;
 - `ObjectTracker` — IDs e entrada/saída;
 - `SmartAlertRuleEngine` — permanência e regras por grupo;
@@ -385,6 +386,18 @@ Testes não devem ser alterados apenas para esconder falhas.
 - `MonitorRecoveryReceiver` continua sendo recuperação assistida; não abre câmera silenciosamente após boot.
 
 
+## Detecção multiescala e reaquisicao 1.0.36
+
+O caminho principal continua sendo uma única inferência sobre o frame preservado por letterbox. A 1.0.36 acrescenta três camadas de recuperação:
+
+1. **Filtro de classes no worker** — `ObjectDetectionService.detect(... allowedLabels)` remove classes não monitoradas antes de `maxResults`, evitando que cadeiras, mochilas ou outros objetos COCO escondam classes úteis no ranking.
+2. **Foco por componentes de movimento** — `MotionDetectionResult.focusRegions()` separa blobs distantes. Se a passagem principal falhar, até duas regiões podem ser testadas, interrompendo assim que uma detecção útil reaparece.
+3. **Varredura detalhada espaçada** — `DetectionScanPlanner` roda no máximo um recorte adicional a cada ~1,6 s quando não houve passagem focada. Primeiro tenta reaquirir uma detecção recentemente perdida; sem alvo anterior, alterna dois tiles sobrepostos de paisagem/retrato para aumentar a resolução efetiva de objetos pequenos.
+
+`DetectionConfidencePolicy` usa classe + área da caixa. Quanto menor a caixa, maior a margem permitida abaixo do limiar principal, mas candidatos muito pequenos exigem três observações coerentes. `TemporalDetectionFilter` usa retenção adaptativa curta para oclusões e `DetectionMerger` consolida duplicatas da mesma família somente com sobreposição alta.
+
+A estratégia evita simplesmente trocar para um modelo pesado ou executar mosaico completo em todos os frames, preservando a operação offline e o consumo de um aparelho móvel.
+
 ## Detecção adaptativa 1.0.34
 
 `ObjectDetectionService` tenta carregar `efficientdet_lite0.tflite` primeiro e só recorre a `ssd_mobilenet_v1.tflite` se o modelo principal não puder ser usado. Ambos precisam expor entrada RGB `[1,H,W,3]` e as quatro saídas de `DetectionPostProcess` (caixas, classes, scores e quantidade). O diagnóstico registra qual modelo foi realmente inicializado.
@@ -489,3 +502,24 @@ A ETAPA 4 separa coleta, avaliação, apresentação e exportação do estado do
 ### Exportação
 
 O TXT é criado em `documents/exports/diagnostico` com nome `vigiaia_diagnostico_<timestamp>.txt`. O compartilhamento usa `Intent.ACTION_SEND` com o mesmo texto do snapshot exibido.
+
+
+## Reidentificação visual e áudio personalizado 1.0.37
+
+### Movimento por cor
+
+`MotionDetectionService` mantém a comparação de luminância e acrescenta distância RGB no grid reduzido. Isso evita perder deslocamentos em que a cor muda muito, mas o brilho médio permanece parecido. Mudanças globais continuam passando pela heurística de movimento da câmera para não transformar alteração de iluminação/enquadramento em objeto local.
+
+### Assinatura de aparência
+
+`ObjectAppearanceService` amostra apenas o interior da caixa detectada e produz um histograma normalizado numa paleta pequena. Para `person`, também calcula cores aproximadas do tronco e das pernas; para `vehicle`, privilegia a região central do corpo para reduzir influência do fundo. A aparência não decide a classe do objeto e não é reconhecimento biométrico/facial.
+
+`ObjectTracker` usa essa assinatura como mais uma variável na associação global. Tracks deixam de exigir rótulo COCO exatamente igual quando pertencem à mesma família monitorada e podem ser reaquiridos durante uma retenção de identidade de 12 s. A saída de uma área continua sendo emitida pelo limite curto de ausência; somente a identidade fica guardada para evitar criar um novo objeto em uma falha temporária do detector.
+
+### Anti-repetição de fala
+
+Alertas de detecção usam `grupo#trackId`, não `label#trackId`. Assim, oscilações `car/truck` ou `cat/dog` não criam uma chave de fala nova. Transições de entrada/saída têm uma proteção de 5 s por `trackId+zoneId` contra chatter de perda/reaquisicao, sem descartar o registro técnico/histórico.
+
+### Áudio próprio
+
+A pasta `custom_audio/` é a fonte estável, fora de `android/`, porque o workflow recria o projeto Android. `tool/bootstrap_android.sh` valida e copia os arquivos para `android/app/src/main/res/raw/`. `NativePlatformService.playCustomAlertAudio()` chama o método Android homônimo; `MainActivity` procura o recurso dinamicamente e usa `MediaPlayer`. Na ausência do slot, `_deliverAlert()` cai para `SpeechService`/TTS.

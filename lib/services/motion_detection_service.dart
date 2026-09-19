@@ -91,96 +91,216 @@ class MotionDetectionResult {
     return ratio >= strongLocalRatio || edgeRatio >= minimumEdgeRatio;
   }
 
-  /// Região de atenção derivada somente das células que realmente mudaram.
-  /// Serve como segunda tentativa ampliada da IA quando a primeira passagem
-  /// não encontra um objeto monitorado.
-  NormalizedBox? focusRegion({
-    double padding = 0.12,
-    double minimumSpan = 0.36,
-    double maximumArea = 0.62,
+  /// Regioes de atencao derivadas das celulas que realmente mudaram. Componentes
+  /// separados de movimento nao sao unidos em uma unica janela enorme; isso
+  /// preserva o ganho de zoom da segunda passagem da IA.
+  List<NormalizedBox> focusRegions({
+    int maxRegions = 2,
+    double padding = 0.10,
+    double minimumSpan = 0.34,
+    double maximumArea = 0.58,
+    int minimumCells = 2,
   }) {
-    if (!hasMotion || cameraMotion || mask.isEmpty || gridWidth <= 0 || gridHeight <= 0) {
-      return null;
+    if (!hasMotion ||
+        cameraMotion ||
+        mask.isEmpty ||
+        gridWidth <= 0 ||
+        gridHeight <= 0 ||
+        maxRegions <= 0) {
+      return const <NormalizedBox>[];
     }
 
-    var minX = gridWidth;
-    var minY = gridHeight;
-    var maxX = -1;
-    var maxY = -1;
+    final visited = Uint8List(mask.length);
+    final components = <_MotionComponent>[];
+    const neighborX = <int>[-1, 0, 1, -1, 1, -1, 0, 1];
+    const neighborY = <int>[-1, -1, -1, 0, 0, 1, 1, 1];
+
     for (var y = 0; y < gridHeight; y++) {
-      final row = y * gridWidth;
       for (var x = 0; x < gridWidth; x++) {
-        if (mask[row + x] == 0) continue;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+        final index = y * gridWidth + x;
+        if (mask[index] == 0 || visited[index] != 0) continue;
+
+        final queueX = <int>[x];
+        final queueY = <int>[y];
+        visited[index] = 1;
+        var head = 0;
+        var minX = x;
+        var maxX = x;
+        var minY = y;
+        var maxY = y;
+        var cells = 0;
+
+        while (head < queueX.length) {
+          final cx = queueX[head];
+          final cy = queueY[head];
+          head++;
+          cells++;
+          minX = math.min(minX, cx);
+          maxX = math.max(maxX, cx);
+          minY = math.min(minY, cy);
+          maxY = math.max(maxY, cy);
+
+          for (var i = 0; i < neighborX.length; i++) {
+            final nx = cx + neighborX[i];
+            final ny = cy + neighborY[i];
+            if (nx < 0 || ny < 0 || nx >= gridWidth || ny >= gridHeight) {
+              continue;
+            }
+            final neighborIndex = ny * gridWidth + nx;
+            if (mask[neighborIndex] == 0 || visited[neighborIndex] != 0) {
+              continue;
+            }
+            visited[neighborIndex] = 1;
+            queueX.add(nx);
+            queueY.add(ny);
+          }
+        }
+
+        if (cells < minimumCells) continue;
+        components.add(
+          _MotionComponent(
+            minX: minX,
+            minY: minY,
+            maxX: maxX,
+            maxY: maxY,
+            cells: cells,
+          ),
+        );
       }
     }
-    if (maxX < minX || maxY < minY) return null;
 
-    var xMin = minX / gridWidth;
-    var yMin = minY / gridHeight;
-    var xMax = (maxX + 1) / gridWidth;
-    var yMax = (maxY + 1) / gridHeight;
+    components.sort((a, b) => b.cells.compareTo(a.cells));
+    final result = <NormalizedBox>[];
+    for (final component in components) {
+      final box = _expandedFocusBox(
+        component,
+        padding: padding,
+        minimumSpan: minimumSpan,
+        maximumArea: maximumArea,
+      );
+      if (box == null) continue;
+      final duplicate = result.any((existing) => _iou(existing, box) >= 0.70);
+      if (!duplicate) result.add(box);
+      if (result.length >= maxRegions) break;
+    }
+    return List<NormalizedBox>.unmodifiable(result);
+  }
+
+  /// Compatibilidade com a passagem focada anterior: retorna a principal
+  /// regiao de movimento, agora sem englobar componentes distantes.
+  NormalizedBox? focusRegion({
+    double padding = 0.10,
+    double minimumSpan = 0.34,
+    double maximumArea = 0.58,
+  }) {
+    final regions = focusRegions(
+      maxRegions: 1,
+      padding: padding,
+      minimumSpan: minimumSpan,
+      maximumArea: maximumArea,
+    );
+    return regions.isEmpty ? null : regions.first;
+  }
+
+  NormalizedBox? _expandedFocusBox(
+    _MotionComponent component, {
+    required double padding,
+    required double minimumSpan,
+    required double maximumArea,
+  }) {
+    var xMin = component.minX / gridWidth;
+    var yMin = component.minY / gridHeight;
+    var xMax = (component.maxX + 1) / gridWidth;
+    var yMax = (component.maxY + 1) / gridHeight;
 
     xMin = (xMin - padding).clamp(0.0, 1.0).toDouble();
     yMin = (yMin - padding).clamp(0.0, 1.0).toDouble();
     xMax = (xMax + padding).clamp(0.0, 1.0).toDouble();
     yMax = (yMax + padding).clamp(0.0, 1.0).toDouble();
 
-    double expandMinSpan(double min, double max) {
-      final span = max - min;
-      if (span >= minimumSpan) return min;
-      final center = (min + max) / 2;
-      return (center - minimumSpan / 2).clamp(0.0, 1.0).toDouble();
-    }
+    final centerX = (xMin + xMax) / 2;
+    final centerY = (yMin + yMax) / 2;
+    final width = math.max(minimumSpan, xMax - xMin).clamp(0.0, 1.0).toDouble();
+    final height = math.max(minimumSpan, yMax - yMin).clamp(0.0, 1.0).toDouble();
 
-    double expandMaxSpan(double min, double max) {
-      final span = max - min;
-      if (span >= minimumSpan) return max;
-      final center = (min + max) / 2;
-      return (center + minimumSpan / 2).clamp(0.0, 1.0).toDouble();
+    var expandedXMin = centerX - width / 2;
+    var expandedXMax = centerX + width / 2;
+    var expandedYMin = centerY - height / 2;
+    var expandedYMax = centerY + height / 2;
+    if (expandedXMin < 0) {
+      expandedXMax -= expandedXMin;
+      expandedXMin = 0;
     }
-
-    var expandedXMin = expandMinSpan(xMin, xMax);
-    var expandedXMax = expandMaxSpan(xMin, xMax);
-    var expandedYMin = expandMinSpan(yMin, yMax);
-    var expandedYMax = expandMaxSpan(yMin, yMax);
-
-    // Se o clamp numa borda encolheu a janela, compensa para o lado oposto.
-    if (expandedXMax - expandedXMin < minimumSpan) {
-      if (expandedXMin <= 0) expandedXMax = minimumSpan.clamp(0.0, 1.0).toDouble();
-      if (expandedXMax >= 1) expandedXMin = (1 - minimumSpan).clamp(0.0, 1.0).toDouble();
+    if (expandedXMax > 1) {
+      expandedXMin -= expandedXMax - 1;
+      expandedXMax = 1;
     }
-    if (expandedYMax - expandedYMin < minimumSpan) {
-      if (expandedYMin <= 0) expandedYMax = minimumSpan.clamp(0.0, 1.0).toDouble();
-      if (expandedYMax >= 1) expandedYMin = (1 - minimumSpan).clamp(0.0, 1.0).toDouble();
+    if (expandedYMin < 0) {
+      expandedYMax -= expandedYMin;
+      expandedYMin = 0;
+    }
+    if (expandedYMax > 1) {
+      expandedYMin -= expandedYMax - 1;
+      expandedYMax = 1;
     }
 
     final area = (expandedXMax - expandedXMin) * (expandedYMax - expandedYMin);
     if (area <= 0 || area > maximumArea) return null;
     return NormalizedBox(
-      xMin: expandedXMin,
-      yMin: expandedYMin,
-      xMax: expandedXMax,
-      yMax: expandedYMax,
+      xMin: expandedXMin.clamp(0.0, 1.0).toDouble(),
+      yMin: expandedYMin.clamp(0.0, 1.0).toDouble(),
+      xMax: expandedXMax.clamp(0.0, 1.0).toDouble(),
+      yMax: expandedYMax.clamp(0.0, 1.0).toDouble(),
     );
   }
+
+  double _iou(NormalizedBox a, NormalizedBox b) {
+    final left = math.max(a.xMin, b.xMin);
+    final top = math.max(a.yMin, b.yMin);
+    final right = math.min(a.xMax, b.xMax);
+    final bottom = math.min(a.yMax, b.yMax);
+    final intersection = math.max(0.0, right - left) * math.max(0.0, bottom - top);
+    final areaA = math.max(0.0, a.xMax - a.xMin) * math.max(0.0, a.yMax - a.yMin);
+    final areaB = math.max(0.0, b.xMax - b.xMin) * math.max(0.0, b.yMax - b.yMin);
+    final union = areaA + areaB - intersection;
+    return union <= 0 ? 0.0 : intersection / union;
+  }
+
+}
+
+class _MotionComponent {
+  const _MotionComponent({
+    required this.minX,
+    required this.minY,
+    required this.maxX,
+    required this.maxY,
+    required this.cells,
+  });
+
+  final int minX;
+  final int minY;
+  final int maxX;
+  final int maxY;
+  final int cells;
 }
 
 class MotionDetectionService {
   MotionDetectionService({
     this.pixelDifferenceThreshold = 26,
+    this.colorDifferenceThreshold = 42,
     this.minimumSceneChangeRatio = 0.012,
     this.cameraMotionRatio = 0.48,
   });
 
+  /// Limiar de luminância preservado para compatibilidade com o detector
+  /// anterior. A diferença RGB abaixo complementa esse sinal para movimentos
+  /// cuja cor muda bastante sem alterar muito o brilho.
   final int pixelDifferenceThreshold;
+  final int colorDifferenceThreshold;
   final double minimumSceneChangeRatio;
   final double cameraMotionRatio;
 
-  Uint8List? _previousGray;
+  Uint8List? _previousRgb;
   int _previousGridWidth = 0;
   int _previousGridHeight = 0;
 
@@ -191,7 +311,7 @@ class MotionDetectionService {
       1,
       (gridWidth * frame.height / frame.width).round(),
     );
-    final currentGray = Uint8List(gridWidth * gridHeight);
+    final currentRgb = Uint8List(gridWidth * gridHeight * 3);
 
     for (var gy = 0; gy < gridHeight; gy++) {
       final sourceY = math.min(
@@ -203,21 +323,20 @@ class MotionDetectionService {
           frame.width - 1,
           ((gx + 0.5) * frame.width / gridWidth).floor(),
         );
-        final offset = (sourceY * frame.width + sourceX) * 3;
-        if (offset + 2 >= frame.rgbBytes.length) continue;
-        final r = frame.rgbBytes[offset];
-        final g = frame.rgbBytes[offset + 1];
-        final b = frame.rgbBytes[offset + 2];
-        currentGray[gy * gridWidth + gx] =
-            ((77 * r + 150 * g + 29 * b) >> 8).clamp(0, 255).toInt();
+        final sourceOffset = (sourceY * frame.width + sourceX) * 3;
+        if (sourceOffset + 2 >= frame.rgbBytes.length) continue;
+        final targetOffset = (gy * gridWidth + gx) * 3;
+        currentRgb[targetOffset] = frame.rgbBytes[sourceOffset];
+        currentRgb[targetOffset + 1] = frame.rgbBytes[sourceOffset + 1];
+        currentRgb[targetOffset + 2] = frame.rgbBytes[sourceOffset + 2];
       }
     }
 
-    final previous = _previousGray;
+    final previous = _previousRgb;
     final sameGrid = previous != null &&
         _previousGridWidth == gridWidth &&
         _previousGridHeight == gridHeight;
-    _previousGray = currentGray;
+    _previousRgb = currentRgb;
     _previousGridWidth = gridWidth;
     _previousGridHeight = gridHeight;
 
@@ -232,17 +351,37 @@ class MotionDetectionService {
       );
     }
 
-    final previousGray = previous;
-    final mask = Uint8List(currentGray.length);
+    final previousRgb = previous;
+    final mask = Uint8List(gridWidth * gridHeight);
+    final colorThresholdSquared = colorDifferenceThreshold * colorDifferenceThreshold;
     var changed = 0;
-    for (var i = 0; i < currentGray.length; i++) {
-      if ((currentGray[i] - previousGray[i]).abs() >= pixelDifferenceThreshold) {
+    for (var i = 0; i < mask.length; i++) {
+      final offset = i * 3;
+      final r = currentRgb[offset];
+      final g = currentRgb[offset + 1];
+      final b = currentRgb[offset + 2];
+      final previousR = previousRgb[offset];
+      final previousG = previousRgb[offset + 1];
+      final previousB = previousRgb[offset + 2];
+
+      final currentLuma = (77 * r + 150 * g + 29 * b) >> 8;
+      final previousLuma =
+          (77 * previousR + 150 * previousG + 29 * previousB) >> 8;
+      final luminanceChanged =
+          (currentLuma - previousLuma).abs() >= pixelDifferenceThreshold;
+      final dr = r - previousR;
+      final dg = g - previousG;
+      final db = b - previousB;
+      final colorDistanceSquared = dr * dr + dg * dg + db * db;
+      final chromaChanged = colorDistanceSquared >= colorThresholdSquared;
+
+      if (luminanceChanged || chromaChanged) {
         mask[i] = 1;
         changed++;
       }
     }
 
-    final changedRatio = changed / currentGray.length;
+    final changedRatio = changed / mask.length;
     final spreadBlocks = _changedMacroBlocks(mask, gridWidth, gridHeight);
     final cameraMotion = changedRatio >= cameraMotionRatio ||
         (changedRatio >= 0.12 && spreadBlocks >= 12);
@@ -283,7 +422,7 @@ class MotionDetectionService {
   }
 
   void reset() {
-    _previousGray = null;
+    _previousRgb = null;
     _previousGridWidth = 0;
     _previousGridHeight = 0;
   }

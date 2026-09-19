@@ -69,6 +69,7 @@ class MonitoringZoneService {
         xMax: normalized.xMin + box.xMax * normalized.width,
         yMax: normalized.yMin + box.yMax * normalized.height,
       ),
+      appearance: detection.appearance,
     );
   }
 

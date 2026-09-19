@@ -177,6 +177,19 @@ class NativePlatformService {
     }
   }
 
+  Future<bool> playCustomAlertAudio(String slot) async {
+    if (!Platform.isAndroid || slot.trim().isEmpty) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'playCustomAlertAudio',
+            <String, Object?>{'slot': slot.trim()},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> showAlertNotification({
     required String title,
     required String message,
