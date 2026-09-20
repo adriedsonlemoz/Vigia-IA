@@ -41,16 +41,16 @@ jobs:
           cache: true
 
       - name: Recriar Android com template atual
-        run: ./tool/bootstrap_android.sh
+        run: bash ./tool/bootstrap_android.sh
 
       - name: Baixar modelo TensorFlow Lite
-        run: ./tool/fetch_model.sh
+        run: bash ./tool/fetch_model.sh
 
       - name: Dependencias
         run: flutter pub get
 
       - name: Verificacao preventiva
-        run: ./tool/verify_project.sh
+        run: bash ./tool/verify_project.sh
 
       - name: Analise estatica
         run: flutter analyze

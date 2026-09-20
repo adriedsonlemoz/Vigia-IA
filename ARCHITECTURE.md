@@ -1,10 +1,17 @@
-# Arquitetura — Vigia IA 1.0.61+61
+# Arquitetura — Vigia IA 1.0.62+62
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
 
+
+## Evolução 1.0.62 — Robustez do workflow Android
+
+- O GitHub Actions invoca scripts de projeto com `bash ./tool/...` em vez de depender do bit executável Unix.
+- A mudança cobre bootstrap Android, download do modelo TensorFlow Lite e verificação preventiva.
+- Isso torna o pipeline compatível com ZIPs/importações que preservam conteúdo mas não metadados de permissão.
+- O verificador passa a exigir essas invocações robustas para evitar regressão.
 
 ## Evolução 1.0.61 — Buildfix pós-refatoração
 

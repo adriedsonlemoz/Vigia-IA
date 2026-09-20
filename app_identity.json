@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.61 corrige três wrappers privados obsoletos deixados pela refatoração do MonitorController, eliminando warnings do flutter analyze sem alterar a lógica dos módulos extraídos.",
-  "version": "1.0.61",
-  "build": 61
+  "notes": "A 1.0.62 torna o workflow robusto quando ZIP/GitHub Manager nao preserva o bit executavel dos scripts shell, chamando bootstrap, download do modelo e verificacao preventiva explicitamente via bash.",
+  "version": "1.0.62",
+  "build": 62
 }

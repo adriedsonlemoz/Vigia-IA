@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.62+62
+
+- Corrigido o erro `Permission denied` / exit code 126 do workflow ao executar `tool/bootstrap_android.sh` após importação do ZIP.
+- O workflow agora chama `bootstrap_android.sh`, `fetch_model.sh` e `verify_project.sh` explicitamente via `bash`, sem depender do bit executável dos arquivos ser preservado pelo ZIP/GitHub Manager.
+- Adicionada verificação preventiva para impedir que o workflow volte a executar esses scripts diretamente.
+- Nenhuma lógica funcional do Monitor, Modo Bike, IA, alertas, áudio ou interface foi alterada.
+- Versionamento e documentação sincronizados em `1.0.62+62`.
+
 ## 1.0.61+61
 
 - Corrigidos os três avisos `unused_element` reportados pelo workflow da 1.0.60 em `monitor_controller.dart`.

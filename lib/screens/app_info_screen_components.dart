@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.61',
+          version: '1.0.62',
           current: true,
+          changes: [
+            'Buildfix do workflow: scripts shell agora são chamados explicitamente via bash, sem depender do bit executável preservado pelo ZIP/GitHub Manager.',
+            'Bootstrap Android, download do modelo e verificação preventiva usam o mesmo caminho robusto no GitHub Actions.',
+            'Nenhuma lógica do Monitor, Bike, IA ou interface foi alterada nesta correção.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.61',
           changes: [
             'Buildfix após a refatoração: removidos três wrappers privados obsoletos que faziam o flutter analyze falhar com unused_element.',
             'Telemetria da sessão, entrega de alertas e diagnóstico de áreas continuam usando diretamente os módulos internos extraídos.',
