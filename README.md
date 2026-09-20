@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.47+47`
+> **Versão atual:** `1.0.48+48`
 
 ## Estado atual
 
-A `1.0.47+47` estabelece a assinatura permanente do APK release via GitHub Secrets, eliminando a dependência da chave debug gerada no ambiente de build.
+A `1.0.48+48` corrige a reprodução dos áudios padrão no Android e compacta as ações da tela Áudios e voz para evitar quebra de linha em celulares estreitos.
+
+### Evolução 1.0.48
+
+- os 78 áudios padrão foram convertidos de WAV PCM para AAC/M4A mono em 24 kHz, formato mais consistente entre implementações Android do `MediaPlayer`;
+- a reprodução nativa usa URI `android.resource://` e `AudioAttributes` voltados a alertas falados;
+- áudios personalizados continuam aceitando WAV, MP3, OGG, M4A/AAC e MP4 de áudio;
+- a tela Áudios e voz mantém `Ouvir`, `Trocar` e `Gravar` sempre na mesma linha, com botões responsivos;
+- a restauração do áudio padrão fica no cabeçalho do item quando existir personalização, evitando um quarto botão na linha principal.
 
 ### Evolução 1.0.47
 

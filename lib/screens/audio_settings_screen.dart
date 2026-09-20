@@ -315,18 +315,41 @@ class _AudioSlotCard extends StatelessWidget {
                       label: Text('Seu áudio'),
                       avatar: Icon(Icons.mic_rounded, size: 16),
                     ),
+                  if (onRestore != null)
+                    IconButton(
+                      onPressed: onRestore,
+                      tooltip: 'Restaurar áudio padrão',
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.restore_rounded),
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Row(
                 children: [
-                  OutlinedButton.icon(onPressed: onPlay, icon: const Icon(Icons.play_arrow_rounded), label: const Text('Ouvir')),
-                  OutlinedButton.icon(onPressed: onImport, icon: const Icon(Icons.audio_file_outlined), label: const Text('Trocar arquivo')),
-                  OutlinedButton.icon(onPressed: onRecord, icon: const Icon(Icons.mic_none_rounded), label: const Text('Gravar')),
-                  if (onRestore != null)
-                    TextButton.icon(onPressed: onRestore, icon: const Icon(Icons.restore_rounded), label: const Text('Padrão')),
+                  Expanded(
+                    child: _AudioActionButton(
+                      onPressed: onPlay,
+                      icon: Icons.play_arrow_rounded,
+                      label: 'Ouvir',
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _AudioActionButton(
+                      onPressed: onImport,
+                      icon: Icons.audio_file_outlined,
+                      label: 'Trocar',
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _AudioActionButton(
+                      onPressed: onRecord,
+                      icon: Icons.mic_none_rounded,
+                      label: 'Gravar',
+                    ),
+                  ),
                 ],
               ),
               if (customized && slot.future)
@@ -344,3 +367,39 @@ class _AudioSlotCard extends StatelessWidget {
         ),
       );
 }
+
+class _AudioActionButton extends StatelessWidget {
+  const _AudioActionButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 19),
+            const SizedBox(width: 5),
+            Text(label, maxLines: 1, softWrap: false),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

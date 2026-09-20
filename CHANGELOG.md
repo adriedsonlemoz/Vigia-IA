@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.48+48
+
+- Corrigida a falha de reprodução na tela `Áudios e voz` observada em aparelho real.
+- Os 78 áudios padrão passam de WAV PCM para AAC/M4A mono em 24 kHz para maior compatibilidade com o `MediaPlayer` Android.
+- O player nativo passa a usar `AudioAttributes` de sonificação/fala e URI `android.resource://` para abrir os recursos embarcados.
+- `Ouvir`, `Trocar` e `Gravar` permanecem lado a lado em uma única linha, com rótulos compactos e ajuste automático sem cortar texto.
+- `Restaurar padrão` foi movido para um ícone no cabeçalho dos itens personalizados para não quebrar a linha de ações.
+- Importação e gravação de áudio personalizado permanecem compatíveis com os formatos já aceitos.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.48+48`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a biblioteca M4A, a equivalência entre `custom_audio` e `res/raw`, o novo player e o layout compacto.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.47+47
 
 - Assinatura Android release migrada de `debug` para uma keystore permanente fornecida exclusivamente por GitHub Secrets.

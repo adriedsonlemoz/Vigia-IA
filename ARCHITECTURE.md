@@ -1,8 +1,17 @@
-# Arquitetura — Vigia IA 1.0.47+47
+# Arquitetura — Vigia IA 1.0.48+48
 
 ## 1. Princípios
 
-A 1.0.47 mantém a arquitetura funcional da 1.0.46 e troca a assinatura efêmera de debug por uma identidade criptográfica release permanente, fornecida somente pelo ambiente seguro do workflow.
+A 1.0.48 mantém a assinatura permanente da 1.0.47 e corrige a camada de reprodução dos alertas padrão para funcionar de forma consistente em aparelhos Android reais.
+
+## Evolução 1.0.48
+
+- `custom_audio/` passa a armazenar a biblioteca padrão em AAC/M4A mono 24 kHz, preservando os mesmos 78 IDs do `AudioSlotCatalog`;
+- `bootstrap_android.sh` continua sendo a origem de reconstrução de `res/raw` e copia os M4A sem alterar o contrato dos slots;
+- `MainActivity.playCustomAlertAudio` mantém prioridade `override → padrão`, mas o padrão é aberto por URI `android.resource://` com `AudioAttributes` de sonificação/fala;
+- importações personalizadas continuam independentes do formato da biblioteca padrão e usam o armazenamento privado do aplicativo;
+- `AudioSettingsScreen` usa uma única `Row` para Ouvir/Trocar/Gravar; os três botões dividem a largura e reduzem internamente sem quebrar rótulos;
+- a restauração de override deixa a linha principal e passa ao cabeçalho do card, mantendo o layout estável em retrato.
 
 ## Evolução 1.0.47
 

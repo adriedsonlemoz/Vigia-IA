@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.47+47$' pubspec.yaml || fail 'Versao esperada 1.0.47+47 nao encontrada.'
+grep -q '^version: 1\.0\.48+48$' pubspec.yaml || fail 'Versao esperada 1.0.48+48 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.47';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.47.'
-grep -q 'static const int build = 47;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 47.'
-grep -q "version: '1.0.47'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.47.'
+grep -q "static const String version = '1.0.48';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.48.'
+grep -q 'static const int build = 48;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 48.'
+grep -q "version: '1.0.48'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.48.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.47+47$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.47+47.'
+grep -q '^version: 1.0.48+48$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.48+48.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.47"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.47.'
-grep -q '"build": 47' app_identity.json \
-  || fail 'app_identity.json nao esta no build 47.'
+grep -q '"version": "1.0.48"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.48.'
+grep -q '"build": 48' app_identity.json \
+  || fail 'app_identity.json nao esta no build 48.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.47+47' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.47+47.'
+grep -q 'Vigia IA 1.0.48+48' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.48+48.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -890,8 +890,8 @@ for audio in \
   person_entered person_exited vehicle_entered vehicle_exited \
   animal_entered animal_exited object_entered object_exited \
   camera_obstructed camera_moved; do
-  [[ -f "custom_audio/$audio.wav" ]] || fail "Audio personalizado ausente: $audio.wav"
-  [[ -f "android/app/src/main/res/raw/$audio.wav" ]] || fail "Audio Android ausente: $audio.wav"
+  [[ -f "custom_audio/$audio.m4a" ]] || fail "Audio personalizado ausente: $audio.m4a"
+  [[ -f "android/app/src/main/res/raw/$audio.m4a" ]] || fail "Audio Android ausente: $audio.m4a"
 done
 
 # Nomes tecnicos antigos nao podem voltar ao projeto atual.
@@ -1027,16 +1027,16 @@ grep -q '\*.m4a' tool/bootstrap_android.sh \
   || fail 'Bootstrap nao reconhece M4A como audio versionado.'
 cmp -s tool/android/MainActivity.kt android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt \
   || fail 'MainActivity atual diverge da copia estavel em tool/android.'
-[[ $(find custom_audio -maxdepth 1 -type f -name '*.wav' | wc -l) -eq 78 ]] \
-  || fail 'Biblioteca padrao nao possui 78 WAVs.'
-[[ $(find android/app/src/main/res/raw -maxdepth 1 -type f -name '*.wav' | wc -l) -eq 78 ]] \
-  || fail 'res/raw nao possui os 78 WAVs da biblioteca padrao.'
-python3 - <<'PY_AUDIO_CHECK' || fail 'Catalogo de audio diverge dos arquivos WAV.'
+[[ $(find custom_audio -maxdepth 1 -type f -name '*.m4a' | wc -l) -eq 78 ]] \
+  || fail 'Biblioteca padrao nao possui 78 M4A.'
+[[ $(find android/app/src/main/res/raw -maxdepth 1 -type f -name '*.m4a' | wc -l) -eq 78 ]] \
+  || fail 'res/raw nao possui os 78 M4A da biblioteca padrao.'
+python3 - <<'PY_AUDIO_CHECK' || fail 'Catalogo de audio diverge dos arquivos M4A.'
 import re
 from pathlib import Path
 text = Path('lib/models/audio_slot.dart').read_text(encoding='utf-8')
 ids = re.findall(r"AudioSlotDefinition\(id: '([^']+)'", text)
-files = {p.stem for p in Path('custom_audio').glob('*.wav')}
+files = {p.stem for p in Path('custom_audio').glob('*.m4a')}
 if len(ids) != 78 or len(set(ids)) != 78:
     raise SystemExit('catalogo nao tem 78 ids unicos')
 if set(ids) != files:
@@ -1088,5 +1088,44 @@ grep -q '^android/key.properties$' .gitignore || fail '.gitignore nao bloqueia a
 if find . -type f \( -name '*.jks' -o -name '*.keystore' \) -not -path './build/*' | grep -q .; then
   fail 'Arquivo de keystore foi incluido no projeto; a chave deve existir apenas nos Secrets.'
 fi
+
+# Correcao de reproducao e layout da biblioteca de audio - 1.0.48
+grep -q '^## 1.0.48+48' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.48.'
+grep -q 'Evolução 1.0.48' README.md || fail 'README nao documenta 1.0.48.'
+grep -q 'Evolução 1.0.48' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.48.'
+grep -q 'AudioAttributes.USAGE_ASSISTANCE_SONIFICATION' tool/android/MainActivity.kt \
+  || fail 'Player de alertas nao define AudioAttributes de sonificacao.'
+grep -q 'android.resource://' tool/android/MainActivity.kt \
+  || fail 'Player de alertas nao usa URI de recurso Android.'
+grep -q 'class _AudioActionButton extends StatelessWidget' lib/screens/audio_settings_screen.dart \
+  || fail 'Botao compacto de audio ausente.'
+grep -q "label: 'Trocar'" lib/screens/audio_settings_screen.dart \
+  || fail 'Acao Trocar compacta nao encontrada.'
+python3 - <<'PY_AUDIO_LAYOUT' || fail 'Layout principal de audio voltou a quebrar em Wrap.'
+from pathlib import Path
+text = Path('lib/screens/audio_settings_screen.dart').read_text(encoding='utf-8')
+start = text.index('class _AudioSlotCard')
+end = text.index('class _AudioActionButton')
+card = text[start:end]
+if 'Wrap(' in card:
+    raise SystemExit('Wrap encontrado no card de audio')
+if 'Row(' not in card or card.count('_AudioActionButton(') < 3:
+    raise SystemExit('linha compacta de tres acoes nao encontrada')
+PY_AUDIO_LAYOUT
+[[ $(find custom_audio -maxdepth 1 -type f -name '*.m4a' | wc -l) -eq 78 ]] \
+  || fail 'Biblioteca 1.0.48 nao possui 78 M4A.'
+[[ $(find android/app/src/main/res/raw -maxdepth 1 -type f -name '*.m4a' | wc -l) -eq 78 ]] \
+  || fail 'res/raw 1.0.48 nao possui 78 M4A.'
+if find custom_audio -maxdepth 1 -type f -name '*.wav' | grep -q .; then
+  fail 'WAV PCM antigo ainda esta presente na biblioteca padrao.'
+fi
+python3 - <<'PY_AUDIO_MIRROR' || fail 'Biblioteca M4A diverge entre custom_audio e res/raw.'
+from pathlib import Path
+import hashlib
+src = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('custom_audio').glob('*.m4a')}
+dst = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('android/app/src/main/res/raw').glob('*.m4a')}
+if src != dst:
+    raise SystemExit('M4A source/raw divergentes')
+PY_AUDIO_MIRROR
 
 echo 'Verificacao preventiva concluida com sucesso.'

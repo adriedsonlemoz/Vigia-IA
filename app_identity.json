@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada. A 1.0.47 substitui a assinatura debug do release por assinatura permanente via GitHub Secrets, com keystore reconstruída apenas no runner e validação da assinatura antes da publicação do APK.",
-  "version": "1.0.47",
-  "build": 47
+  "notes": "Identidade técnica vigiaia preservada. A 1.0.48 corrige a reprodução dos áudios padrão no Android com biblioteca AAC/M4A e player nativo mais robusto, além de manter Ouvir, Trocar e Gravar na mesma linha.",
+  "version": "1.0.48",
+  "build": 48
 }

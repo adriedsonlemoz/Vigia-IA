@@ -9,6 +9,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList
@@ -681,6 +682,15 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun newAlertMediaPlayer(): MediaPlayer = MediaPlayer().apply {
+        setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build(),
+        )
+    }
+
     private fun playCustomAlertAudio(slot: String): Boolean {
         val normalized = normalizeAudioSlot(slot)
         if (normalized.isBlank()) return false
@@ -688,7 +698,7 @@ class MainActivity : FlutterActivity() {
         val override = findAudioOverride(normalized)
         if (override != null) {
             try {
-                val player = MediaPlayer().apply {
+                val player = newAlertMediaPlayer().apply {
                     setDataSource(override.absolutePath)
                     prepare()
                 }
@@ -700,8 +710,16 @@ class MainActivity : FlutterActivity() {
 
         val resourceId = resources.getIdentifier(normalized, "raw", packageName)
         if (resourceId == 0) return false
-        val player = try { MediaPlayer.create(this, resourceId) } catch (_: Throwable) { null } ?: return false
-        return configureAudioPlayer(player)
+        return try {
+            val resourceUri = Uri.parse("android.resource://$packageName/$resourceId")
+            val player = newAlertMediaPlayer().apply {
+                setDataSource(this@MainActivity, resourceUri)
+                prepare()
+            }
+            configureAudioPlayer(player)
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun showAlertNotification(title: String, message: String, notificationEnabled: Boolean, sound: Boolean, vibration: Boolean) {

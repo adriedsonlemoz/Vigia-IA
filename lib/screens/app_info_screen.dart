@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.47',
+          version: '1.0.48',
           current: true,
+          changes: [
+            'Corrigida a reprodução dos áudios padrão que falhava em alguns aparelhos Android.',
+            'Biblioteca padrão convertida de WAV PCM para AAC/M4A mono 24 kHz para maior compatibilidade.',
+            'Player nativo passou a abrir recursos Android por URI com atributos de áudio adequados para alertas falados.',
+            'Ouvir, Trocar e Gravar agora permanecem lado a lado; Restaurar padrão foi movido para o cabeçalho do item personalizado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.47',
           changes: [
             'APK release passa a usar assinatura permanente recriada a partir de GitHub Secrets.',
             'Workflow valida presença, conteúdo e alias da keystore antes de iniciar o build.',
