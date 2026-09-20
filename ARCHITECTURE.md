@@ -1,8 +1,16 @@
-# Arquitetura — Vigia IA 1.0.65+65
+# Arquitetura — Vigia IA 1.0.66+66
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
+
+
+## Evolução 1.0.66 — Buildfix dos testes
+
+- O `pipelineHotspot` continua comparando apenas as etapas locais granulares disponíveis em `SessionStatusData`.
+- `primaryInferenceMs` permanece como métrica agregada/round-trip para compatibilidade e não é tratada como etapa local do hotspot.
+- O teste do orçamento do pipeline foi alinhado a essa arquitetura e agora espera `Inferências auxiliares` no cenário fornecido.
+- Não houve mudança de contrato nem de comportamento do pipeline nesta versão.
 
 
 

@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.65+65`
+> **Versão atual:** `1.0.66+66`
 
 ## Estado atual
 
-A `1.0.65+65` é um buildfix do Android-APK-33 que limpa o `flutter analyze` sem alterar as funcionalidades entregues na 1.0.64.
+A `1.0.66+66` é um buildfix do Android-APK-34 que corrige um teste desatualizado após a telemetria granular, sem alterar o comportamento funcional.
+
+### Evolução 1.0.66 — Buildfix dos testes
+
+- `flutter analyze` passou sem problemas no Android-APK-34; a falha ficou restrita a um único teste de `SessionStatus`;
+- o teste agora espera `Inferências auxiliares` como hotspot no cenário granular, pois `primaryInferenceMs` representa round-trip agregado e não entra na comparação de etapas locais;
+- nenhuma lógica do pipeline, IA, telemetria, relatórios, onboarding ou interface foi alterada;
+- verificadores passam a proteger a expectativa atual do hotspot granular.
+
 
 
 ### Evolução 1.0.65 — Buildfix do analyze

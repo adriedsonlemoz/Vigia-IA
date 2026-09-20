@@ -164,7 +164,7 @@ void main() {
 
     expect(value.processingBudgetUsagePercent, 60);
     expect(value.processingHeadroomMs, 160);
-    expect(value.pipelineHotspot, 'Inferência principal');
+    expect(value.pipelineHotspot, 'Inferências auxiliares');
     expect(value.detectorRuns, 2);
     expect(value.detailScansSkippedByBudget, 3);
   });

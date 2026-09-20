@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.65',
+          version: '1.0.66',
           current: true,
+          changes: [
+            'Buildfix do Android-APK-34: corrigido teste desatualizado do hotspot do pipeline após a telemetria granular.',
+            'O hotspot continua considerando as etapas locais mensuradas; o round-trip agregado da inferência principal não disputa essa classificação.',
+            'Nenhuma lógica funcional de IA, telemetria, exportação ou interface foi alterada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.65',
           changes: [
             'Buildfix do Android-APK-33: removido import redundante em NativePlatformService.',
             'Teste de exportação de diagnóstico atualizado para tratar corretamente o retorno anulável da API.',

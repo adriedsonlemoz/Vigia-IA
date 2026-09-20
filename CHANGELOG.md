@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.66+66
+
+- Corrigido o único teste que falhou no Android-APK-34 após o `flutter analyze` passar sem problemas.
+- `session_status_test.dart` agora valida `Inferências auxiliares` como hotspot no cenário granular usado pelo teste.
+- `primaryInferenceMs` continua representando o round-trip agregado da inferência principal e, por isso, não participa da comparação das etapas locais granulares em `pipelineHotspot`.
+- Nenhuma lógica funcional de IA, telemetria, relatórios, Downloads, onboarding ou layouts foi alterada.
+- Versionamento e documentação sincronizados em `1.0.66+66`.
+
 ## 1.0.65+65
 
 - Corrigido o `flutter analyze` reportado pelo Android-APK-33.

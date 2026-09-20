@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.65 corrige o flutter analyze da telemetria/exportacao: remove import redundante e ajusta o teste de exportacao nullable, sem alterar comportamento funcional.",
-  "version": "1.0.65",
-  "build": 65
+  "notes": "A 1.0.66 corrige o teste de SessionStatus após a telemetria granular: o hotspot considera etapas locais mensuradas e não o round-trip agregado da inferência principal.",
+  "version": "1.0.66",
+  "build": 66
 }
