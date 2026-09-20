@@ -1,10 +1,21 @@
-# Arquitetura — Vigia IA 1.0.55+55
+# Arquitetura — Vigia IA 1.0.56+56
 
 ## 1. Princípios
 
-A 1.0.55 introduz uma camada adaptativa de apresentação para celular retrato, celular paisagem e tablet, sem duplicar fluxos de negócio. A navegação principal muda de barra inferior para rail lateral conforme o espaço; telas críticas reorganizam o mesmo conteúdo em painéis. O Monitor adiciona contain/cover com uma geometria compartilhada pelos overlays. A integração real com ESP32 continua fora desta versão.
+A 1.0.56 introduz um caminho rápido de segurança para o Modo Bike. A inferência principal alimenta um estimador temporal de aproximação antes das varreduras auxiliares e dos fluxos de histórico/gravação. A estimativa usa apenas a geometria observada na câmera, não distância física; radar FMCW e ESP32 continuam como extensões futuras.
 
 
+
+## Evolução 1.0.56
+
+- `BikeApproachEstimator` mantém rastreamento leve próprio para automóveis da inferência principal e calcula a derivada de `log(sqrt(area))`; para aproximação aproximadamente constante, o inverso dessa taxa fornece um TTC visual aproximado.
+- O estimador exige associação espacial, crescimento mínimo, área mínima e confiança combinada antes de elevar o estado para aviso/crítico, reduzindo falsos positivos de uma única caixa ruidosa.
+- `MonitorController` cria um conjunto de labels da inferência principal com os automóveis necessários ao Bike, mas continua passando apenas `_alertLabels` ao pipeline normal; assim segurança Bike e preferências comuns não se contaminam.
+- O caminho rápido é executado antes das varreduras por movimento/detalhe. `BikeApproachBanner` pode ser notificado durante o restante do processamento e `_deliverAlert` é acionado imediatamente quando o risco cruza o limiar.
+- O alerta usa cooldown por track e permite escalada imediata para crítico. A informação exibida é TTC aproximado; não são apresentados metros nem velocidade relativa física.
+- `BikeModeConfig` persiste ativação e limiar de TTC; `BikeModeScreen` expõe controles e informa que radar FMCW permanece upgrade futuro.
+- O cenário `vehicleApproaching` reutiliza o simulador atual de sensores e gera um TTC sintético no controller para validar o HUD e a saída de áudio sem hardware externo.
+- Troca de fonte, reset de regras/sessão e mudança relevante do Bike limpam o estado temporal de aproximação para não carregar risco antigo.
 
 ## Evolução 1.0.55
 

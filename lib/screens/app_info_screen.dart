@@ -150,8 +150,20 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.55',
+          version: '1.0.56',
           current: true,
+          changes: [
+            'Modo Bike ganhou alerta rápido de veículo se aproximando com TTC visual estimado pela variação da caixa na câmera traseira.',
+            'O caminho rápido roda logo após a inferência principal, antes das varreduras auxiliares, histórico e gravação.',
+            'O alerta de aproximação continua procurando automóveis no Bike mesmo quando o filtro normal do Monitor não inclui veículos.',
+            'HUD mostra observação, aviso e crítico sobre o vídeo; áudio/voz é disparado com prioridade alta nos níveis de risco.',
+            'Bike permite ajustar a antecedência do aviso entre 2,5 e 7 s e deixa claro que a câmera não mede distância real.',
+            'Simulador ganhou cenário Veículo se aproximando para validar TTC, HUD e áudio sem ESP32 e sem teste de rua.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.55',
           changes: [
             'Interface adaptativa para retrato, paisagem e tablet, com navegação lateral nas telas largas.',
             'Home e Modo Bike usam duas colunas quando há espaço; Histórico e Configurações também aproveitam melhor telas largas.',

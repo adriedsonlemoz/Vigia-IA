@@ -1,6 +1,20 @@
 # CHANGELOG
 
 
+## 1.0.56+56
+
+- Implementado caminho rápido de aproximação para o Modo Bike, executado logo após a inferência principal.
+- Novo `BikeApproachEstimator` associa automóveis entre frames e usa o crescimento suavizado da escala aparente para estimar TTC visual.
+- O primeiro aviso acontece antes de inferências auxiliares, histórico e gravação, reduzindo trabalho no caminho crítico do alerta.
+- Automóveis necessários ao alerta Bike são incluídos somente na inferência principal de segurança, independentemente do filtro normal do Monitor; os eventos normais continuam respeitando a seleção do usuário.
+- HUD sobre o vídeo ganhou estados observação/aviso/crítico e mostra `TTC ~Xs`, sem apresentar distância em metros.
+- Alertas de voz/notificação têm prioridade alta, cooldown por veículo e escalada imediata quando o risco sobe para crítico.
+- Modo Bike ganhou controle de ativação e limiar configurável de aviso entre 2,5 e 7 s.
+- Simulador sem ESP32 ganhou o cenário `Veículo se aproximando`, com ciclo visual e áudio marcado como teste.
+- Novos testes cobrem crescimento, afastamento, filtragem de não veículos, reset do estimador e persistência das novas preferências.
+- Integração real com ESP32 e radar FMCW continuam fora desta versão.
+- Versionamento e documentação sincronizados em `1.0.56+56`.
+
 ## 1.0.55+55
 
 - Corrigidos os dois avisos `unnecessary_non_null_assertion` em `monitor_screen.dart` que faziam o `flutter analyze` falhar no workflow da 1.0.54.

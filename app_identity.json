@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.55 corrige os lints do Monitor encontrados no workflow da 1.0.54 e introduz layout adaptativo real para celular retrato, paisagem e tablet, com NavigationRail em telas largas, Home/Bike em duas colunas, Monitor paisagem recolhível, Status da sessão lado a lado e modo Ajustar/Preencher alinhado aos overlays. ESP32 continua sem integração real.",
-  "version": "1.0.55",
-  "build": 55
+  "notes": "A 1.0.56 adiciona o alerta rápido de aproximação do Modo Bike por TTC visual, executado logo após a inferência principal e antes das análises auxiliares, histórico e gravação. O HUD mostra aproximação/criticidade e há cenário de simulação sem ESP32. A integração real com ESP32 e radar FMCW continuam futuras.",
+  "version": "1.0.56",
+  "build": 56
 }

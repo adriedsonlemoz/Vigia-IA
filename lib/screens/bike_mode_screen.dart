@@ -161,6 +161,58 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
       ),
     );
 
+    final approachCard = _SectionCard(
+      title: 'Alerta rápido de aproximação',
+      subtitle:
+          'Usa a câmera e a inferência principal para avisar antes das análises extras, histórico e gravação. Não depende do ESP32.',
+      child: Column(
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _config.approachAlertsEnabled,
+            onChanged: (value) =>
+                _update(_config.copyWith(approachAlertsEnabled: value)),
+            secondary: const Icon(Icons.radar_rounded),
+            title: const Text('Avisar veículo se aproximando'),
+            subtitle: const Text(
+              'Estima o tempo de aproximação pelo crescimento do veículo na imagem traseira.',
+            ),
+          ),
+          if (_config.approachAlertsEnabled) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Text('2,5 s'),
+                Expanded(
+                  child: Slider(
+                    value: _config.approachWarningTtcSeconds,
+                    min: 2.5,
+                    max: 7.0,
+                    divisions: 9,
+                    label:
+                        '${_config.approachWarningTtcSeconds.toStringAsFixed(1)} s',
+                    onChanged: (value) => setState(
+                      () => _config = _config.copyWith(
+                        approachWarningTtcSeconds: value,
+                      ),
+                    ),
+                    onChangeEnd: (value) => _update(
+                      _config.copyWith(approachWarningTtcSeconds: value),
+                    ),
+                  ),
+                ),
+                const Text('7 s'),
+              ],
+            ),
+            Text(
+              'Aviso forte quando o TTC visual cair para cerca de ${_config.approachWarningTtcSeconds.toStringAsFixed(1)} s. É uma estimativa por câmera; radar FMCW continua sendo um upgrade futuro.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    );
+
     final rearPhoneCard = _SectionCard(
       title: 'Celular traseiro',
       subtitle:
@@ -329,6 +381,8 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                     hero,
                     const SizedBox(height: 12),
                     powerCard,
+                    const SizedBox(height: 12),
+                    approachCard,
                     const SizedBox(height: 12),
                     telemetryCard,
                   ];

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.55+55$' pubspec.yaml || fail 'Versao esperada 1.0.55+55 nao encontrada.'
+grep -q '^version: 1\.0\.56+56$' pubspec.yaml || fail 'Versao esperada 1.0.56+56 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.55';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.55.'
-grep -q 'static const int build = 55;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 54.'
-grep -q "version: '1.0.55'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.55.'
+grep -q "static const String version = '1.0.56';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.56.'
+grep -q 'static const int build = 56;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 56.'
+grep -q "version: '1.0.56'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.56.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.55+55$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.55+55.'
+grep -q '^version: 1.0.56+56$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.56+56.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.55"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.55.'
-grep -q '"build": 55' app_identity.json \
-  || fail 'app_identity.json nao esta no build 55.'
+grep -q '"version": "1.0.56"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.56.'
+grep -q '"build": 56' app_identity.json \
+  || fail 'app_identity.json nao esta no build 56.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.55+55' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.55+55.'
+grep -q 'Vigia IA 1.0.56+56' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.56+56.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1272,5 +1272,27 @@ grep -q 'constraints.maxWidth >= 760' lib/screens/bike_mode_screen.dart || fail 
 grep -q 'showCloseButton: true' lib/screens/monitor_screen.dart || fail 'Status da sessao nao usa superficie larga.'
 [[ -f test/adaptive_main_scaffold_test.dart ]] || fail 'Teste do shell adaptativo nao encontrado.'
 if grep -q 'bikeSnapshot!' lib/screens/monitor_screen.dart; then fail 'Non-null assertion regressivo no HUD Bike.'; fi
+
+
+# Alerta rapido de aproximacao Bike - 1.0.56
+grep -q '^## 1.0.56+56' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.56.'
+grep -q 'Evolução 1.0.56' README.md || fail 'README nao documenta 1.0.56.'
+grep -q 'Evolução 1.0.56' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.56.'
+[[ -f lib/services/bike_approach_estimator.dart ]] || fail 'Estimador de aproximacao Bike ausente.'
+[[ -f lib/models/bike_approach_status.dart ]] || fail 'Modelo de aproximacao Bike ausente.'
+[[ -f lib/widgets/bike_approach_banner.dart ]] || fail 'Banner de aproximacao Bike ausente.'
+[[ -f test/bike_approach_estimator_test.dart ]] || fail 'Teste do estimador de aproximacao ausente.'
+grep -q 'BikeSimulationScenario.vehicleApproaching' lib/models/bike_mode_config.dart || fail 'Simulacao de aproximacao nao configurada.'
+grep -q '_updateBikeApproachFastPath(primaryGlobalForBike, now);' lib/controllers/monitor_controller.dart || fail 'Caminho rapido Bike nao esta ligado apos a inferencia principal.'
+grep -q 'primaryAllowedLabels' lib/controllers/monitor_controller.dart || fail 'Inferencia principal nao separa labels de seguranca Bike.'
+grep -q 'BikeApproachBanner(status: approach)' lib/screens/monitor_screen.dart || fail 'Monitor nao exibe alerta visual de aproximacao.'
+python3 - <<'PY_BIKE_FAST_PATH' || fail 'Caminho rapido Bike nao ocorre antes das inferencias auxiliares.'
+from pathlib import Path
+text = Path('lib/controllers/monitor_controller.dart').read_text(encoding='utf-8')
+fast = text.index('_updateBikeApproachFastPath(primaryGlobalForBike, now);')
+aux = text.index('if (motionResult.hasMotion && !hasUsefulPrimary)', fast)
+if fast >= aux:
+    raise SystemExit(1)
+PY_BIKE_FAST_PATH
 
 echo 'Verificacao preventiva concluida com sucesso.'

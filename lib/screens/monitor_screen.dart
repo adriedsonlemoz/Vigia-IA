@@ -12,6 +12,7 @@ import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
+import '../widgets/bike_approach_banner.dart';
 import '../widgets/bike_ride_hud.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
@@ -1024,12 +1025,16 @@ class _MonitorScreenState extends State<MonitorScreen>
     final remoteStatus = _controller.remotePhoneStatus;
     final bikeSnapshot = _bikeSensors.snapshot;
     final bikeHudActive = bikeSnapshot != null;
+    final approach = _controller.bikeApproachStatus;
     final compactBikeHud = MediaQuery.sizeOf(context).height < 500;
-    final standardHudTop = bikeHudActive
+    final bikeHudBottom = bikeHudActive
         ? (bikeSnapshot.primaryWarning == null
             ? (compactBikeHud ? 72.0 : 98.0)
             : (compactBikeHud ? 108.0 : 138.0))
-        : 12.0;
+        : 6.0;
+    final standardHudTop = approach.visible
+        ? bikeHudBottom + (compactBikeHud ? 48.0 : 58.0)
+        : (bikeHudActive ? bikeHudBottom : 12.0);
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -1059,6 +1064,13 @@ class _MonitorScreenState extends State<MonitorScreen>
               right: 0,
               top: 6,
               child: BikeRideHud(snapshot: bikeSnapshot),
+            ),
+          if (approach.visible)
+            Positioned(
+              left: 10,
+              right: 10,
+              top: bikeHudBottom,
+              child: BikeApproachBanner(status: approach),
             ),
           Positioned(
             left: 12,

@@ -9,6 +9,8 @@ void main() {
     expect(config.keepRemoteTelemetry, isTrue);
     expect(config.sensorSimulationEnabled, isFalse);
     expect(config.simulationScenario, BikeSimulationScenario.normal);
+    expect(config.approachAlertsEnabled, isTrue);
+    expect(config.approachWarningTtcSeconds, 4.0);
   });
 
   test('configuração do Modo Bike serializa e restaura', () {
@@ -17,14 +19,36 @@ void main() {
       powerProfile: BikePowerProfile.extremeEconomy,
       lowBatteryPercent: 15,
       sensorSimulationEnabled: true,
-      simulationScenario: BikeSimulationScenario.rearTireLow,
+      simulationScenario: BikeSimulationScenario.vehicleApproaching,
+      approachAlertsEnabled: false,
+      approachWarningTtcSeconds: 5.5,
     );
     final restored = BikeModeConfig.fromJson(original.toJson());
     expect(restored.enabled, isTrue);
     expect(restored.powerProfile, BikePowerProfile.extremeEconomy);
     expect(restored.lowBatteryPercent, 15);
     expect(restored.sensorSimulationEnabled, isTrue);
-    expect(restored.simulationScenario, BikeSimulationScenario.rearTireLow);
+    expect(
+      restored.simulationScenario,
+      BikeSimulationScenario.vehicleApproaching,
+    );
+    expect(restored.approachAlertsEnabled, isFalse);
+    expect(restored.approachWarningTtcSeconds, 5.5);
+  });
+
+  test('limite de TTC da aproximacao fica em faixa segura', () {
+    expect(
+      const BikeModeConfig()
+          .copyWith(approachWarningTtcSeconds: 1)
+          .approachWarningTtcSeconds,
+      2.5,
+    );
+    expect(
+      const BikeModeConfig()
+          .copyWith(approachWarningTtcSeconds: 20)
+          .approachWarningTtcSeconds,
+      7.0,
+    );
   });
 
   test('limite de bateria fica em faixa segura', () {

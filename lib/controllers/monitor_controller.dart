@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/audio_slot.dart';
+import '../models/bike_approach_status.dart';
 import '../models/bike_mode_config.dart';
 import '../models/detection.dart';
 import '../models/device_telemetry.dart';
@@ -25,6 +26,7 @@ import '../services/alert_repeat_guard.dart';
 import '../services/analysis_budget_policy.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
+import '../services/bike_approach_estimator.dart';
 import '../services/bike_mode_service.dart';
 import '../services/camera_integrity_service.dart';
 import '../services/clip_recorder_service.dart';
@@ -90,6 +92,7 @@ class MonitorController extends ChangeNotifier {
   final EventHistoryService _eventHistory = EventHistoryService.instance;
   final AppSettingsService _appSettings = AppSettingsService.instance;
   final BikeModeService _bikeMode = BikeModeService.instance;
+  final BikeApproachEstimator _bikeApproachEstimator = BikeApproachEstimator();
   final ClipRecorderService _clipRecorder = ClipRecorderService();
   final MonitorLanStreamService _lanStream = MonitorLanStreamService();
   late AlertRepeatGuard _alertGuard;
@@ -170,6 +173,12 @@ class MonitorController extends ChangeNotifier {
   final Map<String, _RecentAlertMemory> _recentAlertMemory = <String, _RecentAlertMemory>{};
   String? _lanPermissionError;
   BikeModeConfig _bikeConfig = const BikeModeConfig();
+  BikeApproachStatus _bikeApproachStatus =
+      BikeApproachStatus.clear(DateTime.fromMillisecondsSinceEpoch(0));
+  DateTime? _lastBikeApproachAlertAt;
+  int? _lastBikeApproachAlertTrackId;
+  BikeApproachLevel _lastBikeApproachAlertLevel = BikeApproachLevel.clear;
+  DateTime? _bikeApproachSimulationStartedAt;
   bool _bikeLowBatteryAlerted = false;
   bool _bikePolicyChangeInProgress = false;
 
@@ -214,6 +223,7 @@ class MonitorController extends ChangeNotifier {
   bool get cameraIntegrityEnabled => _settings.cameraIntegrityEnabled;
   MonitorSettings get currentSettings => _runtimeSettings();
   BikeModeConfig get bikeModeConfig => _bikeConfig;
+  BikeApproachStatus get bikeApproachStatus => _bikeApproachStatus;
   bool get isRemotePhoneSource => sourceConfig.type == VideoSourceType.remotePhone;
   RemotePhoneStatus? get remotePhoneStatus {
     final source = _source;
@@ -358,6 +368,17 @@ class MonitorController extends ChangeNotifier {
       final previousInterval = previous.effectiveAnalysisInterval(sourceConfig.analysisInterval);
       final nextInterval = next.effectiveAnalysisInterval(sourceConfig.analysisInterval);
       _bikeConfig = next;
+      if (!next.enabled &&
+          !(next.approachAlertsEnabled &&
+              next.sensorSimulationEnabled &&
+              next.simulationScenario == BikeSimulationScenario.vehicleApproaching)) {
+        _resetBikeApproach();
+      } else if (previous.simulationScenario != next.simulationScenario ||
+          previous.sensorSimulationEnabled != next.sensorSimulationEnabled ||
+          previous.approachAlertsEnabled != next.approachAlertsEnabled ||
+          previous.approachWarningTtcSeconds != next.approachWarningTtcSeconds) {
+        _resetBikeApproach();
+      }
       _lanStream
         ..setMaxFps(next.streamFpsCap)
         ..setBikeModeState(enabled: next.enabled, profile: next.powerProfile.name)
@@ -975,17 +996,41 @@ class MonitorController extends ChangeNotifier {
           DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
       final primaryWatch = Stopwatch()..start();
       detectorRuns = 1;
+      final bikeApproachDetectionActive =
+          _bikeConfig.enabled && _bikeConfig.approachAlertsEnabled;
+      final primaryAllowedLabels = bikeApproachDetectionActive
+          ? <String>{..._alertLabels, ...ObjectFilterCatalog.vehicles}
+          : _alertLabels;
+      final primaryMaxResults = bikeApproachDetectionActive
+          ? math.max(_settings.maxResults, 8).toInt()
+          : _settings.maxResults;
       final primaryDetected = await _detector.detect(
         analysisFrame,
         threshold: candidateThreshold,
-        maxResults: _settings.maxResults,
-        allowedLabels: _alertLabels,
+        maxResults: primaryMaxResults,
+        allowedLabels: primaryAllowedLabels,
       );
       primaryWatch.stop();
       _lastPrimaryInferenceMs = primaryWatch.elapsedMicroseconds / 1000.0;
       if (_shouldDiscardFrameResult(session)) return;
 
       var candidates = ObjectFilterPolicy.apply(primaryDetected, _alertLabels);
+      final bikePrimaryCandidates = ObjectFilterPolicy.apply(
+        primaryDetected,
+        ObjectFilterCatalog.vehicles,
+      );
+      final primaryGlobalForBike = analysisZone.isFullFrame
+          ? bikePrimaryCandidates
+          : bikePrimaryCandidates
+              .map(
+                (item) => MonitoringZoneService.remapDetection(
+                  item,
+                  analysisZone,
+                ),
+              )
+              .toList(growable: false);
+      _updateBikeApproachFastPath(primaryGlobalForBike, now);
+
       var hasUsefulPrimary = candidates.any(
         (item) => DetectionConfidencePolicy.isCandidate(
           item,
@@ -1276,6 +1321,113 @@ class MonitorController extends ChangeNotifier {
       if (identical(_processingDone, processingDone)) _processingDone = null;
       _notify();
     }
+  }
+
+  void _updateBikeApproachFastPath(
+    List<Detection> primaryDetections,
+    DateTime now,
+  ) {
+    final simulation = _bikeConfig.approachAlertsEnabled &&
+        _bikeConfig.sensorSimulationEnabled &&
+        _bikeConfig.simulationScenario ==
+            BikeSimulationScenario.vehicleApproaching;
+
+    BikeApproachStatus next;
+    if (simulation) {
+      final started = _bikeApproachSimulationStartedAt ??= now;
+      final elapsedMs = now.difference(started).inMilliseconds;
+      const cycleMs = 9000;
+      final cycle = elapsedMs ~/ cycleMs;
+      final insideCycle = (elapsedMs % cycleMs) / 1000.0;
+      final ttc = (5.8 - insideCycle * 0.72).clamp(1.15, 5.8).toDouble();
+      final warningTtc = _bikeConfig.approachWarningTtcSeconds;
+      final criticalTtc = math.max(1.4, warningTtc * 0.55).toDouble();
+      final level = ttc <= criticalTtc
+          ? BikeApproachLevel.critical
+          : ttc <= warningTtc
+              ? BikeApproachLevel.warning
+              : BikeApproachLevel.watch;
+      next = BikeApproachStatus(
+        level: level,
+        updatedAt: now,
+        trackId: -1000 - cycle,
+        label: 'car',
+        estimatedTtcSeconds: ttc,
+        growthRatePerSecond: 1 / ttc,
+        confidence: 0.98,
+        simulated: true,
+      );
+    } else if (!_bikeConfig.enabled || !_bikeConfig.approachAlertsEnabled) {
+      _bikeApproachEstimator.reset();
+      next = BikeApproachStatus.clear(now);
+    } else {
+      next = _bikeApproachEstimator.update(
+        detections: primaryDetections,
+        now: now,
+        baseConfidenceThreshold: _settings.confidenceThreshold,
+        warningTtcSeconds: _bikeConfig.approachWarningTtcSeconds,
+      );
+    }
+
+    final previous = _bikeApproachStatus;
+    _bikeApproachStatus = next;
+    _maybeDeliverBikeApproachAlert(next, now);
+    final ttcChanged = ((previous.estimatedTtcSeconds ?? 99) -
+                (next.estimatedTtcSeconds ?? 99))
+            .abs() >=
+        0.25;
+    if (previous.level != next.level ||
+        previous.trackId != next.trackId ||
+        previous.simulated != next.simulated ||
+        (next.visible && ttcChanged)) {
+      _notify();
+    }
+  }
+
+  void _maybeDeliverBikeApproachAlert(
+    BikeApproachStatus status,
+    DateTime now,
+  ) {
+    if (!status.shouldAlert) return;
+    final trackChanged = status.trackId != _lastBikeApproachAlertTrackId;
+    final escalated = _bikeApproachRank(status.level) >
+        _bikeApproachRank(_lastBikeApproachAlertLevel);
+    final cooldown = status.level == BikeApproachLevel.critical
+        ? const Duration(seconds: 3)
+        : const Duration(seconds: 5);
+    final cooldownExpired = _lastBikeApproachAlertAt == null ||
+        now.difference(_lastBikeApproachAlertAt!) >= cooldown;
+    if (!trackChanged && !escalated && !cooldownExpired) return;
+
+    _lastBikeApproachAlertAt = now;
+    _lastBikeApproachAlertTrackId = status.trackId;
+    _lastBikeApproachAlertLevel = status.level;
+    final message = status.level == BikeApproachLevel.critical
+        ? 'Aproximação rápida de veículo.'
+        : 'Veículo se aproximando.';
+    unawaited(
+      _deliverAlert(
+        status.simulated ? 'Teste. $message' : message,
+        priority: SpeechPriority.high,
+      ),
+    );
+  }
+
+  int _bikeApproachRank(BikeApproachLevel level) => switch (level) {
+        BikeApproachLevel.clear => 0,
+        BikeApproachLevel.watch => 1,
+        BikeApproachLevel.warning => 2,
+        BikeApproachLevel.critical => 3,
+      };
+
+  void _resetBikeApproach() {
+    _bikeApproachEstimator.reset();
+    _bikeApproachStatus =
+        BikeApproachStatus.clear(DateTime.fromMillisecondsSinceEpoch(0));
+    _lastBikeApproachAlertAt = null;
+    _lastBikeApproachAlertTrackId = null;
+    _lastBikeApproachAlertLevel = BikeApproachLevel.clear;
+    _bikeApproachSimulationStartedAt = null;
   }
 
   bool _sameDetectionRegion(Detection a, Detection b) {
@@ -1965,6 +2117,7 @@ class MonitorController extends ChangeNotifier {
     _seenTrackIds.clear();
     _lastTransitionSpeechAt.clear();
     _trackedDetections = const <TrackedDetection>[];
+    _resetBikeApproach();
   }
 
   void _resetEventState() {
@@ -1982,6 +2135,7 @@ class MonitorController extends ChangeNotifier {
     _detailTileIndex = 0;
     _seenTrackIds.clear();
     _lastTransitionSpeechAt.clear();
+    _resetBikeApproach();
     _motion.reset();
     _motionActive = false;
     _cameraMotion = false;
@@ -2021,6 +2175,7 @@ class MonitorController extends ChangeNotifier {
     _motion.reset();
     if (_baseReady) _smartRuleEngine.reset();
     _tracker.reset();
+    _resetBikeApproach();
     _motionActive = false;
     _cameraMotion = false;
     _motionScore = 0;
@@ -2135,6 +2290,11 @@ class MonitorController extends ChangeNotifier {
         'intervaloEfetivoMs': effectiveAnalysisInterval.inMilliseconds,
         'modoBike': _bikeConfig.enabled,
         'perfilBike': _bikeConfig.powerProfile.name,
+        'alertaAproximacaoBike': _bikeConfig.approachAlertsEnabled,
+        'ttcAvisoBike': _bikeConfig.approachWarningTtcSeconds,
+        'estadoAproximacaoBike': _bikeApproachStatus.level.name,
+        if (_bikeApproachStatus.estimatedTtcSeconds != null)
+          'ttcAtualBike': _bikeApproachStatus.estimatedTtcSeconds!.toStringAsFixed(2),
         'confiança': _settings.confidenceThreshold,
         'somenteMovimento': _settings.motionOnly,
         'movimento': _motionScore.toStringAsFixed(3),

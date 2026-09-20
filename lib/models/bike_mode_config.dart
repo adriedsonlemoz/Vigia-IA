@@ -6,6 +6,7 @@ enum BikeSimulationScenario {
   frontTireLow,
   rearTireLow,
   sensorBatteryLow,
+  vehicleApproaching,
   disconnected,
 }
 
@@ -15,6 +16,7 @@ extension BikeSimulationScenarioUi on BikeSimulationScenario {
         BikeSimulationScenario.frontTireLow => 'Pneu dianteiro baixo',
         BikeSimulationScenario.rearTireLow => 'Pneu traseiro baixo',
         BikeSimulationScenario.sensorBatteryLow => 'Bateria dos sensores baixa',
+        BikeSimulationScenario.vehicleApproaching => 'Veículo se aproximando',
         BikeSimulationScenario.disconnected => 'Sensores desconectados',
       };
 
@@ -27,6 +29,8 @@ extension BikeSimulationScenarioUi on BikeSimulationScenario {
           'Força pressão crítica no pneu traseiro e exibe alerta no vídeo.',
         BikeSimulationScenario.sensorBatteryLow =>
           'Simula bateria baixa na futura central/sensores da bike.',
+        BikeSimulationScenario.vehicleApproaching =>
+          'Simula um automóvel crescendo no quadro para testar TTC, HUD e alerta de áudio sem sair para a rua.',
         BikeSimulationScenario.disconnected =>
           'Simula perda de comunicação com os sensores.',
       };
@@ -89,6 +93,8 @@ class BikeModeConfig {
     this.lowBatteryPercent = 20,
     this.sensorSimulationEnabled = false,
     this.simulationScenario = BikeSimulationScenario.normal,
+    this.approachAlertsEnabled = true,
+    this.approachWarningTtcSeconds = 4.0,
   });
 
   final bool enabled;
@@ -99,6 +105,8 @@ class BikeModeConfig {
   final int lowBatteryPercent;
   final bool sensorSimulationEnabled;
   final BikeSimulationScenario simulationScenario;
+  final bool approachAlertsEnabled;
+  final double approachWarningTtcSeconds;
 
   Duration effectiveAnalysisInterval(Duration configured) {
     if (!enabled) return configured;
@@ -126,6 +134,8 @@ class BikeModeConfig {
     int? lowBatteryPercent,
     bool? sensorSimulationEnabled,
     BikeSimulationScenario? simulationScenario,
+    bool? approachAlertsEnabled,
+    double? approachWarningTtcSeconds,
   }) =>
       BikeModeConfig(
         enabled: enabled ?? this.enabled,
@@ -136,6 +146,10 @@ class BikeModeConfig {
         lowBatteryPercent: (lowBatteryPercent ?? this.lowBatteryPercent).clamp(5, 50).toInt(),
         sensorSimulationEnabled: sensorSimulationEnabled ?? this.sensorSimulationEnabled,
         simulationScenario: simulationScenario ?? this.simulationScenario,
+        approachAlertsEnabled: approachAlertsEnabled ?? this.approachAlertsEnabled,
+        approachWarningTtcSeconds: (approachWarningTtcSeconds ?? this.approachWarningTtcSeconds)
+            .clamp(2.5, 7.0)
+            .toDouble(),
       );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -147,6 +161,8 @@ class BikeModeConfig {
         'lowBatteryPercent': lowBatteryPercent,
         'sensorSimulationEnabled': sensorSimulationEnabled,
         'simulationScenario': simulationScenario.name,
+        'approachAlertsEnabled': approachAlertsEnabled,
+        'approachWarningTtcSeconds': approachWarningTtcSeconds,
       };
 
   factory BikeModeConfig.fromJson(Map<String, dynamic> json) {
@@ -169,6 +185,11 @@ class BikeModeConfig {
       lowBatteryPercent: ((json['lowBatteryPercent'] as num?)?.toInt() ?? 20).clamp(5, 50).toInt(),
       sensorSimulationEnabled: json['sensorSimulationEnabled'] as bool? ?? false,
       simulationScenario: scenario,
+      approachAlertsEnabled: json['approachAlertsEnabled'] as bool? ?? true,
+      approachWarningTtcSeconds:
+          ((json['approachWarningTtcSeconds'] as num?)?.toDouble() ?? 4.0)
+              .clamp(2.5, 7.0)
+              .toDouble(),
     );
   }
 }

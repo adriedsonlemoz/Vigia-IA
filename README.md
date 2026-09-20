@@ -2,13 +2,24 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.55+55`
+> **Versão atual:** `1.0.56+56`
 
 ## Estado atual
 
-A `1.0.55+55` adiciona uma **interface adaptativa real para retrato, paisagem e tablet**. Em telas largas, a navegação passa à lateral, Home/Bike/Histórico/Configurações aproveitam múltiplas colunas e o Monitor prioriza o vídeo. A versão também corrige os dois lints reportados pelo workflow da 1.0.54 e adiciona o modo Ajustar/Preencher com overlays alinhados.
+A `1.0.56+56` adiciona o **alerta rápido de aproximação do Modo Bike**. A inferência principal alimenta um estimador visual de TTC antes das varreduras extras, histórico e gravação; o Monitor mostra o risco sobre o vídeo e a simulação permite validar tudo sem ESP32.
 
 
+
+### Evolução 1.0.56
+
+- novo `BikeApproachEstimator` acompanha automóveis pela posição e crescimento da caixa da inferência principal, sem fingir medir metros ou velocidade física;
+- o caminho rápido roda imediatamente após a inferência principal e antes de detail scans, histórico, gravação e regras normais de alerta;
+- o Modo Bike pode incluir automóveis apenas para essa proteção mesmo quando o filtro normal de objetos não os seleciona;
+- o HUD sobre o vídeo mostra observação, aviso e aproximação crítica, com TTC aproximado e indicação explícita quando o dado é simulado;
+- alertas fortes usam prioridade alta de voz/notificação e têm cooldown por veículo, permitindo escalada imediata de aviso para crítico sem repetir a cada frame;
+- `BikeModeScreen` ganhou chave para ativar o alerta e ajuste de antecedência entre 2,5 e 7 segundos;
+- o simulador ganhou o cenário `Veículo se aproximando`, permitindo testar HUD, TTC e áudio em casa sem ESP32;
+- ESP32 e radar FMCW continuam fora desta etapa; o TTC atual é apenas estimativa visual da câmera.
 
 ### Evolução 1.0.55
 
