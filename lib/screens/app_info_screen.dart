@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.44',
+          version: '1.0.45',
           current: true,
+          changes: [
+            'Biblioteca central com 78 áudios padrão, incluindo todos os avisos atuais e os futuros do Modo Bike/ESP32.',
+            'Nova tela Áudios e voz em Configurações → Geral permite ouvir, trocar por arquivo, gravar pelo microfone e restaurar qualquer aviso.',
+            'Áudios personalizados têm prioridade sobre o padrão e permanecem após atualizações normais do aplicativo.',
+            'TTS continua disponível como fallback de segurança quando um áudio não puder ser reproduzido.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.44',
           changes: [
             'Modo Bike agora aparece como destino próprio Bike no menu principal inferior.',
             'A tela do Modo Bike mantém a barra principal visível para navegação consistente entre Início, Histórico, Monitor, Câmeras e Bike.',

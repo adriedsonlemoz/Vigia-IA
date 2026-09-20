@@ -15,6 +15,7 @@ import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.media.RingtoneManager
 import android.os.BatteryManager
 import android.os.Build
@@ -32,6 +33,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.view.WindowManager
+import android.webkit.MimeTypeMap
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -57,6 +59,13 @@ class MainActivity : FlutterActivity() {
     private var localNetworkPermissionRequestInFlight: Boolean = false
     private var resumeMonitorRequested: Boolean = false
     private var customAlertPlayer: MediaPlayer? = null
+    private var pendingAudioImportResult: MethodChannel.Result? = null
+    private var pendingAudioImportSlot: String? = null
+    private var pendingRecordingPermissionResult: MethodChannel.Result? = null
+    private var pendingRecordingPermissionSlot: String? = null
+    private var audioRecorder: MediaRecorder? = null
+    private var audioRecordingTempFile: File? = null
+    private var audioRecordingSlot: String? = null
     private var bikeBrightnessOverride: Float? = null
     private var lastCpuWallMs: Long? = null
     private var lastCpuProcessMs: Long? = null
@@ -64,6 +73,8 @@ class MainActivity : FlutterActivity() {
     private val notificationPermissionRequestCode = 4412
     private val cameraPermissionRequestCode = 4413
     private val localNetworkPermissionRequestCode = 4414
+    private val audioImportRequestCode = 4415
+    private val recordAudioPermissionRequestCode = 4416
 
     override fun onCreate(savedInstanceState: Bundle?) {
         resumeMonitorRequested = intent?.getBooleanExtra("resume_monitor", false) == true
@@ -81,6 +92,12 @@ class MainActivity : FlutterActivity() {
             try { player.release() } catch (_: Throwable) {}
         }
         customAlertPlayer = null
+        try { audioRecorder?.stop() } catch (_: Throwable) {}
+        try { audioRecorder?.release() } catch (_: Throwable) {}
+        audioRecorder = null
+        audioRecordingTempFile?.delete()
+        audioRecordingTempFile = null
+        audioRecordingSlot = null
         super.onDestroy()
     }
 
@@ -213,6 +230,21 @@ class MainActivity : FlutterActivity() {
                 val slot = call.argument<String>("slot") ?: ""
                 result.success(playCustomAlertAudio(slot))
             }
+            "audioOverrideSlots" -> result.success(listAudioOverrideSlots())
+            "importAudioOverride" -> {
+                val slot = normalizeAudioSlot(call.argument<String>("slot") ?: "")
+                if (slot.isBlank()) result.success(false) else beginAudioImport(slot, result)
+            }
+            "removeAudioOverride" -> {
+                val slot = normalizeAudioSlot(call.argument<String>("slot") ?: "")
+                result.success(slot.isNotBlank() && removeAudioOverrides(slot))
+            }
+            "removeAllAudioOverrides" -> result.success(removeAllAudioOverrides())
+            "startAudioRecording" -> {
+                val slot = normalizeAudioSlot(call.argument<String>("slot") ?: "")
+                if (slot.isBlank()) result.success(false) else requestOrStartAudioRecording(slot, result)
+            }
+            "stopAudioRecording" -> result.success(stopAudioRecording(call.argument<Boolean>("save") ?: true))
             "showAlertNotification" -> {
                 try {
                     showAlertNotification(
@@ -402,7 +434,36 @@ class MainActivity : FlutterActivity() {
             localNetworkPermissionRequestInFlight = false
             pendingLocalNetworkPermission?.success(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
             pendingLocalNetworkPermission = null
+            return
         }
+        if (requestCode == recordAudioPermissionRequestCode) {
+            val pending = pendingRecordingPermissionResult
+            val slot = pendingRecordingPermissionSlot
+            pendingRecordingPermissionResult = null
+            pendingRecordingPermissionSlot = null
+            if (pending != null) {
+                if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED && !slot.isNullOrBlank()) {
+                    pending.success(startAudioRecordingInternal(slot))
+                } else {
+                    pending.success(false)
+                }
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != audioImportRequestCode) return
+        val pending = pendingAudioImportResult
+        val slot = pendingAudioImportSlot
+        pendingAudioImportResult = null
+        pendingAudioImportSlot = null
+        if (pending == null) return
+        if (resultCode != android.app.Activity.RESULT_OK || data?.data == null || slot.isNullOrBlank()) {
+            pending.success(false)
+            return
+        }
+        pending.success(copyAudioOverride(slot, data.data!!))
     }
 
     private fun notificationsAllowed(): Boolean {
@@ -410,17 +471,197 @@ class MainActivity : FlutterActivity() {
         return (getSystemService(NotificationManager::class.java)).areNotificationsEnabled()
     }
 
-    private fun playCustomAlertAudio(slot: String): Boolean {
-        val normalized = slot.lowercase().replace(Regex("[^a-z0-9_]"), "")
-        if (normalized.isBlank()) return false
-        val resourceId = resources.getIdentifier(normalized, "raw", packageName)
-        if (resourceId == 0) return false
-        return try {
-            customAlertPlayer?.let { player ->
-                try { player.stop() } catch (_: Throwable) {}
-                try { player.release() } catch (_: Throwable) {}
+
+    private fun normalizeAudioSlot(raw: String): String =
+        raw.lowercase().replace(Regex("[^a-z0-9_]"), "")
+
+    private fun audioOverrideDirectory(): File = File(filesDir, "audio_overrides").also { it.mkdirs() }
+
+    private fun listAudioOverrideSlots(): List<String> =
+        audioOverrideDirectory().listFiles()
+            ?.filter { it.isFile && !it.name.startsWith(".") }
+            ?.map { it.name.substringBeforeLast('.') }
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            ?.sorted()
+            ?: emptyList()
+
+    private fun findAudioOverride(slot: String): File? {
+        val normalized = normalizeAudioSlot(slot)
+        if (normalized.isBlank()) return null
+        return audioOverrideDirectory().listFiles()
+            ?.firstOrNull { file ->
+                file.isFile && !file.name.startsWith(".") && file.name.substringBeforeLast('.') == normalized
             }
-            val player = MediaPlayer.create(this, resourceId) ?: return false
+    }
+
+    private fun removeAudioOverrides(slot: String): Boolean {
+        val normalized = normalizeAudioSlot(slot)
+        if (normalized.isBlank()) return false
+        var found = false
+        var ok = true
+        audioOverrideDirectory().listFiles()?.forEach { file ->
+            if (file.isFile && !file.name.startsWith(".") && file.name.substringBeforeLast('.') == normalized) {
+                found = true
+                if (!file.delete()) ok = false
+            }
+        }
+        return found && ok
+    }
+
+    private fun removeAllAudioOverrides(): Boolean {
+        var ok = true
+        audioOverrideDirectory().listFiles()?.forEach { file ->
+            if (file.isFile && !file.name.startsWith(".")) {
+                if (!file.delete()) ok = false
+            }
+        }
+        return ok
+    }
+
+    private fun beginAudioImport(slot: String, result: MethodChannel.Result) {
+        if (pendingAudioImportResult != null) {
+            result.success(false)
+            return
+        }
+        pendingAudioImportResult = result
+        pendingAudioImportSlot = slot
+        try {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "audio/*"
+            }, audioImportRequestCode)
+        } catch (_: Throwable) {
+            pendingAudioImportResult = null
+            pendingAudioImportSlot = null
+            result.success(false)
+        }
+    }
+
+    private fun copyAudioOverride(slot: String, uri: Uri): Boolean {
+        return try {
+            val resolver = contentResolver
+            val mime = resolver.getType(uri)
+            val mimeExtension = mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
+            val pathExtension = uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase()
+            val supported = setOf("wav", "mp3", "ogg", "m4a", "aac", "mp4")
+            val extension = listOfNotNull(mimeExtension?.lowercase(), pathExtension)
+                .firstOrNull { it in supported }
+                ?: "m4a"
+            val directory = audioOverrideDirectory()
+            val temporary = File(directory, ".import_${slot}.tmp")
+            resolver.openInputStream(uri)?.use { input ->
+                temporary.outputStream().use { output -> input.copyTo(output) }
+            } ?: return false
+            if (temporary.length() <= 0L) {
+                temporary.delete()
+                return false
+            }
+            removeAudioOverrides(slot)
+            val target = File(directory, "$slot.$extension")
+            if (target.exists()) target.delete()
+            if (!temporary.renameTo(target)) {
+                temporary.copyTo(target, overwrite = true)
+                temporary.delete()
+            }
+            target.exists() && target.length() > 0L
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun requestOrStartAudioRecording(slot: String, result: MethodChannel.Result) {
+        if (audioRecorder != null || pendingRecordingPermissionResult != null) {
+            result.success(false)
+            return
+        }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            result.success(startAudioRecordingInternal(slot))
+            return
+        }
+        pendingRecordingPermissionResult = result
+        pendingRecordingPermissionSlot = slot
+        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), recordAudioPermissionRequestCode)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun startAudioRecordingInternal(slot: String): Boolean {
+        if (audioRecorder != null) return false
+        val normalized = normalizeAudioSlot(slot)
+        if (normalized.isBlank()) return false
+        val directory = audioOverrideDirectory()
+        val temporary = File(directory, ".recording_${normalized}.m4a")
+        if (temporary.exists()) temporary.delete()
+        return try {
+            val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaRecorder(this)
+            } else {
+                MediaRecorder()
+            }
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            recorder.setAudioChannels(1)
+            recorder.setAudioSamplingRate(24000)
+            recorder.setAudioEncodingBitRate(96000)
+            recorder.setOutputFile(temporary.absolutePath)
+            recorder.prepare()
+            recorder.start()
+            audioRecorder = recorder
+            audioRecordingTempFile = temporary
+            audioRecordingSlot = normalized
+            true
+        } catch (_: Throwable) {
+            try { audioRecorder?.release() } catch (_: Throwable) {}
+            audioRecorder = null
+            temporary.delete()
+            audioRecordingTempFile = null
+            audioRecordingSlot = null
+            false
+        }
+    }
+
+    private fun stopAudioRecording(save: Boolean): Boolean {
+        val recorder = audioRecorder ?: return false
+        val temporary = audioRecordingTempFile
+        val slot = audioRecordingSlot
+        var stopped = false
+        try {
+            recorder.stop()
+            stopped = true
+        } catch (_: Throwable) {
+            stopped = false
+        } finally {
+            try { recorder.release() } catch (_: Throwable) {}
+            audioRecorder = null
+            audioRecordingTempFile = null
+            audioRecordingSlot = null
+        }
+        if (!save || !stopped || temporary == null || slot.isNullOrBlank() || temporary.length() <= 0L) {
+            temporary?.delete()
+            return !save && stopped
+        }
+        return try {
+            removeAudioOverrides(slot)
+            val target = File(audioOverrideDirectory(), "$slot.m4a")
+            if (target.exists()) target.delete()
+            if (!temporary.renameTo(target)) {
+                temporary.copyTo(target, overwrite = true)
+                temporary.delete()
+            }
+            target.exists() && target.length() > 0L
+        } catch (_: Throwable) {
+            temporary.delete()
+            false
+        }
+    }
+
+    private fun configureAudioPlayer(player: MediaPlayer): Boolean {
+        return try {
+            customAlertPlayer?.let { active ->
+                try { active.stop() } catch (_: Throwable) {}
+                try { active.release() } catch (_: Throwable) {}
+            }
             customAlertPlayer = player
             player.setOnCompletionListener { completed ->
                 try { completed.release() } catch (_: Throwable) {}
@@ -434,9 +675,33 @@ class MainActivity : FlutterActivity() {
             player.start()
             true
         } catch (_: Throwable) {
-            customAlertPlayer = null
+            try { player.release() } catch (_: Throwable) {}
+            if (customAlertPlayer === player) customAlertPlayer = null
             false
         }
+    }
+
+    private fun playCustomAlertAudio(slot: String): Boolean {
+        val normalized = normalizeAudioSlot(slot)
+        if (normalized.isBlank()) return false
+
+        val override = findAudioOverride(normalized)
+        if (override != null) {
+            try {
+                val player = MediaPlayer().apply {
+                    setDataSource(override.absolutePath)
+                    prepare()
+                }
+                if (configureAudioPlayer(player)) return true
+            } catch (_: Throwable) {
+                // Arquivo personalizado inválido: tenta o áudio padrão embarcado.
+            }
+        }
+
+        val resourceId = resources.getIdentifier(normalized, "raw", packageName)
+        if (resourceId == 0) return false
+        val player = try { MediaPlayer.create(this, resourceId) } catch (_: Throwable) { null } ?: return false
+        return configureAudioPlayer(player)
     }
 
     private fun showAlertNotification(title: String, message: String, notificationEnabled: Boolean, sound: Boolean, vibration: Boolean) {

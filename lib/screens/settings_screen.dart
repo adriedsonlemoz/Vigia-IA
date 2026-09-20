@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_metadata.dart';
 import 'advanced_settings_screen.dart';
+import 'audio_settings_screen.dart';
 import 'alerts_clips_screen.dart';
 import 'app_info_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -43,6 +44,19 @@ class SettingsScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
               children: [
+                _CategoryCard(
+                  icon: Icons.tune_rounded,
+                  title: 'Geral',
+                  subtitle: 'Preferências gerais do aplicativo.',
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.library_music_outlined,
+                      title: 'Áudios e voz',
+                      subtitle: 'Ouça, troque, grave ou restaure os áudios do Vigia IA.',
+                      onTap: () => _push(context, const AudioSettingsScreen()),
+                    ),
+                  ],
+                ),
                 _CategoryCard(
                   icon: Icons.radar_rounded,
                   title: 'Monitoramento',

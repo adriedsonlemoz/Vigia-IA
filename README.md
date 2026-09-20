@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.44+44`
+> **Versão atual:** `1.0.45+45`
 
 ## Estado atual
 
-A `1.0.44+44` corrige a navegação do Modo Bike: ele passa a ser um destino próprio e permanente no menu principal, sem depender de Configurações para ser encontrado.
+A `1.0.45+45` cria a biblioteca central de áudio do Vigia IA, incorpora 78 vozes padrão e permite ao usuário ouvir, trocar por arquivo, gravar pelo microfone ou restaurar qualquer aviso em Configurações → Geral → Áudios e voz.
+
+### Evolução 1.0.45
+
+- biblioteca central com 78 slots de áudio: 14 usados pelo monitor atual e 64 preparados para Bike/ESP32;
+- os 68 novos avisos enviados pelo usuário foram recortados e incorporados em WAV mono/24 kHz;
+- nova tela `Configurações → Geral → Áudios e voz` permite ouvir, substituir por arquivo, gravar pelo microfone, restaurar individualmente ou restaurar todos;
+- áudios personalizados ficam no armazenamento privado do app e têm prioridade sobre os arquivos padrão, sobrevivendo a atualizações normais do APK;
+- TTS permanece como fallback de segurança quando um áudio não puder ser reproduzido;
+- Android ganhou importação via seletor de arquivos e gravação AAC/M4A com permissão de microfone sob demanda;
+- slots futuros de pressão/temperatura dos pneus, Hall/velocidade, ESP32, celular traseiro, faróis, freios, setas, bateria auxiliar e sistema já aparecem marcados como `Futuro`;
+- catálogo, documentação, testes e verificadores passam a validar unicidade e presença dos 78 arquivos.
 
 ### Evolução 1.0.44
 
@@ -89,7 +100,7 @@ A `1.0.44+44` corrige a navegação do Modo Bike: ele passa a ser um destino pr�
 
 ### Áudios personalizados
 
-O app continua funcionando sem nenhum arquivo extra. Para usar sua própria voz/gravação, coloque um único `.wav`, `.mp3` ou `.ogg` em `custom_audio/`. Há slots de detecção (`person_detected`, `vehicle_detected`, `animal_detected`, `object_detected`), entrada/saída por categoria (`person_entered`, `person_exited`, `vehicle_entered`, `vehicle_exited`, `animal_entered`, `animal_exited`) e fallbacks genéricos (`object_entered`, `object_exited`), além de `camera_obstructed` e `camera_moved`. O workflow copia esses arquivos para os recursos Android. Se um slot estiver ausente, o Vigia IA usa o TTS do Android. Consulte `custom_audio/README.md` para o passo a passo.
+A biblioteca padrão contém 78 avisos e pode ser gerenciada dentro do próprio app em `Configurações → Geral → Áudios e voz`. Cada slot pode ser ouvido, substituído por um arquivo do aparelho, gravado pelo microfone e restaurado ao padrão. Personalizações ficam no armazenamento privado e têm prioridade sobre `custom_audio/`; o TTS continua como fallback de segurança. O diretório `custom_audio/` permanece como fonte versionada dos áudios padrão usados pelo build. Consulte `custom_audio/README.md` para detalhes.
 
 ### Evolução 1.0.36
 

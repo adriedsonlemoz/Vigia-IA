@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 1.0.45+45
+
+- Criado sistema central de áudio do Vigia IA com 78 slots únicos.
+- Os 68 novos avisos gerados pelo usuário foram recortados e adicionados aos 10 áudios já existentes.
+- Os 14 slots do monitor atual ficam prontos para uso imediato; 64 slots Bike/ESP32 ficam reservados para as integrações futuras.
+- Nova tela `Configurações → Geral → Áudios e voz` com busca, agrupamento por categoria, prévia e indicação de áudio personalizado/futuro.
+- Cada aviso pode ser substituído por arquivo de áudio, gravado diretamente pelo microfone, restaurado individualmente ou restaurado em lote.
+- Overrides são armazenados nos dados privados do app e têm prioridade sobre os recursos `res/raw`; arquivo inválido cai para o áudio padrão e, quando aplicável, para TTS.
+- Android ganhou seletor SAF sem permissão de armazenamento e gravação AAC/M4A com `RECORD_AUDIO` solicitado apenas ao iniciar gravação.
+- `MonitorController` passa a referenciar os IDs centrais do catálogo em vez de strings soltas para detecção, entrada/saída e integridade da câmera.
+- `bootstrap_android.sh` continua reconstruindo `res/raw` a partir de `custom_audio/` e agora aceita também M4A/AAC como formatos versionados.
+- Teste novo valida 78 slots únicos, 14 slots atuais e 64 slots Bike futuros.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.45+45`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida catálogo, arquivos, ponte Android, tela de configuração e sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.44+44
 
 - Corrigida a navegação do Modo Bike conforme o desenho original do produto.

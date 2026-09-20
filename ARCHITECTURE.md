@@ -1,8 +1,19 @@
-# Arquitetura — Vigia IA 1.0.44+44
+# Arquitetura — Vigia IA 1.0.45+45
 
 ## 1. Princípios
 
-A 1.0.44 mantém a arquitetura da Etapa 3 do Modo Bike e corrige sua exposição na navegação principal: Bike passa a ser um destino operacional de primeira classe, não uma opção escondida em Configurações.
+A 1.0.45 mantém a navegação e o pipeline existentes e adiciona uma camada central de áudio: catálogo versionado, recursos padrão embarcados e overrides privados do usuário, sem alterar o pipeline de IA.
+
+## Evolução 1.0.45
+
+- `AudioSlotCatalog` é a fonte única dos 78 IDs, títulos, frases, grupos e marcação de recursos futuros;
+- `MonitorController` usa `AudioSlotIds` para os 14 eventos atuais, reduzindo strings duplicadas e preparando novos módulos para reutilizar a mesma API;
+- `MainActivity` procura primeiro um override em `filesDir/audio_overrides`, depois o recurso `res/raw` do slot; falha no override não impede o fallback padrão;
+- importação usa `ACTION_OPEN_DOCUMENT` e copia o áudio para o armazenamento privado, sem pedir acesso amplo a arquivos;
+- gravação usa `MediaRecorder` AAC/M4A e solicita `RECORD_AUDIO` apenas quando o usuário toca em Gravar;
+- `AudioSettingsScreen` concentra prévia, importação, gravação, restauração individual e restauração total, com busca e grupos;
+- `custom_audio/` permanece como origem estável do build e passa a conter os 78 WAVs padrão;
+- os 64 slots Bike/ESP32 são apenas reservados nesta versão: não são disparados até a integração real de sensores/atuadores.
 
 ## Evolução 1.0.44
 

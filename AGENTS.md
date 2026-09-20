@@ -6,7 +6,7 @@ Estas regras valem para qualquer correção, melhoria, refatoração, buildfix o
 
 - Nunca entregar uma nova modificação usando a mesma versão da entrega anterior.
 - Toda entrega nova incrementa a versão pública e o build, inclusive correções pequenas.
-- Sequência esperada: `1.0.43+43` → `1.0.44+44` → `1.0.45+45`.
+- Sequência esperada: `1.0.44+44` → `1.0.45+45` → `1.0.46+46`.
 - Nunca reutilizar uma versão que já tenha sido entregue em ZIP.
 
 Antes do ZIP final, manter sincronizados:

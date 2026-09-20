@@ -1,49 +1,42 @@
-# Áudios personalizados do Vigia IA
+# Biblioteca de áudios do Vigia IA
 
-Esta pasta contém os áudios opcionais usados pelo Android no lugar do TTS. Se um
-slot não existir, o Vigia IA continua usando automaticamente a voz TTS do
-Android para aquele evento.
+A pasta `custom_audio/` contém os áudios padrão embarcados no aplicativo. A versão 1.0.45 centraliza todos os avisos em **slots de áudio** e inclui 78 arquivos WAV mono/24 kHz: 14 usados pelo monitor atual e 64 reservados para a evolução do Modo Bike/ESP32.
 
-## Slots suportados
+## Prioridade em tempo de execução
 
-Detecção:
+Para cada slot, o aplicativo tenta nesta ordem:
 
-- `person_detected.wav` — pessoa detectada;
-- `vehicle_detected.wav` — automóvel detectado;
-- `animal_detected.wav` — animal detectado;
-- `object_detected.wav` — fallback para outro objeto.
+1. áudio gravado ou escolhido pelo usuário em **Configurações → Geral → Áudios e voz**;
+2. áudio padrão embarcado nesta pasta;
+3. TTS do Android, quando o evento possui frase dinâmica e nenhum áudio pôde ser reproduzido.
 
-Entrada/saída por categoria:
+Os áudios personalizados ficam no armazenamento interno do app e sobrevivem a atualizações normais do APK. Desinstalar o aplicativo remove esses arquivos junto com os demais dados privados do app.
 
-- `person_entered.wav` / `person_exited.wav`;
-- `vehicle_entered.wav` / `vehicle_exited.wav`;
-- `animal_entered.wav` / `animal_exited.wav`;
-- `object_entered.wav` / `object_exited.wav` — fallback para outra classe.
+## Personalização no aplicativo
 
-Integridade da câmera:
+A tela **Áudios e voz** permite, individualmente para cada slot:
 
-- `camera_obstructed.wav` — câmera obstruída;
-- `camera_moved.wav` — câmera deslocada.
+- ouvir o áudio efetivo;
+- escolher um arquivo de áudio do aparelho;
+- gravar uma nova fala pelo microfone;
+- restaurar o áudio padrão;
+- restaurar todos os padrões de uma vez.
 
-Pode usar `.mp3` ou `.ogg` no lugar de `.wav`, mantendo o mesmo nome-base. Não
-coloque duas extensões para o mesmo slot no mesmo build.
+Arquivos importados aceitos pelo Android incluem WAV, MP3, OGG, M4A/AAC e MP4 de áudio. Gravações feitas pelo app usam AAC/M4A mono.
 
-## Áudio incluído nesta versão
+## Grupos
 
-O arquivo único fornecido em 19/09/2026 foi separado em dez falas e incluído
-nesta pasta: detecção de pessoa/veículo/animal/objeto, entrada e saída de pessoa
-e veículo, câmera obstruída e câmera deslocada.
+- Monitoramento: detecção, entrada/saída e integridade da câmera;
+- Bike · Pneus e sensores: pressão, temperatura, TPMS/Hall e velocidade;
+- Bike · ESP32: conexão, comunicação e bateria do módulo;
+- Bike · Celular traseiro: bateria, temperatura, conexão e câmera;
+- Bike · Operação: ativação e início/fim do monitoramento;
+- Bike · Iluminação: faróis, lanterna e sensor de luz;
+- Bike · Freios e setas: luz de freio, freios, setas e pisca-alerta;
+- Bike · Sistema e energia: sensores gerais, bateria auxiliar e estado do sistema.
 
-A gravação recebida não contém as duas frases `Animal entrou na área` e
-`Animal saiu da área`. Por isso `animal_entered` e `animal_exited` continuam
-caindo automaticamente para TTS até esses dois arquivos serem adicionados.
+Os slots Bike marcados como **Futuro** já possuem áudio e interface, mas só serão disparados quando as futuras integrações ESP32/TPMS/Hall/iluminação/freios forem conectadas ao aplicativo.
 
 ## Build
 
-`tool/bootstrap_android.sh` copia automaticamente os arquivos desta pasta para
-`android/app/src/main/res/raw/`. O app procura o áudio pelo nome em tempo de
-execução. Nomes Android devem usar apenas letras minúsculas, números e
-sublinhado.
-
-Recomendação prática: áudio mono, curto (aprox. 0,5–4 s), sem silêncio longo no
-início e com volume consistente.
+`tool/bootstrap_android.sh` copia automaticamente os arquivos desta pasta para `android/app/src/main/res/raw/`. Os nomes dos slots usam apenas letras minúsculas, números e sublinhado.

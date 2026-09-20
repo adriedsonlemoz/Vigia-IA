@@ -191,6 +191,77 @@ class NativePlatformService {
     }
   }
 
+  Future<Set<String>> audioOverrideSlots() async {
+    if (!Platform.isAndroid) return <String>{};
+    try {
+      final slots = await _channel.invokeListMethod<String>('audioOverrideSlots');
+      return slots?.toSet() ?? <String>{};
+    } catch (_) {
+      return <String>{};
+    }
+  }
+
+  Future<bool> importAudioOverride(String slot) async {
+    if (!Platform.isAndroid || slot.trim().isEmpty) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'importAudioOverride',
+            <String, Object?>{'slot': slot.trim()},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> removeAudioOverride(String slot) async {
+    if (!Platform.isAndroid || slot.trim().isEmpty) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'removeAudioOverride',
+            <String, Object?>{'slot': slot.trim()},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> removeAllAudioOverrides() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('removeAllAudioOverrides') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> startAudioRecording(String slot) async {
+    if (!Platform.isAndroid || slot.trim().isEmpty) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'startAudioRecording',
+            <String, Object?>{'slot': slot.trim()},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> stopAudioRecording({required bool save}) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'stopAudioRecording',
+            <String, Object?>{'save': save},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> showAlertNotification({
     required String title,
     required String message,

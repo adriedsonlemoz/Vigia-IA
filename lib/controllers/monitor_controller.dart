@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
+import '../models/audio_slot.dart';
 import '../models/bike_mode_config.dart';
 import '../models/detection.dart';
 import '../models/monitor_event.dart';
@@ -1247,21 +1248,19 @@ class MonitorController extends ChangeNotifier {
 
   String _audioSlotForLabel(String label) =>
       switch (ObjectFilterCatalog.groupKeyForLabel(label)) {
-        'person' => 'person_detected',
-        'vehicle' => 'vehicle_detected',
-        'animal' => 'animal_detected',
-        _ => 'object_detected',
+        'person' => AudioSlotIds.personDetected,
+        'vehicle' => AudioSlotIds.vehicleDetected,
+        'animal' => AudioSlotIds.animalDetected,
+        _ => AudioSlotIds.objectDetected,
       };
 
   String _audioSlotForTransition(ZoneTransition transition) {
-    final suffix = transition.type == ZoneTransitionType.entered
-        ? 'entered'
-        : 'exited';
+    final entered = transition.type == ZoneTransitionType.entered;
     return switch (ObjectFilterCatalog.groupKeyForLabel(transition.label)) {
-      'person' => 'person_$suffix',
-      'vehicle' => 'vehicle_$suffix',
-      'animal' => 'animal_$suffix',
-      _ => 'object_$suffix',
+      'person' => entered ? AudioSlotIds.personEntered : AudioSlotIds.personExited,
+      'vehicle' => entered ? AudioSlotIds.vehicleEntered : AudioSlotIds.vehicleExited,
+      'animal' => entered ? AudioSlotIds.animalEntered : AudioSlotIds.animalExited,
+      _ => entered ? AudioSlotIds.objectEntered : AudioSlotIds.objectExited,
     };
   }
 
@@ -1333,7 +1332,7 @@ class MonitorController extends ChangeNotifier {
       _deliverAlert(
         message,
         priority: SpeechPriority.high,
-        audioSlot: isObstructed ? 'camera_obstructed' : 'camera_moved',
+        audioSlot: isObstructed ? AudioSlotIds.cameraObstructed : AudioSlotIds.cameraMoved,
       ),
     );
     await _logs.record(

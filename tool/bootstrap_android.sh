@@ -41,7 +41,7 @@ if [[ -d "$CUSTOM_AUDIO_DIR" ]]; then
   mkdir -p "$RAW_DIR"
   declare -A AUDIO_SLOTS=()
   shopt -s nullglob
-  for AUDIO_FILE in "$CUSTOM_AUDIO_DIR"/*.wav "$CUSTOM_AUDIO_DIR"/*.mp3 "$CUSTOM_AUDIO_DIR"/*.ogg; do
+  for AUDIO_FILE in "$CUSTOM_AUDIO_DIR"/*.wav "$CUSTOM_AUDIO_DIR"/*.mp3 "$CUSTOM_AUDIO_DIR"/*.ogg "$CUSTOM_AUDIO_DIR"/*.m4a "$CUSTOM_AUDIO_DIR"/*.aac; do
     BASENAME="$(basename "$AUDIO_FILE")"
     STEM="${BASENAME%.*}"
     if [[ ! "$STEM" =~ ^[a-z0-9_]+$ ]]; then

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.44+44$' pubspec.yaml || fail 'Versao esperada 1.0.44+44 nao encontrada.'
+grep -q '^version: 1\.0\.45+45$' pubspec.yaml || fail 'Versao esperada 1.0.45+45 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.44';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.44.'
-grep -q 'static const int build = 44;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 44.'
-grep -q "version: '1.0.44'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.44.'
+grep -q "static const String version = '1.0.45';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.45.'
+grep -q 'static const int build = 45;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 45.'
+grep -q "version: '1.0.45'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.45.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.44+44$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.44+44.'
+grep -q '^version: 1.0.45+45$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.45+45.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.44"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.44.'
-grep -q '"build": 44' app_identity.json \
-  || fail 'app_identity.json nao esta no build 44.'
+grep -q '"version": "1.0.45"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.45.'
+grep -q '"build": 45' app_identity.json \
+  || fail 'app_identity.json nao esta no build 45.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.44+44' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.44+44.'
+grep -q 'Vigia IA 1.0.45+45' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.45+45.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -879,21 +879,20 @@ grep -q 'Pacote de voz personalizado 1.0.38' ARCHITECTURE.md \
   || fail 'ARCHITECTURE nao documenta 1.0.38.'
 grep -q '_audioSlotForTransition' lib/controllers/monitor_controller.dart \
   || fail 'Controller nao seleciona audio de transicao por categoria.'
-grep -q "'person' => 'person_\$suffix'" lib/controllers/monitor_controller.dart \
-  || fail 'Slots de entrada/saida de pessoa nao estao ligados.'
-grep -q "'vehicle' => 'vehicle_\$suffix'" lib/controllers/monitor_controller.dart \
-  || fail 'Slots de entrada/saida de veiculo nao estao ligados.'
-grep -q "'animal' => 'animal_\$suffix'" lib/controllers/monitor_controller.dart \
-  || fail 'Slots de entrada/saida de animal nao estao ligados.'
+grep -q 'AudioSlotIds.personEntered' lib/controllers/monitor_controller.dart \
+  || fail 'Slots de entrada/saida de pessoa nao estao ligados ao catalogo central.'
+grep -q 'AudioSlotIds.vehicleEntered' lib/controllers/monitor_controller.dart \
+  || fail 'Slots de entrada/saida de veiculo nao estao ligados ao catalogo central.'
+grep -q 'AudioSlotIds.animalEntered' lib/controllers/monitor_controller.dart \
+  || fail 'Slots de entrada/saida de animal nao estao ligados ao catalogo central.'
 for audio in \
   person_detected vehicle_detected animal_detected object_detected \
   person_entered person_exited vehicle_entered vehicle_exited \
+  animal_entered animal_exited object_entered object_exited \
   camera_obstructed camera_moved; do
   [[ -f "custom_audio/$audio.wav" ]] || fail "Audio personalizado ausente: $audio.wav"
   [[ -f "android/app/src/main/res/raw/$audio.wav" ]] || fail "Audio Android ausente: $audio.wav"
 done
-[[ ! -f custom_audio/animal_entered.wav ]] || fail 'animal_entered foi incluído sem existir no WAV recebido.'
-[[ ! -f custom_audio/animal_exited.wav ]] || fail 'animal_exited foi incluído sem existir no WAV recebido.'
 
 # Nomes tecnicos antigos nao podem voltar ao projeto atual.
 for legacy in 'Monitor IA' 'monitor-ia' 'camera_guard_offline' 'vigia-ia'; do
@@ -1004,5 +1003,46 @@ fi
 grep -q '^## 1.0.44+44' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.44.'
 grep -q 'Evolução 1.0.44' README.md || fail 'README nao documenta 1.0.44.'
 grep -q 'Evolução 1.0.44' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.44.'
+
+# Biblioteca central de audio e personalizacao - 1.0.45
+grep -q '^## 1.0.45+45' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.45.'
+grep -q 'Evolução 1.0.45' README.md || fail 'README nao documenta 1.0.45.'
+grep -q 'Evolução 1.0.45' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.45.'
+[[ -f lib/models/audio_slot.dart ]] || fail 'Catalogo central de audio ausente.'
+[[ -f lib/screens/audio_settings_screen.dart ]] || fail 'Tela de configuracao de audio ausente.'
+[[ -f test/audio_slot_catalog_test.dart ]] || fail 'Teste do catalogo de audio ausente.'
+grep -q "title: 'Áudios e voz'" lib/screens/settings_screen.dart \
+  || fail 'Configuracoes gerais nao expoem Audios e voz.'
+grep -q 'audioOverrideSlots' lib/services/native_platform_service.dart \
+  || fail 'Flutter nao consulta overrides de audio.'
+grep -q 'importAudioOverride' tool/android/MainActivity.kt \
+  || fail 'Android nao permite importar audio personalizado.'
+grep -q 'startAudioRecording' tool/android/MainActivity.kt \
+  || fail 'Android nao permite gravar audio personalizado.'
+grep -q 'removeAllAudioOverrides' tool/android/MainActivity.kt \
+  || fail 'Android nao permite restaurar todos os audios.'
+grep -q 'android.permission.RECORD_AUDIO' tool/AndroidManifest.xml \
+  || fail 'Permissao de microfone para gravacao de audio ausente.'
+grep -q '\*.m4a' tool/bootstrap_android.sh \
+  || fail 'Bootstrap nao reconhece M4A como audio versionado.'
+cmp -s tool/android/MainActivity.kt android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt \
+  || fail 'MainActivity atual diverge da copia estavel em tool/android.'
+[[ $(find custom_audio -maxdepth 1 -type f -name '*.wav' | wc -l) -eq 78 ]] \
+  || fail 'Biblioteca padrao nao possui 78 WAVs.'
+[[ $(find android/app/src/main/res/raw -maxdepth 1 -type f -name '*.wav' | wc -l) -eq 78 ]] \
+  || fail 'res/raw nao possui os 78 WAVs da biblioteca padrao.'
+python3 - <<'PY_AUDIO_CHECK' || fail 'Catalogo de audio diverge dos arquivos WAV.'
+import re
+from pathlib import Path
+text = Path('lib/models/audio_slot.dart').read_text(encoding='utf-8')
+ids = re.findall(r"AudioSlotDefinition\(id: '([^']+)'", text)
+files = {p.stem for p in Path('custom_audio').glob('*.wav')}
+if len(ids) != 78 or len(set(ids)) != 78:
+    raise SystemExit('catalogo nao tem 78 ids unicos')
+if set(ids) != files:
+    raise SystemExit(f'diferenca catalogo/arquivos: {sorted(set(ids)^files)}')
+if sum(1 for item in ids if item.startswith('bike_')) != 64:
+    raise SystemExit('quantidade de slots Bike diferente de 64')
+PY_AUDIO_CHECK
 
 echo 'Verificacao preventiva concluida com sucesso.'
