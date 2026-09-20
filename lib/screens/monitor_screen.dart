@@ -5,12 +5,14 @@ import 'package:flutter/services.dart';
 
 import '../controllers/monitor_controller.dart';
 import '../services/system_ui_service.dart';
+import '../services/bike_sensor_service.dart';
 import '../core/video_source_status.dart';
 import '../models/monitoring_zone.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
+import '../widgets/bike_ride_hud.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/remote_bike_status_panel.dart';
@@ -37,6 +39,7 @@ class MonitorScreen extends StatefulWidget {
 class _MonitorScreenState extends State<MonitorScreen>
     with WidgetsBindingObserver {
   late final MonitorController _controller;
+  final BikeSensorService _bikeSensors = BikeSensorService.instance;
   String? _editingZoneId;
   bool _detectionsExpanded = false;
   bool _hudExpanded = false;
@@ -51,6 +54,8 @@ class _MonitorScreenState extends State<MonitorScreen>
       sourceConfig: widget.initialSource,
       settings: widget.settings,
     )..addListener(_refresh);
+    _bikeSensors.addListener(_refresh);
+    unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
   }
 
@@ -85,6 +90,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_refresh);
+    _bikeSensors.removeListener(_refresh);
     _controller.dispose();
     unawaited(SystemUiService.edgeToEdge());
     super.dispose();
@@ -910,6 +916,11 @@ class _MonitorScreenState extends State<MonitorScreen>
   Widget _buildCameraStage(BuildContext context) {
     final status = _controller.sourceStatus;
     final remoteStatus = _controller.remotePhoneStatus;
+    final bikeSnapshot = _bikeSensors.snapshot;
+    final bikeHudActive = bikeSnapshot != null;
+    final standardHudTop = bikeHudActive
+        ? (bikeSnapshot!.primaryWarning == null ? 98.0 : 138.0)
+        : 12.0;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -931,10 +942,17 @@ class _MonitorScreenState extends State<MonitorScreen>
               previewAspectRatio: _controller.previewAspectRatio,
               onChanged: _applyZone,
             ),
+          if (bikeHudActive)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 6,
+              child: BikeRideHud(snapshot: bikeSnapshot!),
+            ),
           Positioned(
             left: 12,
             right: 12,
-            top: 12,
+            top: standardHudTop,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

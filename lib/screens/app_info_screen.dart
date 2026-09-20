@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.53',
+          version: '1.0.54',
           current: true,
+          changes: [
+            'HUD transparente do Modo Bike agora aparece sobre o vídeo com velocidade e pressão dos pneus.',
+            'Simulador interno permite testar cenários de sensores sem possuir ESP32, sempre identificado como SIMULAÇÃO.',
+            'Alertas visuais cobrem pneu dianteiro/traseiro baixo, bateria de sensores e perda de conexão.',
+            'Corrigido o lint use_null_aware_elements que interrompeu o flutter analyze da 1.0.53.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.53',
           changes: [
             'Corrigida a reprodução dos áudios padrão em aparelhos onde a URI android.resource falhava no MediaPlayer.',
             'Os M4A embarcados agora são copiados de res/raw para o cache privado e reproduzidos como arquivo local.',

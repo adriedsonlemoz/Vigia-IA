@@ -478,7 +478,7 @@ class _SessionHealthCard extends StatelessWidget {
     final color = _healthColor(context, health.state);
     final primaryIssue = health.primaryIssue;
     final displayedIssues = <SessionHealthIssue>[
-      if (primaryIssue != null) primaryIssue,
+      ?primaryIssue,
       ...health.issues
           .where((issue) => !identical(issue, primaryIssue))
           .take(2),

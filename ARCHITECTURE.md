@@ -1,8 +1,21 @@
-# Arquitetura — Vigia IA 1.0.53+53
+# Arquitetura — Vigia IA 1.0.54+54
 
 ## 1. Princípios
 
-A 1.0.53 corrige a camada nativa de reprodução dos áudios padrão sem alterar o contrato Dart, a biblioteca M4A, o pipeline de IA, o fluxo imersivo do Bike ou qualquer integração futura com ESP32.
+A 1.0.54 introduz uma camada de sensores do Modo Bike independente da origem dos dados. Nesta etapa, a origem é um simulador local para testar o HUD transparente sem hardware; a futura fonte ESP32 poderá alimentar o mesmo contrato. A versão também corrige o lint identificado no workflow da 1.0.53.
+
+
+## Evolução 1.0.54
+
+- `BikeSensorSnapshot` concentra velocidade, pressões, bateria, distância, temperatura opcional, conexão, origem e classificação de saúde dos sensores;
+- `BikeSensorService` é a fonte única do HUD e hoje fornece apenas dados simulados; a UI não conhece detalhes de ESP32;
+- `BikeModeConfig` persiste a ativação do simulador e o cenário escolhido;
+- `BikeModeScreen` oferece controle explícito de teste sem hardware e atalho para abrir o Monitor;
+- `BikeRideHud` é desenhado sobre o vídeo com fundos translúcidos, velocidade central, pneus nas laterais e alerta temporário quando necessário;
+- `MonitorScreen` exibe o HUD quando existe snapshot de sensores disponível; o fluxo imersivo e a fonte de vídeo não foram alterados;
+- a indicação `SIMULAÇÃO` impede que telemetria sintética seja interpretada como leitura real;
+- `SessionStatusPanel` usa elemento de coleção null-aware para atender ao lint `use_null_aware_elements` do Flutter 3.44.9;
+- nenhuma comunicação BLE/Wi-Fi com ESP32 foi implementada nesta versão.
 
 
 ## Evolução 1.0.53

@@ -7,6 +7,8 @@ void main() {
     expect(config.enabled, isFalse);
     expect(config.powerProfile, BikePowerProfile.economy);
     expect(config.keepRemoteTelemetry, isTrue);
+    expect(config.sensorSimulationEnabled, isFalse);
+    expect(config.simulationScenario, BikeSimulationScenario.normal);
   });
 
   test('configuração do Modo Bike serializa e restaura', () {
@@ -14,11 +16,15 @@ void main() {
       enabled: true,
       powerProfile: BikePowerProfile.extremeEconomy,
       lowBatteryPercent: 15,
+      sensorSimulationEnabled: true,
+      simulationScenario: BikeSimulationScenario.rearTireLow,
     );
     final restored = BikeModeConfig.fromJson(original.toJson());
     expect(restored.enabled, isTrue);
     expect(restored.powerProfile, BikePowerProfile.extremeEconomy);
     expect(restored.lowBatteryPercent, 15);
+    expect(restored.sensorSimulationEnabled, isTrue);
+    expect(restored.simulationScenario, BikeSimulationScenario.rearTireLow);
   });
 
   test('limite de bateria fica em faixa segura', () {

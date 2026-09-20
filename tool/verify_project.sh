@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.53+53$' pubspec.yaml || fail 'Versao esperada 1.0.53+53 nao encontrada.'
+grep -q '^version: 1\.0\.54+54$' pubspec.yaml || fail 'Versao esperada 1.0.54+54 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.53';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.53.'
-grep -q 'static const int build = 53;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 53.'
-grep -q "version: '1.0.53'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.53.'
+grep -q "static const String version = '1.0.54';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.54.'
+grep -q 'static const int build = 54;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 54.'
+grep -q "version: '1.0.54'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.54.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.53+53$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.53+53.'
+grep -q '^version: 1.0.54+54$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.54+54.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.53"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.53.'
-grep -q '"build": 53' app_identity.json \
-  || fail 'app_identity.json nao esta no build 53.'
+grep -q '"version": "1.0.54"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.54.'
+grep -q '"build": 54' app_identity.json \
+  || fail 'app_identity.json nao esta no build 54.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.53+53' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.53+53.'
+grep -q 'Vigia IA 1.0.54+54' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.54+54.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1239,5 +1239,23 @@ if grep -q 'android.resource://' tool/android/MainActivity.kt; then
 fi
 cmp -s tool/android/MainActivity.kt android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt \
   || fail 'MainActivity gerada diverge da fonte versionada na correcao 1.0.53.'
+
+
+# HUD Bike e simulador sem ESP32 - 1.0.54
+grep -q '^## 1.0.54+54' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.54.'
+grep -q 'Evolução 1.0.54' README.md || fail 'README nao documenta 1.0.54.'
+grep -q 'Evolução 1.0.54' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.54.'
+[[ -f lib/models/bike_sensor_snapshot.dart ]] || fail 'Contrato de sensores da bike nao encontrado.'
+[[ -f lib/services/bike_sensor_service.dart ]] || fail 'Servico de sensores/simulador da bike nao encontrado.'
+[[ -f lib/widgets/bike_ride_hud.dart ]] || fail 'HUD transparente da bike nao encontrado.'
+[[ -f test/bike_sensor_snapshot_test.dart ]] || fail 'Testes dos sensores simulados nao encontrados.'
+grep -q 'sensorSimulationEnabled' lib/models/bike_mode_config.dart   || fail 'Configuracao do simulador nao e persistida no Modo Bike.'
+grep -q 'Teste do HUD sem ESP32' lib/screens/bike_mode_screen.dart   || fail 'Tela Bike nao oferece teste do HUD sem ESP32.'
+grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
+grep -q "'SIMULAÇÃO" lib/widgets/bike_ride_hud.dart   || fail 'HUD simulado nao identifica claramente dados sinteticos.'
+if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart; then
+  fail 'Lint use_null_aware_elements da 1.0.53 reapareceu no Status da sessao.'
+fi
+grep -q '?primaryIssue' lib/widgets/session_status_panel.dart   || fail 'Buildfix null-aware do Status da sessao nao encontrado.'
 
 echo 'Verificacao preventiva concluida com sucesso.'

@@ -1,6 +1,32 @@
 # CHANGELOG
 
 
+## 1.0.54+54
+
+- Implementado HUD transparente do Modo Bike diretamente sobre o vídeo do Monitor.
+- O HUD exibe velocidade, pressão do pneu dianteiro/traseiro e bateria da futura central/sensores sem esconder a imagem principal.
+- Alertas visuais destacados para pressão baixa, bateria de sensores baixa/crítica e perda de conexão.
+- Adicionado simulador interno para desenvolvimento e teste sem ESP32, com cenários normal, pneu dianteiro baixo, pneu traseiro baixo, bateria baixa e desconectado.
+- Dados simulados ficam explicitamente marcados como `SIMULAÇÃO`.
+- Novo contrato `BikeSensorSnapshot` e `BikeSensorService` deixam o HUD independente da futura origem ESP32.
+- Corrigido o lint `use_null_aware_elements` em `SessionStatusPanel` reportado pelo workflow Android-APK-25 da 1.0.53.
+- Novos testes cobrem persistência do simulador e classificação de alertas dos sensores.
+- Versionamento e documentação sincronizados em `1.0.54+54`.
+- Integração real com ESP32 continua fora desta etapa.
+
+### Como testar sem ESP32
+
+1. Abra `Bike`.
+2. Em `Teste do HUD sem ESP32`, ative `Simular sensores da bike`.
+3. Escolha um cenário e toque em `Abrir Monitor e testar HUD`.
+4. Confirme o HUD transparente no vídeo e alterne os cenários para verificar cada alerta.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a estrutura, o buildfix, o simulador, o HUD e a sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
+
 ## 1.0.53+53
 
 - Corrigida a reprodução dos áudios padrão que ainda podia falhar em aparelho real com “Não foi possível reproduzir este áudio”.

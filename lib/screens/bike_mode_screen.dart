@@ -295,6 +295,64 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      _SectionCard(
+                        title: 'Teste do HUD sem ESP32',
+                        subtitle:
+                            'Gera dados falsos somente para testar o painel transparente sobre o vídeo. Nenhum sensor real é necessário.',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              value: _config.sensorSimulationEnabled,
+                              onChanged: (value) => _update(
+                                _config.copyWith(sensorSimulationEnabled: value),
+                              ),
+                              secondary: const Icon(Icons.science_outlined),
+                              title: const Text('Simular sensores da bike'),
+                              subtitle: const Text(
+                                'Mostra velocidade, pneus, bateria e alertas no Monitor usando uma fonte marcada como SIMULAÇÃO.',
+                              ),
+                            ),
+                            if (_config.sensorSimulationEnabled) ...[
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<BikeSimulationScenario>(
+                                initialValue: _config.simulationScenario,
+                                decoration: const InputDecoration(
+                                  labelText: 'Cenário de teste',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: BikeSimulationScenario.values
+                                    .map(
+                                      (scenario) => DropdownMenuItem(
+                                        value: scenario,
+                                        child: Text(scenario.label),
+                                      ),
+                                    )
+                                    .toList(growable: false),
+                                onChanged: (scenario) {
+                                  if (scenario == null) return;
+                                  _update(
+                                    _config.copyWith(simulationScenario: scenario),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _config.simulationScenario.description,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.tonalIcon(
+                                onPressed: () => _navigateMain(2),
+                                icon: const Icon(Icons.play_circle_outline_rounded),
+                                label: const Text('Abrir Monitor e testar HUD'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       _TelemetryCard(
                         telemetry: _telemetry,
                         profile: _config.powerProfile,

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.53 corrige a reprodução dos áudios padrão: os recursos M4A embarcados são lidos de res/raw, materializados no cache privado e entregues ao MediaPlayer como arquivo local, evitando falhas de URI android.resource em aparelhos/versões Android incompatíveis. Áudios personalizados, Bike imersivo e ESP32 permanecem inalterados.",
-  "version": "1.0.53",
-  "build": 53
+  "notes": "A 1.0.54 adiciona HUD transparente no vídeo do Modo Bike com velocidade, pressão dianteira/traseira, bateria e alertas, além de simulador interno para teste sem ESP32. Também corrige o lint use_null_aware_elements visto no workflow da 1.0.53. A integração real com ESP32 ainda não foi implementada.",
+  "version": "1.0.54",
+  "build": 54
 }

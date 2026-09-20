@@ -2,11 +2,24 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.53+53`
+> **Versão atual:** `1.0.54+54`
 
 ## Estado atual
 
-A `1.0.53+53` corrige a reprodução dos **áudios padrão embarcados** em aparelhos onde a abertura por URI `android.resource://` falhava no `MediaPlayer`, preservando o pipeline da IA da 1.0.52 e sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+A `1.0.54+54` adiciona o primeiro **HUD transparente do Modo Bike sobre o vídeo**, com simulador interno para validar velocidade, pneus e alertas mesmo sem ESP32. A integração real com ESP32 continua futura. A versão também corrige o lint encontrado pelo workflow da 1.0.53.
+
+
+### Evolução 1.0.54
+
+- HUD transparente no Monitor quando existe uma fonte de sensores disponível; o simulador pode ser testado sem ativar o perfil energético do celular traseiro;
+- velocidade em destaque no topo, pressão do pneu dianteiro e traseiro nas laterais e bateria dos sensores em faixa discreta;
+- avisos ganham destaque temporário para pressão baixa, bateria de sensores baixa/crítica e perda de conexão;
+- novo simulador interno, ativável em `Bike → Teste do HUD sem ESP32`, sem exigir placa ou sensores físicos;
+- cenários manuais: normal, pneu dianteiro baixo, pneu traseiro baixo, bateria dos sensores baixa e sensores desconectados;
+- o HUD mostra `SIMULAÇÃO` enquanto estiver usando dados falsos, evitando confusão com telemetria real;
+- a camada `BikeSensorService` foi separada da UI para permitir substituir o simulador por uma fonte ESP32 futura sem redesenhar o HUD;
+- corrigido o lint `use_null_aware_elements` em `session_status_panel.dart` apontado pelo workflow Android-APK-25;
+- a integração real com ESP32 ainda não foi implementada.
 
 
 ### Evolução 1.0.53

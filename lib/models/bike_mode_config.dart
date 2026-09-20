@@ -1,5 +1,37 @@
 enum BikePowerProfile { normal, economy, extremeEconomy }
 
+
+enum BikeSimulationScenario {
+  normal,
+  frontTireLow,
+  rearTireLow,
+  sensorBatteryLow,
+  disconnected,
+}
+
+extension BikeSimulationScenarioUi on BikeSimulationScenario {
+  String get label => switch (this) {
+        BikeSimulationScenario.normal => 'Normal',
+        BikeSimulationScenario.frontTireLow => 'Pneu dianteiro baixo',
+        BikeSimulationScenario.rearTireLow => 'Pneu traseiro baixo',
+        BikeSimulationScenario.sensorBatteryLow => 'Bateria dos sensores baixa',
+        BikeSimulationScenario.disconnected => 'Sensores desconectados',
+      };
+
+  String get description => switch (this) {
+        BikeSimulationScenario.normal =>
+          'Velocidade e pressões normais para conferir o HUD discreto.',
+        BikeSimulationScenario.frontTireLow =>
+          'Força pressão crítica no pneu dianteiro e exibe alerta no vídeo.',
+        BikeSimulationScenario.rearTireLow =>
+          'Força pressão crítica no pneu traseiro e exibe alerta no vídeo.',
+        BikeSimulationScenario.sensorBatteryLow =>
+          'Simula bateria baixa na futura central/sensores da bike.',
+        BikeSimulationScenario.disconnected =>
+          'Simula perda de comunicação com os sensores.',
+      };
+}
+
 extension BikePowerProfileUi on BikePowerProfile {
   String get label => switch (this) {
         BikePowerProfile.normal => 'Normal',
@@ -55,6 +87,8 @@ class BikeModeConfig {
     this.keepRemoteTelemetry = true,
     this.alertLowBattery = true,
     this.lowBatteryPercent = 20,
+    this.sensorSimulationEnabled = false,
+    this.simulationScenario = BikeSimulationScenario.normal,
   });
 
   final bool enabled;
@@ -63,6 +97,8 @@ class BikeModeConfig {
   final bool keepRemoteTelemetry;
   final bool alertLowBattery;
   final int lowBatteryPercent;
+  final bool sensorSimulationEnabled;
+  final BikeSimulationScenario simulationScenario;
 
   Duration effectiveAnalysisInterval(Duration configured) {
     if (!enabled) return configured;
@@ -88,6 +124,8 @@ class BikeModeConfig {
     bool? keepRemoteTelemetry,
     bool? alertLowBattery,
     int? lowBatteryPercent,
+    bool? sensorSimulationEnabled,
+    BikeSimulationScenario? simulationScenario,
   }) =>
       BikeModeConfig(
         enabled: enabled ?? this.enabled,
@@ -96,6 +134,8 @@ class BikeModeConfig {
         keepRemoteTelemetry: keepRemoteTelemetry ?? this.keepRemoteTelemetry,
         alertLowBattery: alertLowBattery ?? this.alertLowBattery,
         lowBatteryPercent: (lowBatteryPercent ?? this.lowBatteryPercent).clamp(5, 50).toInt(),
+        sensorSimulationEnabled: sensorSimulationEnabled ?? this.sensorSimulationEnabled,
+        simulationScenario: simulationScenario ?? this.simulationScenario,
       );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -105,6 +145,8 @@ class BikeModeConfig {
         'keepRemoteTelemetry': keepRemoteTelemetry,
         'alertLowBattery': alertLowBattery,
         'lowBatteryPercent': lowBatteryPercent,
+        'sensorSimulationEnabled': sensorSimulationEnabled,
+        'simulationScenario': simulationScenario.name,
       };
 
   factory BikeModeConfig.fromJson(Map<String, dynamic> json) {
@@ -113,6 +155,11 @@ class BikeModeConfig {
       (item) => item.name == profileName,
       orElse: () => BikePowerProfile.economy,
     );
+    final scenarioName = json['simulationScenario'] as String?;
+    final scenario = BikeSimulationScenario.values.firstWhere(
+      (item) => item.name == scenarioName,
+      orElse: () => BikeSimulationScenario.normal,
+    );
     return BikeModeConfig(
       enabled: json['enabled'] as bool? ?? false,
       powerProfile: profile,
@@ -120,6 +167,8 @@ class BikeModeConfig {
       keepRemoteTelemetry: json['keepRemoteTelemetry'] as bool? ?? true,
       alertLowBattery: json['alertLowBattery'] as bool? ?? true,
       lowBatteryPercent: ((json['lowBatteryPercent'] as num?)?.toInt() ?? 20).clamp(5, 50).toInt(),
+      sensorSimulationEnabled: json['sensorSimulationEnabled'] as bool? ?? false,
+      simulationScenario: scenario,
     );
   }
 }
