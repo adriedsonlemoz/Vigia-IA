@@ -1,8 +1,20 @@
-# Arquitetura — Vigia IA 1.0.51+51
+# Arquitetura — Vigia IA 1.0.52+52
 
 ## 1. Princípios
 
-A 1.0.51 acrescenta uma camada de interpretação sobre a observabilidade da sessão: as métricas existentes passam por um avaliador puro de saúde que produz estado, problemas atuais e gargalo provável, mantendo a UI reutilizável e sem acoplar o Monitor ao futuro ESP32.
+A 1.0.52 acrescenta instrumentação temporal do pipeline de IA e uma política de orçamento para trabalho opcional, mantendo a detecção principal obrigatória, a UI reutilizável e o Monitor desacoplado do futuro ESP32.
+
+
+## Evolução 1.0.52
+
+- `MonitorController` mede separadamente o custo síncrono anterior ao detector, a inferência principal, inferências auxiliares, o pós-processamento e o tempo total do frame;
+- `SessionStatusData` expõe essas medidas, calcula uso/folga do orçamento e identifica a etapa local de maior custo sem depender da UI;
+- `AnalysisBudgetPolicy` recebe intervalo efetivo, tempo já gasto e estimativa da próxima inferência e decide apenas se uma varredura opcional de detalhe cabe no orçamento;
+- foco por movimento e inferência principal continuam funcionando como antes; o guard de orçamento atua no detail scan periódico para evitar que um refinamento secundário atrase a próxima análise;
+- `SessionHealthAnalyzer` usa o tempo total do pipeline para indicar aproximação/estouro do orçamento além das métricas já existentes de inferência e frames perdidos;
+- `VideoSessionDetailsPanel` concentra as novas métricas, preservando o card de vídeo compacto na superfície principal;
+- contadores/timings são reiniciados junto com as demais métricas da sessão;
+- fluxo imersivo do Bike e qualquer contrato com ESP32 continuam fora desta etapa.
 
 
 ## Evolução 1.0.51

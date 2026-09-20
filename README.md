@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.51+51`
+> **Versão atual:** `1.0.52+52`
 
 ## Estado atual
 
-A `1.0.51+51` transforma o **Status da sessão** em um monitor de saúde operacional, interpretando as métricas em tempo real e apontando a origem provável de degradações sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+A `1.0.52+52` passa a medir o **pipeline da IA por etapa** e aplica um orçamento de processamento para preservar a responsividade, sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+
+
+### Evolução 1.0.52
+
+- o painel detalhado passa a medir pré-processamento, inferência principal, inferências auxiliares, pós-processamento, processamento total e latência estimada da captura até o resultado;
+- o Status da sessão mostra uso do orçamento de análise, folga restante e a etapa local que mais consumiu tempo no último frame analisado;
+- o Monitor registra quantas execuções do detector foram necessárias no frame e quantas foram inferências auxiliares;
+- a varredura opcional de detalhe agora consulta um orçamento antes de rodar e é pulada quando a projeção indica risco de ultrapassar o intervalo configurado;
+- a inferência principal continua obrigatória para todo frame elegível; a proteção de orçamento atua somente no trabalho extra de detalhe;
+- o painel contabiliza quantas varreduras opcionais foram evitadas pelo orçamento durante a sessão;
+- a saúde da sessão passa a sinalizar quando o processamento completo se aproxima ou ultrapassa o intervalo disponível;
+- fluxo imersivo do Bike e integração ESP32 continuam sem alterações.
 
 
 ### Evolução 1.0.51

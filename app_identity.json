@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.51 transforma o Status da sessao em monitor de saude: classifica a sessao, detecta atraso/congelamento, latencia, perdas reais de processamento e gargalos provaveis, com ocorrencias recentes. O fluxo imersivo do Bike e ESP32 permanecem fora desta entrega.",
-  "version": "1.0.51",
-  "build": 51
+  "notes": "A 1.0.52 instrumenta o pipeline da IA por etapa e protege o orçamento de análise: mede pre-processamento, inferencia principal/auxiliar, pos-processamento, total e fim a fim, pulando apenas varreduras opcionais de detalhe quando poderiam comprometer a responsividade. Bike imersivo e ESP32 permanecem fora desta entrega.",
+  "version": "1.0.52",
+  "build": 52
 }

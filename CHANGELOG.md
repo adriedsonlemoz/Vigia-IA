@@ -1,5 +1,22 @@
 # CHANGELOG
 
+
+## 1.0.52+52
+
+- Instrumentação do pipeline da IA por etapa: pré-processamento, inferência principal, inferências auxiliares, pós-processamento, total e fim a fim estimado.
+- Detalhes de vídeo mostram uso do orçamento de análise, folga restante, maior custo local, quantidade de execuções do detector e varreduras opcionais evitadas.
+- Nova `AnalysisBudgetPolicy` protege a responsividade antes de iniciar uma varredura opcional de detalhe.
+- A inferência principal não é removida nem condicionada pelo orçamento; apenas o refinamento opcional pode ser adiado.
+- O avaliador de saúde sinaliza pipeline perto do limite ou acima do intervalo configurado.
+- Novos testes cobrem cálculo do pipeline e a política de orçamento para varreduras de detalhe.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.52+52`.
+- Fluxo imersivo do Modo Bike e integração ESP32 permanecem inalterados.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a estrutura, a nova política de orçamento e o versionamento desta entrega.
+- `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow quando Flutter/Android SDK estiverem disponíveis.
+
 ## 1.0.51+51
 
 - Status da sessão agora calcula saúde operacional em tempo real com estados Saudável, Atenção, Instável e Desconectado.

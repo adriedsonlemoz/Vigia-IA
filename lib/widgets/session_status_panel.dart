@@ -146,6 +146,67 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Pipeline da IA',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            _MetricGroup(
+              children: [
+                _MetricRow(
+                  label: 'Pré-processamento',
+                  value: _millisecondsText(data.preprocessMs),
+                  detail: 'Recorte da zona e análise de movimento antes do detector.',
+                ),
+                _MetricRow(
+                  label: 'Inferência principal',
+                  value: _millisecondsText(data.primaryInferenceMs),
+                ),
+                _MetricRow(
+                  label: 'Inferências auxiliares',
+                  value: _millisecondsText(data.auxiliaryInferenceMs),
+                  detail: '${data.auxiliaryInferenceRuns} execução(ões) extra(s) no último frame.',
+                ),
+                _MetricRow(
+                  label: 'Pós-processamento',
+                  value: _millisecondsText(data.postprocessMs),
+                  detail: 'Filtros, rastreamento, regras e preparação dos alertas.',
+                ),
+                _MetricRow(
+                  label: 'Processamento total',
+                  value: _millisecondsText(data.totalProcessingMs),
+                  detail: 'Orçamento atual: ${data.expectedFrameIntervalMs} ms.',
+                ),
+                _MetricRow(
+                  label: 'Uso do orçamento',
+                  value: data.totalProcessingMs == null
+                      ? '—'
+                      : '${data.processingBudgetUsagePercent.toStringAsFixed(0)}%',
+                  detail: _budgetHeadroomText(data.processingHeadroomMs),
+                ),
+                _MetricRow(
+                  label: 'Maior custo local',
+                  value: data.pipelineHotspot,
+                ),
+                _MetricRow(
+                  label: 'Detector por frame',
+                  value: '${data.detectorRuns} execução(ões)',
+                ),
+                _MetricRow(
+                  label: 'Fim a fim estimado',
+                  value: _millisecondsText(data.endToEndMs),
+                  detail: 'Da captura até o resultado da análise.',
+                ),
+                _MetricRow(
+                  label: 'Detalhes evitados por orçamento',
+                  value: '${data.detailScansSkippedByBudget}',
+                  detail: 'Varreduras opcionais puladas para preservar a responsividade.',
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -551,6 +612,20 @@ IconData _healthIcon(SessionHealthState state) => switch (state) {
       SessionHealthState.unstable => Icons.sync_problem,
       SessionHealthState.disconnected => Icons.link_off,
     };
+
+String _millisecondsText(double? milliseconds) {
+  if (milliseconds == null) return '—';
+  if (milliseconds < 10) return '${milliseconds.toStringAsFixed(1)} ms';
+  return '${milliseconds.toStringAsFixed(0)} ms';
+}
+
+String _budgetHeadroomText(double? headroomMs) {
+  if (headroomMs == null) return 'Sem medição suficiente ainda.';
+  if (headroomMs >= 0) {
+    return '${_millisecondsText(headroomMs)} de folga antes do próximo intervalo.';
+  }
+  return '${_millisecondsText(headroomMs.abs())} acima do intervalo configurado.';
+}
 
 String _durationText(int? milliseconds) {
   if (milliseconds == null) return '—';

@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.51',
+          version: '1.0.52',
           current: true,
+          changes: [
+            'Pipeline da IA agora mede pré-processamento, inferência principal/auxiliar, pós-processamento, total e fim a fim.',
+            'O painel mostra uso do orçamento, folga restante, maior custo local e quantas execuções do detector ocorreram no frame.',
+            'Varreduras opcionais de detalhe são puladas quando poderiam estourar o intervalo de análise; a inferência principal continua obrigatória.',
+            'Saúde da sessão também identifica quando o pipeline se aproxima ou ultrapassa o orçamento configurado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.51',
           changes: [
             'Status da sessão ganhou saúde em tempo real: Saudável, Atenção, Instável ou Desconectado.',
             'Detecção automática de imagem atrasada/congelada, latência alta, inferência lenta e perdas reais por IA ocupada.',

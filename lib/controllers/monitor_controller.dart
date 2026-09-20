@@ -22,6 +22,7 @@ import '../models/system_health.dart';
 import '../models/tracked_detection.dart';
 import '../models/video_source_config.dart';
 import '../services/alert_repeat_guard.dart';
+import '../services/analysis_budget_policy.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/bike_mode_service.dart';
@@ -149,6 +150,15 @@ class MonitorController extends ChangeNotifier {
   int? _lastAnalysisHeight;
   int? _lastFrameDelayMs;
   double? _lastInferenceMs;
+  double? _lastPreprocessMs;
+  double? _lastPrimaryInferenceMs;
+  double? _lastAuxiliaryInferenceMs;
+  double? _lastPostprocessMs;
+  double? _lastTotalProcessingMs;
+  double? _lastEndToEndMs;
+  int _lastDetectorRuns = 0;
+  int _lastAuxiliaryInferenceRuns = 0;
+  int _detailScansSkippedByBudget = 0;
   DeviceTelemetrySnapshot? _localDeviceTelemetry;
   final List<SessionHealthIncident> _sessionHealthIncidents = <SessionHealthIncident>[];
   String? _lastSessionHealthFingerprint;
@@ -253,6 +263,15 @@ class MonitorController extends ChangeNotifier {
       analysisWidth: _lastAnalysisWidth,
       analysisHeight: _lastAnalysisHeight,
       inferenceMs: _lastInferenceMs,
+      preprocessMs: _lastPreprocessMs,
+      primaryInferenceMs: _lastPrimaryInferenceMs,
+      auxiliaryInferenceMs: _lastAuxiliaryInferenceMs,
+      postprocessMs: _lastPostprocessMs,
+      totalProcessingMs: _lastTotalProcessingMs,
+      endToEndMs: _lastEndToEndMs,
+      detectorRuns: _lastDetectorRuns,
+      auxiliaryInferenceRuns: _lastAuxiliaryInferenceRuns,
+      detailScansSkippedByBudget: _detailScansSkippedByBudget,
       frameDelayMs: _lastFrameDelayMs,
       networkLatencyMs: networkLatency,
       localDevice: _localDeviceTelemetry,
@@ -885,6 +904,13 @@ class MonitorController extends ChangeNotifier {
     }
 
     _previewAspectRatio = frame.width / frame.height;
+    final processingWatch = Stopwatch()..start();
+    final inferenceWatch = Stopwatch();
+    final postprocessWatch = Stopwatch();
+    var pipelineMeasured = false;
+    var auxiliaryInferenceMs = 0.0;
+    var detectorRuns = 0;
+    var auxiliaryInferenceRuns = 0;
     final session = _frameSession;
     final activeZones = activeMonitoringZones;
     final analysisZone = activeZones.isEmpty
@@ -897,7 +923,6 @@ class MonitorController extends ChangeNotifier {
         : MonitoringZoneService.crop(frame, analysisZone);
     _lastAnalysisWidth = analysisFrame.width;
     _lastAnalysisHeight = analysisFrame.height;
-    final inferenceWatch = Stopwatch();
     final processingDone = Completer<void>();
     _processingDone = processingDone;
     _processing = true;
@@ -938,15 +963,26 @@ class MonitorController extends ChangeNotifier {
         }
       }
       _lastAnalyzedFpsSample = analysisStartedAt;
+      _lastPreprocessMs = processingWatch.elapsedMicroseconds / 1000.0;
+      _lastPrimaryInferenceMs = null;
+      _lastAuxiliaryInferenceMs = 0;
+      _lastPostprocessMs = null;
+      _lastDetectorRuns = 0;
+      _lastAuxiliaryInferenceRuns = 0;
+      pipelineMeasured = true;
       inferenceWatch.start();
       final candidateThreshold =
           DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
+      final primaryWatch = Stopwatch()..start();
+      detectorRuns = 1;
       final primaryDetected = await _detector.detect(
         analysisFrame,
         threshold: candidateThreshold,
         maxResults: _settings.maxResults,
         allowedLabels: _alertLabels,
       );
+      primaryWatch.stop();
+      _lastPrimaryInferenceMs = primaryWatch.elapsedMicroseconds / 1000.0;
       if (_shouldDiscardFrameResult(session)) return;
 
       var candidates = ObjectFilterPolicy.apply(primaryDetected, _alertLabels);
@@ -971,12 +1007,17 @@ class MonitorController extends ChangeNotifier {
             yMax: focusBox.yMax,
           );
           final focusedFrame = MonitoringZoneService.crop(analysisFrame, focusZone);
+          final auxiliaryWatch = Stopwatch()..start();
           final focusedDetected = await _detector.detect(
             focusedFrame,
             threshold: candidateThreshold,
             maxResults: _settings.maxResults,
             allowedLabels: _alertLabels,
           );
+          auxiliaryWatch.stop();
+          auxiliaryInferenceMs += auxiliaryWatch.elapsedMicroseconds / 1000.0;
+          auxiliaryInferenceRuns++;
+          detectorRuns++;
           if (_shouldDiscardFrameResult(session)) return;
           final focusedCandidates = ObjectFilterPolicy
               .apply(focusedDetected, _alertLabels)
@@ -1014,35 +1055,54 @@ class MonitorController extends ChangeNotifier {
               _settings.confidenceThreshold,
             );
         if (shouldDetailScan) {
-          late final MonitoringZone detailZone;
-          if (missingPrevious != null) {
-            detailZone = DetectionScanPlanner.recoveryZone(missingPrevious);
-          } else {
-            final tiles = DetectionScanPlanner.detailTiles(
-              width: analysisFrame.width,
-              height: analysisFrame.height,
-            );
-            detailZone = tiles[_detailTileIndex % tiles.length];
-            _detailTileIndex = (_detailTileIndex + 1) % tiles.length;
-          }
-          final detailFrame = MonitoringZoneService.crop(analysisFrame, detailZone);
-          final detailDetected = await _detector.detect(
-            detailFrame,
-            threshold: candidateThreshold,
-            maxResults: _settings.maxResults,
-            allowedLabels: _alertLabels,
+          final allowDetailScan = AnalysisBudgetPolicy.allowOptionalDetailScan(
+            intervalMs: effectiveAnalysisInterval.inMilliseconds,
+            elapsedMs: processingWatch.elapsedMicroseconds / 1000.0,
+            estimatedInferenceMs: _lastPrimaryInferenceMs ?? 0,
           );
-          if (_shouldDiscardFrameResult(session)) return;
-          final detailCandidates = ObjectFilterPolicy
-              .apply(detailDetected, _alertLabels)
-              .map((item) => MonitoringZoneService.remapDetection(item, detailZone));
-          candidates = DetectionMerger.merge(candidates, detailCandidates);
-          _lastDetailScanAt = now;
+          if (!allowDetailScan) {
+            _detailScansSkippedByBudget++;
+            _lastDetailScanAt = now;
+          } else {
+            late final MonitoringZone detailZone;
+            if (missingPrevious != null) {
+              detailZone = DetectionScanPlanner.recoveryZone(missingPrevious);
+            } else {
+              final tiles = DetectionScanPlanner.detailTiles(
+                width: analysisFrame.width,
+                height: analysisFrame.height,
+              );
+              detailZone = tiles[_detailTileIndex % tiles.length];
+              _detailTileIndex = (_detailTileIndex + 1) % tiles.length;
+            }
+            final detailFrame = MonitoringZoneService.crop(analysisFrame, detailZone);
+            final auxiliaryWatch = Stopwatch()..start();
+            final detailDetected = await _detector.detect(
+              detailFrame,
+              threshold: candidateThreshold,
+              maxResults: _settings.maxResults,
+              allowedLabels: _alertLabels,
+            );
+            auxiliaryWatch.stop();
+            auxiliaryInferenceMs += auxiliaryWatch.elapsedMicroseconds / 1000.0;
+            auxiliaryInferenceRuns++;
+            detectorRuns++;
+            if (_shouldDiscardFrameResult(session)) return;
+            final detailCandidates = ObjectFilterPolicy
+                .apply(detailDetected, _alertLabels)
+                .map((item) => MonitoringZoneService.remapDetection(item, detailZone));
+            candidates = DetectionMerger.merge(candidates, detailCandidates);
+            _lastDetailScanAt = now;
+          }
         }
       }
 
       inferenceWatch.stop();
       _lastInferenceMs = inferenceWatch.elapsedMicroseconds / 1000.0;
+      _lastAuxiliaryInferenceMs = auxiliaryInferenceMs;
+      _lastDetectorRuns = detectorRuns;
+      _lastAuxiliaryInferenceRuns = auxiliaryInferenceRuns;
+      postprocessWatch.start();
 
       final selected = _detectionFilter.apply(
         candidates: candidates,
@@ -1172,6 +1232,8 @@ class MonitorController extends ChangeNotifier {
       if (alerts.isNotEmpty) {
         unawaited(_recordConfirmedEvents(frame, alerts, alertTargets));
       }
+      postprocessWatch.stop();
+      _lastPostprocessMs = postprocessWatch.elapsedMicroseconds / 1000.0;
     } catch (error, stackTrace) {
       if (_isExpectedDetectionCancellation(error, session)) return;
       _error = 'Falha na detecção. O detalhe foi salvo na Central de Erros.';
@@ -1195,6 +1257,19 @@ class MonitorController extends ChangeNotifier {
         if (inferenceWatch.elapsedMicroseconds > 0) {
           _lastInferenceMs = inferenceWatch.elapsedMicroseconds / 1000.0;
         }
+      }
+      if (postprocessWatch.isRunning) {
+        postprocessWatch.stop();
+        _lastPostprocessMs = postprocessWatch.elapsedMicroseconds / 1000.0;
+      }
+      if (pipelineMeasured) {
+        _lastAuxiliaryInferenceMs = auxiliaryInferenceMs;
+        _lastDetectorRuns = detectorRuns;
+        _lastAuxiliaryInferenceRuns = auxiliaryInferenceRuns;
+        processingWatch.stop();
+        _lastTotalProcessingMs = processingWatch.elapsedMicroseconds / 1000.0;
+        final endToEndUs = DateTime.now().difference(frame.capturedAt).inMicroseconds;
+        _lastEndToEndMs = endToEndUs <= 0 ? 0 : endToEndUs / 1000.0;
       }
       _processing = false;
       if (!processingDone.isCompleted) processingDone.complete();
@@ -1857,6 +1932,15 @@ class MonitorController extends ChangeNotifier {
     _lastAnalysisHeight = null;
     _lastFrameDelayMs = null;
     _lastInferenceMs = null;
+    _lastPreprocessMs = null;
+    _lastPrimaryInferenceMs = null;
+    _lastAuxiliaryInferenceMs = null;
+    _lastPostprocessMs = null;
+    _lastTotalProcessingMs = null;
+    _lastEndToEndMs = null;
+    _lastDetectorRuns = 0;
+    _lastAuxiliaryInferenceRuns = 0;
+    _detailScansSkippedByBudget = 0;
   }
 
   void _resetAfterZoneChange() {

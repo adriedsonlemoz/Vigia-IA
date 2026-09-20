@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.51+51$' pubspec.yaml || fail 'Versao esperada 1.0.51+51 nao encontrada.'
+grep -q '^version: 1\.0\.52+52$' pubspec.yaml || fail 'Versao esperada 1.0.52+52 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.51';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.51.'
-grep -q 'static const int build = 51;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 51.'
-grep -q "version: '1.0.51'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.51.'
+grep -q "static const String version = '1.0.52';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.52.'
+grep -q 'static const int build = 52;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 52.'
+grep -q "version: '1.0.52'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.52.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.51+51$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.51+51.'
+grep -q '^version: 1.0.52+52$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.52+52.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.51"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.51.'
-grep -q '"build": 51' app_identity.json \
-  || fail 'app_identity.json nao esta no build 51.'
+grep -q '"version": "1.0.52"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.52.'
+grep -q '"build": 52' app_identity.json \
+  || fail 'app_identity.json nao esta no build 52.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.51+51' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.51+51.'
+grep -q 'Vigia IA 1.0.52+52' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.52+52.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1088,6 +1088,33 @@ grep -q '^android/key.properties$' .gitignore || fail '.gitignore nao bloqueia a
 if find . -type f \( -name '*.jks' -o -name '*.keystore' \) -not -path './build/*' | grep -q .; then
   fail 'Arquivo de keystore foi incluido no projeto; a chave deve existir apenas nos Secrets.'
 fi
+
+# Instrumentacao e orcamento do pipeline da IA - 1.0.52
+grep -q '^## 1.0.52+52' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.52.'
+grep -q 'Evolução 1.0.52' README.md || fail 'README nao documenta 1.0.52.'
+grep -q 'Evolução 1.0.52' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.52.'
+[[ -f lib/services/analysis_budget_policy.dart ]] || fail 'Politica de orcamento da analise nao encontrada.'
+[[ -f test/analysis_budget_policy_test.dart ]] || fail 'Testes da politica de orcamento nao encontrados.'
+grep -q 'class AnalysisBudgetPolicy' lib/services/analysis_budget_policy.dart \
+  || fail 'AnalysisBudgetPolicy nao encontrada.'
+grep -q 'allowOptionalDetailScan' lib/controllers/monitor_controller.dart \
+  || fail 'MonitorController nao protege a varredura opcional por orcamento.'
+grep -q '_lastPrimaryInferenceMs' lib/controllers/monitor_controller.dart \
+  || fail 'Controller nao mede a inferencia principal.'
+grep -q '_lastPostprocessMs' lib/controllers/monitor_controller.dart \
+  || fail 'Controller nao mede o pos-processamento.'
+grep -q '_lastTotalProcessingMs' lib/controllers/monitor_controller.dart \
+  || fail 'Controller nao mede o processamento total.'
+grep -q 'processingBudgetUsagePercent' lib/models/session_status.dart \
+  || fail 'SessionStatusData nao calcula uso do orcamento.'
+grep -q 'pipelineHotspot' lib/models/session_status.dart \
+  || fail 'SessionStatusData nao identifica a etapa mais custosa.'
+grep -q 'Pipeline da IA' lib/widgets/session_status_panel.dart \
+  || fail 'Painel detalhado nao exibe o pipeline da IA.'
+grep -q 'Detalhes evitados por orçamento' lib/widgets/session_status_panel.dart \
+  || fail 'Painel nao exibe varreduras opcionais evitadas.'
+grep -q 'pipeline_budget_critical' test/session_status_test.dart \
+  || fail 'Testes nao cobrem estouro do orcamento do pipeline.'
 
 # Saude operacional do Status da sessao - 1.0.51
 grep -q '^## 1.0.51+51' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.51.'

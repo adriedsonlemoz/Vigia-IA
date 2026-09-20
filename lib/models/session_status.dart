@@ -105,6 +105,15 @@ class SessionStatusData {
     this.analysisWidth,
     this.analysisHeight,
     this.inferenceMs,
+    this.preprocessMs,
+    this.primaryInferenceMs,
+    this.auxiliaryInferenceMs,
+    this.postprocessMs,
+    this.totalProcessingMs,
+    this.endToEndMs,
+    this.detectorRuns = 0,
+    this.auxiliaryInferenceRuns = 0,
+    this.detailScansSkippedByBudget = 0,
     this.frameDelayMs,
     this.networkLatencyMs,
     this.localDevice,
@@ -132,6 +141,15 @@ class SessionStatusData {
   final int? analysisWidth;
   final int? analysisHeight;
   final double? inferenceMs;
+  final double? preprocessMs;
+  final double? primaryInferenceMs;
+  final double? auxiliaryInferenceMs;
+  final double? postprocessMs;
+  final double? totalProcessingMs;
+  final double? endToEndMs;
+  final int detectorRuns;
+  final int auxiliaryInferenceRuns;
+  final int detailScansSkippedByBudget;
   final int? frameDelayMs;
   final int? networkLatencyMs;
   final DeviceTelemetrySnapshot? localDevice;
@@ -160,6 +178,37 @@ class SessionStatusData {
   double get processingDropPercent => framesReceived <= 0
       ? 0
       : framesDroppedProcessing * 100 / framesReceived;
+
+  double get processingBudgetUsagePercent {
+    final total = totalProcessingMs;
+    if (total == null || expectedFrameIntervalMs <= 0) return 0;
+    return total * 100 / expectedFrameIntervalMs;
+  }
+
+  double? get processingHeadroomMs {
+    final total = totalProcessingMs;
+    if (total == null) return null;
+    return expectedFrameIntervalMs - total;
+  }
+
+  String get pipelineHotspot {
+    final stages = <String, double?>{
+      'Pré-processamento': preprocessMs,
+      'Inferência principal': primaryInferenceMs,
+      'Inferências auxiliares': auxiliaryInferenceMs,
+      'Pós-processamento': postprocessMs,
+    };
+    String? label;
+    double highest = -1;
+    for (final entry in stages.entries) {
+      final value = entry.value;
+      if (value != null && value > highest) {
+        label = entry.key;
+        highest = value;
+      }
+    }
+    return label ?? '—';
+  }
 
   SessionHealthSnapshot get health => SessionHealthAnalyzer.evaluate(this);
 
@@ -309,6 +358,30 @@ class SessionHealthAnalyzer {
           code: 'inference_high',
           title: 'Inferência lenta',
           detail: 'A inferência leva ${inference.toStringAsFixed(0)} ms para um intervalo de $expectedInterval ms.',
+          state: SessionHealthState.attention,
+          bottleneck: SessionBottleneck.ai,
+        ),
+      );
+    }
+
+    final totalProcessing = data.totalProcessingMs;
+    if (totalProcessing != null && totalProcessing >= expectedInterval * 1.5) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'pipeline_budget_critical',
+          title: 'Pipeline acima do orçamento',
+          detail: 'O processamento completo levou ${totalProcessing.toStringAsFixed(0)} ms para um orçamento de $expectedInterval ms.',
+          state: SessionHealthState.unstable,
+          bottleneck: SessionBottleneck.ai,
+        ),
+      );
+    } else if (totalProcessing != null &&
+        totalProcessing >= expectedInterval * 0.95) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'pipeline_budget_high',
+          title: 'Pipeline perto do limite',
+          detail: 'O processamento completo usou ${data.processingBudgetUsagePercent.toStringAsFixed(0)}% do intervalo disponível.',
           state: SessionHealthState.attention,
           bottleneck: SessionBottleneck.ai,
         ),

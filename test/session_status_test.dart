@@ -12,6 +12,15 @@ SessionStatusData status({
   DateTime? sampledAt,
   DateTime? lastFrameReceivedAt,
   double? inferenceMs = 120,
+  double? preprocessMs,
+  double? primaryInferenceMs,
+  double? auxiliaryInferenceMs,
+  double? postprocessMs,
+  double? totalProcessingMs,
+  double? endToEndMs,
+  int detectorRuns = 0,
+  int auxiliaryInferenceRuns = 0,
+  int detailScansSkippedByBudget = 0,
   int? frameDelayMs = 80,
   int? networkLatencyMs,
 }) {
@@ -37,6 +46,15 @@ SessionStatusData status({
     analysisWidth: 640,
     analysisHeight: 360,
     inferenceMs: inferenceMs,
+    preprocessMs: preprocessMs,
+    primaryInferenceMs: primaryInferenceMs,
+    auxiliaryInferenceMs: auxiliaryInferenceMs,
+    postprocessMs: postprocessMs,
+    totalProcessingMs: totalProcessingMs,
+    endToEndMs: endToEndMs,
+    detectorRuns: detectorRuns,
+    auxiliaryInferenceRuns: auxiliaryInferenceRuns,
+    detailScansSkippedByBudget: detailScansSkippedByBudget,
     frameDelayMs: frameDelayMs,
     networkLatencyMs: networkLatencyMs,
   );
@@ -130,4 +148,39 @@ void main() {
     expect(value.health.state, SessionHealthState.attention);
     expect(value.health.issues.first.code, 'source_reconnecting');
   });
+  test('pipeline calcula orçamento, folga e maior etapa local', () {
+    final value = status(
+      expectedFrameIntervalMs: 400,
+      preprocessMs: 24,
+      primaryInferenceMs: 150,
+      auxiliaryInferenceMs: 35,
+      postprocessMs: 31,
+      totalProcessingMs: 240,
+      endToEndMs: 315,
+      detectorRuns: 2,
+      auxiliaryInferenceRuns: 1,
+      detailScansSkippedByBudget: 3,
+    );
+
+    expect(value.processingBudgetUsagePercent, 60);
+    expect(value.processingHeadroomMs, 160);
+    expect(value.pipelineHotspot, 'Inferência principal');
+    expect(value.detectorRuns, 2);
+    expect(value.detailScansSkippedByBudget, 3);
+  });
+
+  test('pipeline acima do intervalo aparece na saúde da sessão', () {
+    final value = status(
+      expectedFrameIntervalMs: 400,
+      inferenceMs: 250,
+      totalProcessingMs: 650,
+    );
+
+    expect(value.health.state, SessionHealthState.unstable);
+    expect(
+      value.health.issues.any((issue) => issue.code == 'pipeline_budget_critical'),
+      isTrue,
+    );
+  });
+
 }
