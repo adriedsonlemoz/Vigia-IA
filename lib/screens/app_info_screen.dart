@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.45',
+          version: '1.0.46',
           current: true,
+          changes: [
+            'Buildfix da tela Áudios e voz após validação real no Flutter 3.44.9.',
+            'Substituído um ícone Material inexistente que bloqueava o flutter analyze.',
+            'Biblioteca de 78 áudios, importação, gravação, restauração e fallback TTS foram preservados.',
+            'Verificação preventiva ampliada para impedir a reintrodução do ícone incompatível.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.45',
           changes: [
             'Biblioteca central com 78 áudios padrão, incluindo todos os avisos atuais e os futuros do Modo Bike/ESP32.',
             'Nova tela Áudios e voz em Configurações → Geral permite ouvir, trocar por arquivo, gravar pelo microfone e restaurar qualquer aviso.',

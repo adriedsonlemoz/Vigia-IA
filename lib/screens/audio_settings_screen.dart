@@ -313,7 +313,7 @@ class _AudioSlotCard extends StatelessWidget {
                     const Chip(
                       visualDensity: VisualDensity.compact,
                       label: Text('Seu áudio'),
-                      avatar: Icon(Icons.person_voice_outlined, size: 16),
+                      avatar: Icon(Icons.mic_rounded, size: 16),
                     ),
                 ],
               ),

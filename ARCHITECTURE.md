@@ -1,8 +1,14 @@
-# Arquitetura — Vigia IA 1.0.45+45
+# Arquitetura — Vigia IA 1.0.46+46
 
 ## 1. Princípios
 
-A 1.0.45 mantém a navegação e o pipeline existentes e adiciona uma camada central de áudio: catálogo versionado, recursos padrão embarcados e overrides privados do usuário, sem alterar o pipeline de IA.
+A 1.0.46 mantém a arquitetura central de áudio da 1.0.45 e corrige apenas a compatibilidade da interface com o conjunto Material Icons disponível no Flutter 3.44.9.
+
+## Evolução 1.0.46
+
+- `AudioSettingsScreen` substitui `Icons.person_voice_outlined` por `Icons.mic_rounded`, removendo o bloqueio do `flutter analyze`;
+- nenhum contrato de `AudioSlotCatalog`, ponte Android, armazenamento de overrides ou reprodução foi alterado;
+- a verificação preventiva registra a incompatibilidade para evitar regressão em futuras entregas.
 
 ## Evolução 1.0.45
 

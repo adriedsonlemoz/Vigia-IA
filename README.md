@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.45+45`
+> **Versão atual:** `1.0.46+46`
 
 ## Estado atual
 
-A `1.0.45+45` cria a biblioteca central de áudio do Vigia IA, incorpora 78 vozes padrão e permite ao usuário ouvir, trocar por arquivo, gravar pelo microfone ou restaurar qualquer aviso em Configurações → Geral → Áudios e voz.
+A `1.0.46+46` é um buildfix da biblioteca de áudio: corrige a compatibilidade visual da tela Áudios e voz com o Flutter 3.44.9 sem alterar os 78 áudios, a personalização, a gravação ou o fallback TTS.
+
+### Evolução 1.0.46
+
+- buildfix após o workflow real da 1.0.45 apontar `Icons.person_voice_outlined` como símbolo inexistente no Flutter 3.44.9;
+- o chip `Seu áudio` passa a usar `Icons.mic_rounded`, disponível no Material Icons atual;
+- não há mudança funcional no catálogo: permanecem 78 slots, importação de arquivo, gravação, restauração e fallback TTS;
+- a verificação preventiva passa a rejeitar a reintrodução do getter incompatível antes do ZIP final.
 
 ### Evolução 1.0.45
 

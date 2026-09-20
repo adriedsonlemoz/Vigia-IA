@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.46+46
+
+- Buildfix da tela `Configurações → Geral → Áudios e voz` após validação no Flutter 3.44.9.
+- Corrigido `Icons.person_voice_outlined`, getter inexistente que fazia o `flutter analyze` encerrar com dois erros na 1.0.45.
+- O chip `Seu áudio` passa a usar `Icons.mic_rounded`, mantendo o mesmo significado visual sem depender de um ícone indisponível.
+- Biblioteca central com 78 vozes, overrides por arquivo, gravação própria, restauração e fallback TTS preservados sem mudança de contrato.
+- `tool/verify_project.sh` ampliado para impedir a reintrodução do getter incompatível.
+- Versionamento, metadados, documentação, tela de mudanças e verificadores sincronizados em `1.0.46+46`.
+
+### Validação disponível
+
+- O workflow da 1.0.45 confirmou dependências e verificação preventiva; a falha ocorreu exclusivamente na análise estática do ícone.
+- `tool/verify_project.sh` deve passar localmente nesta entrega; `flutter analyze`, `flutter test` e build APK precisam ser confirmados pelo próximo workflow.
+
 ## 1.0.45+45
 
 - Criado sistema central de áudio do Vigia IA com 78 slots únicos.

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada. A 1.0.45 centraliza a biblioteca de áudio, incorpora 78 vozes padrão e permite ouvir, substituir por arquivo, gravar pelo microfone e restaurar cada aviso em Configurações → Geral → Áudios e voz, mantendo TTS como fallback.",
-  "version": "1.0.45",
-  "build": 45
+  "notes": "Identidade técnica vigiaia preservada. A 1.0.46 corrige a tela Áudios e voz para compatibilidade com os ícones Material disponíveis no Flutter 3.44.9, preservando a biblioteca de 78 vozes e a personalização por arquivo ou gravação.",
+  "version": "1.0.46",
+  "build": 46
 }
