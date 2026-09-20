@@ -1,10 +1,46 @@
-# Arquitetura — Vigia IA 1.0.56+56
+# Arquitetura — Vigia IA 1.0.60+60
 
 ## 1. Princípios
 
-A 1.0.56 introduz um caminho rápido de segurança para o Modo Bike. A inferência principal alimenta um estimador temporal de aproximação antes das varreduras auxiliares e dos fluxos de histórico/gravação. A estimativa usa apenas a geometria observada na câmera, não distância física; radar FMCW e ESP32 continuam como extensões futuras.
+A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
 
+
+## Evolução 1.0.60 — Refatoração estrutural, lote 4
+
+- `session_status.dart` permanece como contrato público de `SessionStatusData`, `SessionHealthSnapshot`, incidentes, issues e enums; `session_status_health_analyzer.dart` concentra as regras internas de classificação de saúde e gargalo.
+- `system_health_screen.dart` mantém o ciclo de vida da tela, coleta periódica, persistência e ações; `system_health_screen_components.dart` concentra `_SummaryCard`, `_HealthTile` e componentes visuais relacionados.
+- `object_detection_service.dart` mantém a fronteira pública assíncrona com isolate, carregamento de assets, fila e descarte; `object_detection_worker.dart` concentra inicialização do interpreter, inspeção do modelo, letterbox, inferência e conversão dos resultados.
+- A divisão usa `part` para preservar membros privados e reduzir risco de alteração de contrato durante a refatoração.
+- Os quatro lotes preventivos passam a cobrir 12 arquivos, mantendo cada entrega pequena e validável.
+
+## Evolução 1.0.59 — Refatoração estrutural, lote 3
+
+O terceiro lote aplica a mesma estratégia de modularização ao Status da sessão, à Central de diagnóstico e ao Histórico. Os arquivos principais continuam responsáveis por estado, ciclo de vida, filtros, ações e composição de alto nível; componentes visuais privados passam a módulos `part`, preservando acesso privado e contratos existentes.
+
+- `session_status_panel_components.dart` concentra cards de vídeo, dispositivo, saúde, métricas, badges e helpers de apresentação;
+- `error_center_screen_components.dart` concentra resumo operacional, grid de estado, chips e cards de registros;
+- `events_screen_components.dart` concentra cards do histórico, thumbnails, estados vazio/erro e reprodução local de mídia;
+- verificadores agora validam recursos distribuídos entre arquivo principal e módulo extraído, além de impor limites preventivos de tamanho.
+
+A refatoração não altera persistência, filtros, TTC, alertas, diagnóstico, reprodução MP4 ou coleta de telemetria.
+
+
+## Evolução 1.0.58 — Refatoração estrutural, lote 2
+
+O segundo lote reduz três telas de crescimento rápido sem alterar seus contratos. `multi_camera_screen.dart`, `app_info_screen.dart` e `bike_mode_screen.dart` conservam estado, ações e navegação; componentes visuais privados passam a módulos `part` da mesma biblioteca, preservando acesso privado e reduzindo risco de regressão. Os novos módulos são `multi_camera_screen_components.dart`, `app_info_screen_components.dart` e `bike_mode_screen_components.dart`.
+
+A estratégia mantém a mesma adotada no lote 1: arquivos de entrada menores, responsabilidades visuais isoladas e verificadores de tamanho para sinalizar crescimento futuro antes de voltar a concentrar centenas de linhas em uma única tela.
+
+## Evolução 1.0.57
+
+- `MonitorController` continua sendo a fachada/orquestrador, mas delega detalhes internos para `monitor_controller_session_support.dart`, `monitor_controller_event_support.dart` e `monitor_controller_state_support.dart`;
+- os módulos são `part` da mesma biblioteca para preservar acesso aos membros privados e evitar duplicação de estado durante esta primeira etapa de extração;
+- `MonitorScreen` mantém ciclo de vida e composição principal, enquanto widgets auxiliares ficam em `monitor_screen_components.dart`;
+- `HomeScreen` mantém carregamento/persistência/navegação e move widgets auxiliares para `home_screen_components.dart`;
+- wrappers curtos no controller preservam nomes e contratos internos usados pelo pipeline, reduzindo risco de regressão durante a refatoração;
+- limites preventivos de linhas foram adicionados ao verificador para os três arquivos-alvo do lote 1;
+- próximos lotes continuam em grupos de três arquivos, conforme a lista priorizada definida para o projeto.
 
 ## Evolução 1.0.56
 

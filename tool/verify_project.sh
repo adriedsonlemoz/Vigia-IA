@@ -11,17 +11,17 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.56+56$' pubspec.yaml || fail 'Versao esperada 1.0.56+56 nao encontrada.'
+grep -q '^version: 1\.0\.60+60$' pubspec.yaml || fail 'Versao esperada 1.0.60+60 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
 grep -q 'required this.sourceConfig' lib/controllers/monitor_controller.dart \
   || fail 'MonitorController deve usar initializing formal para sourceConfig.'
 
-if grep -q 'separatorBuilder: (_, __)' lib/screens/events_screen.dart; then
+if grep -q 'separatorBuilder: (_, __)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart; then
   fail 'Placeholder duplo desnecessario reapareceu em EventsScreen.'
 fi
-if grep -q 'errorBuilder: (_, __, ___)' lib/screens/events_screen.dart; then
+if grep -q 'errorBuilder: (_, __, ___)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart; then
   fail 'Placeholders multiplos desnecessarios reapareceram em EventsScreen.'
 fi
 if grep -q "import 'dart:typed_data';" lib/services/event_history_service.dart; then
@@ -45,7 +45,7 @@ grep -q "efficientdet_lite0.tflite" lib/services/object_detection_service.dart \
   || fail 'Detector principal EfficientDet-Lite0 nao esta configurado.'
 grep -q "ssd_mobilenet_v1.tflite" lib/services/object_detection_service.dart \
   || fail 'Fallback SSD MobileNet V1 nao esta configurado.'
-grep -q 'TensorType.uint8' lib/services/object_detection_service.dart \
+grep -q 'TensorType.uint8' lib/services/object_detection_service.dart lib/services/object_detection_worker.dart \
   || fail 'Pre-processamento uint8 do modelo SSD nao foi encontrado.'
 
 grep -q 'SettingsScreen' lib/screens/monitor_screen.dart \
@@ -126,6 +126,8 @@ fi
   || fail 'Servico de historico de eventos nao encontrado.'
 [[ -f lib/screens/events_screen.dart ]] \
   || fail 'Tela de historico de eventos nao encontrada.'
+[[ -f lib/screens/events_screen_components.dart ]] \
+  || fail 'Componentes extraidos do historico nao encontrados.'
 [[ -f lib/widgets/detection_overlay.dart ]] \
   || fail 'Overlay de caixas de deteccao nao encontrado.'
 [[ -f test/monitor_event_test.dart ]] \
@@ -201,7 +203,7 @@ grep -q 'ObjectTracker' lib/controllers/monitor_controller.dart \
   || fail 'Rastreamento individual nao esta ligado ao controller.'
 grep -q 'trackId' lib/widgets/detection_overlay.dart \
   || fail 'IDs de rastreamento nao aparecem no overlay.'
-grep -q 'ZoneTransitionType.entered' lib/controllers/monitor_controller.dart \
+grep -q 'ZoneTransitionType.entered' lib/controllers/monitor_controller*.dart \
   || fail 'Deteccao de entrada por zona nao encontrada.'
 grep -q 'ZoneTransitionType.exited' lib/services/object_tracker.dart \
   || fail 'Deteccao de saida por zona nao encontrada.'
@@ -257,7 +259,8 @@ grep -q '_buildLandscape' lib/screens/monitor_screen.dart \
   || fail 'Layout paisagem do monitor nao encontrado.'
 grep -q "Text('Diagnóstico'" lib/screens/error_center_screen.dart \
   || fail 'Tela visual de Diagnostico nao encontrada.'
-grep -q '_HistoryCard' lib/screens/events_screen.dart \
+[[ -f lib/screens/error_center_screen_components.dart ]] || fail 'Componentes extraidos do Diagnostico nao encontrados.'
+grep -q '_HistoryCard' lib/screens/events_screen.dart lib/screens/events_screen_components.dart \
   || fail 'Cards do novo Historico nao foram encontrados.'
 
 # Interface e informacoes 1.0.17
@@ -266,7 +269,7 @@ grep -q '_HistoryCard' lib/screens/events_screen.dart \
 [[ -f lib/widgets/main_navigation_bar.dart ]] || fail 'Navegacao principal nao encontrada.'
 grep -q 'adriedson@outlook.com' lib/core/app_metadata.dart \
   || fail 'Chave PIX esperada nao encontrada nos metadados do app.'
-grep -q 'COPIAR CHAVE PIX' lib/screens/app_info_screen.dart \
+grep -q 'COPIAR CHAVE PIX' lib/screens/app_info_screen*.dart \
   || fail 'Botao para copiar PIX nao encontrado.'
 grep -q '_detectionsExpanded' lib/screens/monitor_screen.dart \
   || fail 'Painel recolhivel de deteccoes nao encontrado.'
@@ -314,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.56';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.56.'
-grep -q 'static const int build = 56;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 56.'
-grep -q "version: '1.0.56'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.56.'
+grep -q "static const String version = '1.0.60';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.60.'
+grep -q 'static const int build = 60;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 60.'
+grep -q "version: '1.0.60'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.60.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -329,9 +332,9 @@ grep -q 'encodeMp4' lib/services/clip_recorder_service.dart \
   || fail 'ClipRecorderService nao tenta gerar MP4.'
 grep -q 'MediaMuxer' tool/android/MainActivity.kt \
   || fail 'Encoder MP4 nativo via MediaMuxer nao encontrado.'
-grep -q "endsWith('.mp4')" lib/screens/events_screen.dart \
+grep -q "endsWith('.mp4')" lib/screens/events_screen.dart lib/screens/events_screen_components.dart \
   || fail 'Historico nao reconhece clipes MP4.'
-grep -q 'VlcPlayerController' lib/screens/events_screen.dart \
+grep -q 'VlcPlayerController' lib/screens/events_screen.dart lib/screens/events_screen_components.dart \
   || fail 'Reproducao local de MP4 no Historico nao encontrada.'
 grep -q 'requestNotificationPermission' lib/screens/alerts_clips_screen.dart \
   || fail 'Permissao de notificacoes nao pode ser conferida na interface.'
@@ -465,15 +468,15 @@ grep -q 'final String? cameraId;' lib/models/monitor_event.dart \
   || fail 'MonitorEvent perdeu cameraId estavel.'
 grep -q "'cameraId': cameraId" lib/models/monitor_event.dart \
   || fail 'cameraId nao esta sendo persistido no historico.'
-grep -q 'cameraId: sourceConfig.cameraId' lib/controllers/monitor_controller.dart \
+grep -q 'cameraId: sourceConfig.cameraId' lib/controllers/monitor_controller*.dart \
   || fail 'MonitorController nao associa novos eventos ao cameraId.'
 grep -q 'probeAll(' lib/services/camera_registry_service.dart \
   || fail 'Probe paralelo da Central multicamera nao encontrado.'
 grep -q '_automaticRefreshInterval = Duration(seconds: 15)' lib/screens/multi_camera_screen.dart \
   || fail 'Atualizacao automatica de 15 s da Central nao encontrada.'
-grep -q 'Editar / renomear' lib/screens/multi_camera_screen.dart \
+grep -q 'Editar / renomear' lib/screens/multi_camera_screen*.dart \
   || fail 'Edicao/renomeacao de camera nao encontrada.'
-grep -q "value == 'toggle'" lib/screens/multi_camera_screen.dart \
+grep -q "value == 'toggle'" lib/screens/multi_camera_screen*.dart \
   || fail 'Ativacao/desativacao de camera nao encontrada.'
 grep -q 'VideoSourceState.reconnecting' lib/sources/remote_phone_camera_source.dart \
   || fail 'Camera remota perdeu estado de reconexao automatica.'
@@ -485,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.56+56$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.56+56.'
+grep -q '^version: 1.0.60+60$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.60+60.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.56"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.56.'
-grep -q '"build": 56' app_identity.json \
-  || fail 'app_identity.json nao esta no build 56.'
+grep -q '"version": "1.0.60"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.60.'
+grep -q '"build": 60' app_identity.json \
+  || fail 'app_identity.json nao esta no build 60.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -651,7 +654,7 @@ grep -q 'this.countingEnabled = false' lib/models/camera_endpoint.dart \
   || fail 'Reserva de contagem por camera deve iniciar desativada.'
 grep -q "'countingEnabled': countingEnabled" lib/models/camera_endpoint.dart \
   || fail 'Reserva futura de contagem nao e persistida por camera.'
-grep -q 'Adicionar outra câmera não ativa contador' lib/screens/multi_camera_screen.dart \
+grep -q 'Adicionar outra câmera não ativa contador' lib/screens/multi_camera_screen*.dart \
   || fail 'Central multicamera nao explica independencia da contagem.'
 grep -q 'Entrada e saída' lib/screens/monitor_screen.dart \
   || fail 'Monitor nao explica entrada/saida.'
@@ -732,7 +735,7 @@ grep -q "'version': 7" lib/services/app_settings_service.dart \
   || fail 'Schema de configuracoes nao foi migrado para version 7.'
 grep -q 'profileVersion < 6' lib/services/app_settings_service.dart \
   || fail 'Migracao dos antigos defaults nao encontrada.'
-grep -q 'SpeechPriority.high' lib/controllers/monitor_controller.dart \
+grep -q 'SpeechPriority.high' lib/controllers/monitor_controller*.dart \
   || fail 'Alertas prioritarios de entrada/saida/integridade nao encontrados.'
 grep -q 'await _tts.stop();' lib/services/speech_service.dart \
   || fail 'TTS nao descarta fala anterior antes do alerta atual.'
@@ -787,7 +790,7 @@ grep -q 'Evolução 1.0.35' README.md || fail 'README nao documenta 1.0.35.'
   || fail 'Filtro temporal de deteccoes nao encontrado.'
 [[ -f lib/services/detection_merger.dart ]] \
   || fail 'Mesclagem das duas passagens de deteccao nao encontrada.'
-grep -q 'DetectorImageTransform.fit' lib/services/object_detection_service.dart \
+grep -q 'DetectorImageTransform.fit' lib/services/object_detection_service.dart lib/services/object_detection_worker.dart \
   || fail 'Inferencia nao usa letterbox preservando proporcao.'
 grep -q 'EfficientDet-Lite0' lib/services/object_detection_service.dart \
   || fail 'EfficientDet-Lite0 nao e o detector principal.'
@@ -813,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.56+56' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.56+56.'
+grep -q 'Vigia IA 1.0.60+60' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.60+60.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -877,13 +880,13 @@ grep -q '^## 1.0.38+38' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.38.'
 grep -q 'Evolução 1.0.38' README.md || fail 'README nao documenta 1.0.38.'
 grep -q 'Pacote de voz personalizado 1.0.38' ARCHITECTURE.md \
   || fail 'ARCHITECTURE nao documenta 1.0.38.'
-grep -q '_audioSlotForTransition' lib/controllers/monitor_controller.dart \
+grep -q '_audioSlotForTransition' lib/controllers/monitor_controller*.dart \
   || fail 'Controller nao seleciona audio de transicao por categoria.'
-grep -q 'AudioSlotIds.personEntered' lib/controllers/monitor_controller.dart \
+grep -q 'AudioSlotIds.personEntered' lib/controllers/monitor_controller*.dart \
   || fail 'Slots de entrada/saida de pessoa nao estao ligados ao catalogo central.'
-grep -q 'AudioSlotIds.vehicleEntered' lib/controllers/monitor_controller.dart \
+grep -q 'AudioSlotIds.vehicleEntered' lib/controllers/monitor_controller*.dart \
   || fail 'Slots de entrada/saida de veiculo nao estao ligados ao catalogo central.'
-grep -q 'AudioSlotIds.animalEntered' lib/controllers/monitor_controller.dart \
+grep -q 'AudioSlotIds.animalEntered' lib/controllers/monitor_controller*.dart \
   || fail 'Slots de entrada/saida de animal nao estao ligados ao catalogo central.'
 for audio in \
   person_detected vehicle_detected animal_detected object_detected \
@@ -1122,7 +1125,7 @@ grep -q 'Evolução 1.0.51' README.md || fail 'README nao documenta 1.0.51.'
 grep -q 'Evolução 1.0.51' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.51.'
 grep -q 'enum SessionHealthState' lib/models/session_status.dart \
   || fail 'Estados de saude da sessao nao encontrados.'
-grep -q 'class SessionHealthAnalyzer' lib/models/session_status.dart \
+grep -q 'class SessionHealthAnalyzer' lib/models/session_status.dart lib/models/session_status_health_analyzer.dart \
   || fail 'Avaliador de saude da sessao nao encontrado.'
 grep -q 'framesDroppedProcessing' lib/models/session_status.dart \
   || fail 'Status da sessao nao separa perdas por processamento.'
@@ -1132,11 +1135,11 @@ grep -q '_framesDroppedProcessing++' lib/controllers/monitor_controller.dart \
   || fail 'Controller nao contabiliza frames perdidos com IA ocupada.'
 grep -q '_framesSkippedOptimization++' lib/controllers/monitor_controller.dart \
   || fail 'Controller nao contabiliza frames pulados pela otimizacao.'
-grep -q 'Saúde da sessão' lib/widgets/session_status_panel.dart \
+grep -q 'Saúde da sessão' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart \
   || fail 'Painel nao exibe a saude da sessao.'
-grep -q 'Gargalo provável' lib/widgets/session_status_panel.dart \
+grep -q 'Gargalo provável' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart \
   || fail 'Painel nao exibe o gargalo provavel.'
-grep -q 'Ocorrências recentes' lib/widgets/session_status_panel.dart \
+grep -q 'Ocorrências recentes' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart \
   || fail 'Painel nao exibe ocorrencias recentes.'
 grep -q "processing_drop_critical" test/session_status_test.dart \
   || fail 'Testes nao cobrem perdas reais de processamento.'
@@ -1158,6 +1161,7 @@ fi
 # Status da sessao e telemetria em tempo real - 1.0.49
 [[ -f lib/models/session_status.dart ]] || fail 'Modelo SessionStatusData nao encontrado.'
 [[ -f lib/widgets/session_status_panel.dart ]] || fail 'Painel Status da sessao nao encontrado.'
+[[ -f lib/widgets/session_status_panel_components.dart ]] || fail 'Componentes do Status da sessao nao encontrados.'
 [[ -f test/session_status_test.dart ]] || fail 'Teste do resumo de status da sessao nao encontrado.'
 grep -q 'SessionStatusData get sessionStatus' lib/controllers/monitor_controller.dart \
   || fail 'MonitorController nao expoe o status consolidado da sessao.'
@@ -1253,10 +1257,10 @@ grep -q 'sensorSimulationEnabled' lib/models/bike_mode_config.dart   || fail 'Co
 grep -q 'Teste do HUD sem ESP32' lib/screens/bike_mode_screen.dart   || fail 'Tela Bike nao oferece teste do HUD sem ESP32.'
 grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
 grep -q "'SIMULAÇÃO" lib/widgets/bike_ride_hud.dart   || fail 'HUD simulado nao identifica claramente dados sinteticos.'
-if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart; then
+if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart; then
   fail 'Lint use_null_aware_elements da 1.0.53 reapareceu no Status da sessao.'
 fi
-grep -q '?primaryIssue' lib/widgets/session_status_panel.dart   || fail 'Buildfix null-aware do Status da sessao nao encontrado.'
+grep -q '?primaryIssue' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart   || fail 'Buildfix null-aware do Status da sessao nao encontrado.'
 
 
 # Layout adaptativo e buildfix - 1.0.55
@@ -1294,5 +1298,104 @@ aux = text.index('if (motionResult.hasMotion && !hasUsefulPrimary)', fast)
 if fast >= aux:
     raise SystemExit(1)
 PY_BIKE_FAST_PATH
+
+# Refatoracao estrutural - 1.0.57
+grep -q '^## 1.0.57+57' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.57.'
+grep -q 'Evolução 1.0.57' README.md || fail 'README nao documenta 1.0.57.'
+grep -q 'Evolução 1.0.57' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.57.'
+[[ -f lib/controllers/monitor_controller_session_support.dart ]] || fail 'Modulo de sessao/telemetria do MonitorController ausente.'
+[[ -f lib/controllers/monitor_controller_event_support.dart ]] || fail 'Modulo de eventos/alertas do MonitorController ausente.'
+[[ -f lib/controllers/monitor_controller_state_support.dart ]] || fail 'Modulo de estado/diagnostico do MonitorController ausente.'
+[[ -f lib/screens/monitor_screen_components.dart ]] || fail 'Componentes extraidos do Monitor ausentes.'
+[[ -f lib/screens/home_screen_components.dart ]] || fail 'Componentes extraidos da Home ausentes.'
+grep -q "part 'monitor_controller_session_support.dart';" lib/controllers/monitor_controller.dart || fail 'MonitorController nao referencia modulo de sessao.'
+grep -q "part 'monitor_screen_components.dart';" lib/screens/monitor_screen.dart || fail 'MonitorScreen nao referencia componentes extraidos.'
+grep -q "part 'home_screen_components.dart';" lib/screens/home_screen.dart || fail 'HomeScreen nao referencia componentes extraidos.'
+python3 - <<'PY_REFACTOR_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 1.'
+from pathlib import Path
+limits = {
+    'lib/controllers/monitor_controller.dart': 1800,
+    'lib/screens/monitor_screen.dart': 1400,
+    'lib/screens/home_screen.dart': 850,
+}
+for filename, limit in limits.items():
+    lines = len(Path(filename).read_text(encoding='utf-8').splitlines())
+    if lines > limit:
+        raise SystemExit(f'{filename}: {lines} > {limit}')
+PY_REFACTOR_SIZE
+
+
+# Refatoracao estrutural - 1.0.58
+ grep -q '^## 1.0.58+58' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.58.'
+ grep -q 'Evolução 1.0.58' README.md || fail 'README nao documenta 1.0.58.'
+ grep -q 'Evolução 1.0.58' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.58.'
+ [[ -f lib/screens/multi_camera_screen_components.dart ]] || fail 'Componentes extraidos da Central multicamera ausentes.'
+ [[ -f lib/screens/app_info_screen_components.dart ]] || fail 'Componentes extraidos de Informacoes do aplicativo ausentes.'
+ [[ -f lib/screens/bike_mode_screen_components.dart ]] || fail 'Componentes extraidos do Modo Bike ausentes.'
+ grep -q "part 'multi_camera_screen_components.dart';" lib/screens/multi_camera_screen.dart || fail 'Central multicamera nao referencia componentes extraidos.'
+ grep -q "part 'app_info_screen_components.dart';" lib/screens/app_info_screen.dart || fail 'Informacoes do aplicativo nao referencia componentes extraidos.'
+ grep -q "part 'bike_mode_screen_components.dart';" lib/screens/bike_mode_screen.dart || fail 'Modo Bike nao referencia componentes extraidos.'
+ python3 - <<'PY_REFACTOR2_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 2.'
+from pathlib import Path
+limits = {
+    'lib/screens/multi_camera_screen.dart': 680,
+    'lib/screens/app_info_screen.dart': 130,
+    'lib/screens/bike_mode_screen.dart': 470,
+}
+for filename, limit in limits.items():
+    lines = len(Path(filename).read_text(encoding='utf-8').splitlines())
+    if lines > limit:
+        raise SystemExit(f'{filename}: {lines} > {limit}')
+PY_REFACTOR2_SIZE
+
+# Refatoracao estrutural - 1.0.59
+grep -q '^## 1.0.59+59' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.59.'
+grep -q 'Evolução 1.0.59' README.md || fail 'README nao documenta 1.0.59.'
+grep -q 'Evolução 1.0.59' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.59.'
+[[ -f lib/widgets/session_status_panel_components.dart ]] || fail 'Componentes extraidos do Status da sessao ausentes.'
+[[ -f lib/screens/error_center_screen_components.dart ]] || fail 'Componentes extraidos da Central de diagnostico ausentes.'
+[[ -f lib/screens/events_screen_components.dart ]] || fail 'Componentes extraidos do Historico ausentes.'
+grep -q "part 'session_status_panel_components.dart';" lib/widgets/session_status_panel.dart || fail 'Status da sessao nao referencia componentes extraidos.'
+grep -q "part 'error_center_screen_components.dart';" lib/screens/error_center_screen.dart || fail 'Central de diagnostico nao referencia componentes extraidos.'
+grep -q "part 'events_screen_components.dart';" lib/screens/events_screen.dart || fail 'Historico nao referencia componentes extraidos.'
+python3 - <<'PY_REFACTOR3_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 3.'
+from pathlib import Path
+limits = {
+    'lib/widgets/session_status_panel.dart': 320,
+    'lib/screens/error_center_screen.dart': 360,
+    'lib/screens/events_screen.dart': 420,
+}
+for filename, limit in limits.items():
+    lines = len(Path(filename).read_text(encoding='utf-8').splitlines())
+    if lines > limit:
+        raise SystemExit(f'{filename}: {lines} > {limit}')
+PY_REFACTOR3_SIZE
+
+# Refatoracao estrutural - 1.0.60
+
+grep -q '^## 1.0.60+60' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.60.'
+grep -q 'Evolução 1.0.60' README.md || fail 'README nao documenta 1.0.60.'
+grep -q 'Evolução 1.0.60' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.60.'
+[[ -f lib/models/session_status_health_analyzer.dart ]] || fail 'Analisador de saude da sessao extraido esta ausente.'
+[[ -f lib/screens/system_health_screen_components.dart ]] || fail 'Componentes extraidos de Saude do sistema ausentes.'
+[[ -f lib/services/object_detection_worker.dart ]] || fail 'Runtime extraido do detector ausente.'
+grep -q "part 'session_status_health_analyzer.dart';" lib/models/session_status.dart || fail 'SessionStatus nao referencia analisador extraido.'
+grep -q "part 'system_health_screen_components.dart';" lib/screens/system_health_screen.dart || fail 'Saude do sistema nao referencia componentes extraidos.'
+grep -q "part 'object_detection_worker.dart';" lib/services/object_detection_service.dart || fail 'Detector nao referencia runtime extraido.'
+grep -q 'class SessionHealthAnalyzer' lib/models/session_status_health_analyzer.dart || fail 'Analisador de saude nao foi preservado no modulo extraido.'
+grep -q 'DetectorImageTransform.fit' lib/services/object_detection_worker.dart || fail 'Pre-processamento do detector nao foi preservado no runtime extraido.'
+grep -q 'interpreter.runForMultipleInputs' lib/services/object_detection_worker.dart || fail 'Inferencia TFLite nao foi preservada no runtime extraido.'
+python3 - <<'PY_REFACTOR4_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 4.'
+from pathlib import Path
+limits = {
+    'lib/models/session_status.dart': 260,
+    'lib/screens/system_health_screen.dart': 440,
+    'lib/services/object_detection_service.dart': 280,
+}
+for filename, limit in limits.items():
+    lines = len(Path(filename).read_text(encoding='utf-8').splitlines())
+    if lines > limit:
+        raise SystemExit(f'{filename}: {lines} > {limit}')
+PY_REFACTOR4_SIZE
 
 echo 'Verificacao preventiva concluida com sucesso.'

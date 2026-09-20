@@ -1,5 +1,52 @@
 # CHANGELOG
 
+## 1.0.60+60
+
+- Quarto lote da refatoração preventiva concluído em `session_status.dart`, `system_health_screen.dart` e `object_detection_service.dart`.
+- `SessionStatusData`, enums e snapshots permanecem em `session_status.dart`; o analisador de saúde foi movido para `session_status_health_analyzer.dart`.
+- `SystemHealthScreen` mantém coleta, timer, persistência e ações no arquivo principal; cards e componentes visuais foram movidos para `system_health_screen_components.dart`.
+- `ObjectDetectionService` mantém a API pública, inicialização, fila de requisições e ciclo de vida do isolate; worker, pré-processamento, inferência e pós-processamento foram movidos para `object_detection_worker.dart`.
+- Arquivos principais reduzidos de 563 → 223 linhas, 539 → 404 linhas e 536 → 236 linhas, respectivamente.
+- Os quatro lotes planejados agora totalizam 12 arquivos refatorados em grupos de três.
+- Verificadores foram atualizados para reconhecer os novos módulos e impor limites preventivos de tamanho.
+- Nenhuma métrica, diagnóstico, contrato do detector, modelo de IA ou comportamento de inferência foi removido.
+- Versionamento e documentação sincronizados em `1.0.60+60`.
+
+## 1.0.59+59
+
+- Terceiro lote da refatoração preventiva concluído em `session_status_panel.dart`, `error_center_screen.dart` e `events_screen.dart`.
+- Status da sessão move cards, métricas, badges e helpers visuais para `session_status_panel_components.dart`, preservando `SessionStatusPanel` e `VideoSessionDetailsPanel` como entradas públicas.
+- Central de diagnóstico move resumo operacional, grid, chips e cards de registros para `error_center_screen_components.dart`, mantendo carregamento, exportação, compartilhamento e filtros no arquivo principal.
+- Histórico move cards, thumbnails, estados vazio/erro e reprodução de mídia para `events_screen_components.dart`, mantendo persistência, filtros, navegação e ações no arquivo principal.
+- Arquivos principais reduzidos de 700 → 258 linhas, 597 → 303 linhas e 586 → 359 linhas, respectivamente.
+- Verificadores foram atualizados para a estrutura modular e ganharam limites preventivos para esses três arquivos.
+- Nenhuma funcionalidade, filtro, reprodução MP4, diagnóstico ou métrica da sessão foi removida.
+- Versionamento e documentação sincronizados em `1.0.59+59`.
+
+
+
+## 1.0.58+58
+
+- Segundo lote da refatoração preventiva concluído em `multi_camera_screen.dart`, `app_info_screen.dart` e `bike_mode_screen.dart`.
+- Central multicâmera move cabeçalho, cards e chips de métricas para `multi_camera_screen_components.dart`, preservando estado, QR, probe, edição e navegação no arquivo principal.
+- Informações do aplicativo move Sobre, Mudanças, Doações e cards auxiliares para `app_info_screen_components.dart`; seleção de seção e cópia da chave PIX permanecem no arquivo principal.
+- Modo Bike move hero, telemetria e cards auxiliares para `bike_mode_screen_components.dart`, preservando carregamento, persistência, simulador e navegação.
+- Arquivos principais reduzidos de 941 → 648 linhas, 723 → 95 linhas e 701 → 441 linhas, respectivamente.
+- Verificadores foram atualizados para a estrutura modular e ganharam limites preventivos para esses três arquivos.
+- Nenhuma funcionalidade, rota, configuração de Bike, Central multicâmera ou informação exibida foi removida.
+- Versionamento e documentação sincronizados em `1.0.58+58`.
+
+
+## 1.0.57+57
+
+- Primeiro lote da refatoração preventiva concluído em `monitor_controller.dart`, `monitor_screen.dart` e `home_screen.dart`.
+- `MonitorController` separa telemetria/saúde da sessão, eventos/alertas/TTC e estado/diagnóstico em módulos internos `part`, preservando a API pública e o comportamento do pipeline.
+- `MonitorScreen` move seus componentes visuais auxiliares para `monitor_screen_components.dart`.
+- `HomeScreen` move seus componentes visuais auxiliares para `home_screen_components.dart`.
+- Arquivos principais reduzidos de 2.379 → 1.744 linhas, 1.808 → 1.332 linhas e 1.199 → 800 linhas, respectivamente.
+- Verificador preventivo passou a reconhecer os módulos extraídos e impõe limites de tamanho para impedir regressão imediata da refatoração.
+- Nenhuma função de monitoramento, Modo Bike, TTC, HUD, áudio ou fonte de vídeo foi removida nesta etapa.
+- Versionamento e documentação sincronizados em `1.0.57+57`.
 
 ## 1.0.56+56
 

@@ -53,6 +53,10 @@ import '../sources/local_camera_source.dart';
 import '../sources/rtsp_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
 
+part 'monitor_controller_session_support.dart';
+part 'monitor_controller_event_support.dart';
+part 'monitor_controller_state_support.dart';
+
 class MonitorController extends ChangeNotifier {
   MonitorController({
     required this.sourceConfig,
@@ -234,101 +238,9 @@ class MonitorController extends ChangeNotifier {
 
   SessionStatusData get sessionStatus => _buildSessionStatus();
 
-  SessionStatusData _buildSessionStatus() {
-    final source = _source;
-    final remote = remotePhoneStatus;
-    final networkLatency = source is RemotePhoneCameraSource
-        ? (source.frameNetworkLatencyMs ?? remote?.networkLatencyMs)
-        : null;
-    final imageSource = switch (sourceConfig.type) {
-      VideoSourceType.localCamera => 'Câmera deste celular',
-      VideoSourceType.rtsp => sourceConfig.displayName ?? 'Câmera RTSP',
-      VideoSourceType.remotePhone => remote?.name ?? 'Celular remoto',
-    };
-    final connection = switch (sourceConfig.type) {
-      VideoSourceType.localCamera => 'Local • sem rede para a imagem',
-      VideoSourceType.rtsp => 'Rede • RTSP',
-      VideoSourceType.remotePhone => 'Rede local / hotspot',
-    };
-    final sourceState = _sourceStatus.state;
-    return SessionStatusData(
-      sampledAt: DateTime.now(),
-      imageSource: imageSource,
-      aiDevice: 'Este celular',
-      sourceConnection: connection,
-      sourceOnline: sourceState == VideoSourceState.streaming,
-      sourceConnecting: sourceState == VideoSourceState.connecting ||
-          sourceState == VideoSourceState.reconnecting,
-      receivedFps: _receivedFps,
-      analyzedFps: _fps,
-      framesReceived: _framesReceived,
-      framesAnalyzed: _framesAnalyzed,
-      framesDropped: _framesDropped,
-      framesDroppedProcessing: _framesDroppedProcessing,
-      framesSkippedOptimization: _framesSkippedOptimization,
-      expectedFrameIntervalMs: effectiveAnalysisInterval.inMilliseconds,
-      lastFrameReceivedAt: _lastFrameReceivedAt,
-      frameWidth: _lastFrameWidth,
-      frameHeight: _lastFrameHeight,
-      analysisWidth: _lastAnalysisWidth,
-      analysisHeight: _lastAnalysisHeight,
-      inferenceMs: _lastInferenceMs,
-      preprocessMs: _lastPreprocessMs,
-      primaryInferenceMs: _lastPrimaryInferenceMs,
-      auxiliaryInferenceMs: _lastAuxiliaryInferenceMs,
-      postprocessMs: _lastPostprocessMs,
-      totalProcessingMs: _lastTotalProcessingMs,
-      endToEndMs: _lastEndToEndMs,
-      detectorRuns: _lastDetectorRuns,
-      auxiliaryInferenceRuns: _lastAuxiliaryInferenceRuns,
-      detailScansSkippedByBudget: _detailScansSkippedByBudget,
-      frameDelayMs: _lastFrameDelayMs,
-      networkLatencyMs: networkLatency,
-      localDevice: _localDeviceTelemetry,
-      remotePhone: remote,
-      healthIncidents: List<SessionHealthIncident>.unmodifiable(
-        _sessionHealthIncidents,
-      ),
-    );
-  }
+  SessionStatusData _buildSessionStatus() => this._buildSessionStatusImpl();
 
-  void _sampleSessionHealth() {
-    if (_disposed) return;
-    final health = _buildSessionStatus().health;
-    final codes = health.issues.map((issue) => issue.code).join(',');
-    final fingerprint = '${health.state.name}|$codes';
-    if (_lastSessionHealthFingerprint == fingerprint) return;
-
-    final previous = _lastSessionHealthFingerprint;
-    _lastSessionHealthFingerprint = fingerprint;
-    if (previous == null &&
-        (health.state == SessionHealthState.healthy ||
-            (_framesReceived == 0 &&
-                health.issues.length == 1 &&
-                health.issues.first.code == 'source_reconnecting'))) {
-      return;
-    }
-    if (health.issues.isEmpty && _sessionHealthIncidents.isEmpty) return;
-
-    final primaryIssue = health.primaryIssue;
-    final incident = primaryIssue == null
-        ? SessionHealthIncident(
-            occurredAt: DateTime.now(),
-            state: SessionHealthState.healthy,
-            title: 'Sessão normalizada',
-            detail: 'Imagem, processamento e recursos voltaram ao estado esperado.',
-          )
-        : SessionHealthIncident(
-            occurredAt: DateTime.now(),
-            state: health.state,
-            title: primaryIssue.title,
-            detail: primaryIssue.detail,
-          );
-    _sessionHealthIncidents.insert(0, incident);
-    if (_sessionHealthIncidents.length > 8) {
-      _sessionHealthIncidents.removeRange(8, _sessionHealthIncidents.length);
-    }
-  }
+  void _sampleSessionHealth() => this._sampleSessionHealthImpl();
 
   Duration get effectiveAnalysisInterval =>
       _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
@@ -408,65 +320,13 @@ class MonitorController extends ChangeNotifier {
         _source != null ? _bikeConfig.rearScreenBrightness : null,
       );
 
-  void _startSessionTelemetryTimer() {
-    _sessionTelemetryTimer?.cancel();
-    unawaited(_refreshSessionTelemetry());
-    _sessionTelemetryTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => unawaited(_refreshSessionTelemetry()),
-    );
-  }
+  void _startSessionTelemetryTimer() => this._startSessionTelemetryTimerImpl();
 
-  Future<void> _refreshSessionTelemetry() async {
-    if (_disposed) return;
-    final telemetry = await _native.readDeviceTelemetry();
-    if (_disposed) return;
-    _localDeviceTelemetry = telemetry;
-    _sampleSessionHealth();
-    _notify();
-  }
+  Future<void> _refreshSessionTelemetry() => this._refreshSessionTelemetryImpl();
 
-  void _configureBikeTelemetryTimer() {
-    _bikeTelemetryTimer?.cancel();
-    _bikeTelemetryTimer = null;
-    if (!_bikeConfig.enabled || !_bikeConfig.keepRemoteTelemetry || _disposed) {
-      _lanStream.updateDeviceTelemetry(null);
-      return;
-    }
-    unawaited(_refreshBikeTelemetry());
-    _bikeTelemetryTimer = Timer.periodic(
-      _bikeConfig.powerProfile.telemetryInterval,
-      (_) => unawaited(_refreshBikeTelemetry()),
-    );
-  }
+  void _configureBikeTelemetryTimer() => this._configureBikeTelemetryTimerImpl();
 
-  Future<void> _refreshBikeTelemetry() async {
-    if (_disposed || !_bikeConfig.enabled || !_bikeConfig.keepRemoteTelemetry) return;
-    final telemetry = await _native.readDeviceTelemetry();
-    if (_disposed) return;
-    _lanStream.updateDeviceTelemetry(telemetry);
-    final battery = telemetry.batteryPercent;
-    if (battery == null || !_bikeConfig.alertLowBattery) return;
-    if (battery > _bikeConfig.lowBatteryPercent + 3) {
-      _bikeLowBatteryAlerted = false;
-      return;
-    }
-    if (battery <= _bikeConfig.lowBatteryPercent && !_bikeLowBatteryAlerted) {
-      _bikeLowBatteryAlerted = true;
-      unawaited(
-        _native.showAlertNotification(
-          title: 'Modo Bike • bateria baixa',
-          message: 'Celular traseiro em $battery%. Verifique a alimentação.',
-          outputs: _settings.alertOutputs.copyWith(
-            voice: false,
-            sound: false,
-            vibration: false,
-            androidNotification: true,
-          ),
-        ),
-      );
-    }
-  }
+  Future<void> _refreshBikeTelemetry() => this._refreshBikeTelemetryImpl();
 
   Future<bool> ensureLanStreaming({bool requestPermission = false}) async {
     if (_disposed || _source == null || !_scheduleActive) return false;
@@ -1326,420 +1186,44 @@ class MonitorController extends ChangeNotifier {
   void _updateBikeApproachFastPath(
     List<Detection> primaryDetections,
     DateTime now,
-  ) {
-    final simulation = _bikeConfig.approachAlertsEnabled &&
-        _bikeConfig.sensorSimulationEnabled &&
-        _bikeConfig.simulationScenario ==
-            BikeSimulationScenario.vehicleApproaching;
+  ) => this._updateBikeApproachFastPathImpl(primaryDetections, now);
 
-    BikeApproachStatus next;
-    if (simulation) {
-      final started = _bikeApproachSimulationStartedAt ??= now;
-      final elapsedMs = now.difference(started).inMilliseconds;
-      const cycleMs = 9000;
-      final cycle = elapsedMs ~/ cycleMs;
-      final insideCycle = (elapsedMs % cycleMs) / 1000.0;
-      final ttc = (5.8 - insideCycle * 0.72).clamp(1.15, 5.8).toDouble();
-      final warningTtc = _bikeConfig.approachWarningTtcSeconds;
-      final criticalTtc = math.max(1.4, warningTtc * 0.55).toDouble();
-      final level = ttc <= criticalTtc
-          ? BikeApproachLevel.critical
-          : ttc <= warningTtc
-              ? BikeApproachLevel.warning
-              : BikeApproachLevel.watch;
-      next = BikeApproachStatus(
-        level: level,
-        updatedAt: now,
-        trackId: -1000 - cycle,
-        label: 'car',
-        estimatedTtcSeconds: ttc,
-        growthRatePerSecond: 1 / ttc,
-        confidence: 0.98,
-        simulated: true,
-      );
-    } else if (!_bikeConfig.enabled || !_bikeConfig.approachAlertsEnabled) {
-      _bikeApproachEstimator.reset();
-      next = BikeApproachStatus.clear(now);
-    } else {
-      next = _bikeApproachEstimator.update(
-        detections: primaryDetections,
-        now: now,
-        baseConfidenceThreshold: _settings.confidenceThreshold,
-        warningTtcSeconds: _bikeConfig.approachWarningTtcSeconds,
-      );
-    }
+  void _resetBikeApproach() => this._resetBikeApproachImpl();
 
-    final previous = _bikeApproachStatus;
-    _bikeApproachStatus = next;
-    _maybeDeliverBikeApproachAlert(next, now);
-    final ttcChanged = ((previous.estimatedTtcSeconds ?? 99) -
-                (next.estimatedTtcSeconds ?? 99))
-            .abs() >=
-        0.25;
-    if (previous.level != next.level ||
-        previous.trackId != next.trackId ||
-        previous.simulated != next.simulated ||
-        (next.visible && ttcChanged)) {
-      _notify();
-    }
-  }
-
-  void _maybeDeliverBikeApproachAlert(
-    BikeApproachStatus status,
-    DateTime now,
-  ) {
-    if (!status.shouldAlert) return;
-    final trackChanged = status.trackId != _lastBikeApproachAlertTrackId;
-    final escalated = _bikeApproachRank(status.level) >
-        _bikeApproachRank(_lastBikeApproachAlertLevel);
-    final cooldown = status.level == BikeApproachLevel.critical
-        ? const Duration(seconds: 3)
-        : const Duration(seconds: 5);
-    final cooldownExpired = _lastBikeApproachAlertAt == null ||
-        now.difference(_lastBikeApproachAlertAt!) >= cooldown;
-    if (!trackChanged && !escalated && !cooldownExpired) return;
-
-    _lastBikeApproachAlertAt = now;
-    _lastBikeApproachAlertTrackId = status.trackId;
-    _lastBikeApproachAlertLevel = status.level;
-    final message = status.level == BikeApproachLevel.critical
-        ? 'Aproximação rápida de veículo.'
-        : 'Veículo se aproximando.';
-    unawaited(
-      _deliverAlert(
-        status.simulated ? 'Teste. $message' : message,
-        priority: SpeechPriority.high,
-      ),
-    );
-  }
-
-  int _bikeApproachRank(BikeApproachLevel level) => switch (level) {
-        BikeApproachLevel.clear => 0,
-        BikeApproachLevel.watch => 1,
-        BikeApproachLevel.warning => 2,
-        BikeApproachLevel.critical => 3,
-      };
-
-  void _resetBikeApproach() {
-    _bikeApproachEstimator.reset();
-    _bikeApproachStatus =
-        BikeApproachStatus.clear(DateTime.fromMillisecondsSinceEpoch(0));
-    _lastBikeApproachAlertAt = null;
-    _lastBikeApproachAlertTrackId = null;
-    _lastBikeApproachAlertLevel = BikeApproachLevel.clear;
-    _bikeApproachSimulationStartedAt = null;
-  }
-
-  bool _sameDetectionRegion(Detection a, Detection b) {
-    if (a.label != b.label) return false;
-    final ax = (a.box.xMin + a.box.xMax) / 2;
-    final ay = (a.box.yMin + a.box.yMax) / 2;
-    final bx = (b.box.xMin + b.box.xMax) / 2;
-    final by = (b.box.yMin + b.box.yMax) / 2;
-    return (ax - bx).abs() <= 0.07 && (ay - by).abs() <= 0.07;
-  }
+  bool _sameDetectionRegion(Detection a, Detection b) =>
+      this._sameDetectionRegionImpl(a, b);
 
   List<MonitoringZoneProfile> _trackingZones(
     List<MonitoringZoneProfile> activeZones,
-  ) {
-    if (activeZones.isNotEmpty) return activeZones;
-    return const <MonitoringZoneProfile>[
-      MonitoringZoneProfile(
-        id: '__tela_inteira__',
-        name: 'Tela inteira',
-        zone: MonitoringZone.fullFrame(),
-      ),
-    ];
-  }
+  ) => this._trackingZonesImpl(activeZones);
 
   Future<void> _recordConfirmedEvents(
     RgbFrame frame,
     List<String> alertKeys,
     Map<String, Detection> alertTargets,
-  ) async {
-    final source = _sourceDisplayName;
-    final eventIds = <String>[];
-    final now = DateTime.now();
-    for (final key in alertKeys) {
-      final detection = alertTargets[key];
-      if (detection == null) continue;
-      final tracked = _trackedDetections
-          .where((item) => identical(item.detection, detection))
-          .firstOrNull;
-      final zones = MonitoringZoneService.zonesForDetection(
-        detection,
-        _trackingZones(activeMonitoringZones),
-      );
-      final zone = zones.firstOrNull;
-      final message = _settings.alertMessages.resolve(
-        label: detection.label,
-        displayLabel: detection.displayLabel,
-        zoneName: zone?.name,
-      );
-      if (_shouldDeliverRepeatedAlert(
-        detection,
-        trackId: tracked?.trackId,
-        now: now,
-      )) {
-        unawaited(
-          _deliverAlert(
-            message,
-            audioSlot: _audioSlotForLabel(detection.label),
-          ),
-        );
-      }
-      final event = await _eventHistory.addEvent(
-        detection: detection,
-        frame: frame,
-        source: source,
-        type: MonitorEventType.alert,
-        trackId: tracked?.trackId,
-        zoneId: zone?.id,
-        zoneName: zone?.name,
-        cameraId: sourceConfig.cameraId,
-      );
-      if (event != null) eventIds.add(event.id);
-    }
-
-    if (_clipRecordingEnabled && eventIds.isNotEmpty) {
-      final clipPath = await _clipRecorder.trigger();
-      if (clipPath != null && clipPath.isNotEmpty) {
-        await _eventHistory.attachClip(eventIds, clipPath);
-      }
-    }
-    if (_settings.storagePolicy.autoCleanup && eventIds.isNotEmpty) {
-      unawaited(_eventHistory.applyStoragePolicy(_settings.storagePolicy));
-    }
-  }
+  ) => this._recordConfirmedEventsImpl(frame, alertKeys, alertTargets);
 
   Future<void> _recordTransitions(
     RgbFrame frame,
     List<ZoneTransition> transitions,
-  ) async {
-    final initialTrackIds = transitions
-        .where((transition) =>
-            transition.type == ZoneTransitionType.entered &&
-            !_seenTrackIds.contains(transition.trackId))
-        .map((transition) => transition.trackId)
-        .toSet();
-    _seenTrackIds.addAll(initialTrackIds);
+  ) => this._recordTransitionsImpl(frame, transitions);
 
-    for (final transition in transitions) {
-      final detection = transition.detection;
-      if (detection == null) continue;
-      if (transition.type == ZoneTransitionType.entered &&
-          initialTrackIds.contains(transition.trackId)) {
-        continue;
-      }
-      _seenTrackIds.add(transition.trackId);
-      if (_announceEntryExit && _allowTransitionSpeech(transition)) {
-        final eventName = transition.type == ZoneTransitionType.entered
-            ? 'entered'
-            : 'exited';
-        final message = _settings.alertMessages.resolve(
-          label: transition.label,
-          displayLabel: transition.displayLabel,
-          zoneName: transition.zoneName,
-          event: eventName,
-        );
-        unawaited(
-          _deliverAlert(
-            message,
-            priority: SpeechPriority.high,
-            audioSlot: _audioSlotForTransition(transition),
-          ),
-        );
-      }
-      await _eventHistory.addEvent(
-        detection: detection,
-        frame: frame,
-        source: _sourceDisplayName,
-        type: transition.type == ZoneTransitionType.entered
-            ? MonitorEventType.entered
-            : MonitorEventType.exited,
-        trackId: transition.trackId,
-        zoneId: transition.zoneId,
-        zoneName: transition.zoneName,
-        cameraId: sourceConfig.cameraId,
-      );
-    }
-  }
-
-  bool _shouldDeliverRepeatedAlert(
-    Detection detection, {
-    required DateTime now,
-    int? trackId,
-  }) {
-    final retention = Duration(
-      milliseconds: (_settings.absenceReset.inMilliseconds * 6)
-          .clamp(9000, 18000)
-          .toInt(),
-    );
-    _recentAlertMemory.removeWhere(
-      (_, memory) => now.difference(memory.timestamp) > retention,
-    );
-
-    final group = ObjectFilterCatalog.groupKeyForLabel(detection.label) ?? detection.label;
-    for (final entry in _recentAlertMemory.entries) {
-      final memory = entry.value;
-      if (memory.group != group) continue;
-      if (trackId != null && memory.trackId != null && memory.trackId == trackId) {
-        _recentAlertMemory[entry.key] = memory.copyWith(timestamp: now, box: detection.box, appearance: detection.appearance);
-        return false;
-      }
-
-      final overlap = _iou(memory.box, detection.box);
-      final distance = _centerDistance(memory.box, detection.box);
-      final appearanceSimilarity = ObjectAppearanceService.similarity(
-        memory.appearance,
-        detection.appearance,
-      );
-      final similar = overlap >= 0.34 ||
-          (distance <= 0.16 && appearanceSimilarity >= 0.64) ||
-          (distance <= 0.10 && overlap >= 0.20);
-      if (!similar) continue;
-      _recentAlertMemory[entry.key] = memory.copyWith(
-        timestamp: now,
-        box: detection.box,
-        appearance: detection.appearance,
-        trackId: trackId ?? memory.trackId,
-      );
-      return false;
-    }
-
-    final key = '${group}_${now.microsecondsSinceEpoch}';
-    _recentAlertMemory[key] = _RecentAlertMemory(
-      group: group,
-      timestamp: now,
-      box: detection.box,
-      appearance: detection.appearance,
-      trackId: trackId,
-    );
-    return true;
-  }
-
-  double _centerDistance(NormalizedBox a, NormalizedBox b) {
-    final ax = (a.xMin + a.xMax) / 2;
-    final ay = (a.yMin + a.yMax) / 2;
-    final bx = (b.xMin + b.xMax) / 2;
-    final by = (b.yMin + b.yMax) / 2;
-    final dx = ax - bx;
-    final dy = ay - by;
-    return math.sqrt(dx * dx + dy * dy);
-  }
-
-  double _iou(NormalizedBox a, NormalizedBox b) {
-    final left = a.xMin > b.xMin ? a.xMin : b.xMin;
-    final top = a.yMin > b.yMin ? a.yMin : b.yMin;
-    final right = a.xMax < b.xMax ? a.xMax : b.xMax;
-    final bottom = a.yMax < b.yMax ? a.yMax : b.yMax;
-    final intersectionWidth = (right - left).clamp(0.0, 1.0).toDouble();
-    final intersectionHeight = (bottom - top).clamp(0.0, 1.0).toDouble();
-    final intersection = intersectionWidth * intersectionHeight;
-    final areaA = (a.xMax - a.xMin).clamp(0.0, 1.0) * (a.yMax - a.yMin).clamp(0.0, 1.0);
-    final areaB = (b.xMax - b.xMin).clamp(0.0, 1.0) * (b.yMax - b.yMin).clamp(0.0, 1.0);
-    final union = areaA + areaB - intersection;
-    return union <= 0 ? 0.0 : intersection / union;
-  }
-
-  String _audioSlotForLabel(String label) =>
-      switch (ObjectFilterCatalog.groupKeyForLabel(label)) {
-        'person' => AudioSlotIds.personDetected,
-        'vehicle' => AudioSlotIds.vehicleDetected,
-        'animal' => AudioSlotIds.animalDetected,
-        _ => AudioSlotIds.objectDetected,
-      };
-
-  String _audioSlotForTransition(ZoneTransition transition) {
-    final entered = transition.type == ZoneTransitionType.entered;
-    return switch (ObjectFilterCatalog.groupKeyForLabel(transition.label)) {
-      'person' => entered ? AudioSlotIds.personEntered : AudioSlotIds.personExited,
-      'vehicle' => entered ? AudioSlotIds.vehicleEntered : AudioSlotIds.vehicleExited,
-      'animal' => entered ? AudioSlotIds.animalEntered : AudioSlotIds.animalExited,
-      _ => entered ? AudioSlotIds.objectEntered : AudioSlotIds.objectExited,
-    };
-  }
-
-  bool _allowTransitionSpeech(ZoneTransition transition) {
-    final now = transition.occurredAt;
-    final key = '${transition.trackId}|${transition.zoneId}';
-    final previous = _lastTransitionSpeechAt[key];
-    _lastTransitionSpeechAt.removeWhere(
-      (_, timestamp) => now.difference(timestamp) > const Duration(minutes: 2),
-    );
-    if (previous != null &&
-        now.difference(previous) < const Duration(seconds: 5)) {
-      return false;
-    }
-    _lastTransitionSpeechAt[key] = now;
-    return true;
-  }
-
-  String get _sourceDisplayName => sourceConfig.displayName ?? switch (sourceConfig.type) {
-        VideoSourceType.localCamera => 'Câmera do dispositivo',
-        VideoSourceType.rtsp => 'Câmera RTSP',
-        VideoSourceType.remotePhone => 'Celular remoto',
-      };
+  String get _sourceDisplayName => this._sourceDisplayNameImpl;
 
   Future<void> _deliverAlert(
     String message, {
     SpeechPriority priority = SpeechPriority.normal,
     String? audioSlot,
-  }) async {
-    final futures = <Future<void>>[];
-    if (_settings.alertOutputs.voice) {
-      _speech.setEnabled(true);
-      futures.add(() async {
-        final customPlayed = audioSlot != null &&
-            await _native.playCustomAlertAudio(audioSlot);
-        if (!customPlayed) {
-          await _speech.speakMessage(message, priority: priority);
-        }
-      }());
-    }
-    if (_settings.alertOutputs.androidNotification ||
-        _settings.alertOutputs.sound ||
-        _settings.alertOutputs.vibration) {
-      futures.add(
-        _native.showAlertNotification(
-          title: 'Vigia IA',
-          message: message,
-          outputs: _settings.alertOutputs,
-        ),
+  }) => this._deliverAlertImpl(
+        message,
+        priority: priority,
+        audioSlot: audioSlot,
       );
-    }
-    if (futures.isNotEmpty) await Future.wait(futures);
-  }
 
   Future<void> _handleCameraIntegrityIssue(
     RgbFrame frame,
     CameraIntegrityIssue issue,
-  ) async {
-    final isObstructed = issue == CameraIntegrityIssue.obstructed;
-    _health.markCameraWarning(
-      isObstructed ? CameraHealthState.obstructed : CameraHealthState.moved,
-    );
-    final message = _settings.alertMessages.resolve(
-      label: 'camera',
-      displayLabel: 'Câmera',
-      event: isObstructed ? 'cameraObstructed' : 'cameraMoved',
-    );
-    unawaited(
-      _deliverAlert(
-        message,
-        priority: SpeechPriority.high,
-        audioSlot: isObstructed ? AudioSlotIds.cameraObstructed : AudioSlotIds.cameraMoved,
-      ),
-    );
-    await _logs.record(
-      level: ErrorLogLevel.warning,
-      source: 'Integridade da câmera',
-      message: message,
-      context: <String, Object?>{'fonte': _sourceDisplayName},
-    );
-    // Integridade da câmera é informação técnica: fica no Diagnóstico e
-    // não entra no Histórico de passagem de pessoas/automóveis/animais.
-  }
+  ) => this._handleCameraIntegrityIssueImpl(frame, issue);
 
   bool _shouldDiscardFrameResult(int session) =>
       _disposed ||
@@ -2066,83 +1550,13 @@ class MonitorController extends ChangeNotifier {
     _notify();
   }
 
-  void _resetSessionMetrics() {
-    _receivedFps = 0;
-    _fps = 0;
-    _lastReceivedFpsSample = null;
-    _lastAnalyzedFpsSample = null;
-    _framesReceived = 0;
-    _framesAnalyzed = 0;
-    _framesDropped = 0;
-    _framesDroppedProcessing = 0;
-    _framesSkippedOptimization = 0;
-    _sessionHealthIncidents.clear();
-    _lastSessionHealthFingerprint = null;
-    _lastFrameWidth = null;
-    _lastFrameHeight = null;
-    _lastAnalysisWidth = null;
-    _lastAnalysisHeight = null;
-    _lastFrameDelayMs = null;
-    _lastInferenceMs = null;
-    _lastPreprocessMs = null;
-    _lastPrimaryInferenceMs = null;
-    _lastAuxiliaryInferenceMs = null;
-    _lastPostprocessMs = null;
-    _lastTotalProcessingMs = null;
-    _lastEndToEndMs = null;
-    _lastDetectorRuns = 0;
-    _lastAuxiliaryInferenceRuns = 0;
-    _detailScansSkippedByBudget = 0;
-  }
+  void _resetSessionMetrics() => this._resetSessionMetricsImpl();
 
-  void _resetAfterZoneChange() {
-    _frameSession++;
-    _motion.reset();
-    _clipRecorder.resetBuffer();
-    _resetEventState();
-    _notify();
-  }
+  void _resetAfterZoneChange() => this._resetAfterZoneChangeImpl();
 
-  void _resetRulesAndTracking() {
-    if (_baseReady) {
-      _alertGuard.reset();
-      _smartRuleEngine.reset();
-    }
-    _tracker.reset();
-    _detectionFilter.reset();
-    _recentMotionByTrackId.clear();
-    _lastIdleInferenceAt = null;
-    _lastDetailScanAt = null;
-    _detailTileIndex = 0;
-    _seenTrackIds.clear();
-    _lastTransitionSpeechAt.clear();
-    _trackedDetections = const <TrackedDetection>[];
-    _resetBikeApproach();
-  }
+  void _resetRulesAndTracking() => this._resetRulesAndTrackingImpl();
 
-  void _resetEventState() {
-    _detections = const [];
-    _trackedDetections = const <TrackedDetection>[];
-    if (_baseReady) {
-      _alertGuard.reset();
-      _smartRuleEngine.reset();
-    }
-    _tracker.reset();
-    _detectionFilter.reset();
-    _recentMotionByTrackId.clear();
-    _lastIdleInferenceAt = null;
-    _lastDetailScanAt = null;
-    _detailTileIndex = 0;
-    _seenTrackIds.clear();
-    _lastTransitionSpeechAt.clear();
-    _resetBikeApproach();
-    _motion.reset();
-    _motionActive = false;
-    _cameraMotion = false;
-    _motionScore = 0;
-    _cameraIntegrity.reset();
-    _fps = 0;
-  }
+  void _resetEventState() => this._resetEventStateImpl();
 
   Future<void> suspend() async {
     _appInBackground = true;
@@ -2257,62 +1671,13 @@ class MonitorController extends ChangeNotifier {
         schedule: _schedule,
       );
 
-  Map<String, Object?> _zonesDiagnosticContext() => <String, Object?>{
-        'quantidade': _monitoringZones.length,
-        'ativas': activeMonitoringZones.length,
-        'areas': _monitoringZones
-            .map(
-              (zone) => <String, Object?>{
-                'id': zone.id,
-                'nome': zone.name,
-                'ativa': zone.enabled,
-                'xMin': zone.zone.xMin.toStringAsFixed(3),
-                'yMin': zone.zone.yMin.toStringAsFixed(3),
-                'xMax': zone.zone.xMax.toStringAsFixed(3),
-                'yMax': zone.zone.yMax.toStringAsFixed(3),
-              },
-            )
-            .toList(growable: false),
-      };
+  Map<String, Object?> _zonesDiagnosticContext() =>
+      this._zonesDiagnosticContextImpl();
 
-  Map<String, Object?> _smartRulesDiagnosticContext() => <String, Object?>{
-        'ativas': _smartAlertRules.enabled,
-        'pessoaMs': _smartAlertRules.personMinimumPresence.inMilliseconds,
-        'veiculoMs': _smartAlertRules.vehicleMinimumPresence.inMilliseconds,
-        'animalMs': _smartAlertRules.animalMinimumPresence.inMilliseconds,
-        'outrosMs': _smartAlertRules.otherMinimumPresence.inMilliseconds,
-        'ignorarVeiculoParado': _smartAlertRules.ignoreStationaryVehicles,
-      };
+  Map<String, Object?> _smartRulesDiagnosticContext() =>
+      this._smartRulesDiagnosticContextImpl();
 
-  Map<String, Object?> _diagnosticContext() => <String, Object?>{
-        'fonte': sourceConfig.type.name,
-        'intervaloAnaliseMs': sourceConfig.analysisInterval.inMilliseconds,
-        'intervaloEfetivoMs': effectiveAnalysisInterval.inMilliseconds,
-        'modoBike': _bikeConfig.enabled,
-        'perfilBike': _bikeConfig.powerProfile.name,
-        'alertaAproximacaoBike': _bikeConfig.approachAlertsEnabled,
-        'ttcAvisoBike': _bikeConfig.approachWarningTtcSeconds,
-        'estadoAproximacaoBike': _bikeApproachStatus.level.name,
-        if (_bikeApproachStatus.estimatedTtcSeconds != null)
-          'ttcAtualBike': _bikeApproachStatus.estimatedTtcSeconds!.toStringAsFixed(2),
-        'confiança': _settings.confidenceThreshold,
-        'somenteMovimento': _settings.motionOnly,
-        'movimento': _motionScore.toStringAsFixed(3),
-        'detectorPronto': _detector.isReady,
-        'suspenso': _suspended,
-        'segundoPlano': _backgroundMonitoringEnabled,
-        'transmissaoLan': _lanStream.running,
-        'visualizadoresLan': _lanStream.connectedViewers,
-        'agendamentoAtivo': _schedule.enabled,
-        'dentroDoHorario': _scheduleActive,
-        'clipes': _clipRecordingEnabled,
-        'rastreamento': _trackingEnabled,
-        'objetosMonitorados': _alertLabels.toList()..sort(),
-        'regrasInteligentes': _smartRulesDiagnosticContext(),
-        'areasMonitoramento': _zonesDiagnosticContext(),
-        if (sourceConfig.type == VideoSourceType.rtsp)
-          'rtspHost': Uri.tryParse(sourceConfig.rtspUrl ?? '')?.host ?? '',
-      };
+  Map<String, Object?> _diagnosticContext() => this._diagnosticContextImpl();
 
   @override
   void dispose() {

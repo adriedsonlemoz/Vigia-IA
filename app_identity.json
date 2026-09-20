@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.56 adiciona o alerta rápido de aproximação do Modo Bike por TTC visual, executado logo após a inferência principal e antes das análises auxiliares, histórico e gravação. O HUD mostra aproximação/criticidade e há cenário de simulação sem ESP32. A integração real com ESP32 e radar FMCW continuam futuras.",
-  "version": "1.0.56",
-  "build": 56
+  "notes": "A 1.0.60 conclui o quarto lote da refatoração preventiva em grupos de três arquivos: status/modelo da sessão, Saúde do sistema e runtime do detector foram divididos em módulos internos menores, preservando APIs e comportamento.",
+  "version": "1.0.60",
+  "build": 60
 }

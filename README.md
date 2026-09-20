@@ -2,13 +2,52 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.56+56`
+> **Versão atual:** `1.0.60+60`
 
 ## Estado atual
 
-A `1.0.56+56` adiciona o **alerta rápido de aproximação do Modo Bike**. A inferência principal alimenta um estimador visual de TTC antes das varreduras extras, histórico e gravação; o Monitor mostra o risco sobre o vídeo e a simulação permite validar tudo sem ESP32.
+A `1.0.60+60` conclui o **quarto lote da refatoração preventiva em grupos de três arquivos**. Foram 12 arquivos reorganizados em quatro entregas, reduzindo concentração sem mudar APIs públicas ou comportamento.
 
 
+
+### Evolução 1.0.60 — Refatoração estrutural, lote 4
+
+- `session_status.dart`, `system_health_screen.dart` e `object_detection_service.dart` foram divididos em arquivos principais menores e módulos `part` internos.
+- Status da sessão preserva modelos, enums, snapshots e getters públicos no arquivo principal; a análise de saúde fica isolada em `session_status_health_analyzer.dart`.
+- Saúde do sistema preserva timer, coleta, atualização, persistência e ações na tela principal; componentes visuais ficam em `system_health_screen_components.dart`.
+- Detector preserva `ObjectDetectionService`, sua API pública e o ciclo de vida do isolate; runtime do worker, transformações e inferência ficam em `object_detection_worker.dart`.
+- Com este lote, os quatro grupos de três totalizam 12 arquivos refatorados preventivamente.
+- Verificadores acompanham a nova estrutura e limitam o crescimento dos arquivos principais.
+- Nenhuma métrica, diagnóstico, detector ou comportamento de IA foi removido.
+
+
+### Evolução 1.0.59 — Refatoração estrutural, lote 3
+
+- `session_status_panel.dart`, `error_center_screen.dart` e `events_screen.dart` foram divididos em arquivos principais menores e módulos `part` para componentes visuais.
+- Status da sessão mantém os dois painéis públicos e move cards, métricas, badges e helpers visuais para `session_status_panel_components.dart`.
+- Central de diagnóstico mantém carregamento, atualização, exportação, compartilhamento e filtros no arquivo principal; resumo, grid, chips e cards de erro ficam em `error_center_screen_components.dart`.
+- Histórico mantém persistência, filtros, navegação e ações no arquivo principal; cards, thumbnails, estados vazios/erro e reprodução local ficam em `events_screen_components.dart`.
+- Verificadores foram adaptados para procurar recursos na nova estrutura e ganharam limites preventivos para os três arquivos principais.
+- Nenhuma função, filtro, reprodução, diagnóstico ou métrica de sessão foi removida.
+
+
+### Evolução 1.0.58 — Refatoração estrutural, lote 2
+
+- `multi_camera_screen.dart`, `app_info_screen.dart` e `bike_mode_screen.dart` foram divididos em arquivos principais focados em estado/navegação e módulos `part` para componentes visuais.
+- A Central multicâmera preserva cadastro, edição, leitura QR, probe, atualização automática e navegação, mas seus cards/cabeçalho/métricas ficam isolados em `multi_camera_screen_components.dart`.
+- A tela Informações mantém seleção de seção e ação de copiar PIX no arquivo principal; painéis Sobre/Mudanças/Doações e cards auxiliares ficam em `app_info_screen_components.dart`.
+- O Modo Bike mantém carregamento, persistência, telemetria e navegação no arquivo principal; hero, telemetria e cards auxiliares ficam em `bike_mode_screen_components.dart`.
+- Verificadores foram adaptados à nova estrutura e ganharam limites preventivos para evitar que os três arquivos principais voltem a crescer sem revisão.
+- Nenhuma função, rota, texto, configuração do Bike ou comportamento da Central foi removido.
+
+## Evolução 1.0.57
+
+- primeiro lote da refatoração: `monitor_controller.dart`, `monitor_screen.dart` e `home_screen.dart`;
+- telemetria/saúde, eventos/alertas/TTC e estado/diagnóstico agora vivem em módulos internos separados do `MonitorController`;
+- componentes auxiliares do Monitor e da Home foram extraídos para arquivos próprios, mantendo a mesma interface e comportamento;
+- os três arquivos principais caíram de 2.379/1.808/1.199 linhas para aproximadamente 1.744/1.332/800 linhas;
+- o verificador preventivo reconhece a nova divisão e impede que os três arquivos voltem imediatamente aos tamanhos anteriores;
+- esta é uma refatoração estrutural: detecção, TTC, Modo Bike, HUD, alertas, histórico, fontes e áudio continuam funcionando pelo mesmo contrato.
 
 ### Evolução 1.0.56
 

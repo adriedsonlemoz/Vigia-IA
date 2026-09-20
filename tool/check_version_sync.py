@@ -38,7 +38,8 @@ architecture = (root / "ARCHITECTURE.md").read_text(encoding="utf-8")
 if f"# Arquitetura — Vigia IA {full}" not in architecture:
     fail("ARCHITECTURE nao marca a versao atual")
 
-app_info = (root / "lib/screens/app_info_screen.dart").read_text(encoding="utf-8")
+app_info = (root / "lib/screens/app_info_screen.dart").read_text(encoding="utf-8") + \
+    (root / "lib/screens/app_info_screen_components.dart").read_text(encoding="utf-8")
 current_pattern = re.compile(
     rf"_ReleaseCard\(\s*version:\s*'{re.escape(version)}',\s*current:\s*true,",
     re.S,
