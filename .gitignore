@@ -8,3 +8,6 @@ android/local.properties
 .idea/
 .vscode/
 .DS_Store
+*.jks
+*.keystore
+android/key.properties

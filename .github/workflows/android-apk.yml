@@ -17,6 +17,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Preparar assinatura release
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Secret ANDROID_KEYSTORE_BASE64 ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Secret ANDROID_KEYSTORE_PASSWORD ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Secret ANDROID_KEY_ALIAS ausente" >&2; exit 1; }
+          KEYSTORE_PATH="$RUNNER_TEMP/vigiaia-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH" || { echo "Keystore reconstruida esta vazia" >&2; exit 1; }
+          keytool -list             -keystore "$KEYSTORE_PATH"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.9'
@@ -50,7 +67,27 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build APK release
-        run: flutter build apk --release
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_PATH" || { echo "ANDROID_KEYSTORE_PATH ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Secret ANDROID_KEYSTORE_PASSWORD ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Secret ANDROID_KEY_ALIAS ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "Secret ANDROID_KEY_PASSWORD ausente" >&2; exit 1; }
+          flutter build apk --release
+
+      - name: Verificar assinatura APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK" || { echo "APK release nao encontrada" >&2; exit 1; }
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/apksigner" || { echo "apksigner nao encontrado" >&2; exit 1; }
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
 
       - uses: actions/upload-artifact@v4
         with:

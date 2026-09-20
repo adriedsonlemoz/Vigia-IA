@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.46',
+          version: '1.0.47',
           current: true,
+          changes: [
+            'APK release passa a usar assinatura permanente recriada a partir de GitHub Secrets.',
+            'Workflow valida presença, conteúdo e alias da keystore antes de iniciar o build.',
+            'Keystore não é armazenada no repositório nem no ZIP do projeto.',
+            'Build release deixou de usar a assinatura debug, permitindo atualizações futuras com a mesma identidade de assinatura.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.46',
           changes: [
             'Buildfix da tela Áudios e voz após validação real no Flutter 3.44.9.',
             'Substituído um ícone Material inexistente que bloqueava o flutter analyze.',

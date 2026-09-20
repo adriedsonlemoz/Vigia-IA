@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 1.0.47+47
+
+- Assinatura Android release migrada de `debug` para uma keystore permanente fornecida exclusivamente por GitHub Secrets.
+- Workflow passa a exigir `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e `ANDROID_KEY_PASSWORD` antes do build.
+- Keystore é reconstruída temporariamente em `$RUNNER_TEMP`, validada com `keytool` e nunca é adicionada ao repositório, ZIP fonte ou artifact final.
+- `bootstrap_android.sh` injeta uma `signingConfig` release que lê caminho e credenciais apenas do ambiente do runner, preservando a recriação completa da pasta Android.
+- Após o build, `apksigner verify` confirma que o APK release está efetivamente assinado antes do upload do artifact.
+- `.gitignore` reforçado para bloquear arquivos `.jks`, `.keystore` e `android/key.properties`.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.47+47`.
+
+### Migração da assinatura
+
+- Instalações feitas com a antiga assinatura debug podem exigir uma última desinstalação antes de instalar a primeira APK assinada com a chave permanente.
+- Depois da primeira instalação com esta chave, as próximas versões poderão atualizar por cima normalmente, desde que os quatro Secrets sejam preservados e o `versionCode` continue aumentando.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a política de assinatura e impede o retorno de `signingConfigs.getByName("debug")` no release.
+- `flutter analyze`, `flutter test` e o build/validação criptográfica da APK continuam sendo confirmados pelo GitHub Actions.
+
 ## 1.0.46+46
 
 - Buildfix da tela `Configurações → Geral → Áudios e voz` após validação no Flutter 3.44.9.

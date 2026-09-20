@@ -1,8 +1,17 @@
-# Arquitetura — Vigia IA 1.0.46+46
+# Arquitetura — Vigia IA 1.0.47+47
 
 ## 1. Princípios
 
-A 1.0.46 mantém a arquitetura central de áudio da 1.0.45 e corrige apenas a compatibilidade da interface com o conjunto Material Icons disponível no Flutter 3.44.9.
+A 1.0.47 mantém a arquitetura funcional da 1.0.46 e troca a assinatura efêmera de debug por uma identidade criptográfica release permanente, fornecida somente pelo ambiente seguro do workflow.
+
+## Evolução 1.0.47
+
+- `.github/workflows/android-apk.yml` reconstrói a keystore em `$RUNNER_TEMP` a partir de `ANDROID_KEYSTORE_BASE64` e valida store/alias com `keytool`;
+- o build release recebe `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e `ANDROID_KEY_PASSWORD` apenas no passo de compilação;
+- `bootstrap_android.sh`, que recria a pasta `android/`, injeta `signingConfigs.release` no Gradle recém-gerado e impede o fallback para `debug`;
+- nenhuma credencial ou keystore é persistida no código-fonte; `.gitignore` cobre extensões de chave e `android/key.properties`;
+- o workflow executa `apksigner verify --verbose --print-certs` na APK antes do upload;
+- a identidade Android continua `com.vigiaia.app`; a mudança é somente da assinatura criptográfica usada em release.
 
 ## Evolução 1.0.46
 

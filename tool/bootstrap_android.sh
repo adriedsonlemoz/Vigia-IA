@@ -70,7 +70,38 @@ if 'minSdk = 29' not in text:
     raise SystemExit('Nao foi possivel ajustar minSdk para 29')
 if 'namespace = "com.vigiaia.app"' not in text or 'applicationId = "com.vigiaia.app"' not in text:
     raise SystemExit('Nao foi possivel aplicar a identidade Android vigiaia')
+
+signing_block = r'''    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            val keyAliasValue = System.getenv("ANDROID_KEY_ALIAS")
+            val keyPasswordValue = System.getenv("ANDROID_KEY_PASSWORD")
+
+            if (keystorePath.isNullOrBlank() || keystorePassword.isNullOrBlank() ||
+                keyAliasValue.isNullOrBlank() || keyPasswordValue.isNullOrBlank()) {
+                throw GradleException("Secrets de assinatura release ausentes. Configure ANDROID_KEYSTORE_BASE64/PASSWORD/ALIAS/KEY_PASSWORD no GitHub.")
+            }
+
+            storeFile = rootProject.file(keystorePath)
+            storePassword = keystorePassword
+            keyAlias = keyAliasValue
+            keyPassword = keyPasswordValue
+        }
+    }
+
+'''
+if 'signingConfigs {\n        create("release")' not in text:
+    marker = '    buildTypes {\n'
+    if marker not in text:
+        raise SystemExit('Bloco buildTypes nao encontrado para assinatura release')
+    text = text.replace(marker, signing_block + marker, 1)
+text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
+if 'signingConfig = signingConfigs.getByName("release")' not in text:
+    raise SystemExit('Nao foi possivel aplicar signingConfig release')
+if 'signingConfigs.getByName("debug")' in text:
+    raise SystemExit('Assinatura debug ainda presente no release')
 path.write_text(text)
 PY
 
-echo "Android recriado pelo template atual do Flutter com minSdk 29 e servico de monitoramento."
+echo "Android recriado pelo template atual do Flutter com minSdk 29, servico de monitoramento e assinatura release permanente."

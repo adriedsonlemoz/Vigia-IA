@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.46+46`
+> **Versão atual:** `1.0.47+47`
 
 ## Estado atual
 
-A `1.0.46+46` é um buildfix da biblioteca de áudio: corrige a compatibilidade visual da tela Áudios e voz com o Flutter 3.44.9 sem alterar os 78 áudios, a personalização, a gravação ou o fallback TTS.
+A `1.0.47+47` estabelece a assinatura permanente do APK release via GitHub Secrets, eliminando a dependência da chave debug gerada no ambiente de build.
+
+### Evolução 1.0.47
+
+- release Android usa uma keystore permanente reconstruída somente durante o workflow;
+- os Secrets esperados são `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e `ANDROID_KEY_PASSWORD`;
+- o workflow valida a keystore/alias com `keytool` e valida a APK pronta com `apksigner`;
+- o Gradle recebe a assinatura por variáveis de ambiente e não contém senha, base64 ou arquivo de chave versionado;
+- `.jks`, `.keystore` e `android/key.properties` ficam explicitamente ignorados pelo Git;
+- após a migração inicial de assinatura, versões futuras com a mesma chave e `versionCode` maior podem atualizar o app sem desinstalação.
+
+> Importante: uma instalação antiga assinada com a chave debug não é compatível com a nova chave permanente. Pode ser necessária uma última desinstalação na primeira migração; depois disso, preserve os Secrets permanentemente.
 
 ### Evolução 1.0.46
 
