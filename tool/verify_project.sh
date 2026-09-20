@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.49+49$' pubspec.yaml || fail 'Versao esperada 1.0.49+49 nao encontrada.'
+grep -q '^version: 1\.0\.50+50$' pubspec.yaml || fail 'Versao esperada 1.0.50+50 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -314,12 +314,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.49';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.49.'
-grep -q 'static const int build = 49;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 49.'
-grep -q "version: '1.0.49'" lib/screens/app_info_screen.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.49.'
+grep -q "static const String version = '1.0.50';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.50.'
+grep -q 'static const int build = 50;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 50.'
+grep -q "version: '1.0.50'" lib/screens/app_info_screen.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.50.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -485,18 +485,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.49+49$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.49+49.'
+grep -q '^version: 1.0.50+50$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.50+50.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.49"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.49.'
-grep -q '"build": 49' app_identity.json \
-  || fail 'app_identity.json nao esta no build 49.'
+grep -q '"version": "1.0.50"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.50.'
+grep -q '"build": 50' app_identity.json \
+  || fail 'app_identity.json nao esta no build 50.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -813,7 +813,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.49+49' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.49+49.'
+grep -q 'Vigia IA 1.0.50+50' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.50+50.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1087,6 +1087,20 @@ grep -q '^\*\.keystore$' .gitignore || fail '.gitignore nao bloqueia arquivos ke
 grep -q '^android/key.properties$' .gitignore || fail '.gitignore nao bloqueia android/key.properties.'
 if find . -type f \( -name '*.jks' -o -name '*.keystore' \) -not -path './build/*' | grep -q .; then
   fail 'Arquivo de keystore foi incluido no projeto; a chave deve existir apenas nos Secrets.'
+fi
+
+# Buildfix do Status da sessao - 1.0.50
+grep -q '^## 1.0.50+50' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.50.'
+grep -q 'Evolução 1.0.50' README.md || fail 'README nao documenta 1.0.50.'
+grep -q 'Evolução 1.0.50' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.50.'
+if grep -q '\${frameWidth}' lib/models/session_status.dart; then
+  fail 'Interpolacao redundante de frameWidth reapareceu.'
+fi
+if grep -q '\${analysisWidth}' lib/models/session_status.dart; then
+  fail 'Interpolacao redundante de analysisWidth reapareceu.'
+fi
+if grep -q '\${frameDelayMs}' lib/models/session_status.dart; then
+  fail 'Interpolacao redundante de frameDelayMs reapareceu.'
 fi
 
 # Status da sessao e telemetria em tempo real - 1.0.49

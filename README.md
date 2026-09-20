@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.49+49`
+> **Versão atual:** `1.0.50+50`
 
 ## Estado atual
 
-A `1.0.49+49` adiciona o painel **Status da sessão** em tempo real no Monitor, com métricas separadas do aparelho atual e do celular remoto, sem alterar ainda o fluxo imersivo do Modo Bike nem integrar ESP32.
+A `1.0.50+50` é um buildfix da entrega do **Status da sessão**: corrige os três avisos apontados pelo `flutter analyze` no modelo do painel, sem mudar o comportamento funcional introduzido na 1.0.49.
+
+### Evolução 1.0.50
+
+- removidas chaves desnecessárias em três interpolações de `lib/models/session_status.dart`;
+- a correção elimina os avisos `unnecessary_brace_in_string_interps` que bloquearam o workflow da 1.0.49;
+- painel Status da sessão, telemetria local/remota, Monitor e preparação para o Modo Bike permanecem inalterados funcionalmente;
+- fluxo imersivo do Bike e integração ESP32 continuam sem alterações.
 
 ### Evolução 1.0.49
 

@@ -46,16 +46,16 @@ class SessionStatusData {
 
   String get frameResolution => frameWidth == null || frameHeight == null
       ? '—'
-      : '${frameWidth}×$frameHeight';
+      : '$frameWidth×$frameHeight';
 
   String get analysisResolution => analysisWidth == null || analysisHeight == null
       ? '—'
-      : '${analysisWidth}×$analysisHeight';
+      : '$analysisWidth×$analysisHeight';
 
   String get compactVideoSummary {
     final received = receivedFps > 0 ? receivedFps.toStringAsFixed(1) : '0,0';
     final analyzed = analyzedFps > 0 ? analyzedFps.toStringAsFixed(1) : '0,0';
-    final delay = frameDelayMs == null ? 'atraso —' : 'atraso ${frameDelayMs} ms';
+    final delay = frameDelayMs == null ? 'atraso —' : 'atraso $frameDelayMs ms';
     return '$frameResolution • $received FPS recebidos • $analyzed FPS analisados • $delay';
   }
 }

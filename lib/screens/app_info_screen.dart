@@ -150,8 +150,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.49',
+          version: '1.0.50',
           current: true,
+          changes: [
+            'Buildfix do Status da sessão após validação real no Flutter 3.44.9.',
+            'Removidas três interpolações com chaves desnecessárias que faziam o flutter analyze encerrar com código 1.',
+            'Painel, telemetria, Monitor normal e preparação para o Modo Bike permanecem funcionalmente iguais à 1.0.49.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.49',
           changes: [
             'Novo painel Status da sessão em tempo real, reutilizável e preparado para o Modo Bike.',
             'Vídeo ganhou resumo compacto e painel próprio com FPS recebido/analisado, resolução, inferência, atraso, latência e frames descartados.',

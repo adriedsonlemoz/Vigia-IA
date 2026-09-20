@@ -1,8 +1,14 @@
-# Arquitetura — Vigia IA 1.0.49+49
+# Arquitetura — Vigia IA 1.0.50+50
 
 ## 1. Princípios
 
-A 1.0.49 adiciona observabilidade em tempo real da sessão de monitoramento, separando métricas de vídeo/processamento das condições do aparelho atual e do celular remoto, sem alterar o fluxo imersivo do Modo Bike nem adicionar ESP32.
+A 1.0.50 é um buildfix da observabilidade adicionada na 1.0.49: corrige exclusivamente três interpolações de texto sinalizadas pelo analisador, preservando arquitetura, telemetria, Monitor e limites de escopo.
+
+## Evolução 1.0.50
+
+- `SessionStatusData` mantém o mesmo contrato e comportamento, mas suas strings de resolução e atraso usam interpolação Dart sem chaves redundantes;
+- a alteração remove os avisos `unnecessary_brace_in_string_interps` vistos no Flutter 3.44.9;
+- nenhum fluxo do Modo Bike, endpoint remoto, telemetria ou integração futura com ESP32 foi alterado.
 
 ## Evolução 1.0.49
 

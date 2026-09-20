@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.50+50
+
+- Buildfix da entrega `Status da sessão` após o workflow real da 1.0.49 apontar três avisos `unnecessary_brace_in_string_interps`.
+- Corrigidas as interpolações de resolução recebida, resolução analisada e atraso do frame em `lib/models/session_status.dart`.
+- Nenhuma funcionalidade do painel, Monitor normal, telemetria remota ou preparação para o Modo Bike foi removida ou alterada.
+- Fluxo imersivo do Modo Bike e integração ESP32 permanecem inalterados.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.50+50`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a correção das três interpolações e a sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.49+49
 
 - Adicionado o painel reutilizável `Status da sessão` em tempo real no Monitor.
