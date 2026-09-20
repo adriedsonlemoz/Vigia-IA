@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.62+62`
+> **Versão atual:** `1.0.63+63`
 
 ## Estado atual
 
-A `1.0.62+62` é um **buildfix do workflow Android**. Ela corrige a falha `Permission denied` (exit code 126) causada quando o ZIP/GitHub Manager não preserva o bit executável dos scripts shell, sem alterar a lógica funcional do aplicativo.
+A `1.0.63+63` é um **buildfix pós-refatoração**. Ela corrige 19 avisos `unnecessary_this` encontrados pelo Flutter 3.44.9 no `MonitorController`, sem alterar a lógica funcional do aplicativo.
+
+
+### Evolução 1.0.63 — Buildfix do analyze
+
+- removidos 19 qualificadores `this.` desnecessários do `MonitorController`, reportados pelo `flutter analyze` do Android-APK-31;
+- os métodos e getters continuam apontando para as mesmas implementações `*Impl` dos módulos internos;
+- nenhuma regra de IA, Monitor, Bike, TTC, telemetria ou interface foi alterada;
+- o verificador passa a impedir a reintrodução desses qualificadores nos wrappers internos.
 
 
 ### Evolução 1.0.62 — Buildfix do workflow

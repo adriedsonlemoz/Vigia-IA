@@ -238,9 +238,9 @@ class MonitorController extends ChangeNotifier {
 
   SessionStatusData get sessionStatus => _buildSessionStatus();
 
-  SessionStatusData _buildSessionStatus() => this._buildSessionStatusImpl();
+  SessionStatusData _buildSessionStatus() => _buildSessionStatusImpl();
 
-  void _sampleSessionHealth() => this._sampleSessionHealthImpl();
+  void _sampleSessionHealth() => _sampleSessionHealthImpl();
 
   Duration get effectiveAnalysisInterval =>
       _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
@@ -320,11 +320,11 @@ class MonitorController extends ChangeNotifier {
         _source != null ? _bikeConfig.rearScreenBrightness : null,
       );
 
-  void _startSessionTelemetryTimer() => this._startSessionTelemetryTimerImpl();
+  void _startSessionTelemetryTimer() => _startSessionTelemetryTimerImpl();
 
-  void _configureBikeTelemetryTimer() => this._configureBikeTelemetryTimerImpl();
+  void _configureBikeTelemetryTimer() => _configureBikeTelemetryTimerImpl();
 
-  Future<void> _refreshBikeTelemetry() => this._refreshBikeTelemetryImpl();
+  Future<void> _refreshBikeTelemetry() => _refreshBikeTelemetryImpl();
 
   Future<bool> ensureLanStreaming({bool requestPermission = false}) async {
     if (_disposed || _source == null || !_scheduleActive) return false;
@@ -1184,34 +1184,34 @@ class MonitorController extends ChangeNotifier {
   void _updateBikeApproachFastPath(
     List<Detection> primaryDetections,
     DateTime now,
-  ) => this._updateBikeApproachFastPathImpl(primaryDetections, now);
+  ) => _updateBikeApproachFastPathImpl(primaryDetections, now);
 
-  void _resetBikeApproach() => this._resetBikeApproachImpl();
+  void _resetBikeApproach() => _resetBikeApproachImpl();
 
   bool _sameDetectionRegion(Detection a, Detection b) =>
-      this._sameDetectionRegionImpl(a, b);
+      _sameDetectionRegionImpl(a, b);
 
   List<MonitoringZoneProfile> _trackingZones(
     List<MonitoringZoneProfile> activeZones,
-  ) => this._trackingZonesImpl(activeZones);
+  ) => _trackingZonesImpl(activeZones);
 
   Future<void> _recordConfirmedEvents(
     RgbFrame frame,
     List<String> alertKeys,
     Map<String, Detection> alertTargets,
-  ) => this._recordConfirmedEventsImpl(frame, alertKeys, alertTargets);
+  ) => _recordConfirmedEventsImpl(frame, alertKeys, alertTargets);
 
   Future<void> _recordTransitions(
     RgbFrame frame,
     List<ZoneTransition> transitions,
-  ) => this._recordTransitionsImpl(frame, transitions);
+  ) => _recordTransitionsImpl(frame, transitions);
 
-  String get _sourceDisplayName => this._sourceDisplayNameImpl;
+  String get _sourceDisplayName => _sourceDisplayNameImpl;
 
   Future<void> _handleCameraIntegrityIssue(
     RgbFrame frame,
     CameraIntegrityIssue issue,
-  ) => this._handleCameraIntegrityIssueImpl(frame, issue);
+  ) => _handleCameraIntegrityIssueImpl(frame, issue);
 
   bool _shouldDiscardFrameResult(int session) =>
       _disposed ||
@@ -1538,13 +1538,13 @@ class MonitorController extends ChangeNotifier {
     _notify();
   }
 
-  void _resetSessionMetrics() => this._resetSessionMetricsImpl();
+  void _resetSessionMetrics() => _resetSessionMetricsImpl();
 
-  void _resetAfterZoneChange() => this._resetAfterZoneChangeImpl();
+  void _resetAfterZoneChange() => _resetAfterZoneChangeImpl();
 
-  void _resetRulesAndTracking() => this._resetRulesAndTrackingImpl();
+  void _resetRulesAndTracking() => _resetRulesAndTrackingImpl();
 
-  void _resetEventState() => this._resetEventStateImpl();
+  void _resetEventState() => _resetEventStateImpl();
 
   Future<void> suspend() async {
     _appInBackground = true;
@@ -1660,9 +1660,9 @@ class MonitorController extends ChangeNotifier {
       );
 
   Map<String, Object?> _smartRulesDiagnosticContext() =>
-      this._smartRulesDiagnosticContextImpl();
+      _smartRulesDiagnosticContextImpl();
 
-  Map<String, Object?> _diagnosticContext() => this._diagnosticContextImpl();
+  Map<String, Object?> _diagnosticContext() => _diagnosticContextImpl();
 
   @override
   void dispose() {

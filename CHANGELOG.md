@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.63+63
+
+- Corrigidos 19 avisos `unnecessary_this` reportados pelo `flutter analyze` em `monitor_controller.dart` no workflow Android-APK-31.
+- Removidos apenas qualificadores `this.` redundantes; os wrappers continuam delegando para as mesmas implementações internas `*Impl`.
+- Adicionada verificação preventiva para evitar a reintrodução de `this._` no `MonitorController`.
+- Nenhuma lógica funcional do Monitor, Modo Bike, IA, TTC, telemetria, áudio ou interface foi alterada.
+- Versionamento e documentação sincronizados em `1.0.63+63`.
+
 ## 1.0.62+62
 
 - Corrigido o erro `Permission denied` / exit code 126 do workflow ao executar `tool/bootstrap_android.sh` após importação do ZIP.

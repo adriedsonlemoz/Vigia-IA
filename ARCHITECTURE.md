@@ -1,10 +1,16 @@
-# Arquitetura — Vigia IA 1.0.62+62
+# Arquitetura — Vigia IA 1.0.63+63
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
 
+
+## Evolução 1.0.63 — Limpeza pós-refatoração
+
+- O `MonitorController` remove qualificadores `this.` redundantes nas fachadas que delegam para módulos `part`.
+- A alteração atende ao lint `unnecessary_this` do Flutter 3.44.9 sem mudar resolução de métodos, estado ou contratos.
+- O verificador passa a rejeitar novas ocorrências de `this._` no arquivo principal.
 
 ## Evolução 1.0.62 — Robustez do workflow Android
 
