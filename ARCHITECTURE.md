@@ -1,8 +1,19 @@
-# Arquitetura — Vigia IA 1.0.50+50
+# Arquitetura — Vigia IA 1.0.51+51
 
 ## 1. Princípios
 
-A 1.0.50 é um buildfix da observabilidade adicionada na 1.0.49: corrige exclusivamente três interpolações de texto sinalizadas pelo analisador, preservando arquitetura, telemetria, Monitor e limites de escopo.
+A 1.0.51 acrescenta uma camada de interpretação sobre a observabilidade da sessão: as métricas existentes passam por um avaliador puro de saúde que produz estado, problemas atuais e gargalo provável, mantendo a UI reutilizável e sem acoplar o Monitor ao futuro ESP32.
+
+
+## Evolução 1.0.51
+
+- `SessionHealthAnalyzer` interpreta `SessionStatusData` sem depender da UI e produz `SessionHealthSnapshot`, permitindo reutilização futura no Modo Bike;
+- os limites de frame antigo/congelado usam `expectedFrameIntervalMs`, derivado do intervalo efetivo da fonte, para manter o diagnóstico coerente com perfis de energia e análise;
+- `MonitorController` separa `_framesDroppedProcessing` de `_framesSkippedOptimization`; apenas o primeiro participa do cálculo de saturação da IA;
+- o controller mantém até oito `SessionHealthIncident` em memória por sessão e reinicia o histórico junto com as métricas ao trocar/reiniciar a fonte;
+- `SessionStatusPanel` mostra estado, resumo, gargalo provável e ocorrências recentes; `VideoSessionDetailsPanel` continua concentrando os números de vídeo;
+- temperatura, RAM e CPU podem sinalizar pressão de recursos, mas a análise de rede/captura/IA continua baseada em métricas diretamente observadas;
+- o fluxo imersivo do Bike e qualquer contrato com ESP32 continuam fora desta etapa.
 
 ## Evolução 1.0.50
 

@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 1.0.51+51
+
+- Status da sessão agora calcula saúde operacional em tempo real com estados Saudável, Atenção, Instável e Desconectado.
+- Detecção de frame atrasado/sem atualização, latência elevada, atraso ponta a ponta, FPS recebido abaixo do esperado, inferência lenta e perdas reais enquanto a IA está ocupada.
+- Gargalo provável classificado entre rede, captura de vídeo, processamento da IA e recursos do aparelho.
+- Frames pulados intencionalmente pelo filtro de movimento separados dos descartes por processamento, para não contaminar o diagnóstico de desempenho.
+- Histórico curto de ocorrências da sessão com registro de recuperação/normalização.
+- Detalhes de vídeo ampliados com idade da imagem, FPS esperado e contadores separados de descarte/otimização.
+- Novos testes do avaliador de saúde para sessão saudável, frame congelado, latência alta, reconexão e perdas de processamento.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.51+51`.
+- Fluxo imersivo do Modo Bike e integração ESP32 permanecem inalterados.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a estrutura e o versionamento desta entrega.
+- `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow quando Flutter/Android SDK estiverem disponíveis.
+
+
 ## 1.0.50+50
 
 - Buildfix da entrega `Status da sessão` após o workflow real da 1.0.49 apontar três avisos `unnecessary_brace_in_string_interps`.

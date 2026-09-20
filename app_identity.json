@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.50 corrige os avisos de interpolacao detectados pelo flutter analyze no novo Status da sessao, preservando a funcionalidade da 1.0.49 sem alterar o fluxo imersivo do Bike nem integrar ESP32.",
-  "version": "1.0.50",
-  "build": 50
+  "notes": "A 1.0.51 transforma o Status da sessao em monitor de saude: classifica a sessao, detecta atraso/congelamento, latencia, perdas reais de processamento e gargalos provaveis, com ocorrencias recentes. O fluxo imersivo do Bike e ESP32 permanecem fora desta entrega.",
+  "version": "1.0.51",
+  "build": 51
 }

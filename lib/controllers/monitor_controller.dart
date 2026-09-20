@@ -141,6 +141,8 @@ class MonitorController extends ChangeNotifier {
   int _framesReceived = 0;
   int _framesAnalyzed = 0;
   int _framesDropped = 0;
+  int _framesDroppedProcessing = 0;
+  int _framesSkippedOptimization = 0;
   int? _lastFrameWidth;
   int? _lastFrameHeight;
   int? _lastAnalysisWidth;
@@ -148,6 +150,8 @@ class MonitorController extends ChangeNotifier {
   int? _lastFrameDelayMs;
   double? _lastInferenceMs;
   DeviceTelemetrySnapshot? _localDeviceTelemetry;
+  final List<SessionHealthIncident> _sessionHealthIncidents = <SessionHealthIncident>[];
+  String? _lastSessionHealthFingerprint;
   DateTime? _lastIdleInferenceAt;
   DateTime? _lastDetailScanAt;
   int _detailTileIndex = 0;
@@ -208,7 +212,9 @@ class MonitorController extends ChangeNotifier {
   int get remotePhoneWarningCount => remotePhoneStatus?.warnings().length ?? 0;
   DeviceTelemetrySnapshot? get localDeviceTelemetry => _localDeviceTelemetry;
 
-  SessionStatusData get sessionStatus {
+  SessionStatusData get sessionStatus => _buildSessionStatus();
+
+  SessionStatusData _buildSessionStatus() {
     final source = _source;
     final remote = remotePhoneStatus;
     final networkLatency = source is RemotePhoneCameraSource
@@ -224,17 +230,24 @@ class MonitorController extends ChangeNotifier {
       VideoSourceType.rtsp => 'Rede • RTSP',
       VideoSourceType.remotePhone => 'Rede local / hotspot',
     };
+    final sourceState = _sourceStatus.state;
     return SessionStatusData(
       sampledAt: DateTime.now(),
       imageSource: imageSource,
       aiDevice: 'Este celular',
       sourceConnection: connection,
-      sourceOnline: _sourceStatus.state == VideoSourceState.streaming,
+      sourceOnline: sourceState == VideoSourceState.streaming,
+      sourceConnecting: sourceState == VideoSourceState.connecting ||
+          sourceState == VideoSourceState.reconnecting,
       receivedFps: _receivedFps,
       analyzedFps: _fps,
       framesReceived: _framesReceived,
       framesAnalyzed: _framesAnalyzed,
       framesDropped: _framesDropped,
+      framesDroppedProcessing: _framesDroppedProcessing,
+      framesSkippedOptimization: _framesSkippedOptimization,
+      expectedFrameIntervalMs: effectiveAnalysisInterval.inMilliseconds,
+      lastFrameReceivedAt: _lastFrameReceivedAt,
       frameWidth: _lastFrameWidth,
       frameHeight: _lastFrameHeight,
       analysisWidth: _lastAnalysisWidth,
@@ -244,7 +257,48 @@ class MonitorController extends ChangeNotifier {
       networkLatencyMs: networkLatency,
       localDevice: _localDeviceTelemetry,
       remotePhone: remote,
+      healthIncidents: List<SessionHealthIncident>.unmodifiable(
+        _sessionHealthIncidents,
+      ),
     );
+  }
+
+  void _sampleSessionHealth() {
+    if (_disposed) return;
+    final health = _buildSessionStatus().health;
+    final codes = health.issues.map((issue) => issue.code).join(',');
+    final fingerprint = '${health.state.name}|$codes';
+    if (_lastSessionHealthFingerprint == fingerprint) return;
+
+    final previous = _lastSessionHealthFingerprint;
+    _lastSessionHealthFingerprint = fingerprint;
+    if (previous == null &&
+        (health.state == SessionHealthState.healthy ||
+            (_framesReceived == 0 &&
+                health.issues.length == 1 &&
+                health.issues.first.code == 'source_reconnecting'))) {
+      return;
+    }
+    if (health.issues.isEmpty && _sessionHealthIncidents.isEmpty) return;
+
+    final primaryIssue = health.primaryIssue;
+    final incident = primaryIssue == null
+        ? SessionHealthIncident(
+            occurredAt: DateTime.now(),
+            state: SessionHealthState.healthy,
+            title: 'Sessão normalizada',
+            detail: 'Imagem, processamento e recursos voltaram ao estado esperado.',
+          )
+        : SessionHealthIncident(
+            occurredAt: DateTime.now(),
+            state: health.state,
+            title: primaryIssue.title,
+            detail: primaryIssue.detail,
+          );
+    _sessionHealthIncidents.insert(0, incident);
+    if (_sessionHealthIncidents.length > 8) {
+      _sessionHealthIncidents.removeRange(8, _sessionHealthIncidents.length);
+    }
   }
 
   Duration get effectiveAnalysisInterval =>
@@ -328,6 +382,7 @@ class MonitorController extends ChangeNotifier {
     final telemetry = await _native.readDeviceTelemetry();
     if (_disposed) return;
     _localDeviceTelemetry = telemetry;
+    _sampleSessionHealth();
     _notify();
   }
 
@@ -672,6 +727,7 @@ class MonitorController extends ChangeNotifier {
         monitoring: _source != null && _scheduleActive,
         active: status.state == VideoSourceState.streaming,
       );
+      _sampleSessionHealth();
       if (status.state == VideoSourceState.error &&
           previousState == VideoSourceState.streaming) {
         unawaited(
@@ -795,6 +851,7 @@ class MonitorController extends ChangeNotifier {
     }
     if (_processing || !_baseReady || !_detector.isReady) {
       _framesDropped++;
+      _framesDroppedProcessing++;
       _notify();
       return;
     }
@@ -861,6 +918,7 @@ class MonitorController extends ChangeNotifier {
           // Isso evita que uma pessoa/animal parado desapareça só porque o
           // filtro de movimento deixou de disparar.
           _framesDropped++;
+          _framesSkippedOptimization++;
           return;
         }
         _lastIdleInferenceAt = now;
@@ -1789,6 +1847,10 @@ class MonitorController extends ChangeNotifier {
     _framesReceived = 0;
     _framesAnalyzed = 0;
     _framesDropped = 0;
+    _framesDroppedProcessing = 0;
+    _framesSkippedOptimization = 0;
+    _sessionHealthIncidents.clear();
+    _lastSessionHealthFingerprint = null;
     _lastFrameWidth = null;
     _lastFrameHeight = null;
     _lastAnalysisWidth = null;

@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.50+50`
+> **Versão atual:** `1.0.51+51`
 
 ## Estado atual
 
-A `1.0.50+50` é um buildfix da entrega do **Status da sessão**: corrige os três avisos apontados pelo `flutter analyze` no modelo do painel, sem mudar o comportamento funcional introduzido na 1.0.49.
+A `1.0.51+51` transforma o **Status da sessão** em um monitor de saúde operacional, interpretando as métricas em tempo real e apontando a origem provável de degradações sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+
+
+### Evolução 1.0.51
+
+- o Status da sessão passa a classificar a operação como `Saudável`, `Atenção`, `Instável` ou `Desconectado`;
+- a análise considera idade do último frame, atraso ponta a ponta, latência de rede, FPS recebido em relação ao intervalo configurado, tempo de inferência e perdas por IA ocupada;
+- o painel sugere o gargalo provável entre rede, captura de vídeo, processamento da IA e recursos do aparelho;
+- frames descartados porque a IA ainda estava ocupada foram separados dos frames pulados intencionalmente pelo filtro de movimento, evitando falso diagnóstico de desempenho;
+- o painel mantém as últimas ocorrências de saúde da sessão e registra a normalização quando o problema desaparece;
+- o detalhe de vídeo mostra idade atual da imagem, meta aproximada de FPS, perdas reais por processamento e otimizações intencionais separadamente;
+- os limites de atraso são adaptados ao intervalo efetivo configurado para a fonte, evitando exigir FPS incompatível com o próprio perfil da sessão;
+- fluxo imersivo do Bike e integração ESP32 continuam sem alterações.
 
 ### Evolução 1.0.50
 

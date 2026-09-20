@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.50',
+          version: '1.0.51',
           current: true,
+          changes: [
+            'Status da sessão ganhou saúde em tempo real: Saudável, Atenção, Instável ou Desconectado.',
+            'Detecção automática de imagem atrasada/congelada, latência alta, inferência lenta e perdas reais por IA ocupada.',
+            'O painel aponta o gargalo provável entre rede, captura, IA e recursos do aparelho e mantém ocorrências recentes da sessão.',
+            'Frames ignorados pelo filtro de movimento ficam separados dos descartes por processamento e não geram falso alerta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.50',
           changes: [
             'Buildfix do Status da sessão após validação real no Flutter 3.44.9.',
             'Removidas três interpolações com chaves desnecessárias que faziam o flutter analyze encerrar com código 1.',

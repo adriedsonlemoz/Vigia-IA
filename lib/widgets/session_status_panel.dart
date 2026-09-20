@@ -27,9 +27,11 @@ class SessionStatusPanel extends StatelessWidget {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
                 ),
               ),
-              _StateBadge(online: data.sourceOnline),
+              _StateBadge(state: data.health.state),
             ],
           ),
+          const SizedBox(height: 12),
+          _SessionHealthCard(data: data),
           const SizedBox(height: 12),
           _VideoSummaryCard(data: data),
           const SizedBox(height: 12),
@@ -95,6 +97,7 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                 _MetricRow(
                   label: 'FPS recebido',
                   value: '${data.receivedFps.toStringAsFixed(1)} FPS',
+                  detail: 'Meta aproximada: ${data.expectedReceivedFps.toStringAsFixed(1)} FPS',
                 ),
                 _MetricRow(
                   label: 'FPS analisado',
@@ -111,6 +114,12 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                 _MetricRow(
                   label: 'Atraso do frame',
                   value: data.frameDelayMs == null ? '—' : '${data.frameDelayMs} ms',
+                  detail: 'Da captura até a chegada neste celular',
+                ),
+                _MetricRow(
+                  label: 'Idade atual da imagem',
+                  value: _durationText(data.frameAgeMs),
+                  detail: 'Tempo desde o último frame recebido',
                 ),
                 _MetricRow(
                   label: 'Latência de rede',
@@ -123,7 +132,17 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                 _MetricRow(
                   label: 'Frames descartados',
                   value: '${data.framesDropped}',
-                  detail: 'Recebidos, mas não enviados à IA por processamento em andamento, otimização por movimento ou transição da sessão.',
+                  detail: 'Total não enviado à IA nesta sessão.',
+                ),
+                _MetricRow(
+                  label: 'Descartados por IA ocupada',
+                  value: '${data.framesDroppedProcessing}',
+                  detail: '${data.processingDropPercent.toStringAsFixed(1)}% dos frames recebidos',
+                ),
+                _MetricRow(
+                  label: 'Ignorados por otimização',
+                  value: '${data.framesSkippedOptimization}',
+                  detail: 'Pulos intencionais do filtro de movimento; não contam como falha de desempenho.',
                 ),
               ],
             ),
@@ -387,26 +406,158 @@ class _MetricRow extends StatelessWidget {
       );
 }
 
-class _StateBadge extends StatelessWidget {
-  const _StateBadge({required this.online});
+class _SessionHealthCard extends StatelessWidget {
+  const _SessionHealthCard({required this.data});
 
-  final bool online;
+  final SessionStatusData data;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: (online ? Colors.green : Theme.of(context).colorScheme.error)
-              .withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          online ? 'Ao vivo' : 'Sem imagem',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            color: online ? Colors.green : Theme.of(context).colorScheme.error,
+  Widget build(BuildContext context) {
+    final health = data.health;
+    final color = _healthColor(context, health.state);
+    final primaryIssue = health.primaryIssue;
+    final displayedIssues = <SessionHealthIssue>[
+      if (primaryIssue != null) primaryIssue,
+      ...health.issues
+          .where((issue) => !identical(issue, primaryIssue))
+          .take(2),
+    ];
+    final incidents = data.healthIncidents.take(4).toList(growable: false);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_healthIcon(health.state), size: 20, color: color),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Saúde da sessão',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              Text(
+                health.state.label,
+                style: TextStyle(fontWeight: FontWeight.w900, color: color),
+              ),
+            ],
           ),
-        ),
-      );
+          const SizedBox(height: 7),
+          Text(health.summary, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text('Gargalo provável', style: Theme.of(context).textTheme.bodySmall),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  health.bottleneck.label,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          if (displayedIssues.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final issue in displayedIssues)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: _healthColor(context, issue.state)),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        '${issue.title}: ${issue.detail}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          if (incidents.isNotEmpty) ...[
+            Divider(
+              height: 18,
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.16),
+            ),
+            Text(
+              'Ocorrências recentes',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            for (final incident in incidents)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '${_clockText(incident.occurredAt)} • ${incident.title}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
 }
+
+class _StateBadge extends StatelessWidget {
+  const _StateBadge({required this.state});
+
+  final SessionHealthState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _healthColor(context, state);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        state.label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+Color _healthColor(BuildContext context, SessionHealthState state) => switch (state) {
+      SessionHealthState.healthy => Colors.green,
+      SessionHealthState.attention => Colors.amber.shade800,
+      SessionHealthState.unstable => Colors.deepOrange,
+      SessionHealthState.disconnected => Theme.of(context).colorScheme.error,
+    };
+
+IconData _healthIcon(SessionHealthState state) => switch (state) {
+      SessionHealthState.healthy => Icons.check_circle_outline_rounded,
+      SessionHealthState.attention => Icons.warning_amber_rounded,
+      SessionHealthState.unstable => Icons.sync_problem,
+      SessionHealthState.disconnected => Icons.link_off,
+    };
+
+String _durationText(int? milliseconds) {
+  if (milliseconds == null) return '—';
+  if (milliseconds < 1000) return '$milliseconds ms';
+  final seconds = milliseconds / 1000;
+  return '${seconds.toStringAsFixed(seconds >= 10 ? 0 : 1)} s';
+}
+
+String _clockText(DateTime value) =>
+    '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}:${value.second.toString().padLeft(2, '0')}';
