@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.63+63`
+> **Versão atual:** `1.0.64+64`
 
 ## Estado atual
 
-A `1.0.63+63` é um **buildfix pós-refatoração**. Ela corrige 19 avisos `unnecessary_this` encontrados pelo Flutter 3.44.9 no `MonitorController`, sem alterar a lógica funcional do aplicativo.
+A `1.0.64+64` adiciona diagnóstico exportável do desempenho real da IA, corrige o onboarding para primeira instalação, melhora o destino de exportação e avança a adaptação para paisagem/tablet.
+
+
+### Evolução 1.0.64 — Telemetria e interface adaptativa
+
+- o pipeline registra conversão/decodificação da fonte, fila/transferência do isolate, materialização, criação da imagem, resize/letterbox, montagem do tensor, LiteRT/TFLite puro, pós-processamentos, total e fim a fim;
+- o Diagnóstico oferece captura profunda de 30 ou 60 segundos e exporta `resumo.txt`, `telemetria.json` e `telemetria.csv` dentro de um ZIP;
+- o relatório inclui percentis P50/P90/P95/P99, aparelho/Android, FPS, descartes, CPU, RAM, temperatura, bateria, rede e ocorrências importantes;
+- diagnósticos usam `Downloads/Vigia IA` por padrão ou o seletor nativo quando `Perguntar sempre` é escolhido em Configurações;
+- o acesso inicial deixa de ser a `home` permanente e passa a aparecer somente na primeira instalação, com revisão manual disponível em Configurações;
+- os três chips do acesso inicial permanecem na mesma linha;
+- paisagem/tablet recebe ações multicâmera em linha, Alertas e clipes em duas colunas, Histórico com filtros 2×2 e Status da sessão em painel lateral com detalhes no mesmo painel;
+- o gargalo de IA deixa de tratar todo o round-trip como tempo do modelo: LiteRT e preparação são avaliados separadamente.
 
 
 ### Evolução 1.0.63 — Buildfix do analyze

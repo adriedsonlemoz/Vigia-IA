@@ -61,10 +61,13 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         final allowedLabels = (message['allowedLabels'] as List<Object?>?)
             ?.whereType<String>()
             .toSet();
+        final workerWatch = Stopwatch()..start();
         final transfer = message['bytes']! as TransferableTypedData;
+        final materializeWatch = Stopwatch()..start();
         final rgbBytes = transfer.materialize().asUint8List();
+        materializeWatch.stop();
 
-        final results = _runDetection(
+        final payload = _runDetection(
           interpreter: activeInterpreter,
           runtime: activeRuntime,
           labels: labels,
@@ -75,10 +78,20 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
           maxResults: maxResults,
           allowedLabels: allowedLabels,
         );
+        workerWatch.stop();
         replyPort.send(<String, Object>{
           'type': 'result',
           'id': id,
-          'results': results,
+          'results': payload.results,
+          'timings': <String, double>{
+            'workerMaterializeMs': materializeWatch.elapsedMicroseconds / 1000.0,
+            'imageBuildMs': payload.imageBuildMs,
+            'resizeLetterboxMs': payload.resizeLetterboxMs,
+            'tensorBuildMs': payload.tensorBuildMs,
+            'liteRtMs': payload.liteRtMs,
+            'detectorPostprocessMs': payload.detectorPostprocessMs,
+            'workerTotalMs': workerWatch.elapsedMicroseconds / 1000.0,
+          },
         });
       } catch (error, stackTrace) {
         replyPort.send(<String, Object>{
@@ -140,7 +153,7 @@ _DetectorRuntime _inspectInterpreter(Interpreter interpreter, String modelName) 
   );
 }
 
-List<List<Object>> _runDetection({
+_WorkerDetectionPayload _runDetection({
   required Interpreter interpreter,
   required _DetectorRuntime runtime,
   required List<String> labels,
@@ -151,6 +164,7 @@ List<List<Object>> _runDetection({
   required int maxResults,
   Set<String>? allowedLabels,
 }) {
+  final imageBuildWatch = Stopwatch()..start();
   final source = img.Image.fromBytes(
     width: width,
     height: height,
@@ -158,6 +172,9 @@ List<List<Object>> _runDetection({
     numChannels: 3,
     order: img.ChannelOrder.rgb,
   );
+  imageBuildWatch.stop();
+
+  final resizeWatch = Stopwatch()..start();
   final transform = DetectorImageTransform.fit(
     sourceWidth: width,
     sourceHeight: height,
@@ -181,7 +198,9 @@ List<List<Object>> _runDetection({
     dstX: transform.offsetX,
     dstY: transform.offsetY,
   );
+  resizeWatch.stop();
 
+  final tensorWatch = Stopwatch()..start();
   late final Object batchedInput;
   if (runtime.inputType == TensorType.uint8) {
     final matrix = List<List<List<int>>>.generate(
@@ -236,9 +255,13 @@ List<List<Object>> _runDetection({
   ];
   final count = <double>[0.0];
   final output = <int, Object>{0: boxes, 1: classes, 2: scores, 3: count};
+  tensorWatch.stop();
 
+  final liteRtWatch = Stopwatch()..start();
   interpreter.runForMultipleInputs(<Object>[batchedInput], output);
+  liteRtWatch.stop();
 
+  final postprocessWatch = Stopwatch()..start();
   final boxList = boxes.first;
   final classList = classes.first;
   final scoreList = scores.first;
@@ -282,8 +305,34 @@ List<List<Object>> _runDetection({
   }
 
   results.sort((a, b) => (b[1] as double).compareTo(a[1] as double));
-  if (results.length > maxResults) return results.sublist(0, maxResults);
-  return results;
+  final limited = results.length > maxResults ? results.sublist(0, maxResults) : results;
+  postprocessWatch.stop();
+  return _WorkerDetectionPayload(
+    results: limited,
+    imageBuildMs: imageBuildWatch.elapsedMicroseconds / 1000.0,
+    resizeLetterboxMs: resizeWatch.elapsedMicroseconds / 1000.0,
+    tensorBuildMs: tensorWatch.elapsedMicroseconds / 1000.0,
+    liteRtMs: liteRtWatch.elapsedMicroseconds / 1000.0,
+    detectorPostprocessMs: postprocessWatch.elapsedMicroseconds / 1000.0,
+  );
+}
+
+class _WorkerDetectionPayload {
+  const _WorkerDetectionPayload({
+    required this.results,
+    required this.imageBuildMs,
+    required this.resizeLetterboxMs,
+    required this.tensorBuildMs,
+    required this.liteRtMs,
+    required this.detectorPostprocessMs,
+  });
+
+  final List<List<Object>> results;
+  final double imageBuildMs;
+  final double resizeLetterboxMs;
+  final double tensorBuildMs;
+  final double liteRtMs;
+  final double detectorPostprocessMs;
 }
 
 class _DetectorRuntime {

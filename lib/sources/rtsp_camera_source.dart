@@ -106,7 +106,10 @@ class RtspCameraSource implements VideoSource {
       if (bytes.isEmpty) {
         throw StateError('Snapshot RTSP vazio.');
       }
-      final frame = await FrameConverter.fromEncoded(bytes);
+      final frame = await FrameConverter.fromEncoded(
+        bytes,
+        capturedAt: DateTime.now(),
+      );
       _lastSuccessfulFrame = DateTime.now();
       if (!_frames.isClosed) _frames.add(frame);
     } catch (error, stackTrace) {

@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
-
 import '../models/device_telemetry.dart';
 import '../models/session_status.dart';
 import '../utils/storage_size_formatter.dart';
-
 part 'session_status_panel_components.dart';
-
-class SessionStatusPanel extends StatelessWidget {
+class SessionStatusPanel extends StatefulWidget {
   const SessionStatusPanel({
     super.key,
     required this.data,
     this.showCloseButton = false,
   });
-
   final SessionStatusData data;
   final bool showCloseButton;
-
+  @override
+  State<SessionStatusPanel> createState() => _SessionStatusPanelState();
+}
+class _SessionStatusPanelState extends State<SessionStatusPanel> {
+  bool _showVideoDetails = false;
   @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    if (_showVideoDetails) {
+      return VideoSessionDetailsPanel(
+        data: data,
+        onBack: () => setState(() => _showVideoDetails = false),
+      );
+    }
     final remote = data.remotePhone;
     return SafeArea(
       child: LayoutBuilder(
@@ -61,7 +68,7 @@ class SessionStatusPanel extends StatelessWidget {
                     ),
                   ),
                   _StateBadge(state: data.health.state),
-                  if (showCloseButton) ...[
+                  if (widget.showCloseButton) ...[
                     const SizedBox(width: 6),
                     IconButton(
                       tooltip: 'Fechar',
@@ -78,13 +85,19 @@ class SessionStatusPanel extends StatelessWidget {
                   children: [
                     Expanded(child: _SessionHealthCard(data: data)),
                     const SizedBox(width: 12),
-                    Expanded(child: _VideoSummaryCard(data: data)),
+                    Expanded(child: _VideoSummaryCard(
+                      data: data,
+                      onTap: () => setState(() => _showVideoDetails = true),
+                    )),
                   ],
                 )
               else ...[
                 _SessionHealthCard(data: data),
                 const SizedBox(height: 12),
-                _VideoSummaryCard(data: data),
+                _VideoSummaryCard(
+                      data: data,
+                      onTap: () => setState(() => _showVideoDetails = true),
+                    ),
               ],
               const SizedBox(height: 16),
               if (wide)
@@ -108,23 +121,34 @@ class SessionStatusPanel extends StatelessWidget {
     );
   }
 }
-
 class VideoSessionDetailsPanel extends StatelessWidget {
-  const VideoSessionDetailsPanel({super.key, required this.data});
-
+  const VideoSessionDetailsPanel({
+    super.key,
+    required this.data,
+    this.onBack,
+  });
   final SessionStatusData data;
-
+  final VoidCallback? onBack;
   @override
   Widget build(BuildContext context) => SafeArea(
         child: ListView(
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.videocam_outlined),
-                SizedBox(width: 10),
-                Expanded(
+                if (onBack != null) ...[
+                  IconButton(
+                    tooltip: 'Voltar ao status',
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                  const SizedBox(width: 2),
+                ] else ...[
+                  const Icon(Icons.videocam_outlined),
+                  const SizedBox(width: 10),
+                ],
+                const Expanded(
                   child: Text(
                     'Vídeo e processamento',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
@@ -150,10 +174,11 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                 _MetricRow(label: 'Resolução recebida', value: data.frameResolution),
                 _MetricRow(label: 'Resolução analisada', value: data.analysisResolution),
                 _MetricRow(
-                  label: 'Inferência',
+                  label: 'Inferência (round-trip)',
                   value: data.inferenceMs == null
                       ? '—'
                       : '${data.inferenceMs!.toStringAsFixed(0)} ms',
+                  detail: 'Inclui fila/transferência do isolate e execução do detector.',
                 ),
                 _MetricRow(
                   label: 'Atraso do frame',
@@ -201,12 +226,46 @@ class VideoSessionDetailsPanel extends StatelessWidget {
             _MetricGroup(
               children: [
                 _MetricRow(
-                  label: 'Pré-processamento',
+                  label: 'Conversão/decodificação da fonte',
+                  value: _millisecondsText(data.sourceConversionMs),
+                  detail: 'YUV/BGRA → RGB na câmera local ou decodificação da imagem recebida.',
+                ),
+                _MetricRow(
+                  label: 'Pré-processamento do Monitor',
                   value: _millisecondsText(data.preprocessMs),
                   detail: 'Recorte da zona e análise de movimento antes do detector.',
                 ),
                 _MetricRow(
-                  label: 'Inferência principal',
+                  label: 'Fila + transferência do isolate',
+                  value: _millisecondsText(data.isolateTransferAndQueueMs),
+                ),
+                _MetricRow(
+                  label: 'Materialização no worker',
+                  value: _millisecondsText(data.workerMaterializeMs),
+                ),
+                _MetricRow(
+                  label: 'Imagem RGB no detector',
+                  value: _millisecondsText(data.detectorImageBuildMs),
+                ),
+                _MetricRow(
+                  label: 'Resize + letterbox',
+                  value: _millisecondsText(data.resizeLetterboxMs),
+                ),
+                _MetricRow(
+                  label: 'Montagem do tensor',
+                  value: _millisecondsText(data.tensorBuildMs),
+                ),
+                _MetricRow(
+                  label: 'LiteRT / TFLite puro',
+                  value: _millisecondsText(data.liteRtMs),
+                  detail: 'Tempo efetivamente gasto pelo modelo, separado do código ao redor.',
+                ),
+                _MetricRow(
+                  label: 'Pós-processamento do detector',
+                  value: _millisecondsText(data.detectorPostprocessMs),
+                ),
+                _MetricRow(
+                  label: 'Inferência principal (round-trip)',
                   value: _millisecondsText(data.primaryInferenceMs),
                 ),
                 _MetricRow(
@@ -255,4 +314,3 @@ class VideoSessionDetailsPanel extends StatelessWidget {
         ),
       );
 }
-

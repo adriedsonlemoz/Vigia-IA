@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
-
-import 'package:path_provider/path_provider.dart';
+import 'dart:typed_data';
 
 import '../core/app_metadata.dart';
 import '../models/system_health.dart';
@@ -150,20 +150,38 @@ class DiagnosticReportService {
     );
   }
 
-  Future<String> export(
+  Future<String?> export(
     DiagnosticReport report, {
     Directory? directory,
+    bool chooseLocation = false,
   }) async {
-    final root = directory ?? await getApplicationDocumentsDirectory();
-    final exports = Directory(
-      '${root.path}${Platform.pathSeparator}exports${Platform.pathSeparator}diagnostico',
+    final fileName =
+        'vigiaia_diagnostico_${_stamp(report.generatedAt)}.txt';
+    if (directory != null) {
+      final exports = Directory(
+        '${directory.path}${Platform.pathSeparator}exports${Platform.pathSeparator}diagnostico',
+      );
+      await exports.create(recursive: true);
+      final file = File(
+        '${exports.path}${Platform.pathSeparator}$fileName',
+      );
+      await file.writeAsString(report.toText(), flush: true);
+      return file.path;
+    }
+
+    final bytes = Uint8List.fromList(utf8.encode(report.toText()));
+    if (chooseLocation) {
+      return _native.saveBytesWithPicker(
+        fileName: fileName,
+        mimeType: 'text/plain',
+        bytes: bytes,
+      );
+    }
+    return _native.saveBytesToDownloads(
+      fileName: fileName,
+      mimeType: 'text/plain',
+      bytes: bytes,
     );
-    await exports.create(recursive: true);
-    final file = File(
-      '${exports.path}${Platform.pathSeparator}vigiaia_diagnostico_${_stamp(report.generatedAt)}.txt',
-    );
-    await file.writeAsString(report.toText(), flush: true);
-    return file.path;
   }
 
   Future<bool> share(DiagnosticReport report) {

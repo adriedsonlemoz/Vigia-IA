@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../screens/access_guide_screen.dart';
+import '../screens/home_screen.dart';
 import '../services/appearance_settings_service.dart';
+import '../services/native_platform_service.dart';
 
 class VigiaIaApp extends StatelessWidget {
   const VigiaIaApp({super.key});
@@ -121,8 +123,44 @@ class VigiaIaApp extends StatelessWidget {
         themeMode: appearance.themeMode,
         theme: _theme(brightness: Brightness.light, seed: appearance.seedColor),
         darkTheme: _theme(brightness: Brightness.dark, seed: appearance.seedColor),
-        home: const AccessGuideScreen(),
+        home: const _StartupGate(),
       ),
     );
+  }
+}
+
+
+class _StartupGate extends StatefulWidget {
+  const _StartupGate();
+
+  @override
+  State<_StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<_StartupGate> {
+  bool? _onboardingCompleted;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final completed = await NativePlatformService.instance.onboardingCompleted();
+    if (!mounted) return;
+    setState(() => _onboardingCompleted = completed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = _onboardingCompleted;
+    if (completed == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (completed) return const HomeScreen();
+    return const AccessGuideScreen();
   }
 }

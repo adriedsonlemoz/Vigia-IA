@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.64+64
+
+- Implementada telemetria granular do pipeline da IA: conversão/decodificação da fonte, transporte, fila/transferência entre isolates, materialização, imagem RGB, resize/letterbox, tensor, LiteRT/TFLite puro, pós-processamentos, total e fim a fim.
+- `PerformanceTelemetryService` mantém amostras normais e diagnóstico profundo de 30/60 s, calcula média/min/max/P50/P90/P95/P99 e identifica o maior custo observado.
+- Exportação de desempenho gera ZIP com `resumo.txt`, `telemetria.json` e `telemetria.csv`, sem imagens por padrão.
+- Diagnósticos técnicos e de desempenho salvam em `Downloads/Vigia IA` por padrão; Configurações permite trocar para `Perguntar sempre`, usando o seletor nativo do Android.
+- Acesso inicial agora é exibido somente na primeira instalação; atualizações existentes são reconhecidas sem reabrir o onboarding e a tela continua disponível em Configurações > Permissões do aplicativo.
+- Os chips Câmera/Alertas/Pareamento permanecem em uma única linha com redução de escala quando necessário.
+- Saúde da sessão passa a distinguir custo de conversão da fonte, preparação da IA e LiteRT puro, evitando atribuir todo o round-trip ao modelo.
+- Melhorias adaptativas: Central multicâmera usa três ações em uma linha quando há espaço; Histórico usa filtros 2×2; Alertas e clipes usa duas colunas em tela larga e SafeArea; Status da sessão usa painel lateral e detalhes internos no mesmo painel.
+- `DeviceTelemetrySnapshot` inclui fabricante/modelo e versão/SDK Android para contextualizar relatórios.
+- Novos testes cobrem percentis, gargalo provável, prioridade do diagnóstico profundo e metadados de dispositivo.
+- Versionamento e documentação sincronizados em `1.0.64+64`.
+
 ## 1.0.63+63
 
 - Corrigidos 19 avisos `unnecessary_this` reportados pelo `flutter analyze` em `monitor_controller.dart` no workflow Android-APK-31.

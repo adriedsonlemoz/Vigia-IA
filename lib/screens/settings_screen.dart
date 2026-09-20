@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_metadata.dart';
+import '../services/export_preferences_service.dart';
+import 'access_guide_screen.dart';
 import 'advanced_settings_screen.dart';
 import 'audio_settings_screen.dart';
 import 'alerts_clips_screen.dart';
@@ -23,6 +25,42 @@ class SettingsScreen extends StatelessWidget {
 
   void _openInfo(BuildContext context, AppInfoSection section) {
     _push(context, AppInfoScreen(initialSection: section));
+  }
+
+  Future<void> _configureExportDestination(BuildContext context) async {
+    final service = ExportPreferencesService.instance;
+    final current = await service.initialize();
+    if (!context.mounted) return;
+    final selected = await showDialog<ExportDestinationPreference>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Local padrão de exportação'),
+        children: ExportDestinationPreference.values
+            .map(
+              (value) => ListTile(
+                leading: Icon(
+                  value == current
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                ),
+                title: Text(value.label),
+                subtitle: Text(
+                  value == ExportDestinationPreference.downloads
+                      ? 'Salva automaticamente em Downloads/Vigia IA.'
+                      : 'Abre o seletor do Android em cada exportação.',
+                ),
+                onTap: () => Navigator.pop(dialogContext, value),
+              ),
+            )
+            .toList(growable: false),
+      ),
+    );
+    if (selected == null) return;
+    await service.setDestination(selected);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exportações: ${selected.label}.')),
+    );
   }
 
   @override
@@ -107,6 +145,12 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _push(context, const StorageBackupScreen()),
           ),
           _SettingsTile(
+            icon: Icons.download_outlined,
+            title: 'Local padrão de exportação',
+            subtitle: 'Downloads por padrão ou perguntar onde salvar.',
+            onTap: () => _configureExportDestination(context),
+          ),
+          _SettingsTile(
             icon: Icons.query_stats_outlined,
             title: 'Estatísticas',
             subtitle: 'Resumo por período, câmera, área e horário.',
@@ -117,8 +161,17 @@ class SettingsScreen extends StatelessWidget {
       _CategoryCard(
         icon: Icons.settings_suggest_outlined,
         title: 'Sistema',
-        subtitle: 'Saúde do monitoramento e estado do aparelho.',
+        subtitle: 'Saúde, permissões e estado do aparelho.',
         children: [
+          _SettingsTile(
+            icon: Icons.admin_panel_settings_outlined,
+            title: 'Permissões do aplicativo',
+            subtitle: 'Revise câmera, notificações e rede local sem repetir o onboarding.',
+            onTap: () => _push(
+              context,
+              const AccessGuideScreen(manualReview: true),
+            ),
+          ),
           _SettingsTile(
             icon: Icons.monitor_heart_outlined,
             title: 'Saúde do sistema',

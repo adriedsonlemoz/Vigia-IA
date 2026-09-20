@@ -6,9 +6,14 @@ import '../services/native_platform_service.dart';
 import 'home_screen.dart';
 
 class AccessGuideScreen extends StatefulWidget {
-  const AccessGuideScreen({super.key, this.startMonitorOnLoad = false});
+  const AccessGuideScreen({
+    super.key,
+    this.startMonitorOnLoad = false,
+    this.manualReview = false,
+  });
 
   final bool startMonitorOnLoad;
+  final bool manualReview;
 
   @override
   State<AccessGuideScreen> createState() => _AccessGuideScreenState();
@@ -72,7 +77,20 @@ class _AccessGuideScreenState extends State<AccessGuideScreen> {
   }
 
   Future<void> _continue() async {
+    if (widget.manualReview) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final marked = await _native.markOnboardingCompleted();
     if (!mounted) return;
+    if (!marked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível concluir o acesso inicial. Tente novamente.'),
+        ),
+      );
+      return;
+    }
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => HomeScreen(startMonitorOnLoad: widget.startMonitorOnLoad),
@@ -151,23 +169,29 @@ class _AccessGuideScreenState extends State<AccessGuideScreen> {
                           'Você pode liberar agora ou ajustar depois nas configurações do Android.',
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                        Row(
                           children: [
-                            _GuideChip(
-                              icon: Icons.videocam_outlined,
-                              text: permissionsReady ? 'Câmera pronta' : 'Câmera pendente',
+                            Expanded(
+                              child: _GuideChip(
+                                icon: Icons.videocam_outlined,
+                                text: permissionsReady ? 'Câmera pronta' : 'Câmera pendente',
+                              ),
                             ),
-                            _GuideChip(
-                              icon: Icons.notifications_active_outlined,
-                              text: notificationsAllowed == true
-                                  ? 'Alertas habilitados'
-                                  : 'Alertas recomendados',
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _GuideChip(
+                                icon: Icons.notifications_active_outlined,
+                                text: notificationsAllowed == true
+                                    ? 'Alertas habilitados'
+                                    : 'Alertas recomendados',
+                              ),
                             ),
-                            _GuideChip(
-                              icon: Icons.qr_code_scanner_rounded,
-                              text: 'Pareamento por QR',
+                            const SizedBox(width: 6),
+                            const Expanded(
+                              child: _GuideChip(
+                                icon: Icons.qr_code_scanner_rounded,
+                                text: 'Pareamento por QR',
+                              ),
                             ),
                           ],
                         ),
@@ -279,7 +303,7 @@ class _AccessGuideScreenState extends State<AccessGuideScreen> {
                   FilledButton.icon(
                     onPressed: _continue,
                     icon: const Icon(Icons.arrow_forward_rounded),
-                    label: const Text('Continuar para o app'),
+                    label: Text(widget.manualReview ? 'Voltar' : 'Continuar para o app'),
                   ),
                   const SizedBox(height: 8),
                   TextButton.icon(
@@ -304,17 +328,31 @@ class _GuideChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
       decoration: BoxDecoration(
         color: scheme.surface.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: scheme.primary),
-          const SizedBox(width: 6),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Icon(icon, size: 14, color: scheme.primary),
+          const SizedBox(width: 4),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                text,
+                maxLines: 1,
+                softWrap: false,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

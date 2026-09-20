@@ -209,83 +209,227 @@ class _AlertsClipsScreenState extends State<AlertsClipsScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = _profile;
-    if (profile == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alertas e clipes'),
-        actions: [IconButton(onPressed: _save, tooltip: 'Salvar', icon: const Icon(Icons.save_outlined))],
+    if (profile == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final outputAndClipWidgets = <Widget>[
+      const _Header(
+        title: 'Como avisar',
+        subtitle: 'Combine as formas de alerta que fizerem sentido.',
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-        children: [
-          const _Header(title: 'Como avisar', subtitle: 'Combine as formas de alerta que fizerem sentido.'),
-          _SwitchTile(icon: Icons.record_voice_over_outlined, title: 'Voz', value: _outputs.voice, onChanged: (v) => setState(() => _outputs = _outputs.copyWith(voice: v))),
-          _SwitchTile(icon: Icons.volume_up_outlined, title: 'Som da notificação', value: _outputs.sound, onChanged: (v) => setState(() => _outputs = _outputs.copyWith(sound: v))),
-          _SwitchTile(icon: Icons.vibration_rounded, title: 'Vibração', value: _outputs.vibration, onChanged: (v) => setState(() => _outputs = _outputs.copyWith(vibration: v))),
-          _SwitchTile(icon: Icons.notifications_active_outlined, title: 'Notificação Android', value: _outputs.androidNotification, onChanged: (v) => setState(() => _outputs = _outputs.copyWith(androidNotification: v))),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(onPressed: _requestNotifications, icon: const Icon(Icons.security_outlined), label: const Text('Conferir permissão de notificações')),
-          ),
-          const SizedBox(height: 18),
-          const _Header(title: 'Clipes dos eventos', subtitle: 'MP4 H.264 é prioritário no Android; GIF permanece como fallback.'),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      _SwitchTile(
+        icon: Icons.record_voice_over_outlined,
+        title: 'Voz',
+        value: _outputs.voice,
+        onChanged: (value) =>
+            setState(() => _outputs = _outputs.copyWith(voice: value)),
+      ),
+      _SwitchTile(
+        icon: Icons.volume_up_outlined,
+        title: 'Som da notificação',
+        value: _outputs.sound,
+        onChanged: (value) =>
+            setState(() => _outputs = _outputs.copyWith(sound: value)),
+      ),
+      _SwitchTile(
+        icon: Icons.vibration_rounded,
+        title: 'Vibração',
+        value: _outputs.vibration,
+        onChanged: (value) =>
+            setState(() => _outputs = _outputs.copyWith(vibration: value)),
+      ),
+      _SwitchTile(
+        icon: Icons.notifications_active_outlined,
+        title: 'Notificação Android',
+        value: _outputs.androidNotification,
+        onChanged: (value) => setState(
+          () => _outputs = _outputs.copyWith(androidNotification: value),
+        ),
+      ),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: _requestNotifications,
+          icon: const Icon(Icons.security_outlined),
+          label: const Text('Conferir permissão de notificações'),
+        ),
+      ),
+      const SizedBox(height: 14),
+      const _Header(
+        title: 'Clipes dos eventos',
+        subtitle: 'MP4 H.264 é prioritário no Android; GIF permanece como fallback.',
+      ),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(children: [const Expanded(child: Text('Duração do clipe', style: TextStyle(fontWeight: FontWeight.w800))), Text('${_clipDuration.inSeconds}s', style: const TextStyle(fontWeight: FontWeight.w900))]),
-                  Slider(value: _clipDuration.inSeconds.toDouble(), min: 3, max: 20, divisions: 17, onChanged: (v) => setState(() => _clipDuration = Duration(seconds: v.round()))),
-                  SegmentedButton<ClipFormatPreference>(
-                    segments: const [
-                      ButtonSegment(value: ClipFormatPreference.mp4WithGifFallback, icon: Icon(Icons.movie_outlined), label: Text('MP4 + fallback')),
-                      ButtonSegment(value: ClipFormatPreference.gifOnly, icon: Icon(Icons.gif_box_outlined), label: Text('Somente GIF')),
-                    ],
-                    selected: {_clipFormat},
-                    onSelectionChanged: (value) => setState(() => _clipFormat = value.first),
+                  const Expanded(
+                    child: Text(
+                      'Duração do clipe',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  Text(
+                    '${_clipDuration.inSeconds}s',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const _Header(title: 'Frases personalizadas', subtitle: 'Alertas visuais e de voz usam somente Pessoas, Automóveis e Animais. Entrada/saída registra transições; não é um contador.'),
-          _messageField('person', 'Pessoa'),
-          _messageField('vehicle', 'Automóvel'),
-          _messageField('animal', 'Animal'),
-          _messageField('entered', 'Entrada (não é contador)'),
-          _messageField('exited', 'Saída (não é contador)'),
-          _messageField('cameraObstructed', 'Câmera obstruída'),
-          _messageField('cameraMoved', 'Câmera deslocada'),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Expanded(child: Text('Regras específicas por grupo + área', style: TextStyle(fontWeight: FontWeight.w800))),
-              IconButton(onPressed: _addOverride, tooltip: 'Adicionar regra', icon: const Icon(Icons.add_circle_outline_rounded)),
-            ],
-          ),
-          if (_messages.byObjectAndArea.isEmpty)
-            const Text('Nenhuma frase específica. As frases gerais acima serão usadas.')
-          else
-            ..._messages.byObjectAndArea.entries.map(
-              (entry) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.record_voice_over_outlined),
-                title: Text(_overrideTitle(entry.key)),
-                subtitle: Text(entry.value),
-                trailing: IconButton(
-                  onPressed: () => setState(() {
-                    final map = <String, String>{..._messages.byObjectAndArea}..remove(entry.key);
-                    _messages = _messages.copyWith(byObjectAndArea: map);
-                  }),
-                  icon: const Icon(Icons.delete_outline_rounded),
+              Slider(
+                value: _clipDuration.inSeconds.toDouble(),
+                min: 3,
+                max: 20,
+                divisions: 17,
+                onChanged: (value) => setState(
+                  () => _clipDuration = Duration(seconds: value.round()),
                 ),
               ),
+              SegmentedButton<ClipFormatPreference>(
+                segments: const [
+                  ButtonSegment(
+                    value: ClipFormatPreference.mp4WithGifFallback,
+                    icon: Icon(Icons.movie_outlined),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('MP4 + fallback'),
+                    ),
+                  ),
+                  ButtonSegment(
+                    value: ClipFormatPreference.gifOnly,
+                    icon: Icon(Icons.gif_box_outlined),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Somente GIF'),
+                    ),
+                  ),
+                ],
+                selected: {_clipFormat},
+                onSelectionChanged: (value) =>
+                    setState(() => _clipFormat = value.first),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+
+    final messageWidgets = <Widget>[
+      const _Header(
+        title: 'Frases personalizadas',
+        subtitle:
+            'Alertas visuais e de voz usam somente Pessoas, Automóveis e Animais. Entrada/saída registra transições; não é um contador.',
+      ),
+      _messageField('person', 'Pessoa'),
+      _messageField('vehicle', 'Automóvel'),
+      _messageField('animal', 'Animal'),
+      _messageField('entered', 'Entrada (não é contador)'),
+      _messageField('exited', 'Saída (não é contador)'),
+      _messageField('cameraObstructed', 'Câmera obstruída'),
+      _messageField('cameraMoved', 'Câmera deslocada'),
+      const SizedBox(height: 6),
+      Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'Regras específicas por grupo + área',
+              style: TextStyle(fontWeight: FontWeight.w800),
             ),
-          const SizedBox(height: 18),
-          FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_outlined), label: const Text('SALVAR ALTERAÇÕES')),
+          ),
+          IconButton(
+            onPressed: _addOverride,
+            tooltip: 'Adicionar regra',
+            icon: const Icon(Icons.add_circle_outline_rounded),
+          ),
         ],
+      ),
+      if (_messages.byObjectAndArea.isEmpty)
+        const Text('Nenhuma frase específica. As frases gerais acima serão usadas.')
+      else
+        ..._messages.byObjectAndArea.entries.map(
+          (entry) => ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.record_voice_over_outlined),
+            title: Text(_overrideTitle(entry.key)),
+            subtitle: Text(entry.value),
+            trailing: IconButton(
+              onPressed: () => setState(() {
+                final map = <String, String>{..._messages.byObjectAndArea}
+                  ..remove(entry.key);
+                _messages = _messages.copyWith(byObjectAndArea: map);
+              }),
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ),
+        ),
+    ];
+
+    Widget saveButton() => FilledButton.icon(
+          onPressed: _save,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('SALVAR ALTERAÇÕES'),
+        );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Alertas e clipes'),
+        actions: [
+          IconButton(
+            onPressed: _save,
+            tooltip: 'Salvar',
+            icon: const Icon(Icons.save_outlined),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 840;
+            if (wide) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1180),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(18, 12, 9, 24),
+                          children: outputAndClipWidgets,
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(9, 12, 18, 24),
+                          children: [
+                            ...messageWidgets,
+                            const SizedBox(height: 14),
+                            saveButton(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+              children: [
+                ...outputAndClipWidgets,
+                const SizedBox(height: 18),
+                ...messageWidgets,
+                const SizedBox(height: 18),
+                saveButton(),
+                const SizedBox(height: 8),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

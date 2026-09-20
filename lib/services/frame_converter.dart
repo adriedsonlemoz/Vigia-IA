@@ -51,23 +51,39 @@ class CameraFrameData {
 }
 
 class FrameConverter {
-  static Future<RgbFrame> fromCamera(CameraFrameData data) async {
+  static Future<RgbFrame> fromCamera(
+    CameraFrameData data, {
+    DateTime? capturedAt,
+  }) async {
+    final captured = capturedAt ?? DateTime.now();
+    final watch = Stopwatch()..start();
     final result = await compute(_convertCameraFrame, data.toMap());
+    watch.stop();
     return RgbFrame(
       width: result['width']! as int,
       height: result['height']! as int,
       rgbBytes: result['bytes']! as Uint8List,
-      capturedAt: DateTime.now(),
+      capturedAt: captured,
+      sourceConversionMs: watch.elapsedMicroseconds / 1000.0,
     );
   }
 
-  static Future<RgbFrame> fromEncoded(Uint8List bytes) async {
+  static Future<RgbFrame> fromEncoded(
+    Uint8List bytes, {
+    DateTime? capturedAt,
+    double? sourceTransportMs,
+  }) async {
+    final captured = capturedAt ?? DateTime.now();
+    final watch = Stopwatch()..start();
     final result = await compute(_convertEncodedFrame, bytes);
+    watch.stop();
     return RgbFrame(
       width: result['width']! as int,
       height: result['height']! as int,
       rgbBytes: result['bytes']! as Uint8List,
-      capturedAt: DateTime.now(),
+      capturedAt: captured,
+      sourceConversionMs: watch.elapsedMicroseconds / 1000.0,
+      sourceTransportMs: sourceTransportMs,
     );
   }
 }

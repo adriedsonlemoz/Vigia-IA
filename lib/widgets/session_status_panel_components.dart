@@ -1,9 +1,10 @@
 part of 'session_status_panel.dart';
 
 class _VideoSummaryCard extends StatelessWidget {
-  const _VideoSummaryCard({required this.data});
+  const _VideoSummaryCard({required this.data, this.onTap});
 
   final SessionStatusData data;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +14,7 @@ class _VideoSummaryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
+        onTap: onTap ?? () {
           final size = MediaQuery.sizeOf(context);
           if (size.width >= 840) {
             showDialog<void>(

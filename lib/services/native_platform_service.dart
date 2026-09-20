@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 
@@ -127,6 +128,64 @@ class NativePlatformService {
     try {
       await _channel.invokeMethod<bool>('openAppSettings');
     } catch (_) {}
+  }
+
+  Future<bool> onboardingCompleted() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('onboardingCompleted') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> markOnboardingCompleted() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      return await _channel.invokeMethod<bool>('markOnboardingCompleted') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> saveBytesToDownloads({
+    required String fileName,
+    required String mimeType,
+    required Uint8List bytes,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _channel.invokeMethod<String>(
+        'saveBytesToDownloads',
+        <String, Object?>{
+          'fileName': fileName,
+          'mimeType': mimeType,
+          'bytes': bytes,
+        },
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> saveBytesWithPicker({
+    required String fileName,
+    required String mimeType,
+    required Uint8List bytes,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _channel.invokeMethod<String>(
+        'saveBytesWithPicker',
+        <String, Object?>{
+          'fileName': fileName,
+          'mimeType': mimeType,
+          'bytes': bytes,
+        },
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
 

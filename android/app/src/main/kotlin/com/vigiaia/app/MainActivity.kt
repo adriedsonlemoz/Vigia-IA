@@ -1,12 +1,14 @@
 package com.vigiaia.app
 
 import android.Manifest
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
@@ -22,6 +24,7 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Debug
+import android.os.Environment
 import android.os.PowerManager
 import android.os.SystemClock
 import android.os.StatFs
@@ -29,6 +32,7 @@ import android.os.VibratorManager
 import android.os.Vibrator
 import android.os.VibrationEffect
 import android.provider.Settings
+import android.provider.MediaStore
 import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -64,6 +68,9 @@ class MainActivity : FlutterActivity() {
     private var customAlertPlayer: MediaPlayer? = null
     private var pendingAudioImportResult: MethodChannel.Result? = null
     private var pendingAudioImportSlot: String? = null
+    private var pendingDocumentSaveResult: MethodChannel.Result? = null
+    private var pendingDocumentBytes: ByteArray? = null
+    private var pendingDocumentMimeType: String? = null
     private var pendingRecordingPermissionResult: MethodChannel.Result? = null
     private var pendingRecordingPermissionSlot: String? = null
     private var audioRecorder: MediaRecorder? = null
@@ -78,6 +85,7 @@ class MainActivity : FlutterActivity() {
     private val localNetworkPermissionRequestCode = 4414
     private val audioImportRequestCode = 4415
     private val recordAudioPermissionRequestCode = 4416
+    private val documentSaveRequestCode = 4417
 
     override fun onCreate(savedInstanceState: Bundle?) {
         resumeMonitorRequested = intent?.getBooleanExtra("resume_monitor", false) == true
@@ -224,6 +232,24 @@ class MainActivity : FlutterActivity() {
             "openAppSettings" -> {
                 openAppSettings()
                 result.success(true)
+            }
+            "onboardingCompleted" -> result.success(onboardingCompleted())
+            "markOnboardingCompleted" -> result.success(markOnboardingCompleted())
+            "saveBytesToDownloads" -> {
+                val fileName = call.argument<String>("fileName") ?: "vigiaia_relatorio.bin"
+                val mimeType = call.argument<String>("mimeType") ?: "application/octet-stream"
+                val bytes = call.argument<ByteArray>("bytes") ?: byteArrayOf()
+                try {
+                    result.success(saveBytesToDownloads(fileName, mimeType, bytes))
+                } catch (error: Throwable) {
+                    result.error("save_downloads", error.message, null)
+                }
+            }
+            "saveBytesWithPicker" -> {
+                val fileName = call.argument<String>("fileName") ?: "vigiaia_relatorio.bin"
+                val mimeType = call.argument<String>("mimeType") ?: "application/octet-stream"
+                val bytes = call.argument<ByteArray>("bytes") ?: byteArrayOf()
+                beginDocumentSave(fileName, mimeType, bytes, result)
             }
             "requestNotificationPermission" -> requestNotificationPermission(result)
             "notificationsAllowed" -> result.success(notificationsAllowed())
@@ -456,17 +482,131 @@ class MainActivity : FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != audioImportRequestCode) return
-        val pending = pendingAudioImportResult
-        val slot = pendingAudioImportSlot
-        pendingAudioImportResult = null
-        pendingAudioImportSlot = null
-        if (pending == null) return
-        if (resultCode != android.app.Activity.RESULT_OK || data?.data == null || slot.isNullOrBlank()) {
-            pending.success(false)
+        if (requestCode == audioImportRequestCode) {
+            val pending = pendingAudioImportResult
+            val slot = pendingAudioImportSlot
+            pendingAudioImportResult = null
+            pendingAudioImportSlot = null
+            if (pending == null) return
+            if (resultCode != Activity.RESULT_OK || data?.data == null || slot.isNullOrBlank()) {
+                pending.success(false)
+                return
+            }
+            pending.success(copyAudioOverride(slot, data.data!!))
             return
         }
-        pending.success(copyAudioOverride(slot, data.data!!))
+        if (requestCode == documentSaveRequestCode) {
+            val pending = pendingDocumentSaveResult
+            val bytes = pendingDocumentBytes
+            pendingDocumentSaveResult = null
+            pendingDocumentBytes = null
+            pendingDocumentMimeType = null
+            if (pending == null) return
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null || bytes == null) {
+                pending.success(null)
+                return
+            }
+            try {
+                contentResolver.openOutputStream(uri, "w")?.use { output ->
+                    output.write(bytes)
+                    output.flush()
+                } ?: error("Não foi possível abrir o destino escolhido.")
+                pending.success(uri.toString())
+            } catch (error: Throwable) {
+                pending.error("save_document", error.message, null)
+            }
+        }
+    }
+
+    private fun onboardingMarkerFile(): File = File(noBackupFilesDir, "onboarding_completed_v1")
+
+    private fun onboardingCompleted(): Boolean {
+        if (onboardingMarkerFile().exists()) return true
+        return try {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            val upgradedExistingInstall = info.lastUpdateTime > info.firstInstallTime + 1000L
+            if (upgradedExistingInstall) {
+                markOnboardingCompleted()
+                true
+            } else {
+                false
+            }
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun markOnboardingCompleted(): Boolean = try {
+        val marker = onboardingMarkerFile()
+        marker.parentFile?.mkdirs()
+        marker.writeText("completed")
+        marker.exists()
+    } catch (_: Throwable) {
+        false
+    }
+
+    private fun saveBytesToDownloads(
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray,
+    ): String {
+        require(bytes.isNotEmpty()) { "Arquivo vazio." }
+        val resolver = contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.MIME_TYPE, mimeType)
+            put(
+                MediaStore.Downloads.RELATIVE_PATH,
+                Environment.DIRECTORY_DOWNLOADS + File.separator + "Vigia IA",
+            )
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: error("Android não criou o arquivo em Downloads.")
+        try {
+            resolver.openOutputStream(uri, "w")?.use { output ->
+                output.write(bytes)
+                output.flush()
+            } ?: error("Não foi possível gravar em Downloads.")
+            values.clear()
+            values.put(MediaStore.Downloads.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            return "Downloads/Vigia IA/$fileName"
+        } catch (error: Throwable) {
+            resolver.delete(uri, null, null)
+            throw error
+        }
+    }
+
+    private fun beginDocumentSave(
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray,
+        result: MethodChannel.Result,
+    ) {
+        if (pendingDocumentSaveResult != null || bytes.isEmpty()) {
+            result.success(null)
+            return
+        }
+        pendingDocumentSaveResult = result
+        pendingDocumentBytes = bytes
+        pendingDocumentMimeType = mimeType
+        try {
+            startActivityForResult(
+                Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = mimeType
+                    putExtra(Intent.EXTRA_TITLE, fileName)
+                },
+                documentSaveRequestCode,
+            )
+        } catch (error: Throwable) {
+            pendingDocumentSaveResult = null
+            pendingDocumentBytes = null
+            pendingDocumentMimeType = null
+            result.error("save_document", error.message, null)
+        }
     }
 
     private fun notificationsAllowed(): Boolean {
@@ -937,6 +1077,10 @@ class MainActivity : FlutterActivity() {
         lastCpuProcessMs = processNow
 
         return mapOf(
+            "deviceManufacturer" to Build.MANUFACTURER,
+            "deviceModel" to Build.MODEL,
+            "androidVersion" to Build.VERSION.RELEASE,
+            "androidSdk" to Build.VERSION.SDK_INT,
             "batteryPercent" to battery,
             "batteryCharging" to batteryCharging,
             "batteryPowerSource" to powerSource,

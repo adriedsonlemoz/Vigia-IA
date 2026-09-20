@@ -121,23 +121,76 @@ class SessionHealthAnalyzer {
       );
     }
 
-    final inference = data.inferenceMs;
-    if (inference != null && inference >= expectedInterval * 2.5) {
+    final sourceConversion = data.sourceConversionMs;
+    if (sourceConversion != null && sourceConversion >= expectedInterval * 2.5) {
       issues.add(
         SessionHealthIssue(
-          code: 'inference_critical',
-          title: 'IA não acompanha a entrada',
-          detail: 'A inferência leva ${inference.toStringAsFixed(0)} ms, muito acima do intervalo de $expectedInterval ms.',
+          code: 'source_conversion_critical',
+          title: 'Conversão da imagem muito lenta',
+          detail: 'A preparação RGB da fonte leva ${sourceConversion.toStringAsFixed(0)} ms antes de a IA receber o frame.',
+          state: SessionHealthState.unstable,
+          bottleneck: SessionBottleneck.capture,
+        ),
+      );
+    } else if (sourceConversion != null &&
+        sourceConversion >= expectedInterval * 1.25) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'source_conversion_high',
+          title: 'Conversão da imagem lenta',
+          detail: 'A preparação RGB da fonte leva ${sourceConversion.toStringAsFixed(0)} ms.',
+          state: SessionHealthState.attention,
+          bottleneck: SessionBottleneck.capture,
+        ),
+      );
+    }
+
+    final liteRt = data.liteRtMs;
+    if (liteRt != null && liteRt >= expectedInterval * 2.5) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'litert_critical',
+          title: 'Modelo de IA muito lento',
+          detail: 'O LiteRT/TFLite puro leva ${liteRt.toStringAsFixed(0)} ms, muito acima do intervalo de $expectedInterval ms.',
           state: SessionHealthState.unstable,
           bottleneck: SessionBottleneck.ai,
         ),
       );
-    } else if (inference != null && inference >= expectedInterval * 1.25) {
+    } else if (liteRt != null && liteRt >= expectedInterval * 1.25) {
       issues.add(
         SessionHealthIssue(
-          code: 'inference_high',
-          title: 'Inferência lenta',
-          detail: 'A inferência leva ${inference.toStringAsFixed(0)} ms para um intervalo de $expectedInterval ms.',
+          code: 'litert_high',
+          title: 'Modelo de IA lento',
+          detail: 'O LiteRT/TFLite puro leva ${liteRt.toStringAsFixed(0)} ms para um intervalo de $expectedInterval ms.',
+          state: SessionHealthState.attention,
+          bottleneck: SessionBottleneck.ai,
+        ),
+      );
+    }
+
+    final detectorPreparation = <double?>[
+      data.isolateTransferAndQueueMs,
+      data.workerMaterializeMs,
+      data.detectorImageBuildMs,
+      data.resizeLetterboxMs,
+      data.tensorBuildMs,
+    ].whereType<double>().fold<double>(0, (sum, value) => sum + value);
+    if (detectorPreparation >= expectedInterval * 2.5) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'detector_preparation_critical',
+          title: 'Preparação da IA muito lenta',
+          detail: 'Transferência, resize e montagem do tensor consomem ${detectorPreparation.toStringAsFixed(0)} ms antes/depois do modelo.',
+          state: SessionHealthState.unstable,
+          bottleneck: SessionBottleneck.ai,
+        ),
+      );
+    } else if (detectorPreparation >= expectedInterval * 1.25) {
+      issues.add(
+        SessionHealthIssue(
+          code: 'detector_preparation_high',
+          title: 'Preparação da IA lenta',
+          detail: 'Transferência, resize e montagem do tensor consomem ${detectorPreparation.toStringAsFixed(0)} ms.',
           state: SessionHealthState.attention,
           bottleneck: SessionBottleneck.ai,
         ),

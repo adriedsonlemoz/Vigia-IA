@@ -206,9 +206,13 @@ class _EventsScreenState extends State<EventsScreen> {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 7,
-              runSpacing: 7,
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 7,
+              mainAxisSpacing: 7,
+              childAspectRatio: 2.8,
               children: [
                 _filterChip('Tudo', _HistoryGroupFilter.all),
                 _filterChip('Pessoas', _HistoryGroupFilter.people),
@@ -346,10 +350,9 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Widget _filterChip(String label, _HistoryGroupFilter filter) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 7),
+    return SizedBox.expand(
       child: ChoiceChip(
-        label: Text(label),
+        label: Center(child: Text(label, maxLines: 1)),
         selected: _groupFilter == filter,
         onSelected: (_) => setState(() => _groupFilter = filter),
       ),

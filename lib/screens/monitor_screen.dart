@@ -704,27 +704,56 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
+  Future<void> _showRightSidePanel({
+    required WidgetBuilder builder,
+    double maxWidth = 560,
+  }) async {
+    final size = MediaQuery.sizeOf(context);
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Fechar painel',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Align(
+        alignment: Alignment.centerRight,
+        child: SafeArea(
+          child: Material(
+            color: Theme.of(dialogContext).colorScheme.surface,
+            elevation: 12,
+            clipBehavior: Clip.antiAlias,
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(24),
+            ),
+            child: SizedBox(
+              width: size.width < maxWidth ? size.width : maxWidth,
+              height: double.infinity,
+              child: builder(dialogContext),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final offset = Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        return SlideTransition(position: offset, child: child);
+      },
+    );
+  }
+
   Future<void> _showSessionStatus() async {
     final size = MediaQuery.sizeOf(context);
     final largeSurface = size.width >= 840;
     if (largeSurface) {
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => Dialog(
-          insetPadding: const EdgeInsets.all(24),
-          clipBehavior: Clip.antiAlias,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 1040,
-              maxHeight: size.height * 0.88,
-            ),
-            child: ListenableBuilder(
-              listenable: _controller,
-              builder: (context, _) => SessionStatusPanel(
-                data: _controller.sessionStatus,
-                showCloseButton: true,
-              ),
-            ),
+      await _showRightSidePanel(
+        maxWidth: size.width >= 1200 ? 600 : 520,
+        builder: (dialogContext) => ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => SessionStatusPanel(
+            data: _controller.sessionStatus,
+            showCloseButton: true,
           ),
         ),
       );

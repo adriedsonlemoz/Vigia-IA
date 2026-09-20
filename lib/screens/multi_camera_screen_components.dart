@@ -68,33 +68,59 @@ class _CentralHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onScanPhone,
-                icon: const Icon(Icons.qr_code_scanner_rounded),
-                label: const Text('ESCANEAR QR DO CELULAR'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onAddPhone,
-                    icon: const Icon(Icons.edit_rounded),
-                    label: const Text('Adicionar manual'),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wideActions = constraints.maxWidth >= 720;
+                final scan = FilledButton.icon(
+                  onPressed: onScanPhone,
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Escanear QR'),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onAddRtsp,
-                    icon: const Icon(Icons.router_outlined),
-                    label: const Text('Adicionar RTSP'),
+                );
+                final manual = OutlinedButton.icon(
+                  onPressed: onAddPhone,
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Adicionar manual'),
                   ),
-                ),
-              ],
+                );
+                final rtsp = OutlinedButton.icon(
+                  onPressed: onAddRtsp,
+                  icon: const Icon(Icons.router_outlined),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Adicionar RTSP'),
+                  ),
+                );
+                if (wideActions) {
+                  return Row(
+                    children: [
+                      Expanded(child: scan),
+                      const SizedBox(width: 8),
+                      Expanded(child: manual),
+                      const SizedBox(width: 8),
+                      Expanded(child: rtsp),
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    scan,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: manual),
+                        const SizedBox(width: 8),
+                        Expanded(child: rtsp),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),

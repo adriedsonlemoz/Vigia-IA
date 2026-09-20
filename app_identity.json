@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.63 corrige 19 avisos unnecessary_this detectados pelo flutter analyze no MonitorController apos a refatoracao, sem alterar o comportamento funcional.",
-  "version": "1.0.63",
-  "build": 63
+  "notes": "A 1.0.64 adiciona telemetria detalhada e exportavel do pipeline da IA, corrige o onboarding para primeira instalacao, move diagnosticos para Downloads/seletor e aprimora paisagem/tablet.",
+  "version": "1.0.64",
+  "build": 64
 }

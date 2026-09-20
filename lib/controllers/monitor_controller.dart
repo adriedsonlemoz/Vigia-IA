@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
-
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/audio_slot.dart';
@@ -44,6 +42,7 @@ import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
 import '../services/object_tracker.dart';
 import '../services/partial_person_detection_service.dart';
+import '../services/performance_telemetry_service.dart';
 import '../services/smart_alert_rule_engine.dart';
 import '../services/temporal_detection_filter.dart';
 import '../services/shared_local_camera_service.dart';
@@ -52,11 +51,9 @@ import '../services/speech_service.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/rtsp_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
-
 part 'monitor_controller_session_support.dart';
 part 'monitor_controller_event_support.dart';
 part 'monitor_controller_state_support.dart';
-
 class MonitorController extends ChangeNotifier {
   MonitorController({
     required this.sourceConfig,
@@ -81,16 +78,16 @@ class MonitorController extends ChangeNotifier {
     _lanStream.addListener(_onLanStreamChanged);
     _bikeMode.addListener(_onBikeModeChanged);
   }
-
   MonitorSettings _settings;
   VideoSourceConfig sourceConfig;
-
   ObjectDetectionService _detector = ObjectDetectionService();
   final SpeechService _speech = SpeechService();
   final MotionDetectionService _motion = MotionDetectionService();
   final TemporalDetectionFilter _detectionFilter = TemporalDetectionFilter();
   final CameraIntegrityService _cameraIntegrity = CameraIntegrityService();
   final NativePlatformService _native = NativePlatformService.instance;
+  final PerformanceTelemetryService _performanceTelemetry =
+      PerformanceTelemetryService.instance;
   final RuntimeHealthService _health = RuntimeHealthService.instance;
   final ErrorLogService _logs = ErrorLogService.instance;
   final EventHistoryService _eventHistory = EventHistoryService.instance;
@@ -114,7 +111,6 @@ class MonitorController extends ChangeNotifier {
   bool _announceEntryExit;
   bool _scheduleActive = true;
   double? _previewAspectRatio;
-
   VideoSource? _source;
   StreamSubscription<RgbFrame>? _frameSubscription;
   StreamSubscription<VideoSourceStatus>? _statusSubscription;
@@ -157,6 +153,14 @@ class MonitorController extends ChangeNotifier {
   int? _lastAnalysisHeight;
   int? _lastFrameDelayMs;
   double? _lastInferenceMs;
+  double? _lastSourceConversionMs;
+  double? _lastIsolateTransferAndQueueMs;
+  double? _lastWorkerMaterializeMs;
+  double? _lastDetectorImageBuildMs;
+  double? _lastResizeLetterboxMs;
+  double? _lastTensorBuildMs;
+  double? _lastLiteRtMs;
+  double? _lastDetectorPostprocessMs;
   double? _lastPreprocessMs;
   double? _lastPrimaryInferenceMs;
   double? _lastAuxiliaryInferenceMs;
@@ -185,7 +189,6 @@ class MonitorController extends ChangeNotifier {
   DateTime? _bikeApproachSimulationStartedAt;
   bool _bikeLowBatteryAlerted = false;
   bool _bikePolicyChangeInProgress = false;
-
   List<Detection> get detections => _detections;
   List<TrackedDetection> get trackedDetections => _trackedDetections;
   VideoSourceStatus get sourceStatus => _sourceStatus;
@@ -235,13 +238,9 @@ class MonitorController extends ChangeNotifier {
   }
   int get remotePhoneWarningCount => remotePhoneStatus?.warnings().length ?? 0;
   DeviceTelemetrySnapshot? get localDeviceTelemetry => _localDeviceTelemetry;
-
   SessionStatusData get sessionStatus => _buildSessionStatus();
-
   SessionStatusData _buildSessionStatus() => _buildSessionStatusImpl();
-
   void _sampleSessionHealth() => _sampleSessionHealthImpl();
-
   Duration get effectiveAnalysisInterval =>
       _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
 
@@ -730,6 +729,7 @@ class MonitorController extends ChangeNotifier {
     _lastFrameReceivedAt = receivedAt;
     _lastFrameWidth = frame.width;
     _lastFrameHeight = frame.height;
+    _lastSourceConversionMs = frame.sourceConversionMs;
     final rawDelay = receivedAt.difference(frame.capturedAt).inMilliseconds;
     _lastFrameDelayMs = rawDelay < 0 ? 0 : rawDelay;
     _framesReceived++;
@@ -844,6 +844,13 @@ class MonitorController extends ChangeNotifier {
       _lastAnalyzedFpsSample = analysisStartedAt;
       _lastPreprocessMs = processingWatch.elapsedMicroseconds / 1000.0;
       _lastPrimaryInferenceMs = null;
+      _lastIsolateTransferAndQueueMs = null;
+      _lastWorkerMaterializeMs = null;
+      _lastDetectorImageBuildMs = null;
+      _lastResizeLetterboxMs = null;
+      _lastTensorBuildMs = null;
+      _lastLiteRtMs = null;
+      _lastDetectorPostprocessMs = null;
       _lastAuxiliaryInferenceMs = 0;
       _lastPostprocessMs = null;
       _lastDetectorRuns = 0;
@@ -852,7 +859,6 @@ class MonitorController extends ChangeNotifier {
       inferenceWatch.start();
       final candidateThreshold =
           DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
-      final primaryWatch = Stopwatch()..start();
       detectorRuns = 1;
       final bikeApproachDetectionActive =
           _bikeConfig.enabled && _bikeConfig.approachAlertsEnabled;
@@ -862,14 +868,22 @@ class MonitorController extends ChangeNotifier {
       final primaryMaxResults = bikeApproachDetectionActive
           ? math.max(_settings.maxResults, 8).toInt()
           : _settings.maxResults;
-      final primaryDetected = await _detector.detect(
+      final primaryRun = await _detector.detectMeasured(
         analysisFrame,
         threshold: candidateThreshold,
         maxResults: primaryMaxResults,
         allowedLabels: primaryAllowedLabels,
       );
-      primaryWatch.stop();
-      _lastPrimaryInferenceMs = primaryWatch.elapsedMicroseconds / 1000.0;
+      final primaryDetected = primaryRun.detections;
+      final detectorTimings = primaryRun.timings;
+      _lastPrimaryInferenceMs = detectorTimings.roundTripMs;
+      _lastIsolateTransferAndQueueMs = detectorTimings.isolateTransferAndQueueMs;
+      _lastWorkerMaterializeMs = detectorTimings.workerMaterializeMs;
+      _lastDetectorImageBuildMs = detectorTimings.imageBuildMs;
+      _lastResizeLetterboxMs = detectorTimings.resizeLetterboxMs;
+      _lastTensorBuildMs = detectorTimings.tensorBuildMs;
+      _lastLiteRtMs = detectorTimings.liteRtMs;
+      _lastDetectorPostprocessMs = detectorTimings.detectorPostprocessMs;
       if (_shouldDiscardFrameResult(session)) return;
 
       var candidates = ObjectFilterPolicy.apply(primaryDetected, _alertLabels);
@@ -1173,6 +1187,55 @@ class MonitorController extends ChangeNotifier {
         _lastTotalProcessingMs = processingWatch.elapsedMicroseconds / 1000.0;
         final endToEndUs = DateTime.now().difference(frame.capturedAt).inMicroseconds;
         _lastEndToEndMs = endToEndUs <= 0 ? 0 : endToEndUs / 1000.0;
+        final remoteSource = _source;
+        final networkLatency = remoteSource is RemotePhoneCameraSource
+            ? (remoteSource.frameNetworkLatencyMs ?? remotePhoneStatus?.networkLatencyMs)
+            : null;
+        _performanceTelemetry.record(
+          PerformanceFrameSample(
+            timestamp: DateTime.now(),
+            imageSource: _sourceDisplayName,
+            detectorDiagnostics: _detector.diagnostics ?? 'detector sem diagnóstico',
+            frameWidth: frame.width,
+            frameHeight: frame.height,
+            analysisWidth: analysisFrame.width,
+            analysisHeight: analysisFrame.height,
+            receivedFps: _receivedFps,
+            analyzedFps: _fps,
+            framesReceived: _framesReceived,
+            framesAnalyzed: _framesAnalyzed,
+            framesDroppedProcessing: _framesDroppedProcessing,
+            framesSkippedOptimization: _framesSkippedOptimization,
+            detectorRuns: detectorRuns,
+            auxiliaryInferenceRuns: auxiliaryInferenceRuns,
+            expectedFrameIntervalMs: effectiveAnalysisInterval.inMilliseconds,
+            deviceManufacturer: _localDeviceTelemetry?.deviceManufacturer,
+            deviceModel: _localDeviceTelemetry?.deviceModel,
+            androidVersion: _localDeviceTelemetry?.androidVersion,
+            androidSdk: _localDeviceTelemetry?.androidSdk,
+            sourceConversionMs: frame.sourceConversionMs,
+            sourceTransportMs: frame.sourceTransportMs,
+            controllerPreprocessMs: _lastPreprocessMs,
+            isolateTransferAndQueueMs: _lastIsolateTransferAndQueueMs,
+            workerMaterializeMs: _lastWorkerMaterializeMs,
+            detectorImageBuildMs: _lastDetectorImageBuildMs,
+            resizeLetterboxMs: _lastResizeLetterboxMs,
+            tensorBuildMs: _lastTensorBuildMs,
+            liteRtMs: _lastLiteRtMs,
+            detectorPostprocessMs: _lastDetectorPostprocessMs,
+            primaryRoundTripMs: _lastPrimaryInferenceMs,
+            auxiliaryInferenceMs: _lastAuxiliaryInferenceMs,
+            appPostprocessMs: _lastPostprocessMs,
+            totalProcessingMs: _lastTotalProcessingMs,
+            endToEndMs: _lastEndToEndMs,
+            frameDelayMs: _lastFrameDelayMs,
+            networkLatencyMs: networkLatency,
+            cpuPercent: _localDeviceTelemetry?.appCpuPercent,
+            ramBytes: _localDeviceTelemetry?.appMemoryUsedBytes,
+            batteryTemperatureC: _localDeviceTelemetry?.batteryTemperatureC,
+            batteryPercent: _localDeviceTelemetry?.batteryPercent,
+          ),
+        );
       }
       _processing = false;
       if (!processingDone.isCompleted) processingDone.complete();

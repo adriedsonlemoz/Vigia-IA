@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.63+63$' pubspec.yaml || fail 'Versao esperada 1.0.63+63 nao encontrada.'
+grep -q '^version: 1\.0\.64+64$' pubspec.yaml || fail 'Versao esperada 1.0.64+64 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.63';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.63.'
-grep -q 'static const int build = 63;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 63.'
-grep -q "version: '1.0.63'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.63.'
+grep -q "static const String version = '1.0.64';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.64.'
+grep -q 'static const int build = 64;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 64.'
+grep -q "version: '1.0.64'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.64.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.63+63$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.63+63.'
+grep -q '^version: 1.0.64+64$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.64+64.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.63"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.63.'
-grep -q '"build": 63' app_identity.json \
-  || fail 'app_identity.json nao esta no build 63.'
+grep -q '"version": "1.0.64"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.64.'
+grep -q '"build": 64' app_identity.json \
+  || fail 'app_identity.json nao esta no build 64.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.63+63' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.63+63.'
+grep -q 'Vigia IA 1.0.64+64' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.64+64.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1422,5 +1422,33 @@ grep -q 'run: bash ./tool/verify_project.sh' .github/workflows/android-apk.yml |
 if grep -qE 'run: \./tool/(bootstrap_android|fetch_model|verify_project)\.sh' .github/workflows/android-apk.yml; then
   fail 'Workflow voltou a executar script shell diretamente sem bash.'
 fi
+
+
+
+# Telemetria/exportacao/onboarding/layout adaptativo - 1.0.64
+grep -q '^## 1.0.64+64' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.64.'
+grep -q 'Evolução 1.0.64' README.md || fail 'README nao documenta 1.0.64.'
+grep -q 'Evolução 1.0.64' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.64.'
+[[ -f lib/services/performance_telemetry_service.dart ]] || fail 'Servico de telemetria de desempenho nao encontrado.'
+[[ -f lib/services/export_preferences_service.dart ]] || fail 'Preferencia de destino de exportacao nao encontrada.'
+[[ -f lib/widgets/export_destination_dialog.dart ]] || fail 'Resolucao do destino de exportacao nao encontrada.'
+[[ -f test/performance_telemetry_service_test.dart ]] || fail 'Testes da telemetria de desempenho nao encontrados.'
+grep -q 'detectMeasured' lib/services/object_detection_service.dart || fail 'Detector perdeu API de medicao granular.'
+grep -q 'liteRtMs' lib/services/object_detection_worker.dart || fail 'Worker nao mede LiteRT puro.'
+grep -q 'sourceConversionMs' lib/services/frame_converter.dart || fail 'Conversao da fonte nao esta instrumentada.'
+grep -q 'PerformanceTelemetryService.instance' lib/controllers/monitor_controller.dart || fail 'Monitor nao registra telemetria de desempenho.'
+grep -q 'Diagnóstico 30 s' lib/screens/error_center_screen_components.dart || fail 'Diagnostico profundo de 30 s nao esta exposto.'
+grep -q 'Diagnóstico 60 s' lib/screens/error_center_screen_components.dart || fail 'Diagnostico profundo de 60 s nao esta exposto.'
+grep -q "'resumo.txt'" lib/services/performance_telemetry_service.dart || fail 'ZIP de desempenho nao contem resumo.txt.'
+grep -q "'telemetria.json'" lib/services/performance_telemetry_service.dart || fail 'ZIP de desempenho nao contem telemetria.json.'
+grep -q "'telemetria.csv'" lib/services/performance_telemetry_service.dart || fail 'ZIP de desempenho nao contem telemetria.csv.'
+grep -q 'MediaStore.Downloads' tool/android/MainActivity.kt || fail 'Exportacao para Downloads via MediaStore nao encontrada.'
+grep -q 'Intent.ACTION_CREATE_DOCUMENT' tool/android/MainActivity.kt || fail 'Seletor nativo de destino nao encontrado.'
+grep -q 'noBackupFilesDir' tool/android/MainActivity.kt || fail 'Marcador de onboarding fora de backup nao encontrado.'
+grep -q 'home: const _StartupGate()' lib/app/app.dart || fail 'App voltou a abrir AccessGuide como home permanente.'
+grep -q 'manualReview: true' lib/screens/settings_screen.dart || fail 'Revisao manual de permissoes nao esta acessivel nas Configuracoes.'
+grep -q 'Local padrão de exportação' lib/screens/settings_screen.dart || fail 'Preferencia de destino nao esta nas Configuracoes.'
+grep -q 'onTap: onTap ??' lib/widgets/session_status_panel_components.dart || fail 'Detalhes do Status voltaram a depender apenas de bottom sheet empilhado.'
+grep -q 'showGeneralDialog<void>' lib/screens/monitor_screen.dart || fail 'Painel lateral do Status em paisagem nao encontrado.'
 
 echo 'Verificacao preventiva concluida com sucesso.'

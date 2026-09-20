@@ -709,17 +709,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ButtonSegment(
                 value: VideoSourceType.localCamera,
                 icon: Icon(Icons.phone_android_rounded),
-                label: Text('Local'),
+                label: FittedBox(fit: BoxFit.scaleDown, child: Text('Local')),
               ),
               ButtonSegment(
                 value: VideoSourceType.rtsp,
                 icon: Icon(Icons.router_outlined),
-                label: Text('RTSP'),
+                label: FittedBox(fit: BoxFit.scaleDown, child: Text('RTSP')),
               ),
               ButtonSegment(
                 value: VideoSourceType.remotePhone,
                 icon: Icon(Icons.phone_android_rounded),
-                label: Text('Remoto'),
+                label: FittedBox(fit: BoxFit.scaleDown, child: Text('Remoto')),
               ),
             ],
             selected: {_sourceType},

@@ -12,6 +12,7 @@ import 'detector_image_transform.dart';
 import 'label_translator.dart';
 
 part 'object_detection_worker.dart';
+part 'object_detection_metrics.dart';
 
 class ObjectDetectionService {
   static const _primaryModelAsset = 'assets/models/efficientdet_lite0.tflite';
@@ -24,8 +25,7 @@ class ObjectDetectionService {
   StreamSubscription<dynamic>? _responseSubscription;
   Completer<void>? _ready;
   Completer<void>? _workerDone;
-  final Map<int, Completer<List<Detection>>> _pending =
-      <int, Completer<List<Detection>>>{};
+  final Map<int, _PendingDetection> _pending = <int, _PendingDetection>{};
   int _nextRequestId = 0;
   bool _disposed = false;
   String? _diagnostics;
@@ -128,16 +128,17 @@ class ObjectDetectionService {
 
     final id = message['id'];
     if (id is! int) return;
-    final completer = _pending.remove(id);
-    if (completer == null || completer.isCompleted) return;
+    final pending = _pending.remove(id);
+    if (pending == null || pending.completer.isCompleted) return;
+    pending.watch.stop();
 
     if (type == 'error') {
-      completer.completeError(StateError('${message['error']}'));
+      pending.completer.completeError(StateError('${message['error']}'));
       return;
     }
 
     if (type != 'result') {
-      completer.completeError(StateError('Resposta desconhecida do detector.'));
+      pending.completer.completeError(StateError('Resposta desconhecida do detector.'));
       return;
     }
 
@@ -164,13 +165,50 @@ class ObjectDetectionService {
           ),
         );
       }
-      completer.complete(List<Detection>.unmodifiable(detections));
+      final rawTimings = message['timings'];
+      final timingsMap = rawTimings is Map<Object?, Object?>
+          ? rawTimings
+          : const <Object?, Object?>{};
+      double timing(String key) => (timingsMap[key] as num?)?.toDouble() ?? 0.0;
+      final workerTotalMs = timing('workerTotalMs');
+      final roundTripMs = pending.watch.elapsedMicroseconds / 1000.0;
+      pending.completer.complete(
+        DetectionRunResult(
+          detections: List<Detection>.unmodifiable(detections),
+          timings: DetectorStageTimings(
+            roundTripMs: roundTripMs,
+            isolateTransferAndQueueMs:
+                math.max(0.0, roundTripMs - workerTotalMs),
+            workerMaterializeMs: timing('workerMaterializeMs'),
+            imageBuildMs: timing('imageBuildMs'),
+            resizeLetterboxMs: timing('resizeLetterboxMs'),
+            tensorBuildMs: timing('tensorBuildMs'),
+            liteRtMs: timing('liteRtMs'),
+            detectorPostprocessMs: timing('detectorPostprocessMs'),
+            workerTotalMs: workerTotalMs,
+          ),
+        ),
+      );
     } catch (error, stackTrace) {
-      completer.completeError(error, stackTrace);
+      pending.completer.completeError(error, stackTrace);
     }
   }
 
   Future<List<Detection>> detect(
+    RgbFrame frame, {
+    required double threshold,
+    required int maxResults,
+    Set<String>? allowedLabels,
+  }) async =>
+      (await detectMeasured(
+        frame,
+        threshold: threshold,
+        maxResults: maxResults,
+        allowedLabels: allowedLabels,
+      ))
+          .detections;
+
+  Future<DetectionRunResult> detectMeasured(
     RgbFrame frame, {
     required double threshold,
     required int maxResults,
@@ -182,8 +220,8 @@ class ObjectDetectionService {
     }
 
     final id = _nextRequestId++;
-    final completer = Completer<List<Detection>>();
-    _pending[id] = completer;
+    final pending = _PendingDetection();
+    _pending[id] = pending;
     final request = <String, Object>{
       'type': 'detect',
       'id': id,
@@ -197,7 +235,7 @@ class ObjectDetectionService {
       request['allowedLabels'] = allowedLabels.toList(growable: false);
     }
     commands.send(request);
-    return completer.future;
+    return pending.completer.future;
   }
 
   Future<void> dispose() async {
@@ -209,9 +247,10 @@ class ObjectDetectionService {
     commands?.send(const <String, Object>{'type': 'dispose'});
     _commands = null;
 
-    for (final completer in _pending.values) {
-      if (!completer.isCompleted) {
-        completer.completeError(StateError('Detector encerrado.'));
+    for (final pending in _pending.values) {
+      pending.watch.stop();
+      if (!pending.completer.isCompleted) {
+        pending.completer.completeError(StateError('Detector encerrado.'));
       }
     }
     _pending.clear();

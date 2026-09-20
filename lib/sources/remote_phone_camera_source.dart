@@ -80,13 +80,17 @@ class RemotePhoneCameraSource implements VideoSource {
       final bytes = await consolidateHttpClientResponseBytes(response);
       _frameNetworkLatencyMs = DateTime.now().difference(startedAt).inMilliseconds;
       _latestJpeg.value = bytes;
+      final decodeWatch = Stopwatch()..start();
       final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
+      decodeWatch.stop();
       if (decoded != null && !_frames.isClosed) {
         _frames.add(RgbFrame(
           width: decoded['width']! as int,
           height: decoded['height']! as int,
           rgbBytes: decoded['bytes']! as Uint8List,
           capturedAt: capturedAt ?? DateTime.now(),
+          sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
+          sourceTransportMs: _frameNetworkLatencyMs?.toDouble(),
         ));
       }
       _hasConnected = true;

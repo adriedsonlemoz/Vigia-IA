@@ -120,9 +120,9 @@ class SharedLocalCameraService extends ChangeNotifier {
 
   Future<void> _onCameraImage(CameraImage image) async {
     if (_converting || _consumers.isEmpty) return;
-    final now = DateTime.now();
-    if (now.difference(_lastConvertedAt) < _minimumInterval) return;
-    _lastConvertedAt = now;
+    final capturedAt = DateTime.now();
+    if (capturedAt.difference(_lastConvertedAt) < _minimumInterval) return;
+    _lastConvertedAt = capturedAt;
     _converting = true;
 
     try {
@@ -151,7 +151,10 @@ class SharedLocalCameraService extends ChangeNotifier {
             )
             .toList(growable: false),
       );
-      final converted = await FrameConverter.fromCamera(data);
+      final converted = await FrameConverter.fromCamera(
+        data,
+        capturedAt: capturedAt,
+      );
       if (_consumers.isNotEmpty && !_frames.isClosed) _frames.add(converted);
     } catch (error, stackTrace) {
       // Um quadro inválido isolado não significa que a câmera física caiu.

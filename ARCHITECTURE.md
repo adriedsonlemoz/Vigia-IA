@@ -1,10 +1,21 @@
-# Arquitetura — Vigia IA 1.0.63+63
+# Arquitetura — Vigia IA 1.0.64+64
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
 
+
+## Evolução 1.0.64 — Telemetria de desempenho e superfícies adaptativas
+
+- `RgbFrame` carrega tempo de conversão/decodificação da fonte e, quando disponível, transporte da origem remota.
+- `ObjectDetectionService.detectMeasured` preserva a API `detect`, mas expõe métricas do round-trip; o worker mede materialização, criação da imagem, resize/letterbox, tensor, LiteRT puro e pós-processamento.
+- `PerformanceTelemetryService` mantém uma janela de amostras da sessão, suporta diagnóstico profundo temporário e gera ZIP STORE com resumo humano, JSON e CSV sem incluir imagens.
+- `SessionHealthAnalyzer` diferencia lentidão de captura/conversão, preparação do detector, LiteRT e orçamento total em vez de chamar todo o detector de “inferência”.
+- exportações Android usam `MediaStore.Downloads` em `Downloads/Vigia IA` ou `ACTION_CREATE_DOCUMENT`; `ExportPreferencesService` persiste `Downloads` ou `Perguntar sempre`.
+- `_StartupGate` consulta um marcador em `noBackupFilesDir`; atualização de uma instalação existente não reabre onboarding, enquanto instalação nova mostra o guia até a conclusão.
+- `SessionStatusPanel` troca internamente entre resumo e detalhes para evitar bottom sheets empilhados; em paisagem o Monitor o apresenta em painel lateral.
+- Central multicâmera, Histórico e Alertas/Clipes receberam densidade e composição específicas para largura ampla/baixa altura sem alterar regras funcionais.
 
 ## Evolução 1.0.63 — Limpeza pós-refatoração
 

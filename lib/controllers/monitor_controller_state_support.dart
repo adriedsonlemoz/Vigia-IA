@@ -19,6 +19,14 @@ extension _MonitorControllerStateSupport on MonitorController {
     _lastAnalysisHeight = null;
     _lastFrameDelayMs = null;
     _lastInferenceMs = null;
+    _lastSourceConversionMs = null;
+    _lastIsolateTransferAndQueueMs = null;
+    _lastWorkerMaterializeMs = null;
+    _lastDetectorImageBuildMs = null;
+    _lastResizeLetterboxMs = null;
+    _lastTensorBuildMs = null;
+    _lastLiteRtMs = null;
+    _lastDetectorPostprocessMs = null;
     _lastPreprocessMs = null;
     _lastPrimaryInferenceMs = null;
     _lastAuxiliaryInferenceMs = null;
@@ -28,6 +36,7 @@ extension _MonitorControllerStateSupport on MonitorController {
     _lastDetectorRuns = 0;
     _lastAuxiliaryInferenceRuns = 0;
     _detailScansSkippedByBudget = 0;
+    _performanceTelemetry.resetSession();
   }
 
   void _resetAfterZoneChangeImpl() {

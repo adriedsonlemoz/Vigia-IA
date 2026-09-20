@@ -107,6 +107,14 @@ class SessionStatusData {
     this.analysisWidth,
     this.analysisHeight,
     this.inferenceMs,
+    this.sourceConversionMs,
+    this.isolateTransferAndQueueMs,
+    this.workerMaterializeMs,
+    this.detectorImageBuildMs,
+    this.resizeLetterboxMs,
+    this.tensorBuildMs,
+    this.liteRtMs,
+    this.detectorPostprocessMs,
     this.preprocessMs,
     this.primaryInferenceMs,
     this.auxiliaryInferenceMs,
@@ -143,6 +151,14 @@ class SessionStatusData {
   final int? analysisWidth;
   final int? analysisHeight;
   final double? inferenceMs;
+  final double? sourceConversionMs;
+  final double? isolateTransferAndQueueMs;
+  final double? workerMaterializeMs;
+  final double? detectorImageBuildMs;
+  final double? resizeLetterboxMs;
+  final double? tensorBuildMs;
+  final double? liteRtMs;
+  final double? detectorPostprocessMs;
   final double? preprocessMs;
   final double? primaryInferenceMs;
   final double? auxiliaryInferenceMs;
@@ -195,10 +211,15 @@ class SessionStatusData {
 
   String get pipelineHotspot {
     final stages = <String, double?>{
-      'Pré-processamento': preprocessMs,
-      'Inferência principal': primaryInferenceMs,
+      'Conversão/decodificação da fonte': sourceConversionMs,
+      'Pré-processamento do Monitor': preprocessMs,
+      'Fila/transferência do isolate': isolateTransferAndQueueMs,
+      'Resize + letterbox': resizeLetterboxMs,
+      'Montagem do tensor': tensorBuildMs,
+      'LiteRT / TFLite': liteRtMs,
+      'Pós-processamento do detector': detectorPostprocessMs,
       'Inferências auxiliares': auxiliaryInferenceMs,
-      'Pós-processamento': postprocessMs,
+      'Pós-processamento do Monitor': postprocessMs,
     };
     String? label;
     double highest = -1;

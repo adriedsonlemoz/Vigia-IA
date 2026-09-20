@@ -58,8 +58,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.63',
+          version: '1.0.64',
           current: true,
+          changes: [
+            'Telemetria detalhada separa conversão da fonte, isolate, resize, tensor, LiteRT puro, pós-processamento e tempo fim a fim.',
+            'Diagnóstico ganhou captura profunda de 30/60 s e exporta ZIP com resumo, JSON e CSV para análise de desempenho.',
+            'Relatórios salvam em Downloads/Vigia IA por padrão ou usam o seletor do Android conforme a preferência.',
+            'Acesso inicial aparece apenas em instalação nova; permissões continuam acessíveis manualmente em Configurações.',
+            'Paisagem/tablet ganhou ações mais compactas na Central, Histórico mais organizado, Alertas em duas colunas e Status lateral sem bottom sheet empilhado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.63',
           changes: [
             'Buildfix pós-refatoração: removidos 19 qualificadores this. redundantes reportados pelo flutter analyze.',
             'Os wrappers do MonitorController continuam delegando para as mesmas implementações internas, sem mudança de comportamento.',

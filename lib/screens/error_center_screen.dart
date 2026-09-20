@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../models/system_health.dart';
 import '../services/diagnostic_report_service.dart';
 import '../services/error_log_service.dart';
+import '../services/performance_telemetry_service.dart';
+import '../widgets/export_destination_dialog.dart';
 import '../widgets/help_button.dart';
 
 part 'error_center_screen_components.dart';
@@ -22,12 +24,15 @@ class ErrorCenterScreen extends StatefulWidget {
 class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
   final ErrorLogService _logs = ErrorLogService.instance;
   final DiagnosticReportService _reports = DiagnosticReportService();
+  final PerformanceTelemetryService _performance =
+      PerformanceTelemetryService.instance;
   _ErrorFilter _filter = _ErrorFilter.all;
   DiagnosticReport? _report;
   Timer? _timer;
   bool _loading = true;
   bool _refreshing = false;
   bool _exporting = false;
+  bool _exportingPerformance = false;
 
   @override
   void initState() {
@@ -78,30 +83,17 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
   Future<void> _export() async {
     final report = _report;
     if (report == null || _exporting) return;
+    final chooseLocation = await resolveExportLocation(context, title: 'Salvar diagnóstico');
+    if (chooseLocation == null || !mounted) return;
     setState(() => _exporting = true);
     try {
-      final path = await _reports.export(report);
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Diagnóstico exportado'),
-          content: SelectableText(path),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                unawaited(_share());
-              },
-              icon: const Icon(Icons.share_outlined),
-              label: const Text('Compartilhar'),
-            ),
-          ],
-        ),
+      final path = await _reports.export(
+        report,
+        chooseLocation: chooseLocation,
+      );
+      if (!mounted || path == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Diagnóstico salvo em $path')),
       );
     } catch (error) {
       if (mounted) {
@@ -112,6 +104,45 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
+  }
+
+  Future<void> _exportPerformance() async {
+    if (_exportingPerformance || _performance.sampleCount == 0) return;
+    final chooseLocation = await resolveExportLocation(
+      context,
+      title: 'Salvar desempenho da sessão',
+    );
+    if (chooseLocation == null || !mounted) return;
+    setState(() => _exportingPerformance = true);
+    try {
+      final path = chooseLocation
+          ? await _performance.exportWithPicker()
+          : await _performance.exportToDownloads();
+      if (!mounted || path == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Relatório de desempenho salvo em $path')),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível exportar desempenho: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exportingPerformance = false);
+    }
+  }
+
+  void _startDeepTrace(Duration duration) {
+    _performance.startDeepTrace(duration);
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Diagnóstico profundo iniciado por ${duration.inSeconds} s. Use o Monitor normalmente durante esse período.',
+        ),
+      ),
+    );
   }
 
   Future<void> _share() async {
@@ -184,7 +215,7 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
           const HelpButton(
             title: 'Diagnóstico',
             message:
-                'Use esta tela para conferir câmera, frames, IA, serviço e permissões. Exportar gera um TXT com exatamente o estado e os registros exibidos.',
+                'Use esta tela para conferir câmera, frames, IA, serviço e permissões. O diagnóstico técnico vai para Downloads por padrão; o relatório de desempenho inclui resumo, JSON e CSV em um ZIP.',
           ),
           PopupMenuButton<String>(
             tooltip: 'Opções de diagnóstico',
@@ -247,6 +278,17 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
                   ),
                 ],
               ),
+            ),
+            _PerformanceTelemetryCard(
+              service: _performance,
+              exporting: _exportingPerformance,
+              onTrace30: () => _startDeepTrace(const Duration(seconds: 30)),
+              onTrace60: () => _startDeepTrace(const Duration(seconds: 60)),
+              onStopTrace: () {
+                _performance.stopDeepTrace();
+                setState(() {});
+              },
+              onExport: _exportPerformance,
             ),
             _CurrentStateGrid(health: report.health),
             SizedBox(

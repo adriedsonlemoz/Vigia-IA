@@ -1,6 +1,10 @@
 class DeviceTelemetrySnapshot {
   const DeviceTelemetrySnapshot({
     required this.createdAt,
+    this.deviceManufacturer,
+    this.deviceModel,
+    this.androidVersion,
+    this.androidSdk,
     this.batteryPercent,
     this.batteryCharging,
     this.batteryPowerSource,
@@ -21,6 +25,10 @@ class DeviceTelemetrySnapshot {
   });
 
   final DateTime createdAt;
+  final String? deviceManufacturer;
+  final String? deviceModel;
+  final String? androidVersion;
+  final int? androidSdk;
   final int? batteryPercent;
   final bool? batteryCharging;
   final String? batteryPowerSource;
@@ -56,6 +64,10 @@ class DeviceTelemetrySnapshot {
     double? decimal(String key) => (map[key] as num?)?.toDouble();
     return DeviceTelemetrySnapshot(
       createdAt: createdAt,
+      deviceManufacturer: map['deviceManufacturer'] as String?,
+      deviceModel: map['deviceModel'] as String?,
+      androidVersion: map['androidVersion'] as String?,
+      androidSdk: integer('androidSdk'),
       batteryPercent: integer('batteryPercent'),
       batteryCharging: map['batteryCharging'] as bool?,
       batteryPowerSource: map['batteryPowerSource'] as String?,
@@ -78,6 +90,10 @@ class DeviceTelemetrySnapshot {
 
   Map<String, Object?> toJson() => <String, Object?>{
         'capturedAt': createdAt.toIso8601String(),
+        'deviceManufacturer': deviceManufacturer,
+        'deviceModel': deviceModel,
+        'androidVersion': androidVersion,
+        'androidSdk': androidSdk,
         'batteryPercent': batteryPercent,
         'batteryCharging': batteryCharging,
         'batteryPowerSource': batteryPowerSource,

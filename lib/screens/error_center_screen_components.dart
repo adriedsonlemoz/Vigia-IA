@@ -296,3 +296,100 @@ class _ErrorEntryCard extends StatelessWidget {
     );
   }
 }
+
+class _PerformanceTelemetryCard extends StatelessWidget {
+  const _PerformanceTelemetryCard({
+    required this.service,
+    required this.exporting,
+    required this.onTrace30,
+    required this.onTrace60,
+    required this.onStopTrace,
+    required this.onExport,
+  });
+
+  final PerformanceTelemetryService service;
+  final bool exporting;
+  final VoidCallback onTrace30;
+  final VoidCallback onTrace60;
+  final VoidCallback onStopTrace;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = service.deepTraceActive;
+    final deepSamples = service.deepTraceSampleCount;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.speed_rounded, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Desempenho da sessão',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Telemetria normal: ${service.sampleCount} amostra(s). '
+            '${active ? 'Diagnóstico profundo em andamento.' : deepSamples > 0 ? 'Último diagnóstico profundo: $deepSamples amostra(s).' : 'Você pode gravar cada análise por 30 ou 60 segundos.'}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (!active) ...[
+                OutlinedButton.icon(
+                  onPressed: onTrace30,
+                  icon: const Icon(Icons.timer_outlined),
+                  label: const Text('Diagnóstico 30 s'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onTrace60,
+                  icon: const Icon(Icons.timer_rounded),
+                  label: const Text('Diagnóstico 60 s'),
+                ),
+              ] else
+                FilledButton.tonalIcon(
+                  onPressed: onStopTrace,
+                  icon: const Icon(Icons.stop_circle_outlined),
+                  label: const Text('Encerrar diagnóstico'),
+                ),
+              FilledButton.icon(
+                onPressed: service.sampleCount == 0 || exporting ? null : onExport,
+                icon: exporting
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.archive_outlined),
+                label: const Text('Exportar desempenho'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'O ZIP contém resumo.txt, telemetria.json e telemetria.csv. Não inclui imagens.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}

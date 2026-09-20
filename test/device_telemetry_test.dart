@@ -4,6 +4,10 @@ import 'package:vigiaia/models/device_telemetry.dart';
 void main() {
   test('telemetria converte dados nativos e preserva tipos', () {
     final snapshot = DeviceTelemetrySnapshot.fromMap(<Object?, Object?>{
+      'deviceManufacturer': 'Xiaomi',
+      'deviceModel': 'Teste',
+      'androidVersion': '16',
+      'androidSdk': 36,
       'batteryPercent': 73,
       'batteryCharging': true,
       'batteryPowerSource': 'USB',
@@ -23,6 +27,10 @@ void main() {
       'connectionType': 'Wi-Fi',
     });
 
+    expect(snapshot.deviceManufacturer, 'Xiaomi');
+    expect(snapshot.deviceModel, 'Teste');
+    expect(snapshot.androidVersion, '16');
+    expect(snapshot.androidSdk, 36);
     expect(snapshot.batteryPercent, 73);
     expect(snapshot.batteryCharging, isTrue);
     expect(snapshot.batteryPowerSource, 'USB');
@@ -41,6 +49,10 @@ void main() {
     final capturedAt = DateTime.utc(2026, 9, 19, 18, 30);
     final snapshot = DeviceTelemetrySnapshot(
       createdAt: capturedAt,
+      deviceManufacturer: 'Xiaomi',
+      deviceModel: 'Teste',
+      androidVersion: '16',
+      androidSdk: 36,
       batteryPercent: 41,
       batteryCharging: false,
       screenDimmedByBike: true,
@@ -52,6 +64,10 @@ void main() {
 
     final json = snapshot.toJson();
     expect(json['capturedAt'], capturedAt.toIso8601String());
+    expect(json['deviceManufacturer'], 'Xiaomi');
+    expect(json['deviceModel'], 'Teste');
+    expect(json['androidVersion'], '16');
+    expect(json['androidSdk'], 36);
     expect(json['batteryPercent'], 41);
     expect(json['batteryCharging'], isFalse);
     expect(json['screenDimmedByBike'], isTrue);
