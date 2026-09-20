@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 1.0.49+49
+
+- Adicionado o painel reutilizável `Status da sessão` em tempo real no Monitor.
+- O vídeo fica resumido em um card compacto; os detalhes foram isolados em painel próprio.
+- O painel detalha fonte da imagem, dispositivo que executa a IA, FPS recebido e analisado, resolução recebida/analisada, inferência, atraso do frame, latência de rede e frames descartados.
+- Telemetria é apresentada separadamente para `Este celular` e `Celular remoto`: bateria, carga, temperatura, brilho, CPU, RAM, armazenamento e conexão.
+- `MonitorController` passa a medir chegada e análise separadamente, mantendo contadores da sessão e tempo de inferência.
+- `RemoteCameraServerService` disponibiliza telemetria remota também fora do Bike e anexa ao JPEG o horário real de captura do frame.
+- `RemotePhoneCameraSource` preserva o timestamp remoto e mede o tempo de transferência do frame para cálculo de atraso/latência.
+- Android passa a expor o tipo de conexão ativa via `ConnectivityManager`, com `ACCESS_NETWORK_STATE`.
+- O fluxo imersivo do Modo Bike e a integração ESP32 não foram alterados.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes e verificadores sincronizados em `1.0.49+49`.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida versão, novos arquivos do painel, telemetria, timestamp remoto e sincronização Android.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.48+48
 
 - Corrigida a falha de reprodução na tela `Áudios e voz` observada em aparelho real.

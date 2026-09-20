@@ -31,10 +31,12 @@ class RemotePhoneCameraSource implements VideoSource {
   bool _disposed = false;
   bool _hasConnected = false;
   int _consecutiveFailures = 0;
+  int? _frameNetworkLatencyMs;
   final ValueNotifier<RemotePhoneStatus?> remoteStatusNotifier =
       ValueNotifier<RemotePhoneStatus?>(null);
 
   RemotePhoneStatus? get remoteStatus => remoteStatusNotifier.value;
+  int? get frameNetworkLatencyMs => _frameNetworkLatencyMs;
 
   @override
   Stream<RgbFrame> get frames => _frames.stream;
@@ -55,7 +57,7 @@ class RemotePhoneCameraSource implements VideoSource {
     unawaited(_pollStatus());
     _timer = Timer.periodic(analysisInterval, (_) => unawaited(_poll()));
     _statusTimer = Timer.periodic(
-      const Duration(seconds: 5),
+      const Duration(seconds: 2),
       (_) => unawaited(_pollStatus()),
     );
   }
@@ -63,6 +65,7 @@ class RemotePhoneCameraSource implements VideoSource {
   Future<void> _poll() async {
     if (_busy || _disposed) return;
     _busy = true;
+    final startedAt = DateTime.now();
     try {
       final root = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
       final uri = Uri.parse('$root/frame.jpg').replace(queryParameters: <String, String>{'key': accessKey});
@@ -71,7 +74,11 @@ class RemotePhoneCameraSource implements VideoSource {
       if (response.statusCode != HttpStatus.ok) {
         throw HttpException('HTTP ${response.statusCode}');
       }
+      final capturedAt = DateTime.tryParse(
+        response.headers.value('x-vigia-frame-captured-at') ?? '',
+      );
       final bytes = await consolidateHttpClientResponseBytes(response);
+      _frameNetworkLatencyMs = DateTime.now().difference(startedAt).inMilliseconds;
       _latestJpeg.value = bytes;
       final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
       if (decoded != null && !_frames.isClosed) {
@@ -79,7 +86,7 @@ class RemotePhoneCameraSource implements VideoSource {
           width: decoded['width']! as int,
           height: decoded['height']! as int,
           rgbBytes: decoded['bytes']! as Uint8List,
-          capturedAt: DateTime.now(),
+          capturedAt: capturedAt ?? DateTime.now(),
         ));
       }
       _hasConnected = true;
@@ -154,6 +161,7 @@ class RemotePhoneCameraSource implements VideoSource {
     _client = null;
     _hasConnected = false;
     _consecutiveFailures = 0;
+    _frameNetworkLatencyMs = null;
     _statusBusy = false;
     remoteStatusNotifier.value = null;
     if (!_statuses.isClosed) {

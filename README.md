@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.48+48`
+> **Versão atual:** `1.0.49+49`
 
 ## Estado atual
 
-A `1.0.48+48` corrige a reprodução dos áudios padrão no Android e compacta as ações da tela Áudios e voz para evitar quebra de linha em celulares estreitos.
+A `1.0.49+49` adiciona o painel **Status da sessão** em tempo real no Monitor, com métricas separadas do aparelho atual e do celular remoto, sem alterar ainda o fluxo imersivo do Modo Bike nem integrar ESP32.
+
+### Evolução 1.0.49
+
+- novo painel reutilizável `Status da sessão`, acessível pelo Monitor normal e estruturado para ser reaproveitado futuramente pelo Modo Bike;
+- resumo compacto de vídeo mostra o essencial e abre um painel próprio com fonte da imagem, aparelho que executa a IA, FPS recebido/analisado, resolução recebida/analisada, tempo de inferência, atraso do frame, latência de rede e frames descartados;
+- métricas do aparelho são separadas em `Este celular` e `Celular remoto`, incluindo bateria, carga, temperatura, brilho, CPU do Vigia IA, RAM, armazenamento e tipo de conexão;
+- o Monitor passa a medir FPS de chegada independentemente do FPS efetivamente enviado à IA, além de contabilizar frames recebidos e descartados pelo pipeline;
+- frames vindos do outro celular preservam o horário real de captura pelo cabeçalho `x-vigia-frame-captured-at`, permitindo calcular atraso ponta a ponta de forma útil;
+- o Modo Câmera passa a disponibilizar telemetria do aparelho remoto também no Monitor normal, mantendo a política específica do Bike quando ele estiver ativo;
+- Android informa o transporte de rede ativo (Wi-Fi, Ethernet, dados móveis, VPN ou Bluetooth) via telemetria;
+- o fluxo imersivo do Modo Bike e qualquer integração ESP32 permanecem inalterados nesta versão.
 
 ### Evolução 1.0.48
 

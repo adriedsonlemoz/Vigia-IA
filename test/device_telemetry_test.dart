@@ -20,6 +20,7 @@ void main() {
       'memoryTotalBytes': 4444444444,
       'freeStorageBytes': 5555555555,
       'totalStorageBytes': 9999999999,
+      'connectionType': 'Wi-Fi',
     });
 
     expect(snapshot.batteryPercent, 73);
@@ -33,6 +34,7 @@ void main() {
     expect(snapshot.processorCount, 8);
     expect(snapshot.appMemoryUsedBytes, 123456789);
     expect(snapshot.memoryTotalBytes, 4444444444);
+    expect(snapshot.connectionType, 'Wi-Fi');
   });
 
   test('telemetria serializa payload que pode ser enviado ao receptor', () {
@@ -45,6 +47,7 @@ void main() {
       appCpuPercent: 7.5,
       memoryAvailableBytes: 1024,
       memoryTotalBytes: 2048,
+      connectionType: 'Wi-Fi',
     );
 
     final json = snapshot.toJson();
@@ -55,6 +58,7 @@ void main() {
     expect(json['appCpuPercent'], 7.5);
     expect(json['memoryAvailableBytes'], 1024);
     expect(json['memoryTotalBytes'], 2048);
+    expect(json['connectionType'], 'Wi-Fi');
   });
 
   test('telemetria tolera campos indisponíveis no aparelho', () {

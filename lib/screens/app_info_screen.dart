@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.48',
+          version: '1.0.49',
           current: true,
+          changes: [
+            'Novo painel Status da sessão em tempo real, reutilizável e preparado para o Modo Bike.',
+            'Vídeo ganhou resumo compacto e painel próprio com FPS recebido/analisado, resolução, inferência, atraso, latência e frames descartados.',
+            'Este celular e o celular remoto agora aparecem separados com bateria, carga, temperatura, brilho, CPU, RAM, armazenamento e conexão.',
+            'Telemetria remota também funciona no Monitor normal; fluxo imersivo do Bike e ESP32 permanecem inalterados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.48',
           changes: [
             'Corrigida a reprodução dos áudios padrão que falhava em alguns aparelhos Android.',
             'Biblioteca padrão convertida de WAV PCM para AAC/M4A mono 24 kHz para maior compatibilidade.',

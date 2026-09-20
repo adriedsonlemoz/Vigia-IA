@@ -14,6 +14,7 @@ import '../widgets/detection_overlay.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/remote_bike_status_panel.dart';
+import '../widgets/session_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
@@ -692,6 +693,23 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
+  Future<void> _showSessionStatus() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: 0.86,
+        child: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => SessionStatusPanel(
+            data: _controller.sessionStatus,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showRemoteBikeStatus() async {
     if (!_controller.isRemotePhoneSource) return;
     await showModalBottomSheet<void>(
@@ -751,17 +769,16 @@ class _MonitorScreenState extends State<MonitorScreen>
                         : Icons.lan_outlined,
                   ),
           ),
-          if (_controller.isRemotePhoneSource)
-            IconButton(
-              tooltip: 'Condições do celular traseiro',
-              onPressed: _showRemoteBikeStatus,
-              icon: _controller.remotePhoneWarningCount > 0
-                  ? Badge(
-                      label: Text('${_controller.remotePhoneWarningCount}'),
-                      child: const Icon(Icons.directions_bike_rounded),
-                    )
-                  : const Icon(Icons.directions_bike_rounded),
-            ),
+          IconButton(
+            tooltip: 'Status da sessão',
+            onPressed: _showSessionStatus,
+            icon: _controller.remotePhoneWarningCount > 0
+                ? Badge(
+                    label: Text('${_controller.remotePhoneWarningCount}'),
+                    child: const Icon(Icons.monitor_heart_outlined),
+                  )
+                : const Icon(Icons.monitor_heart_outlined),
+          ),
           IconButton(
             tooltip: 'Eventos',
             onPressed: () => unawaited(

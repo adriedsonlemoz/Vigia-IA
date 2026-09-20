@@ -1,8 +1,19 @@
-# Arquitetura — Vigia IA 1.0.48+48
+# Arquitetura — Vigia IA 1.0.49+49
 
 ## 1. Princípios
 
-A 1.0.48 mantém a assinatura permanente da 1.0.47 e corrige a camada de reprodução dos alertas padrão para funcionar de forma consistente em aparelhos Android reais.
+A 1.0.49 adiciona observabilidade em tempo real da sessão de monitoramento, separando métricas de vídeo/processamento das condições do aparelho atual e do celular remoto, sem alterar o fluxo imersivo do Modo Bike nem adicionar ESP32.
+
+## Evolução 1.0.49
+
+- `SessionStatusData` é um modelo de apresentação independente da tela, permitindo reutilizar o mesmo contrato no Monitor atual e em uma futura superfície do Modo Bike;
+- `SessionStatusPanel` recebe apenas esse modelo, separa `Este celular` de `Celular remoto` e mantém os detalhes de vídeo em `VideoSessionDetailsPanel`;
+- `MonitorController` mede FPS recebido e FPS efetivamente inferido separadamente, resolução, contadores de frames, tempo de inferência e atraso entre captura e recebimento;
+- a telemetria local é atualizada periodicamente durante a sessão sem depender da ativação do Bike;
+- `RemoteCameraServerService` coleta telemetria também no uso normal do Modo Câmera e envia o timestamp do JPEG em `x-vigia-frame-captured-at`;
+- `RemotePhoneCameraSource` preserva esse timestamp no `RgbFrame` e mede a latência da requisição de frame;
+- `DeviceTelemetrySnapshot` ganha `connectionType`, preenchido no Android com `ConnectivityManager`/`NetworkCapabilities`;
+- a política do Bike continua respeitando `keepRemoteTelemetry` quando o Bike estiver ativo e nenhuma integração ESP32 foi introduzida.
 
 ## Evolução 1.0.48
 

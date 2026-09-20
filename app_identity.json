@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Identidade técnica vigiaia preservada. A 1.0.48 corrige a reprodução dos áudios padrão no Android com biblioteca AAC/M4A e player nativo mais robusto, além de manter Ouvir, Trocar e Gravar na mesma linha.",
-  "version": "1.0.48",
-  "build": 48
+  "notes": "A 1.0.49 adiciona o painel Status da sessão em tempo real, separa este celular do celular remoto e mede FPS recebido/analisado, resolução, inferência, atraso, latência e frames descartados sem alterar o fluxo imersivo do Bike nem integrar ESP32.",
+  "version": "1.0.49",
+  "build": 49
 }

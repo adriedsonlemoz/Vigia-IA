@@ -30,6 +30,8 @@ import android.os.Vibrator
 import android.os.VibrationEffect
 import android.provider.Settings
 import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -822,6 +824,24 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun activeConnectionType(): String {
+        return try {
+            val manager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = manager.activeNetwork ?: return "Sem rede"
+            val capabilities = manager.getNetworkCapabilities(network) ?: return "Sem rede"
+            when {
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Dados móveis"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> "Bluetooth"
+                else -> "Rede ativa"
+            }
+        } catch (_: Throwable) {
+            "Indisponível"
+        }
+    }
+
     private fun readSystemHealth(): Map<String, Any?> {
         val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it >= 0 }
@@ -903,6 +923,7 @@ class MainActivity : FlutterActivity() {
             "memoryTotalBytes" to deviceMemory.totalMem,
             "freeStorageBytes" to stat.availableBytes,
             "totalStorageBytes" to stat.totalBytes,
+            "connectionType" to activeConnectionType(),
         )
     }
 

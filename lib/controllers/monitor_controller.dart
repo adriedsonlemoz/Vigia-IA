@@ -8,6 +8,7 @@ import '../core/video_source_status.dart';
 import '../models/audio_slot.dart';
 import '../models/bike_mode_config.dart';
 import '../models/detection.dart';
+import '../models/device_telemetry.dart';
 import '../models/monitor_event.dart';
 import '../models/monitor_schedule.dart';
 import '../models/monitoring_zone.dart';
@@ -15,6 +16,7 @@ import '../models/object_appearance.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/remote_phone_status.dart';
 import '../models/rgb_frame.dart';
+import '../models/session_status.dart';
 import '../models/smart_alert_rules.dart';
 import '../models/system_health.dart';
 import '../models/tracked_detection.dart';
@@ -111,6 +113,7 @@ class MonitorController extends ChangeNotifier {
   Timer? _scheduleTimer;
   Timer? _backgroundHealthTimer;
   Timer? _bikeTelemetryTimer;
+  Timer? _sessionTelemetryTimer;
   List<Detection> _detections = const [];
   VideoSourceStatus _sourceStatus =
       const VideoSourceStatus(VideoSourceState.idle);
@@ -126,13 +129,25 @@ class MonitorController extends ChangeNotifier {
   int _frameSession = 0;
   Completer<void>? _processingDone;
   Future<void> _transitionTail = Future<void>.value();
-  DateTime? _lastFpsSample;
   DateTime? _lastFrameReceivedAt;
   DateTime? _lastNotificationUpdateAt;
   DateTime? _lastRecoveryAttemptAt;
   bool _appInBackground = false;
   bool _backgroundRecoveryInProgress = false;
   double _fps = 0;
+  double _receivedFps = 0;
+  DateTime? _lastReceivedFpsSample;
+  DateTime? _lastAnalyzedFpsSample;
+  int _framesReceived = 0;
+  int _framesAnalyzed = 0;
+  int _framesDropped = 0;
+  int? _lastFrameWidth;
+  int? _lastFrameHeight;
+  int? _lastAnalysisWidth;
+  int? _lastAnalysisHeight;
+  int? _lastFrameDelayMs;
+  double? _lastInferenceMs;
+  DeviceTelemetrySnapshot? _localDeviceTelemetry;
   DateTime? _lastIdleInferenceAt;
   DateTime? _lastDetailScanAt;
   int _detailTileIndex = 0;
@@ -191,6 +206,46 @@ class MonitorController extends ChangeNotifier {
     return source is RemotePhoneCameraSource ? source.remoteStatus : null;
   }
   int get remotePhoneWarningCount => remotePhoneStatus?.warnings().length ?? 0;
+  DeviceTelemetrySnapshot? get localDeviceTelemetry => _localDeviceTelemetry;
+
+  SessionStatusData get sessionStatus {
+    final source = _source;
+    final remote = remotePhoneStatus;
+    final networkLatency = source is RemotePhoneCameraSource
+        ? (source.frameNetworkLatencyMs ?? remote?.networkLatencyMs)
+        : null;
+    final imageSource = switch (sourceConfig.type) {
+      VideoSourceType.localCamera => 'Câmera deste celular',
+      VideoSourceType.rtsp => sourceConfig.displayName ?? 'Câmera RTSP',
+      VideoSourceType.remotePhone => remote?.name ?? 'Celular remoto',
+    };
+    final connection = switch (sourceConfig.type) {
+      VideoSourceType.localCamera => 'Local • sem rede para a imagem',
+      VideoSourceType.rtsp => 'Rede • RTSP',
+      VideoSourceType.remotePhone => 'Rede local / hotspot',
+    };
+    return SessionStatusData(
+      sampledAt: DateTime.now(),
+      imageSource: imageSource,
+      aiDevice: 'Este celular',
+      sourceConnection: connection,
+      sourceOnline: _sourceStatus.state == VideoSourceState.streaming,
+      receivedFps: _receivedFps,
+      analyzedFps: _fps,
+      framesReceived: _framesReceived,
+      framesAnalyzed: _framesAnalyzed,
+      framesDropped: _framesDropped,
+      frameWidth: _lastFrameWidth,
+      frameHeight: _lastFrameHeight,
+      analysisWidth: _lastAnalysisWidth,
+      analysisHeight: _lastAnalysisHeight,
+      inferenceMs: _lastInferenceMs,
+      frameDelayMs: _lastFrameDelayMs,
+      networkLatencyMs: networkLatency,
+      localDevice: _localDeviceTelemetry,
+      remotePhone: remote,
+    );
+  }
 
   Duration get effectiveAnalysisInterval =>
       _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
@@ -258,6 +313,23 @@ class MonitorController extends ChangeNotifier {
   Future<void> _applyBikeScreenPolicy() => _native.setBikeScreenBrightness(
         _source != null ? _bikeConfig.rearScreenBrightness : null,
       );
+
+  void _startSessionTelemetryTimer() {
+    _sessionTelemetryTimer?.cancel();
+    unawaited(_refreshSessionTelemetry());
+    _sessionTelemetryTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => unawaited(_refreshSessionTelemetry()),
+    );
+  }
+
+  Future<void> _refreshSessionTelemetry() async {
+    if (_disposed) return;
+    final telemetry = await _native.readDeviceTelemetry();
+    if (_disposed) return;
+    _localDeviceTelemetry = telemetry;
+    _notify();
+  }
 
   void _configureBikeTelemetryTimer() {
     _bikeTelemetryTimer?.cancel();
@@ -371,6 +443,7 @@ class MonitorController extends ChangeNotifier {
           quality: _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 76,
         );
       _configureBikeTelemetryTimer();
+      _startSessionTelemetryTimer();
       _clipRecorder.configure(
         clipDuration: _settings.clipDuration,
         format: _settings.clipFormatPreference,
@@ -561,6 +634,7 @@ class MonitorController extends ChangeNotifier {
     }
     if (!_scheduleActive) return;
 
+    _resetSessionMetrics();
     final analysisInterval = _bikeConfig.effectiveAnalysisInterval(
       config.analysisInterval,
     );
@@ -698,11 +772,32 @@ class MonitorController extends ChangeNotifier {
 
   Future<void> _onFrame(RgbFrame frame) async {
     if (_disposed) return;
-    _lastFrameReceivedAt = frame.capturedAt;
+    final receivedAt = DateTime.now();
+    _lastFrameReceivedAt = receivedAt;
+    _lastFrameWidth = frame.width;
+    _lastFrameHeight = frame.height;
+    final rawDelay = receivedAt.difference(frame.capturedAt).inMilliseconds;
+    _lastFrameDelayMs = rawDelay < 0 ? 0 : rawDelay;
+    _framesReceived++;
+    final previousReceived = _lastReceivedFpsSample;
+    if (previousReceived != null) {
+      final elapsedMs = receivedAt.difference(previousReceived).inMilliseconds;
+      if (elapsedMs > 0) {
+        final instant = 1000 / elapsedMs;
+        _receivedFps = _receivedFps == 0
+            ? instant
+            : (_receivedFps * 0.82 + instant * 0.18);
+      }
+    }
+    _lastReceivedFpsSample = receivedAt;
     if (_lanStream.running) {
       unawaited(_lanStream.publishFrame(frame));
     }
-    if (_processing || !_baseReady || !_detector.isReady) return;
+    if (_processing || !_baseReady || !_detector.isReady) {
+      _framesDropped++;
+      _notify();
+      return;
+    }
     if (_backgroundMonitoringEnabled) {
       final lastUpdate = _lastNotificationUpdateAt;
       if (lastUpdate == null ||
@@ -718,22 +813,13 @@ class MonitorController extends ChangeNotifier {
       }
     }
     if (_clipRecordingEnabled) _clipRecorder.pushFrame(frame);
-    final previousFpsSample = _lastFpsSample;
-    if (previousFpsSample != null) {
-      final elapsedMs = frame.capturedAt.difference(previousFpsSample).inMilliseconds;
-      if (elapsedMs > 0) {
-        final instantFps = 1000 / elapsedMs;
-        _fps = _fps == 0 ? instantFps : (_fps * 0.82 + instantFps * 0.18);
-      }
-    }
-    _lastFpsSample = frame.capturedAt;
     _health
       ..source = _sourceDisplayName
       ..monitoringActive = true
       ..cameraActive = true
       ..aiReady = _detector.isReady
       ..backgroundActive = _backgroundMonitoringEnabled
-      ..updateFrame(frame.capturedAt, _fps);
+      ..updateFrame(receivedAt, _fps);
     if (_settings.cameraIntegrityEnabled) {
       final integrity = _cameraIntegrity.evaluate(frame, frame.capturedAt);
       if (integrity.issue != null) {
@@ -752,6 +838,9 @@ class MonitorController extends ChangeNotifier {
     final analysisFrame = analysisZone.isFullFrame
         ? frame
         : MonitoringZoneService.crop(frame, analysisZone);
+    _lastAnalysisWidth = analysisFrame.width;
+    _lastAnalysisHeight = analysisFrame.height;
+    final inferenceWatch = Stopwatch();
     final processingDone = Completer<void>();
     _processingDone = processingDone;
     _processing = true;
@@ -771,6 +860,7 @@ class MonitorController extends ChangeNotifier {
           // Mantém a última presença confirmada entre verificações silenciosas.
           // Isso evita que uma pessoa/animal parado desapareça só porque o
           // filtro de movimento deixou de disparar.
+          _framesDropped++;
           return;
         }
         _lastIdleInferenceAt = now;
@@ -779,6 +869,18 @@ class MonitorController extends ChangeNotifier {
       }
 
       final previousDetections = _detections;
+      final analysisStartedAt = DateTime.now();
+      _framesAnalyzed++;
+      final previousAnalyzed = _lastAnalyzedFpsSample;
+      if (previousAnalyzed != null) {
+        final elapsedMs = analysisStartedAt.difference(previousAnalyzed).inMilliseconds;
+        if (elapsedMs > 0) {
+          final instant = 1000 / elapsedMs;
+          _fps = _fps == 0 ? instant : (_fps * 0.82 + instant * 0.18);
+        }
+      }
+      _lastAnalyzedFpsSample = analysisStartedAt;
+      inferenceWatch.start();
       final candidateThreshold =
           DetectionConfidencePolicy.candidateThreshold(_settings.confidenceThreshold);
       final primaryDetected = await _detector.detect(
@@ -880,6 +982,9 @@ class MonitorController extends ChangeNotifier {
           _lastDetailScanAt = now;
         }
       }
+
+      inferenceWatch.stop();
+      _lastInferenceMs = inferenceWatch.elapsedMicroseconds / 1000.0;
 
       final selected = _detectionFilter.apply(
         candidates: candidates,
@@ -1027,6 +1132,12 @@ class MonitorController extends ChangeNotifier {
         ),
       );
     } finally {
+      if (inferenceWatch.isRunning) {
+        inferenceWatch.stop();
+        if (inferenceWatch.elapsedMicroseconds > 0) {
+          _lastInferenceMs = inferenceWatch.elapsedMicroseconds / 1000.0;
+        }
+      }
       _processing = false;
       if (!processingDone.isCompleted) processingDone.complete();
       if (identical(_processingDone, processingDone)) _processingDone = null;
@@ -1670,6 +1781,22 @@ class MonitorController extends ChangeNotifier {
     _notify();
   }
 
+  void _resetSessionMetrics() {
+    _receivedFps = 0;
+    _fps = 0;
+    _lastReceivedFpsSample = null;
+    _lastAnalyzedFpsSample = null;
+    _framesReceived = 0;
+    _framesAnalyzed = 0;
+    _framesDropped = 0;
+    _lastFrameWidth = null;
+    _lastFrameHeight = null;
+    _lastAnalysisWidth = null;
+    _lastAnalysisHeight = null;
+    _lastFrameDelayMs = null;
+    _lastInferenceMs = null;
+  }
+
   void _resetAfterZoneChange() {
     _frameSession++;
     _motion.reset();
@@ -1714,7 +1841,6 @@ class MonitorController extends ChangeNotifier {
     _cameraMotion = false;
     _motionScore = 0;
     _cameraIntegrity.reset();
-    _lastFpsSample = null;
     _fps = 0;
   }
 
@@ -1890,6 +2016,7 @@ class MonitorController extends ChangeNotifier {
     _scheduleTimer?.cancel();
     _backgroundHealthTimer?.cancel();
     _bikeTelemetryTimer?.cancel();
+    _sessionTelemetryTimer?.cancel();
     _bikeMode.removeListener(_onBikeModeChanged);
     _lanStream.removeListener(_onLanStreamChanged);
     unawaited(_disposeAsync());

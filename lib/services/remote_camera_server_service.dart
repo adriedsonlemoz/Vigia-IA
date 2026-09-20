@@ -29,6 +29,7 @@ class RemoteCameraServerService extends ChangeNotifier {
   StreamSubscription<RgbFrame>? _subscription;
   HttpServer? _server;
   Uint8List? _latestJpeg;
+  DateTime? _latestJpegCapturedAt;
   DateTime? _lastFrameAt;
   DateTime? _lastFpsFrameAt;
   DateTime? _lastNotificationUpdateAt;
@@ -128,21 +129,29 @@ class RemoteCameraServerService extends ChangeNotifier {
   void _configureBikeTelemetryTimer() {
     _bikeTelemetryTimer?.cancel();
     _bikeTelemetryTimer = null;
-    if (!_bikeConfig.enabled || !running) {
+    if (!running) {
       _deviceTelemetry = null;
       return;
     }
     unawaited(_refreshBikeTelemetry());
+    final interval = _bikeConfig.enabled
+        ? _bikeConfig.powerProfile.telemetryInterval
+        : const Duration(seconds: 2);
     _bikeTelemetryTimer = Timer.periodic(
-      _bikeConfig.powerProfile.telemetryInterval,
+      interval,
       (_) => unawaited(_refreshBikeTelemetry()),
     );
   }
 
   Future<void> _refreshBikeTelemetry() async {
-    if (!_bikeConfig.enabled || !running) return;
+    if (!running) return;
     final telemetry = await _native.readDeviceTelemetry();
-    if (_bikeConfig.keepRemoteTelemetry) _deviceTelemetry = telemetry;
+    if (!_bikeConfig.enabled || _bikeConfig.keepRemoteTelemetry) {
+      _deviceTelemetry = telemetry;
+    } else {
+      _deviceTelemetry = null;
+    }
+    if (!_bikeConfig.enabled) return;
     final battery = telemetry.batteryPercent;
     if (battery == null || !_bikeConfig.alertLowBattery) return;
     if (battery > _bikeConfig.lowBatteryPercent + 3) {
@@ -219,6 +228,7 @@ class RemoteCameraServerService extends ChangeNotifier {
           'quality': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 78,
         },
       );
+      _latestJpegCapturedAt = frame.capturedAt;
     } catch (_) {}
     notifyListeners();
   }
@@ -236,7 +246,7 @@ class RemoteCameraServerService extends ChangeNotifier {
         }
         final path = request.uri.path;
         if (path == '/status') {
-          final telemetry = _bikeConfig.enabled && _bikeConfig.keepRemoteTelemetry
+          final telemetry = (!_bikeConfig.enabled || _bikeConfig.keepRemoteTelemetry)
               ? (_deviceTelemetry ?? await _native.readDeviceTelemetry())
               : null;
           request.response.headers.contentType = ContentType.json;
@@ -258,6 +268,13 @@ class RemoteCameraServerService extends ChangeNotifier {
             request.response.write('frame unavailable');
           } else {
             request.response.headers.contentType = ContentType('image', 'jpeg');
+            final capturedAt = _latestJpegCapturedAt;
+            if (capturedAt != null) {
+              request.response.headers.set(
+                'x-vigia-frame-captured-at',
+                capturedAt.toIso8601String(),
+              );
+            }
             request.response.add(jpeg);
           }
         } else {
@@ -288,6 +305,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     _bikeTelemetryTimer = null;
     _deviceTelemetry = null;
     _latestJpeg = null;
+    _latestJpegCapturedAt = null;
     _lastFrameAt = null;
     _lastFpsFrameAt = null;
     _streamFps = 0;

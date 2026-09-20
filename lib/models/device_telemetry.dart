@@ -17,6 +17,7 @@ class DeviceTelemetrySnapshot {
     this.memoryTotalBytes,
     this.freeStorageBytes,
     this.totalStorageBytes,
+    this.connectionType,
   });
 
   final DateTime createdAt;
@@ -36,6 +37,7 @@ class DeviceTelemetrySnapshot {
   final int? memoryTotalBytes;
   final int? freeStorageBytes;
   final int? totalStorageBytes;
+  final String? connectionType;
 
   factory DeviceTelemetrySnapshot.fromMap(Map<Object?, Object?> map) =>
       DeviceTelemetrySnapshot._fromMap(map, createdAt: DateTime.now());
@@ -70,6 +72,7 @@ class DeviceTelemetrySnapshot {
       memoryTotalBytes: integer('memoryTotalBytes'),
       freeStorageBytes: integer('freeStorageBytes'),
       totalStorageBytes: integer('totalStorageBytes'),
+      connectionType: map['connectionType'] as String?,
     );
   }
 
@@ -91,5 +94,6 @@ class DeviceTelemetrySnapshot {
         'memoryTotalBytes': memoryTotalBytes,
         'freeStorageBytes': freeStorageBytes,
         'totalStorageBytes': totalStorageBytes,
+        'connectionType': connectionType,
       };
 }
