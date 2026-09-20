@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.52+52`
+> **Versão atual:** `1.0.53+53`
 
 ## Estado atual
 
-A `1.0.52+52` passa a medir o **pipeline da IA por etapa** e aplica um orçamento de processamento para preservar a responsividade, sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+A `1.0.53+53` corrige a reprodução dos **áudios padrão embarcados** em aparelhos onde a abertura por URI `android.resource://` falhava no `MediaPlayer`, preservando o pipeline da IA da 1.0.52 e sem alterar o fluxo imersivo do Bike nem integrar ESP32.
+
+
+### Evolução 1.0.53
+
+- corrigida a falha “Não foi possível reproduzir este áudio” ao ouvir áudios padrão em aparelhos onde o `MediaPlayer` não conseguia preparar o M4A por URI `android.resource://`;
+- o recurso padrão é lido diretamente de `res/raw`, copiado para o cache privado do Vigia IA e reproduzido por caminho de arquivo local;
+- a cópia usa arquivo temporário e substituição controlada para não reutilizar cache parcial/corrompido;
+- a prioridade continua `áudio personalizado → áudio padrão`; se um override personalizado estiver inválido, o padrão ainda é tentado;
+- os 78 M4A padrão permanecem com os mesmos IDs e conteúdo, sem nova recompressão;
+- Monitor, Status da sessão, pipeline da IA, Bike imersivo e ESP32 permanecem sem alterações funcionais.
 
 
 ### Evolução 1.0.52

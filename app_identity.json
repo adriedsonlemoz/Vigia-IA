@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.52 instrumenta o pipeline da IA por etapa e protege o orçamento de análise: mede pre-processamento, inferencia principal/auxiliar, pos-processamento, total e fim a fim, pulando apenas varreduras opcionais de detalhe quando poderiam comprometer a responsividade. Bike imersivo e ESP32 permanecem fora desta entrega.",
-  "version": "1.0.52",
-  "build": 52
+  "notes": "A 1.0.53 corrige a reprodução dos áudios padrão: os recursos M4A embarcados são lidos de res/raw, materializados no cache privado e entregues ao MediaPlayer como arquivo local, evitando falhas de URI android.resource em aparelhos/versões Android incompatíveis. Áudios personalizados, Bike imersivo e ESP32 permanecem inalterados.",
+  "version": "1.0.53",
+  "build": 53
 }

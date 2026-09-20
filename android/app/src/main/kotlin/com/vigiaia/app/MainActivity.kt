@@ -684,13 +684,52 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun alertAudioAttributes(): AudioAttributes =
+        AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+
     private fun newAlertMediaPlayer(): MediaPlayer = MediaPlayer().apply {
-        setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build(),
-        )
+        setAudioAttributes(alertAudioAttributes())
+    }
+
+    private fun copyBundledAlertToCache(slot: String, resourceId: Int): File? {
+        val normalized = normalizeAudioSlot(slot)
+        if (normalized.isBlank() || resourceId == 0) return null
+        return try {
+            val directory = File(cacheDir, "bundled_alert_audio").also { it.mkdirs() }
+            val temporary = File(directory, ".$normalized.tmp")
+            val target = File(directory, "$normalized.m4a")
+            resources.openRawResource(resourceId).use { input ->
+                temporary.outputStream().use { output -> input.copyTo(output) }
+            }
+            if (temporary.length() <= 0L) {
+                temporary.delete()
+                return null
+            }
+            if (target.exists()) target.delete()
+            if (!temporary.renameTo(target)) {
+                temporary.copyTo(target, overwrite = true)
+                temporary.delete()
+            }
+            target.takeIf { it.exists() && it.length() > 0L }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun playBundledAlertAudio(slot: String, resourceId: Int): Boolean {
+        val cached = copyBundledAlertToCache(slot, resourceId) ?: return false
+        return try {
+            val player = newAlertMediaPlayer().apply {
+                setDataSource(cached.absolutePath)
+                prepare()
+            }
+            configureAudioPlayer(player)
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun playCustomAlertAudio(slot: String): Boolean {
@@ -712,16 +751,7 @@ class MainActivity : FlutterActivity() {
 
         val resourceId = resources.getIdentifier(normalized, "raw", packageName)
         if (resourceId == 0) return false
-        return try {
-            val resourceUri = Uri.parse("android.resource://$packageName/$resourceId")
-            val player = newAlertMediaPlayer().apply {
-                setDataSource(this@MainActivity, resourceUri)
-                prepare()
-            }
-            configureAudioPlayer(player)
-        } catch (_: Throwable) {
-            false
-        }
+        return playBundledAlertAudio(normalized, resourceId)
     }
 
     private fun showAlertNotification(title: String, message: String, notificationEnabled: Boolean, sound: Boolean, vibration: Boolean) {

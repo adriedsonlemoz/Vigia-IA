@@ -1,6 +1,6 @@
 # Biblioteca de áudios do Vigia IA
 
-A pasta `custom_audio/` contém os áudios padrão embarcados no aplicativo. O catálogo central possui 78 slots: 14 usados pelo monitor atual e 64 reservados para a evolução do Modo Bike/ESP32. Desde a 1.0.48, os arquivos padrão são AAC/M4A mono em 24 kHz para maior compatibilidade de reprodução entre aparelhos Android.
+A pasta `custom_audio/` contém os áudios padrão embarcados no aplicativo. O catálogo central possui 78 slots: 14 usados pelo monitor atual e 64 reservados para a evolução do Modo Bike/ESP32. Desde a 1.0.48, os arquivos padrão são AAC/M4A mono em 24 kHz. Na 1.0.53, a reprodução passou a materializar o recurso `res/raw` no cache privado antes de entregá-lo ao `MediaPlayer`, evitando incompatibilidades com URI de recurso em alguns aparelhos Android.
 
 ## Prioridade em tempo de execução
 

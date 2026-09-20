@@ -1,6 +1,21 @@
 # CHANGELOG
 
 
+## 1.0.53+53
+
+- Corrigida a reprodução dos áudios padrão que ainda podia falhar em aparelho real com “Não foi possível reproduzir este áudio”.
+- Removida a dependência de `android.resource://` para os M4A padrão durante a reprodução.
+- `MainActivity` agora lê o recurso de `res/raw`, grava uma cópia íntegra no cache privado e entrega o caminho local ao `MediaPlayer`.
+- O fallback de áudio personalizado inválido para o áudio padrão foi preservado.
+- Os 78 M4A padrão não foram reconvertidos nem alterados; apenas o mecanismo de abertura/reprodução foi corrigido.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README, ARCHITECTURE, testes/verificadores e fontes Android sincronizados em `1.0.53+53`.
+- Fluxo imersivo do Bike e integração ESP32 permanecem inalterados.
+
+### Validação disponível
+
+- `tool/verify_project.sh` valida a nova estratégia de reprodução, espelhamento do `MainActivity`, biblioteca padrão e sincronização da versão.
+- Este ambiente não contém Flutter/Android SDK; `flutter analyze`, `flutter test` e o build do APK ainda precisam ser confirmados pelo workflow.
+
 ## 1.0.52+52
 
 - Instrumentação do pipeline da IA por etapa: pré-processamento, inferência principal, inferências auxiliares, pós-processamento, total e fim a fim estimado.

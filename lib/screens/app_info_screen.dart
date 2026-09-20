@@ -150,8 +150,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.52',
+          version: '1.0.53',
           current: true,
+          changes: [
+            'Corrigida a reprodução dos áudios padrão em aparelhos onde a URI android.resource falhava no MediaPlayer.',
+            'Os M4A embarcados agora são copiados de res/raw para o cache privado e reproduzidos como arquivo local.',
+            'Áudios personalizados continuam tendo prioridade e caem automaticamente para o padrão se o arquivo escolhido estiver inválido.',
+            'Biblioteca de 78 áudios, layout da tela, Monitor, Bike imersivo e integração ESP32 permanecem sem alterações funcionais.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.52',
           changes: [
             'Pipeline da IA agora mede pré-processamento, inferência principal/auxiliar, pós-processamento, total e fim a fim.',
             'O painel mostra uso do orçamento, folga restante, maior custo local e quantas execuções do detector ocorreram no frame.',

@@ -1,8 +1,19 @@
-# Arquitetura — Vigia IA 1.0.52+52
+# Arquitetura — Vigia IA 1.0.53+53
 
 ## 1. Princípios
 
-A 1.0.52 acrescenta instrumentação temporal do pipeline de IA e uma política de orçamento para trabalho opcional, mantendo a detecção principal obrigatória, a UI reutilizável e o Monitor desacoplado do futuro ESP32.
+A 1.0.53 corrige a camada nativa de reprodução dos áudios padrão sem alterar o contrato Dart, a biblioteca M4A, o pipeline de IA, o fluxo imersivo do Bike ou qualquer integração futura com ESP32.
+
+
+## Evolução 1.0.53
+
+- `AudioSettingsScreen` continua chamando o mesmo contrato `playCustomAlertAudio(slot)`, evitando impacto na UI e nos eventos existentes;
+- `MainActivity.playCustomAlertAudio` mantém a prioridade `override → padrão`;
+- o caminho padrão deixou de usar `setDataSource(context, android.resource://...)`, que falhava em alguns aparelhos ao preparar M4A;
+- `copyBundledAlertToCache` lê `resources.openRawResource(resourceId)`, cria uma cópia privada íntegra e a entrega ao mesmo fluxo `setDataSource(caminho) + prepare()` já usado para overrides;
+- a cópia temporária reduz risco de cache parcial e é refeita quando o áudio é solicitado, portanto atualizações do APK não ficam presas a uma cópia antiga;
+- `tool/android/MainActivity.kt` e a árvore Android gerada permanecem idênticos para que `bootstrap_android.sh` não reintroduza a implementação antiga;
+- os 78 M4A e seus IDs não foram modificados.
 
 
 ## Evolução 1.0.52
