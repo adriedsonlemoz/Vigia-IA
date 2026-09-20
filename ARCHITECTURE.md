@@ -1,9 +1,17 @@
-# Arquitetura — Vigia IA 1.0.64+64
+# Arquitetura — Vigia IA 1.0.65+65
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
+
+
+## Evolução 1.0.65 — Buildfix do analyze
+
+- `NativePlatformService` remove dependência/import redundante de `dart:typed_data`, mantendo `Uint8List` via Flutter services.
+- O teste de exportação reconhece que `DiagnosticReportService.export` retorna `String?`, pois o seletor nativo pode ser cancelado.
+- O caminho com `directory` continua sendo obrigatório no teste e é validado antes de construir `File`.
+- Não há alteração de contratos, pipeline de IA ou comportamento de exportação nesta versão.
 
 
 ## Evolução 1.0.64 — Telemetria de desempenho e superfícies adaptativas

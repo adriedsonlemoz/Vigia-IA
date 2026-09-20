@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.0.65+65
+
+- Corrigido o `flutter analyze` reportado pelo Android-APK-33.
+- Removido o import redundante `dart:typed_data` de `native_platform_service.dart`; `Uint8List` já é disponibilizado por `package:flutter/services.dart`.
+- `diagnostic_report_service_test.dart` agora valida que o caminho exportado não é nulo antes de criar `File`, respeitando o retorno `Future<String?>` da API de exportação.
+- Adicionadas verificações preventivas para impedir a volta desses dois problemas.
+- Nenhuma lógica funcional de telemetria, relatórios, Downloads, onboarding, IA ou layouts foi alterada.
+- Versionamento e documentação sincronizados em `1.0.65+65`.
+
 ## 1.0.64+64
 
 - Implementada telemetria granular do pipeline da IA: conversão/decodificação da fonte, transporte, fila/transferência entre isolates, materialização, imagem RGB, resize/letterbox, tensor, LiteRT/TFLite puro, pós-processamentos, total e fim a fim.

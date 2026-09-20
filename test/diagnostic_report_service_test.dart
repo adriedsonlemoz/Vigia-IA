@@ -65,7 +65,8 @@ void main() {
     final service = DiagnosticReportService();
 
     final path = await service.export(report, directory: temp);
-    final file = File(path);
+    expect(path, isNotNull);
+    final file = File(path!);
 
     expect(await file.exists(), isTrue);
     expect(await file.readAsString(), report.toText());

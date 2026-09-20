@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.64',
+          version: '1.0.65',
           current: true,
+          changes: [
+            'Buildfix do Android-APK-33: removido import redundante em NativePlatformService.',
+            'Teste de exportação de diagnóstico atualizado para tratar corretamente o retorno anulável da API.',
+            'Nenhuma lógica de telemetria, exportação, onboarding, IA ou interface foi alterada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.64',
           changes: [
             'Telemetria detalhada separa conversão da fonte, isolate, resize, tensor, LiteRT puro, pós-processamento e tempo fim a fim.',
             'Diagnóstico ganhou captura profunda de 30/60 s e exporta ZIP com resumo, JSON e CSV para análise de desempenho.',

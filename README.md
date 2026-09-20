@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.64+64`
+> **Versão atual:** `1.0.65+65`
 
 ## Estado atual
 
-A `1.0.64+64` adiciona diagnóstico exportável do desempenho real da IA, corrige o onboarding para primeira instalação, melhora o destino de exportação e avança a adaptação para paisagem/tablet.
+A `1.0.65+65` é um buildfix do Android-APK-33 que limpa o `flutter analyze` sem alterar as funcionalidades entregues na 1.0.64.
+
+
+### Evolução 1.0.65 — Buildfix do analyze
+
+- removido o import redundante `dart:typed_data` de `NativePlatformService`;
+- teste de exportação de diagnóstico passa a tratar explicitamente o retorno anulável antes de abrir o arquivo;
+- nenhuma mudança funcional em telemetria, relatórios, Downloads, onboarding, IA ou layouts;
+- verificadores passam a impedir a regressão dos dois problemas encontrados pelo Android-APK-33.
 
 
 ### Evolução 1.0.64 — Telemetria e interface adaptativa
