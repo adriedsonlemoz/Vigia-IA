@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.60 conclui o quarto lote da refatoração preventiva em grupos de três arquivos: status/modelo da sessão, Saúde do sistema e runtime do detector foram divididos em módulos internos menores, preservando APIs e comportamento.",
-  "version": "1.0.60",
-  "build": 60
+  "notes": "A 1.0.61 corrige três wrappers privados obsoletos deixados pela refatoração do MonitorController, eliminando warnings do flutter analyze sem alterar a lógica dos módulos extraídos.",
+  "version": "1.0.61",
+  "build": 61
 }

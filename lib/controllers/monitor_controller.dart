@@ -322,8 +322,6 @@ class MonitorController extends ChangeNotifier {
 
   void _startSessionTelemetryTimer() => this._startSessionTelemetryTimerImpl();
 
-  Future<void> _refreshSessionTelemetry() => this._refreshSessionTelemetryImpl();
-
   void _configureBikeTelemetryTimer() => this._configureBikeTelemetryTimerImpl();
 
   Future<void> _refreshBikeTelemetry() => this._refreshBikeTelemetryImpl();
@@ -1210,16 +1208,6 @@ class MonitorController extends ChangeNotifier {
 
   String get _sourceDisplayName => this._sourceDisplayNameImpl;
 
-  Future<void> _deliverAlert(
-    String message, {
-    SpeechPriority priority = SpeechPriority.normal,
-    String? audioSlot,
-  }) => this._deliverAlertImpl(
-        message,
-        priority: priority,
-        audioSlot: audioSlot,
-      );
-
   Future<void> _handleCameraIntegrityIssue(
     RgbFrame frame,
     CameraIntegrityIssue issue,
@@ -1670,9 +1658,6 @@ class MonitorController extends ChangeNotifier {
         alertOutputs: _settings.alertOutputs.copyWith(voice: _settings.alertOutputs.voice),
         schedule: _schedule,
       );
-
-  Map<String, Object?> _zonesDiagnosticContext() =>
-      this._zonesDiagnosticContextImpl();
 
   Map<String, Object?> _smartRulesDiagnosticContext() =>
       this._smartRulesDiagnosticContextImpl();

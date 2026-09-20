@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.60+60`
+> **Versão atual:** `1.0.61+61`
 
 ## Estado atual
 
-A `1.0.60+60` conclui o **quarto lote da refatoração preventiva em grupos de três arquivos**. Foram 12 arquivos reorganizados em quatro entregas, reduzindo concentração sem mudar APIs públicas ou comportamento.
+A `1.0.61+61` é um **buildfix pós-refatoração**. Ela remove três wrappers privados do `MonitorController` que ficaram sem uso após a modularização e faziam o `flutter analyze` encerrar com warnings tratados como falha, sem alterar o comportamento dos módulos ativos.
+
+
+### Evolução 1.0.61 — Buildfix pós-refatoração
+
+- removidos `_refreshSessionTelemetry`, `_deliverAlert` e `_zonesDiagnosticContext` do arquivo principal porque nenhum chamador ainda usava essas fachadas;
+- telemetria, alertas/TTC e diagnóstico de áreas continuam executados pelos métodos `*Impl` dos módulos internos;
+- nenhuma API pública, fluxo do Monitor, Modo Bike, IA, áudio ou diagnóstico foi alterado;
+- a correção responde diretamente aos três `unused_element` encontrados pelo Flutter 3.44.9 no workflow da 1.0.60.
 
 
 

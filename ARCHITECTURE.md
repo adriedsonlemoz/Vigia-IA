@@ -1,10 +1,16 @@
-# Arquitetura — Vigia IA 1.0.60+60
+# Arquitetura — Vigia IA 1.0.61+61
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
 
+
+## Evolução 1.0.61 — Buildfix pós-refatoração
+
+- O `MonitorController` não mantém mais as fachadas privadas `_refreshSessionTelemetry`, `_deliverAlert` e `_zonesDiagnosticContext`, pois a refatoração já direciona os chamadores para os métodos `*Impl` nos módulos `part`.
+- A remoção elimina três `unused_element` sem deslocar estado nem alterar contratos públicos.
+- `monitor_controller_session_support.dart`, `monitor_controller_event_support.dart` e `monitor_controller_state_support.dart` continuam sendo as implementações ativas dessas responsabilidades.
 
 ## Evolução 1.0.60 — Refatoração estrutural, lote 4
 

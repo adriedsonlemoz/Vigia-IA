@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.61+61
+
+- Corrigidos os três avisos `unused_element` reportados pelo workflow da 1.0.60 em `monitor_controller.dart`.
+- Removidos os wrappers privados `_refreshSessionTelemetry`, `_deliverAlert` e `_zonesDiagnosticContext`, que ficaram sem referências após a extração dos módulos internos.
+- A implementação ativa permanece em `_refreshSessionTelemetryImpl`, `_deliverAlertImpl` e `_zonesDiagnosticContextImpl`, preservando telemetria, alertas/TTC e diagnóstico de áreas.
+- Nenhuma funcionalidade do Monitor, Modo Bike, IA, áudio, histórico ou diagnóstico foi removida.
+- Versionamento e documentação sincronizados em `1.0.61+61`.
+
 ## 1.0.60+60
 
 - Quarto lote da refatoração preventiva concluído em `session_status.dart`, `system_health_screen.dart` e `object_detection_service.dart`.

@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.60',
+          version: '1.0.61',
           current: true,
+          changes: [
+            'Buildfix após a refatoração: removidos três wrappers privados obsoletos que faziam o flutter analyze falhar com unused_element.',
+            'Telemetria da sessão, entrega de alertas e diagnóstico de áreas continuam usando diretamente os módulos internos extraídos.',
+            'Nenhuma lógica funcional do Monitor, Bike, TTC, IA ou diagnóstico foi alterada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.60',
           changes: [
             'Quarto lote da refatoração estrutural concluído em status da sessão, Saúde do sistema e detector de objetos.',
             'Analisador de saúde, componentes visuais e runtime interno da IA foram movidos para módulos próprios sem alterar APIs públicas.',
