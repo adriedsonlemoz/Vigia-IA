@@ -5,37 +5,23 @@ import '../models/session_status.dart';
 import '../utils/storage_size_formatter.dart';
 
 class SessionStatusPanel extends StatelessWidget {
-  const SessionStatusPanel({super.key, required this.data});
+  const SessionStatusPanel({
+    super.key,
+    required this.data,
+    this.showCloseButton = false,
+  });
 
   final SessionStatusData data;
+  final bool showCloseButton;
 
   @override
   Widget build(BuildContext context) {
     final remote = data.remotePhone;
     return SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.monitor_heart_outlined),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Status da sessão',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-                ),
-              ),
-              _StateBadge(state: data.health.state),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SessionHealthCard(data: data),
-          const SizedBox(height: 12),
-          _VideoSummaryCard(data: data),
-          const SizedBox(height: 12),
-          _DeviceSection(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 720;
+          final localSection = _DeviceSection(
             title: 'Este celular',
             subtitle: data.aiDevice == 'Este celular'
                 ? 'Executa a IA desta sessão.'
@@ -43,9 +29,8 @@ class SessionStatusPanel extends StatelessWidget {
             icon: Icons.smartphone_rounded,
             telemetry: data.localDevice,
             connectionFallback: data.sourceConnection,
-          ),
-          const SizedBox(height: 12),
-          _DeviceSection(
+          );
+          final remoteSection = _DeviceSection(
             title: remote?.name ?? 'Celular remoto',
             subtitle: remote == null
                 ? 'Não há celular remoto ativo nesta fonte.'
@@ -58,8 +43,65 @@ class SessionStatusPanel extends StatelessWidget {
                     ? 'Rede local conectada'
                     : 'Rede local sem imagem',
             unavailable: remote == null,
-          ),
-        ],
+          );
+          return ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.monitor_heart_outlined),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Status da sessão',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  _StateBadge(state: data.health.state),
+                  if (showCloseButton) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      tooltip: 'Fechar',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (wide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _SessionHealthCard(data: data)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _VideoSummaryCard(data: data)),
+                  ],
+                )
+              else ...[
+                _SessionHealthCard(data: data),
+                const SizedBox(height: 12),
+                _VideoSummaryCard(data: data),
+              ],
+              const SizedBox(height: 16),
+              if (wide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: localSection),
+                    const SizedBox(width: 16),
+                    Expanded(child: remoteSection),
+                  ],
+                )
+              else ...[
+                localSection,
+                const SizedBox(height: 12),
+                remoteSection,
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -225,15 +267,35 @@ class _VideoSummaryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => showModalBottomSheet<void>(
-          context: context,
-          showDragHandle: true,
-          isScrollControlled: true,
-          builder: (_) => FractionallySizedBox(
-            heightFactor: 0.78,
-            child: VideoSessionDetailsPanel(data: data),
-          ),
-        ),
+        onTap: () {
+          final size = MediaQuery.sizeOf(context);
+          if (size.width >= 840) {
+            showDialog<void>(
+              context: context,
+              builder: (_) => Dialog(
+                insetPadding: const EdgeInsets.all(28),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 860,
+                    maxHeight: size.height * 0.84,
+                  ),
+                  child: VideoSessionDetailsPanel(data: data),
+                ),
+              ),
+            );
+            return;
+          }
+          showModalBottomSheet<void>(
+            context: context,
+            showDragHandle: true,
+            isScrollControlled: true,
+            builder: (_) => FractionallySizedBox(
+              heightFactor: 0.78,
+              child: VideoSessionDetailsPanel(data: data),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(

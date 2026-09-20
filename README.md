@@ -2,12 +2,25 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.54+54`
+> **Versão atual:** `1.0.55+55`
 
 ## Estado atual
 
-A `1.0.54+54` adiciona o primeiro **HUD transparente do Modo Bike sobre o vídeo**, com simulador interno para validar velocidade, pneus e alertas mesmo sem ESP32. A integração real com ESP32 continua futura. A versão também corrige o lint encontrado pelo workflow da 1.0.53.
+A `1.0.55+55` adiciona uma **interface adaptativa real para retrato, paisagem e tablet**. Em telas largas, a navegação passa à lateral, Home/Bike/Histórico/Configurações aproveitam múltiplas colunas e o Monitor prioriza o vídeo. A versão também corrige os dois lints reportados pelo workflow da 1.0.54 e adiciona o modo Ajustar/Preencher com overlays alinhados.
 
+
+
+### Evolução 1.0.55
+
+- `AdaptiveMainScaffold` troca automaticamente a barra inferior por `NavigationRail` em celular paisagem e tablet, recuperando altura útil sem criar um modo manual.
+- `HomeScreen` remove o botão flutuante que cobria conteúdo, integra a ação de iniciar ao fluxo da tela e usa duas colunas em largura suficiente.
+- A seleção de fonte usa rótulos compactos `Local / RTSP / Remoto`, evitando quebra de `Dispositivo` em telas estreitas.
+- `BikeModeScreen` organiza perfil/telemetria e celular traseiro/simulador em duas colunas quando há espaço; o HUD reduz altura automaticamente em paisagem baixa.
+- `MonitorScreen` usa painel lateral recolhível em celular deitado e permanente apenas em tablets amplos.
+- `Ajustar / Preencher` altera o vídeo e a geometria de `DetectionOverlay` e `MonitoringZoneOverlay` em conjunto, preservando alinhamento após crop.
+- `SessionStatusPanel` usa duas colunas em telas largas e abre em diálogo amplo no Monitor quando o espaço permite.
+- `EventsScreen` move filtros para uma coluna lateral em telas largas; `SettingsScreen` distribui categorias em duas colunas.
+- Os dois `!` desnecessários apontados pelo Flutter 3.44.9 foram removidos do HUD do Monitor.
 
 ### Evolução 1.0.54
 

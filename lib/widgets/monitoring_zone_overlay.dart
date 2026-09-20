@@ -9,11 +9,13 @@ class MonitoringZoneOverlay extends StatefulWidget {
     required this.editingZoneId,
     required this.previewAspectRatio,
     required this.onChanged,
+    this.fillPreview = false,
   });
 
   final List<MonitoringZoneProfile> zones;
   final String? editingZoneId;
   final double? previewAspectRatio;
+  final bool fillPreview;
   final void Function(String id, MonitoringZone zone) onChanged;
 
   @override
@@ -37,6 +39,14 @@ class _MonitoringZoneOverlayState extends State<MonitoringZoneOverlay> {
     final ratio = widget.previewAspectRatio;
     if (ratio == null || ratio <= 0 || size.isEmpty) return Offset.zero & size;
     final containerRatio = size.width / size.height;
+    if (widget.fillPreview) {
+      if (containerRatio > ratio) {
+        final height = size.width / ratio;
+        return Rect.fromLTWH(0, (size.height - height) / 2, size.width, height);
+      }
+      final width = size.height * ratio;
+      return Rect.fromLTWH((size.width - width) / 2, 0, width, size.height);
+    }
     if (containerRatio > ratio) {
       final width = size.height * ratio;
       return Rect.fromLTWH((size.width - width) / 2, 0, width, size.height);

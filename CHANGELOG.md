@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## 1.0.55+55
+
+- Corrigidos os dois avisos `unnecessary_non_null_assertion` em `monitor_screen.dart` que faziam o `flutter analyze` falhar no workflow da 1.0.54.
+- Nova base adaptativa para celular retrato, celular paisagem e tablet: telas principais trocam a barra inferior por `NavigationRail` quando há largura útil.
+- Home e Modo Bike passam a usar duas colunas em tela larga; Histórico ganha filtros laterais e Configurações divide categorias em duas colunas.
+- Monitor em celular paisagem prioriza o vídeo: o painel de controles/detecções pode ser recolhido; em tablet grande ele permanece lateral.
+- Monitor ganhou `Ajustar / Preencher`; caixas da IA e áreas de vigilância usam a mesma geometria de contain/cover para permanecer alinhadas.
+- HUD da Bike fica mais compacto em telas de pouca altura.
+- Status da sessão abre como diálogo largo em telas grandes e posiciona Este celular/Celular remoto lado a lado.
+- ESP32 continua sem implementação real; o simulador permanece disponível para validação do HUD.
+- Versionamento e documentação sincronizados em `1.0.55+55`.
+
 ## 1.0.54+54
 
 - Implementado HUD transparente do Modo Bike diretamente sobre o vídeo do Monitor.

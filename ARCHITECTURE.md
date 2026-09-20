@@ -1,9 +1,21 @@
-# Arquitetura — Vigia IA 1.0.54+54
+# Arquitetura — Vigia IA 1.0.55+55
 
 ## 1. Princípios
 
-A 1.0.54 introduz uma camada de sensores do Modo Bike independente da origem dos dados. Nesta etapa, a origem é um simulador local para testar o HUD transparente sem hardware; a futura fonte ESP32 poderá alimentar o mesmo contrato. A versão também corrige o lint identificado no workflow da 1.0.53.
+A 1.0.55 introduz uma camada adaptativa de apresentação para celular retrato, celular paisagem e tablet, sem duplicar fluxos de negócio. A navegação principal muda de barra inferior para rail lateral conforme o espaço; telas críticas reorganizam o mesmo conteúdo em painéis. O Monitor adiciona contain/cover com uma geometria compartilhada pelos overlays. A integração real com ESP32 continua fora desta versão.
 
+
+
+## Evolução 1.0.55
+
+- `AdaptiveMainScaffold` centraliza a decisão `NavigationBar` vs `NavigationRail`; `AdaptiveLayout` mantém os breakpoints em um único ponto.
+- Home, Bike, Histórico e Multicâmera reutilizam o mesmo shell principal, evitando divergência de navegação entre orientações.
+- `MonitorScreen` diferencia celular paisagem de tablet grande: o primeiro usa painel lateral sobreposto/recolhível; o segundo reserva uma coluna permanente.
+- O preenchimento do vídeo é aplicado por escala sobre o preview existente; `DetectionOverlay` e `MonitoringZoneOverlay` calculam o retângulo visível com a mesma regra de cover/contain.
+- `SessionStatusPanel` permanece um componente reutilizável, mas reorganiza saúde/vídeo e os dois dispositivos em duas colunas quando a largura permite.
+- `BikeRideHud` reduz altura, tipografia e métricas quando a altura da janela é inferior a 500 dp.
+- `SettingsScreen` mantém as mesmas rotas e serviços, apenas distribuindo as categorias em duas listas independentes em telas largas.
+- Nenhum contrato de ESP32/BLE/Wi-Fi foi introduzido nesta etapa.
 
 ## Evolução 1.0.54
 

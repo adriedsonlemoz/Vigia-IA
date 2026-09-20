@@ -43,6 +43,8 @@ class _MonitorScreenState extends State<MonitorScreen>
   String? _editingZoneId;
   bool _detectionsExpanded = false;
   bool _hudExpanded = false;
+  bool _fillPreview = false;
+  bool _landscapePanelExpanded = false;
   int _lastDetectionCount = 0;
 
   @override
@@ -700,6 +702,31 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Future<void> _showSessionStatus() async {
+    final size = MediaQuery.sizeOf(context);
+    final largeSurface = size.width >= 840;
+    if (largeSurface) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          insetPadding: const EdgeInsets.all(24),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 1040,
+              maxHeight: size.height * 0.88,
+            ),
+            child: ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) => SessionStatusPanel(
+                data: _controller.sessionStatus,
+                showCloseButton: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -750,6 +777,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     final size = MediaQuery.sizeOf(context);
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape &&
         size.width >= 700;
+    final permanentLandscapePanel = size.shortestSide >= 600 && size.width >= 980;
 
     return Scaffold(
       appBar: AppBar(
@@ -812,7 +840,9 @@ class _MonitorScreenState extends State<MonitorScreen>
         ],
       ),
       body: SafeArea(
-        child: landscape ? _buildLandscape(context) : _buildPortrait(context),
+        child: landscape
+            ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
+            : _buildPortrait(context),
       ),
     );
   }
@@ -886,30 +916,106 @@ class _MonitorScreenState extends State<MonitorScreen>
       ? _controller.trackedDetections.length
       : _controller.detections.length;
 
-  Widget _buildLandscape(BuildContext context) {
+  Widget _buildLandscape(
+    BuildContext context, {
+    required bool permanentPanel,
+  }) {
     final width = MediaQuery.sizeOf(context).width;
-    final panelWidth = (width * 0.32).clamp(300.0, 420.0).toDouble();
-    return Row(
-      children: [
-        Expanded(child: _buildCameraStage(context)),
-        SizedBox(
-          width: panelWidth,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border(
-                left: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
-              ),
-            ),
-            child: Column(
-              children: [
-                _buildControlDock(context, compact: true),
-                Expanded(child: _buildDetectionPanel(context, compact: true)),
-              ],
-            ),
+    final panelWidth = (width * 0.31).clamp(300.0, 420.0).toDouble();
+    final panel = DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.98),
+        border: Border(
+          left: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.14),
           ),
         ),
+      ),
+      child: Column(
+        children: [
+          if (!permanentPanel)
+            SizedBox(
+              height: 42,
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Controles e detecções',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Ocultar painel',
+                    onPressed: () => setState(() => _landscapePanelExpanded = false),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+          _buildControlDock(context, compact: true),
+          Expanded(child: _buildDetectionPanel(context, compact: true)),
+        ],
+      ),
+    );
+
+    if (permanentPanel) {
+      return Row(
+        children: [
+          Expanded(child: _buildCameraStage(context)),
+          SizedBox(width: panelWidth, child: panel),
+        ],
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildCameraStage(context),
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          top: 0,
+          bottom: 0,
+          right: _landscapePanelExpanded ? 0 : -panelWidth,
+          width: panelWidth,
+          child: Material(elevation: 12, child: panel),
+        ),
+        if (!_landscapePanelExpanded)
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: FilledButton.tonalIcon(
+              onPressed: () => setState(() => _landscapePanelExpanded = true),
+              icon: const Icon(Icons.radar_rounded),
+              label: Text('Detectados $_currentDetectionCount'),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _buildPreviewLayer(BuildContext context) {
+    final preview = _controller.buildPreview();
+    if (!_fillPreview) return preview;
+    final ratio = _controller.previewAspectRatio;
+    if (ratio == null || ratio <= 0) return preview;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
+          return preview;
+        }
+        final containerRatio = constraints.maxWidth / constraints.maxHeight;
+        final scale = containerRatio > ratio
+            ? containerRatio / ratio
+            : ratio / containerRatio;
+        return ClipRect(
+          child: Transform.scale(
+            scale: scale,
+            child: preview,
+          ),
+        );
+      },
     );
   }
 
@@ -918,15 +1024,18 @@ class _MonitorScreenState extends State<MonitorScreen>
     final remoteStatus = _controller.remotePhoneStatus;
     final bikeSnapshot = _bikeSensors.snapshot;
     final bikeHudActive = bikeSnapshot != null;
+    final compactBikeHud = MediaQuery.sizeOf(context).height < 500;
     final standardHudTop = bikeHudActive
-        ? (bikeSnapshot!.primaryWarning == null ? 98.0 : 138.0)
+        ? (bikeSnapshot.primaryWarning == null
+            ? (compactBikeHud ? 72.0 : 98.0)
+            : (compactBikeHud ? 108.0 : 138.0))
         : 12.0;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (!_controller.initializing) _controller.buildPreview(),
+          if (!_controller.initializing) _buildPreviewLayer(context),
           if (_controller.initializing)
             const Center(child: CircularProgressIndicator()),
           if (!_controller.initializing)
@@ -934,12 +1043,14 @@ class _MonitorScreenState extends State<MonitorScreen>
               detections: _controller.detections,
               trackedDetections: _controller.trackedDetections,
               previewAspectRatio: _controller.previewAspectRatio,
+              fillPreview: _fillPreview,
             ),
           if (!_controller.initializing)
             MonitoringZoneOverlay(
               zones: _controller.monitoringZones,
               editingZoneId: _editingZoneId,
               previewAspectRatio: _controller.previewAspectRatio,
+              fillPreview: _fillPreview,
               onChanged: _applyZone,
             ),
           if (bikeHudActive)
@@ -947,7 +1058,7 @@ class _MonitorScreenState extends State<MonitorScreen>
               left: 0,
               right: 0,
               top: 6,
-              child: BikeRideHud(snapshot: bikeSnapshot!),
+              child: BikeRideHud(snapshot: bikeSnapshot),
             ),
           Positioned(
             left: 12,
@@ -1023,6 +1134,14 @@ class _MonitorScreenState extends State<MonitorScreen>
                           label: _controller.clipRecording ? 'Gravando clipe' : 'Clipes',
                           active: _controller.clipRecording,
                         ),
+                      _HudPill(
+                        icon: _fillPreview
+                            ? Icons.fullscreen_rounded
+                            : Icons.fit_screen_rounded,
+                        label: _fillPreview ? 'Preencher' : 'Ajustar',
+                        active: _fillPreview,
+                        onTap: () => setState(() => _fillPreview = !_fillPreview),
+                      ),
                     ],
                   ),
                 ],

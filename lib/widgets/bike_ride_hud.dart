@@ -13,6 +13,7 @@ class BikeRideHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final warning = snapshot.primaryWarning;
+    final compact = MediaQuery.sizeOf(context).height < 500;
     final health = snapshot.health;
     final footerText = _footerText(snapshot);
     final warningColor = switch (health) {
@@ -29,13 +30,14 @@ class BikeRideHud extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              height: 86,
+              height: compact ? 64 : 86,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
                     child: _BikeHudMetric(
+                      compact: compact,
                       icon: Icons.tire_repair_rounded,
                       label: 'Dianteiro',
                       value: snapshot.connected
@@ -47,12 +49,14 @@ class BikeRideHud extends StatelessWidget {
                   Align(
                     alignment: Alignment.topCenter,
                     child: _SpeedBadge(
+                      compact: compact,
                       speedKmh: snapshot.connected ? snapshot.speedKmh : 0,
                     ),
                   ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: _BikeHudMetric(
+                      compact: compact,
                       icon: Icons.tire_repair_rounded,
                       label: 'Traseiro',
                       value: snapshot.connected
@@ -87,7 +91,7 @@ class BikeRideHud extends StatelessWidget {
               const SizedBox(height: 5),
               Container(
                 constraints: const BoxConstraints(maxWidth: 560),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 5 : 8),
                 decoration: BoxDecoration(
                   color: warningColor.withValues(alpha: 0.88),
                   borderRadius: BorderRadius.circular(14),
@@ -104,9 +108,9 @@ class BikeRideHud extends StatelessWidget {
                       child: Text(
                         warning,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: compact ? 10 : 12,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -138,14 +142,15 @@ class BikeRideHud extends StatelessWidget {
 }
 
 class _SpeedBadge extends StatelessWidget {
-  const _SpeedBadge({required this.speedKmh});
+  const _SpeedBadge({required this.speedKmh, required this.compact});
 
   final double speedKmh;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 92,
-        padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
+        width: compact ? 78 : 92,
+        padding: EdgeInsets.fromLTRB(8, compact ? 3 : 5, 8, compact ? 4 : 6),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.54),
           borderRadius: BorderRadius.circular(18),
@@ -156,9 +161,9 @@ class _SpeedBadge extends StatelessWidget {
           children: [
             Text(
               speedKmh.toStringAsFixed(0),
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: compact ? 22 : 28,
                 height: 1,
                 fontWeight: FontWeight.w900,
               ),
@@ -179,12 +184,14 @@ class _SpeedBadge extends StatelessWidget {
 
 class _BikeHudMetric extends StatelessWidget {
   const _BikeHudMetric({
+    required this.compact,
     required this.icon,
     required this.label,
     required this.value,
     required this.alert,
   });
 
+  final bool compact;
   final IconData icon;
   final String label;
   final String value;
@@ -196,8 +203,8 @@ class _BikeHudMetric extends StatelessWidget {
         ? Theme.of(context).colorScheme.error.withValues(alpha: 0.78)
         : Colors.black.withValues(alpha: 0.48);
     return Container(
-      constraints: const BoxConstraints(minWidth: 90, maxWidth: 104),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      constraints: BoxConstraints(minWidth: compact ? 82 : 90, maxWidth: compact ? 94 : 104),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 9, vertical: compact ? 5 : 7),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(16),
@@ -206,7 +213,7 @@ class _BikeHudMetric extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 17, color: Colors.white),
+          Icon(icon, size: compact ? 15 : 17, color: Colors.white),
           const SizedBox(width: 6),
           Flexible(
             child: Column(
@@ -227,9 +234,9 @@ class _BikeHudMetric extends StatelessWidget {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: compact ? 10 : 12,
                     fontWeight: FontWeight.w900,
                   ),
                 ),

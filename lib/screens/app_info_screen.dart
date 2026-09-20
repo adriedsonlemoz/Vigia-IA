@@ -150,8 +150,20 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.54',
+          version: '1.0.55',
           current: true,
+          changes: [
+            'Interface adaptativa para retrato, paisagem e tablet, com navegação lateral nas telas largas.',
+            'Home e Modo Bike usam duas colunas quando há espaço; Histórico e Configurações também aproveitam melhor telas largas.',
+            'Monitor em celular deitado prioriza o vídeo e permite recolher o painel lateral; tablet mantém painel permanente.',
+            'Vídeo ganhou Ajustar/Preencher com caixas da IA e áreas de vigilância sincronizadas ao mesmo recorte.',
+            'Status da sessão usa diálogo largo e separa os dois celulares lado a lado em tablets/paisagem ampla.',
+            'Corrigidos os dois lints unnecessary_non_null_assertion reportados pelo workflow da 1.0.54.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.54',
           changes: [
             'HUD transparente do Modo Bike agora aparece sobre o vídeo com velocidade e pressão dos pneus.',
             'Simulador interno permite testar cenários de sensores sem possuir ESP32, sempre identificado como SIMULAÇÃO.',

@@ -9,11 +9,13 @@ class DetectionOverlay extends StatelessWidget {
     required this.detections,
     required this.previewAspectRatio,
     this.trackedDetections = const <TrackedDetection>[],
+    this.fillPreview = false,
   });
 
   final List<Detection> detections;
   final List<TrackedDetection> trackedDetections;
   final double? previewAspectRatio;
+  final bool fillPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,7 @@ class DetectionOverlay extends StatelessWidget {
           detections: detections,
           trackIds: ids,
           previewAspectRatio: previewAspectRatio,
+          fillPreview: fillPreview,
           textDirection: Directionality.of(context),
         ),
         child: const SizedBox.expand(),
@@ -40,12 +43,14 @@ class _DetectionPainter extends CustomPainter {
     required this.detections,
     required this.trackIds,
     required this.previewAspectRatio,
+    required this.fillPreview,
     required this.textDirection,
   });
 
   final List<Detection> detections;
   final Map<Detection, int> trackIds;
   final double? previewAspectRatio;
+  final bool fillPreview;
   final TextDirection textDirection;
 
   Rect _previewRect(Size size) {
@@ -54,6 +59,14 @@ class _DetectionPainter extends CustomPainter {
       return Offset.zero & size;
     }
     final containerRatio = size.width / size.height;
+    if (fillPreview) {
+      if (containerRatio > ratio) {
+        final height = size.width / ratio;
+        return Rect.fromLTWH(0, (size.height - height) / 2, size.width, height);
+      }
+      final width = size.height * ratio;
+      return Rect.fromLTWH((size.width - width) / 2, 0, width, size.height);
+    }
     if (containerRatio > ratio) {
       final width = size.height * ratio;
       return Rect.fromLTWH((size.width - width) / 2, 0, width, size.height);
@@ -131,5 +144,6 @@ class _DetectionPainter extends CustomPainter {
       oldDelegate.detections != detections ||
       oldDelegate.trackIds != trackIds ||
       oldDelegate.previewAspectRatio != previewAspectRatio ||
+      oldDelegate.fillPreview != fillPreview ||
       oldDelegate.textDirection != textDirection;
 }

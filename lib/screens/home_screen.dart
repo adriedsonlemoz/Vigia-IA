@@ -455,8 +455,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final activeZones = _monitoringZones.where((zone) => zone.enabled).length;
-    final width = MediaQuery.sizeOf(context).width;
-    final wide = width >= 820;
 
     final overview = <Widget>[
       _buildHero(context, activeZones),
@@ -543,20 +541,24 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ];
 
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton.extended(
+    overview.addAll([
+      const SizedBox(height: 14),
+      FilledButton.icon(
         onPressed: _start,
         icon: const Icon(Icons.play_arrow_rounded),
-        label: const Text(
-          'INICIAR MONITORAMENTO',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        label: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            'INICIAR MONITORAMENTO',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
         ),
       ),
-      bottomNavigationBar: MainNavigationBar(
-        currentIndex: 0,
-        onDestinationSelected: _navigateMain,
-      ),
+    ]);
+
+    return AdaptiveMainScaffold(
+      currentIndex: 0,
+      onDestinationSelected: _navigateMain,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,30 +582,36 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            if (wide) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 9,
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 10, 110),
-                      children: overview,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 11,
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(10, 12, 20, 110),
-                      children: controls,
-                    ),
-                  ),
-                ],
-              );
-            }
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 110),
-              children: [...overview, const SizedBox(height: 22), ...controls],
+            final wide = constraints.maxWidth >= 700;
+            final content = wide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 9,
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 10, 28),
+                          children: overview,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 11,
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(10, 12, 20, 28),
+                          children: controls,
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+                    children: [...overview, const SizedBox(height: 22), ...controls],
+                  );
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: content,
+              ),
             );
           },
         ),
@@ -699,7 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ButtonSegment(
                 value: VideoSourceType.localCamera,
                 icon: Icon(Icons.phone_android_rounded),
-                label: Text('Dispositivo'),
+                label: Text('Local'),
               ),
               ButtonSegment(
                 value: VideoSourceType.rtsp,
@@ -709,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ButtonSegment(
                 value: VideoSourceType.remotePhone,
                 icon: Icon(Icons.phone_android_rounded),
-                label: Text('Celular'),
+                label: Text('Remoto'),
               ),
             ],
             selected: {_sourceType},

@@ -94,7 +94,202 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final hero = _BikeHero(
+      enabled: _config.enabled,
+      onChanged: (value) => _update(_config.copyWith(enabled: value)),
+    );
+
+    final powerCard = _SectionCard(
+      title: 'Perfil de energia',
+      subtitle:
+          'O perfil limita de verdade a captura/análise e a transmissão durante o uso na bike.',
+      child: Column(
+        children: BikePowerProfile.values.map((profile) {
+          final selected = _config.powerProfile == profile;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _update(_config.copyWith(powerProfile: profile)),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile.label,
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(profile.description),
+                          const SizedBox(height: 6),
+                          Text(
+                            'IA: mínimo ${profile.targetAnalysisIntervalMs} ms entre análises · LAN: limite de ${profile.targetStreamFps} FPS',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(growable: false),
+      ),
+    );
+
+    final rearPhoneCard = _SectionCard(
+      title: 'Celular traseiro',
+      subtitle:
+          'Otimizações aplicadas enquanto o aparelho estiver monitorando ou transmitindo.',
+      child: Column(
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _config.dimRearScreen,
+            onChanged: (value) =>
+                _update(_config.copyWith(dimRearScreen: value)),
+            secondary: const Icon(Icons.brightness_low_outlined),
+            title: const Text('Reduzir brilho da tela'),
+            subtitle: const Text(
+              'Diminui o brilho somente dentro do Vigia IA; ao sair, o brilho do sistema é restaurado.',
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _config.keepRemoteTelemetry,
+            onChanged: (value) =>
+                _update(_config.copyWith(keepRemoteTelemetry: value)),
+            secondary: const Icon(Icons.monitor_heart_outlined),
+            title: const Text('Enviar condições do aparelho'),
+            subtitle: const Text(
+              'Disponibiliza bateria, carga, temperatura, brilho, CPU e memória junto à transmissão local.',
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _config.alertLowBattery,
+            onChanged: (value) =>
+                _update(_config.copyWith(alertLowBattery: value)),
+            secondary: const Icon(Icons.battery_alert_outlined),
+            title: const Text('Avisar bateria baixa'),
+            subtitle: Text(
+              'Avisa quando o celular traseiro chegar a ${_config.lowBatteryPercent}%.',
+            ),
+          ),
+          if (_config.alertLowBattery)
+            Row(
+              children: [
+                const SizedBox(width: 8),
+                const Text('5%'),
+                Expanded(
+                  child: Slider(
+                    value: _config.lowBatteryPercent.toDouble(),
+                    min: 5,
+                    max: 50,
+                    divisions: 9,
+                    label: '${_config.lowBatteryPercent}%',
+                    onChanged: (value) => setState(
+                      () => _config = _config.copyWith(
+                        lowBatteryPercent: value.round(),
+                      ),
+                    ),
+                    onChangeEnd: (value) => _update(
+                      _config.copyWith(lowBatteryPercent: value.round()),
+                    ),
+                  ),
+                ),
+                const Text('50%'),
+              ],
+            ),
+        ],
+      ),
+    );
+
+    final simulationCard = _SectionCard(
+      title: 'Teste do HUD sem ESP32',
+      subtitle:
+          'Gera dados falsos apenas para testar o painel transparente sobre o vídeo.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _config.sensorSimulationEnabled,
+            onChanged: (value) =>
+                _update(_config.copyWith(sensorSimulationEnabled: value)),
+            secondary: const Icon(Icons.science_outlined),
+            title: const Text('Simular sensores da bike'),
+            subtitle: const Text(
+              'Mostra velocidade, pneus, bateria e alertas no Monitor com a marca SIMULAÇÃO.',
+            ),
+          ),
+          if (_config.sensorSimulationEnabled) ...[
+            const SizedBox(height: 8),
+            DropdownButtonFormField<BikeSimulationScenario>(
+              initialValue: _config.simulationScenario,
+              decoration: const InputDecoration(labelText: 'Cenário de teste'),
+              items: BikeSimulationScenario.values
+                  .map(
+                    (scenario) => DropdownMenuItem(
+                      value: scenario,
+                      child: Text(scenario.label),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (scenario) {
+                if (scenario == null) return;
+                _update(_config.copyWith(simulationScenario: scenario));
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _config.simulationScenario.description,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              onPressed: () => _navigateMain(2),
+              icon: const Icon(Icons.play_circle_outline_rounded),
+              label: const Text('Abrir Monitor e testar HUD'),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    final telemetryCard = _TelemetryCard(
+      telemetry: _telemetry,
+      profile: _config.powerProfile,
+      enabled: _config.enabled,
+    );
+
+    return AdaptiveMainScaffold(
+      currentIndex: 4,
+      onDestinationSelected: _navigateMain,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,249 +319,69 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
             ),
         ],
       ),
-      bottomNavigationBar: MainNavigationBar(
-        currentIndex: 4,
-        onDestinationSelected: _navigateMain,
-      ),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                    children: [
-                      _BikeHero(
-                        enabled: _config.enabled,
-                        onChanged: (value) =>
-                            _update(_config.copyWith(enabled: value)),
-                      ),
-                      const SizedBox(height: 12),
-                      _SectionCard(
-                        title: 'Perfil de energia',
-                        subtitle:
-                            'Agora o perfil limita de verdade a captura/análise e a transmissão durante o uso na bike.',
-                        child: Column(
-                          children: BikePowerProfile.values.map((profile) {
-                            final selected = _config.powerProfile == profile;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () => _update(
-                                  _config.copyWith(powerProfile: profile),
-                                ),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: selected
-                                          ? Theme.of(context).colorScheme.primary
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .outlineVariant,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        selected
-                                            ? Icons.radio_button_checked
-                                            : Icons.radio_button_off,
-                                        color: selected
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                            : null,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              profile.label,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(profile.description),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              'IA: mínimo ${profile.targetAnalysisIntervalMs} ms entre análises · LAN: limite de ${profile.targetStreamFps} FPS',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(growable: false),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _SectionCard(
-                        title: 'Celular traseiro',
-                        subtitle:
-                            'As otimizações abaixo são aplicadas enquanto o aparelho estiver monitorando ou transmitindo.',
-                        child: Column(
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 760;
+                  final left = <Widget>[
+                    hero,
+                    const SizedBox(height: 12),
+                    powerCard,
+                    const SizedBox(height: 12),
+                    telemetryCard,
+                  ];
+                  final right = <Widget>[
+                    rearPhoneCard,
+                    const SizedBox(height: 12),
+                    simulationCard,
+                    const SizedBox(height: 12),
+                    const _RemotePanelReadyCard(),
+                  ];
+                  if (!wide) {
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 760),
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                           children: [
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              value: _config.dimRearScreen,
-                              onChanged: (value) => _update(
-                                _config.copyWith(dimRearScreen: value),
-                              ),
-                              secondary:
-                                  const Icon(Icons.brightness_low_outlined),
-                              title: const Text('Reduzir brilho da tela'),
-                              subtitle: const Text(
-                                'Diminui o brilho somente dentro do Vigia IA durante a operação; ao sair, o brilho do sistema é restaurado.',
-                              ),
-                            ),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              value: _config.keepRemoteTelemetry,
-                              onChanged: (value) => _update(
-                                _config.copyWith(keepRemoteTelemetry: value),
-                              ),
-                              secondary:
-                                  const Icon(Icons.monitor_heart_outlined),
-                              title: const Text('Enviar condições do aparelho'),
-                              subtitle: const Text(
-                                'Disponibiliza bateria, carga, temperatura, brilho, CPU e memória junto ao estado da transmissão local.',
-                              ),
-                            ),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              value: _config.alertLowBattery,
-                              onChanged: (value) => _update(
-                                _config.copyWith(alertLowBattery: value),
-                              ),
-                              secondary:
-                                  const Icon(Icons.battery_alert_outlined),
-                              title: const Text('Avisar bateria baixa'),
-                              subtitle: Text(
-                                'Gera aviso quando o celular traseiro chegar a ${_config.lowBatteryPercent}%.',
-                              ),
-                            ),
-                            if (_config.alertLowBattery)
-                              Row(
-                                children: [
-                                  const SizedBox(width: 8),
-                                  const Text('5%'),
-                                  Expanded(
-                                    child: Slider(
-                                      value: _config.lowBatteryPercent
-                                          .toDouble(),
-                                      min: 5,
-                                      max: 50,
-                                      divisions: 9,
-                                      label:
-                                          '${_config.lowBatteryPercent}%',
-                                      onChanged: (value) => setState(
-                                        () => _config = _config.copyWith(
-                                          lowBatteryPercent: value.round(),
-                                        ),
-                                      ),
-                                      onChangeEnd: (value) => _update(
-                                        _config.copyWith(
-                                          lowBatteryPercent: value.round(),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const Text('50%'),
-                                ],
-                              ),
+                            ...left,
+                            const SizedBox(height: 12),
+                            ...right,
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _SectionCard(
-                        title: 'Teste do HUD sem ESP32',
-                        subtitle:
-                            'Gera dados falsos somente para testar o painel transparente sobre o vídeo. Nenhum sensor real é necessário.',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              value: _config.sensorSimulationEnabled,
-                              onChanged: (value) => _update(
-                                _config.copyWith(sensorSimulationEnabled: value),
-                              ),
-                              secondary: const Icon(Icons.science_outlined),
-                              title: const Text('Simular sensores da bike'),
-                              subtitle: const Text(
-                                'Mostra velocidade, pneus, bateria e alertas no Monitor usando uma fonte marcada como SIMULAÇÃO.',
-                              ),
+                    );
+                  }
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1180),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(18, 12, 9, 28),
+                              children: left,
                             ),
-                            if (_config.sensorSimulationEnabled) ...[
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<BikeSimulationScenario>(
-                                initialValue: _config.simulationScenario,
-                                decoration: const InputDecoration(
-                                  labelText: 'Cenário de teste',
-                                  border: OutlineInputBorder(),
-                                ),
-                                items: BikeSimulationScenario.values
-                                    .map(
-                                      (scenario) => DropdownMenuItem(
-                                        value: scenario,
-                                        child: Text(scenario.label),
-                                      ),
-                                    )
-                                    .toList(growable: false),
-                                onChanged: (scenario) {
-                                  if (scenario == null) return;
-                                  _update(
-                                    _config.copyWith(simulationScenario: scenario),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _config.simulationScenario.description,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 12),
-                              FilledButton.tonalIcon(
-                                onPressed: () => _navigateMain(2),
-                                icon: const Icon(Icons.play_circle_outline_rounded),
-                                label: const Text('Abrir Monitor e testar HUD'),
-                              ),
-                            ],
-                          ],
-                        ),
+                          ),
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(9, 12, 18, 28),
+                              children: right,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _TelemetryCard(
-                        telemetry: _telemetry,
-                        profile: _config.powerProfile,
-                        enabled: _config.enabled,
-                      ),
-                      const SizedBox(height: 12),
-                      const _RemotePanelReadyCard(),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
       ),
     );
   }
+
 }
 
 class _BikeHero extends StatelessWidget {

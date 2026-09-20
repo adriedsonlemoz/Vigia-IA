@@ -196,7 +196,74 @@ class _EventsScreenState extends State<EventsScreen> {
     final events = _filteredEvents;
     final cameras = relevant.map((event) => event.source).toSet().toList()..sort();
 
-    return Scaffold(
+    Widget filters() => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${events.length} registro${events.length == 1 ? '' : 's'} visível${events.length == 1 ? '' : 'eis'}',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                _filterChip('Tudo', _HistoryGroupFilter.all),
+                _filterChip('Pessoas', _HistoryGroupFilter.people),
+                _filterChip('Automóveis', _HistoryGroupFilter.automobiles),
+                _filterChip('Animais', _HistoryGroupFilter.animals),
+              ],
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              initialValue: _cameraFilter,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.videocam_outlined),
+                labelText: 'Câmera',
+              ),
+              items: <DropdownMenuItem<String>>[
+                const DropdownMenuItem<String>(
+                  value: _allCameras,
+                  child: Text('Todas as câmeras'),
+                ),
+                ...cameras.map(
+                  (camera) => DropdownMenuItem<String>(
+                    value: camera,
+                    child: Text(camera, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _cameraFilter = value);
+              },
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Pessoas, Automóveis e Animais ficam aqui. Obstrução, conexão e erros ficam em Diagnóstico.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        );
+
+    Widget eventList() => events.isEmpty
+        ? const _EmptyHistory()
+        : ListView.separated(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
+            itemCount: events.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 9),
+            itemBuilder: (context, index) {
+              final event = events[index];
+              return _HistoryCard(
+                event: event,
+                onOpen: () => _openEvent(event),
+                onDelete: () => unawaited(_delete(event)),
+              );
+            },
+          );
+
+    return AdaptiveMainScaffold(
+      currentIndex: 1,
+      onDestinationSelected: _navigateMain,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,88 +298,46 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: MainNavigationBar(
-        currentIndex: 1,
-        onDestinationSelected: _navigateMain,
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _loadError != null
               ? _LoadError(message: _loadError!, onRetry: _load)
               : SafeArea(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-                        child: Column(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth >= 760) {
+                        return Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              '${events.length} registro${events.length == 1 ? '' : 's'} visível${events.length == 1 ? '' : 'eis'}',
-                              style: const TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 8),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _filterChip('Tudo', _HistoryGroupFilter.all),
-                                  _filterChip('Pessoas', _HistoryGroupFilter.people),
-                                  _filterChip('Automóveis', _HistoryGroupFilter.automobiles),
-                                  _filterChip('Animais', _HistoryGroupFilter.animals),
-                                ],
+                            SizedBox(
+                              width: 300,
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 12, 24),
+                                child: filters(),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              initialValue: _cameraFilter,
-                              decoration: const InputDecoration(
-                                prefixIcon: Icon(Icons.videocam_outlined),
-                                labelText: 'Câmera',
-                              ),
-                              items: <DropdownMenuItem<String>>[
-                                const DropdownMenuItem<String>(
-                                  value: _allCameras,
-                                  child: Text('Todas as câmeras'),
-                                ),
-                                ...cameras.map(
-                                  (camera) => DropdownMenuItem<String>(
-                                    value: camera,
-                                    child: Text(camera),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) setState(() => _cameraFilter = value);
-                              },
+                            VerticalDivider(
+                              width: 1,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outline
+                                  .withValues(alpha: 0.12),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Aqui aparecem apenas Pessoas, Automóveis e Animais. Obstrução, deslocamento, conexão e erros ficam em Diagnóstico.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                            Expanded(child: eventList()),
                           ],
-                        ),
-                      ),
-                      const Divider(height: 16),
-                      Expanded(
-                        child: events.isEmpty
-                            ? const _EmptyHistory()
-                            : ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
-                                itemCount: events.length,
-                                separatorBuilder: (_, _) => const SizedBox(height: 9),
-                                itemBuilder: (context, index) {
-                                  final event = events[index];
-                                  return _HistoryCard(
-                                    event: event,
-                                    onOpen: () => _openEvent(event),
-                                    onDelete: () => unawaited(_delete(event)),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+                            child: filters(),
+                          ),
+                          const Divider(height: 1),
+                          Expanded(child: eventList()),
+                        ],
+                      );
+                    },
                   ),
                 ),
     );

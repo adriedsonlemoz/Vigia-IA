@@ -61,6 +61,25 @@ class VigiaIaApp extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: surface,
+        indicatorColor: effectiveScheme.primary.withValues(alpha: 0.14),
+        selectedIconTheme: IconThemeData(color: effectiveScheme.primary, size: 23),
+        unselectedIconTheme: IconThemeData(
+          color: effectiveScheme.onSurfaceVariant,
+          size: 22,
+        ),
+        selectedLabelTextStyle: TextStyle(
+          color: effectiveScheme.primary,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          color: effectiveScheme.onSurfaceVariant,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         height: 68,
         backgroundColor: surface,

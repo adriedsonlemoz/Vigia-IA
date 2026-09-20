@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.54 adiciona HUD transparente no vídeo do Modo Bike com velocidade, pressão dianteira/traseira, bateria e alertas, além de simulador interno para teste sem ESP32. Também corrige o lint use_null_aware_elements visto no workflow da 1.0.53. A integração real com ESP32 ainda não foi implementada.",
-  "version": "1.0.54",
-  "build": 54
+  "notes": "A 1.0.55 corrige os lints do Monitor encontrados no workflow da 1.0.54 e introduz layout adaptativo real para celular retrato, paisagem e tablet, com NavigationRail em telas largas, Home/Bike em duas colunas, Monitor paisagem recolhível, Status da sessão lado a lado e modo Ajustar/Preencher alinhado aos overlays. ESP32 continua sem integração real.",
+  "version": "1.0.55",
+  "build": 55
 }

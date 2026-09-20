@@ -543,7 +543,9 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptiveMainScaffold(
+      currentIndex: 3,
+      onDestinationSelected: _navigateMain,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,10 +574,6 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                 : const Icon(Icons.refresh_rounded),
           ),
         ],
-      ),
-      bottomNavigationBar: MainNavigationBar(
-        currentIndex: 3,
-        onDestinationSelected: _navigateMain,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
