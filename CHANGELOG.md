@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.71+71 — 2026-09-21
+
+- Desacoplada a recepção da câmera remota da cadência da IA, com polling entre 250 e 400 ms.
+- Adicionados sequência de quadro, timestamp UTC e cabeçalhos sem cache; o servidor responde sem conteúdo quando ainda não existe imagem nova.
+- Quadros remotos repetidos deixam de ser decodificados e enviados novamente ao pipeline de análise.
+- O Monitor passa a manter visíveis receptor e transmissor, com bateria, carregamento, estado da conexão e latência remota quando disponível, inclusive no perfil econômico.
+- A faixa dos aparelhos permanece no retrato, paisagem e tela inteira e abre o Status da sessão ao toque.
+- A resolução de áudios Android passa a priorizar `R.raw`, com fallback e diagnóstico do identificador/erro do recurso.
+- Adicionado teste de regressão para consulta rápida e supressão de quadro remoto repetido.
+- Versionamento, metadados, Sobre/Mudanças, documentação, testes e verificadores sincronizados em `1.0.71+71`.
+
 ## 1.0.70+70 — 2026-09-21
 
 - Corrigido o empacotamento do código-fonte: o ZIP 1.0.69 não continha o arquivo oculto `.gitignore`.

@@ -1,5 +1,166 @@
 part of 'monitor_screen.dart';
 
+class _DeviceStatusStrip extends StatelessWidget {
+  const _DeviceStatusStrip({
+    required this.localDevice,
+    required this.remoteStatus,
+    required this.sourceType,
+    required this.sourceStatus,
+    required this.receiverActive,
+    required this.networkLatencyMs,
+    required this.onTap,
+  });
+
+  final DeviceTelemetrySnapshot? localDevice;
+  final RemotePhoneStatus? remoteStatus;
+  final VideoSourceType sourceType;
+  final VideoSourceStatus sourceStatus;
+  final bool receiverActive;
+  final int? networkLatencyMs;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final remoteSource = sourceType == VideoSourceType.remotePhone;
+    final transmitterTelemetry = remoteSource ? remoteStatus?.device : localDevice;
+    final transmitterOnline = remoteSource
+        ? sourceStatus.state == VideoSourceState.streaming &&
+            remoteStatus?.online != false &&
+            remoteStatus?.isStale() != true
+        : sourceStatus.state == VideoSourceState.streaming;
+    final transmitterLabel = switch (sourceType) {
+      VideoSourceType.remotePhone => 'Transmissor',
+      VideoSourceType.localCamera => 'Câmera local',
+      VideoSourceType.rtsp => 'Câmera RTSP',
+    };
+    final latency = remoteSource && networkLatencyMs != null
+        ? '$networkLatencyMs ms'
+        : null;
+
+    return Material(
+      color: Colors.black.withValues(alpha: 0.76),
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 40,
+          child: Row(
+            children: [
+              Expanded(
+                child: _DeviceStatusItem(
+                  label: 'Receptor',
+                  telemetry: localDevice,
+                  online: receiverActive,
+                  detail: receiverActive ? 'IA ativa' : 'Verificando',
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 24,
+                color: Colors.white.withValues(alpha: 0.18),
+              ),
+              Expanded(
+                child: _DeviceStatusItem(
+                  label: transmitterLabel,
+                  telemetry: sourceType == VideoSourceType.rtsp
+                      ? null
+                      : transmitterTelemetry,
+                  online: transmitterOnline,
+                  detail: latency ??
+                      (transmitterOnline ? 'Imagem ativa' : 'Sem imagem'),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(right: 6),
+                child: Icon(Icons.chevron_right_rounded, size: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeviceStatusItem extends StatelessWidget {
+  const _DeviceStatusItem({
+    required this.label,
+    required this.telemetry,
+    required this.online,
+    required this.detail,
+  });
+
+  final String label;
+  final DeviceTelemetrySnapshot? telemetry;
+  final bool online;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final battery = telemetry?.batteryPercent;
+    final charging = telemetry?.batteryCharging == true;
+    final statusColor = online
+        ? const Color(0xFF69D59C)
+        : const Color(0xFFFFB4AB);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 9),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            charging
+                ? Icons.battery_charging_full_rounded
+                : Icons.battery_5_bar_rounded,
+            size: 15,
+            color: battery == null ? Colors.white54 : Colors.white,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            battery == null ? '—' : '$battery%',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MonitorActionButton extends StatelessWidget {
   const _MonitorActionButton({
     required this.icon,

@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.70+70
+# Arquitetura — Vigia IA 1.0.71+71
 
 ## 1. Princípios
+
+## Evolução 1.0.71 — Transporte remoto e estado operacional
+
+- `RemoteCameraServerService` numera JPEGs, publica o timestamp em UTC, proíbe cache e responde `204` quando o receptor já possui o quadro mais recente.
+- `RemotePhoneCameraSource` consulta a imagem em ciclo próprio de 250–400 ms; somente quadros novos são decodificados e publicados como `RgbFrame`, mantendo a cadência de recepção separada da IA.
+- `_DeviceStatusStrip` permanece sobre o Monitor no retrato, paisagem e tela inteira. O receptor usa a telemetria local e o transmissor usa `/status` quando a fonte é outro celular; bateria e estado continuam disponíveis mesmo no perfil econômico.
+- O toque na faixa abre `SessionStatusPanel`, onde continuam os detalhes de CPU, memória, temperatura, FPS, rede e histórico de saúde.
+- O Android resolve os áudios padrão por `R.raw` antes do fallback dinâmico e expõe o identificador/erro de abertura no diagnóstico.
 
 ## Evolução 1.0.70 — Empacotamento e assinatura
 

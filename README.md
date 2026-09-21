@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.70+70`
+> **Versão atual:** `1.0.71+71`
 
 ## Estado atual
 
-A `1.0.70+70` corrige a falha de empacotamento encontrada no Android-APK-38: o ZIP anterior não continha o `.gitignore`, então a verificação preventiva interrompia o workflow antes do `flutter analyze`.
+A `1.0.71+71` melhora o recebimento da câmera de outro celular, reorganiza o Monitor e mantém o estado energético do receptor e do transmissor sempre visível.
+
+### Evolução 1.0.71 — Vídeo remoto e HUD
+
+- consulta quadros remotos a cada 250–400 ms, independentemente do intervalo da análise;
+- usa sequência, timestamp UTC e respostas sem cache para descartar quadros repetidos antes da decodificação e da IA;
+- mostra uma faixa permanente e tocável para receptor e transmissor, com bateria, carregamento, conexão e latência disponível, inclusive no perfil econômico;
+- adapta a mesma faixa ao retrato, paisagem e tela inteira, preservando a câmera como conteúdo principal;
+- resolve o recurso de áudio pelo identificador Android compilado e amplia o diagnóstico de falha dos áudios integrados.
 
 ### Evolução 1.0.70 — Empacotamento seguro
 
@@ -42,7 +50,7 @@ A `1.0.70+70` corrige a falha de empacotamento encontrada no Android-APK-38: o Z
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.70.md](RELEASE-1.0.70.md). Correção anterior: [RELEASE-1.0.69.md](RELEASE-1.0.69.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.71.md](RELEASE-1.0.71.md). Correção anterior: [RELEASE-1.0.70.md](RELEASE-1.0.70.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

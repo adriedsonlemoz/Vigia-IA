@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.70',
+          version: '1.0.71',
           current: true,
+          changes: [
+            'A câmera remota consulta quadros novos rapidamente e evita baixar ou analisar novamente imagens repetidas.',
+            'Receptor e transmissor permanecem visíveis no Monitor com bateria, estado, carregamento e acesso ao painel completo.',
+            'O HUD ocupa menos a imagem em retrato, paisagem e tela inteira.',
+            'A resolução dos áudios Android usa o identificador compilado do recurso e registra detalhes quando o arquivo não puder ser aberto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.70',
           changes: [
             'Corrige o pacote-fonte para incluir o .gitignore exigido pela verificação preventiva.',
             'Protege arquivos *.jks, *.keystore e android/key.properties contra versionamento acidental.',

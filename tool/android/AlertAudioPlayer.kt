@@ -29,6 +29,8 @@ class AlertAudioPlayer(private val context: Context) {
     private var closed = false
     private var state = "idle"
     private var lastError: String? = null
+    private var lastResource: Int? = null
+    private var lastResourceError: String? = null
     private val events = ArrayDeque<Map<String, Any?>>()
 
     private class Request(val slot: String, val override: File?, val resource: Int,
@@ -94,7 +96,10 @@ class AlertAudioPlayer(private val context: Context) {
         io.execute {
             val file = try {
                 if (request.usingOverride) request.override else bundledFile(request)
-            } catch (_: Exception) { null }
+            } catch (error: Exception) {
+                lastResourceError = "${error.javaClass.simpleName}: ${error.message}"
+                null
+            }
             main.post {
                 if (active !== request || request.completed || closed || attempt != request.attempt) return@post
                 if (file == null || !file.exists() || file.length() == 0L) {
@@ -136,7 +141,11 @@ class AlertAudioPlayer(private val context: Context) {
     }
 
     private fun bundledFile(request: Request): File? {
-        if (request.resource == 0) return null
+        lastResource = request.resource
+        if (request.resource == 0) {
+            lastResourceError = "resource_id_zero:${request.slot}"
+            return null
+        }
         // O carimbo muda em uma atualização do APK; não reusa áudio de versão anterior.
         val stamp = context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
         val directory = File(context.cacheDir, "bundled_alert_audio/$stamp").also { it.mkdirs() }
@@ -148,6 +157,7 @@ class AlertAudioPlayer(private val context: Context) {
         }
         if (temporary.length() == 0L) { temporary.delete(); return null }
         if (!temporary.renameTo(target)) { temporary.copyTo(target, overwrite = true); temporary.delete() }
+        lastResourceError = null
         return target
     }
 
@@ -218,6 +228,7 @@ class AlertAudioPlayer(private val context: Context) {
 
     fun diagnostics(): Map<String, Any?> = mapOf(
         "state" to state, "lastError" to lastError, "activeSlot" to active?.slot,
+        "lastResource" to lastResource, "lastResourceError" to lastResourceError,
         "pendingSlot" to pending?.slot, "activePriority" to active?.priority, "usage" to "USAGE_MEDIA",
         "mediaVolume" to audio.getStreamVolume(AudioManager.STREAM_MUSIC),
         "mediaMaxVolume" to audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),

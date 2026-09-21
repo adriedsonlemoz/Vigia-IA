@@ -257,7 +257,7 @@ class MainActivity : FlutterActivity() {
                 val slot = call.argument<String>("slot") ?: ""
                 val normalized = normalizeAudioSlot(slot)
                 alertAudio.play(normalized, findAudioOverride(normalized),
-                    resources.getIdentifier(normalized, "raw", packageName),
+                    rawAudioResourceId(normalized),
                     call.argument<Int>("priority") ?: 0,
                     call.argument<Number>("capturedAtMs")?.toLong(), result)
             }
@@ -626,6 +626,15 @@ class MainActivity : FlutterActivity() {
 
     private fun normalizeAudioSlot(raw: String): String =
         raw.lowercase().replace(Regex("[^a-z0-9_]"), "")
+
+    private fun rawAudioResourceId(slot: String): Int {
+        if (slot.isBlank()) return 0
+        return try {
+            R.raw::class.java.getField(slot).getInt(null)
+        } catch (_: Throwable) {
+            resources.getIdentifier(slot, "raw", packageName)
+        }
+    }
 
     private fun audioOverrideDirectory(): File = File(filesDir, "audio_overrides").also { it.mkdirs() }
 

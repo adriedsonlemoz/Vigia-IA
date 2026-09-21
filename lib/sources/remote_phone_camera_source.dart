@@ -24,13 +24,15 @@ class RemotePhoneCameraSource implements VideoSource {
   final StreamController<VideoSourceStatus> _statuses = StreamController<VideoSourceStatus>.broadcast();
   final ValueNotifier<Uint8List?> _latestJpeg = ValueNotifier<Uint8List?>(null);
   HttpClient? _client;
-  Timer? _timer;
+  Timer? _pollTimer;
   Timer? _statusTimer;
   bool _busy = false;
   bool _statusBusy = false;
   bool _disposed = false;
   bool _hasConnected = false;
   int _consecutiveFailures = 0;
+  int? _lastFrameSequence;
+  DateTime? _lastRemoteCapturedAt;
   int? _frameNetworkLatencyMs;
   final ValueNotifier<RemotePhoneStatus?> remoteStatusNotifier =
       ValueNotifier<RemotePhoneStatus?>(null);
@@ -53,42 +55,98 @@ class RemotePhoneCameraSource implements VideoSource {
     }
     _client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
     _statuses.add(const VideoSourceStatus(VideoSourceState.connecting, message: 'Conectando ao celular remoto…'));
-    await _poll();
+    unawaited(_poll());
     unawaited(_pollStatus());
-    _timer = Timer.periodic(analysisInterval, (_) => unawaited(_poll()));
     _statusTimer = Timer.periodic(
       const Duration(seconds: 2),
       (_) => unawaited(_pollStatus()),
     );
   }
 
+  Duration get _framePollInterval {
+    final normalizedMs = analysisInterval.inMilliseconds.clamp(250, 400).toInt();
+    return Duration(milliseconds: normalizedMs);
+  }
+
+  void _scheduleNextPoll([Duration? delay]) {
+    if (_disposed || _client == null) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer(delay ?? _framePollInterval, () => unawaited(_poll()));
+  }
+
   Future<void> _poll() async {
-    if (_busy || _disposed) return;
+    if (_busy || _disposed || _client == null) return;
     _busy = true;
     final startedAt = DateTime.now();
     try {
       final root = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-      final uri = Uri.parse('$root/frame.jpg').replace(queryParameters: <String, String>{'key': accessKey});
+      final query = <String, String>{
+        'key': accessKey,
+        't': startedAt.millisecondsSinceEpoch.toString(),
+        if (_lastFrameSequence != null) 'after': _lastFrameSequence.toString(),
+      };
+      final uri = Uri.parse('$root/frame.jpg').replace(queryParameters: query);
       final request = await _client!.getUrl(uri);
+      request.headers
+        ..set(HttpHeaders.cacheControlHeader, 'no-store')
+        ..set(HttpHeaders.pragmaHeader, 'no-cache');
       final response = await request.close().timeout(const Duration(seconds: 5));
+      if (response.statusCode == HttpStatus.noContent) {
+        await response.drain<void>();
+        _frameNetworkLatencyMs =
+            DateTime.now().difference(startedAt).inMilliseconds;
+        _hasConnected = true;
+        _consecutiveFailures = 0;
+        if (!_statuses.isClosed) {
+          _statuses.add(const VideoSourceStatus(
+            VideoSourceState.streaming,
+            message: 'Celular remoto online',
+          ));
+        }
+        return;
+      }
       if (response.statusCode != HttpStatus.ok) {
         throw HttpException('HTTP ${response.statusCode}');
       }
       final capturedAt = DateTime.tryParse(
         response.headers.value('x-vigia-frame-captured-at') ?? '',
       );
+      final sequence = int.tryParse(
+        response.headers.value('x-vigia-frame-sequence') ?? '',
+      );
       final bytes = await consolidateHttpClientResponseBytes(response);
-      _frameNetworkLatencyMs = DateTime.now().difference(startedAt).inMilliseconds;
+      final receivedAt = DateTime.now();
+      _frameNetworkLatencyMs = receivedAt.difference(startedAt).inMilliseconds;
       _latestJpeg.value = bytes;
+      final isDuplicateSequence =
+          sequence != null && _lastFrameSequence != null && sequence <= _lastFrameSequence!;
+      final isDuplicateTimestamp = sequence == null &&
+          capturedAt != null &&
+          _lastRemoteCapturedAt != null &&
+          !capturedAt.isAfter(_lastRemoteCapturedAt!);
+      if (isDuplicateSequence || isDuplicateTimestamp) {
+        _hasConnected = true;
+        _consecutiveFailures = 0;
+        if (!_statuses.isClosed) {
+          _statuses.add(const VideoSourceStatus(
+            VideoSourceState.streaming,
+            message: 'Celular remoto online',
+          ));
+        }
+        return;
+      }
       final decodeWatch = Stopwatch()..start();
       final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
       decodeWatch.stop();
       if (decoded != null && !_frames.isClosed) {
+        final frameCapturedAt = capturedAt ?? receivedAt;
+        _lastFrameSequence = sequence ?? _lastFrameSequence;
+        _lastRemoteCapturedAt = frameCapturedAt;
         _frames.add(RgbFrame(
           width: decoded['width']! as int,
           height: decoded['height']! as int,
           rgbBytes: decoded['bytes']! as Uint8List,
-          capturedAt: capturedAt ?? DateTime.now(),
+          capturedAt: frameCapturedAt,
           sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
           sourceTransportMs: _frameNetworkLatencyMs?.toDouble(),
         ));
@@ -114,6 +172,7 @@ class RemotePhoneCameraSource implements VideoSource {
       }
     } finally {
       _busy = false;
+      _scheduleNextPoll();
     }
   }
 
@@ -157,14 +216,16 @@ class RemotePhoneCameraSource implements VideoSource {
 
   @override
   Future<void> stop() async {
-    _timer?.cancel();
-    _timer = null;
+    _pollTimer?.cancel();
+    _pollTimer = null;
     _statusTimer?.cancel();
     _statusTimer = null;
     _client?.close(force: true);
     _client = null;
     _hasConnected = false;
     _consecutiveFailures = 0;
+    _lastFrameSequence = null;
+    _lastRemoteCapturedAt = null;
     _frameNetworkLatencyMs = null;
     _statusBusy = false;
     remoteStatusNotifier.value = null;

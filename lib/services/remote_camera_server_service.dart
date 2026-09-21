@@ -30,6 +30,7 @@ class RemoteCameraServerService extends ChangeNotifier {
   HttpServer? _server;
   Uint8List? _latestJpeg;
   DateTime? _latestJpegCapturedAt;
+  int _latestJpegSequence = 0;
   DateTime? _lastFrameAt;
   DateTime? _lastFpsFrameAt;
   DateTime? _lastNotificationUpdateAt;
@@ -229,6 +230,7 @@ class RemoteCameraServerService extends ChangeNotifier {
         },
       );
       _latestJpegCapturedAt = frame.capturedAt;
+      _latestJpegSequence++;
     } catch (_) {}
     notifyListeners();
   }
@@ -246,13 +248,15 @@ class RemoteCameraServerService extends ChangeNotifier {
         }
         final path = request.uri.path;
         if (path == '/status') {
-          final telemetry = (!_bikeConfig.enabled || _bikeConfig.keepRemoteTelemetry)
-              ? (_deviceTelemetry ?? await _native.readDeviceTelemetry())
-              : null;
+          // Bateria e estado do transmissor são dados operacionais essenciais.
+          // Mesmo no perfil econômico, /status os mantém disponíveis ao receptor.
+          final telemetry =
+              _deviceTelemetry ?? await _native.readDeviceTelemetry();
           request.response.headers.contentType = ContentType.json;
           request.response.write(jsonEncode(<String, Object?>{
             'online': running,
             'lastFrameAt': _lastFrameAt?.toIso8601String(),
+            'frameSequence': _latestJpegSequence,
             'fps': _streamFps,
             'bikeMode': _bikeConfig.enabled,
             'bikeProfile': _bikeConfig.enabled ? _bikeConfig.powerProfile.name : null,
@@ -263,16 +267,32 @@ class RemoteCameraServerService extends ChangeNotifier {
           }));
         } else if (path == '/frame.jpg') {
           final jpeg = _latestJpeg;
+          final afterSequence = int.tryParse(
+            request.uri.queryParameters['after'] ?? '',
+          );
           if (jpeg == null) {
             request.response.statusCode = HttpStatus.serviceUnavailable;
             request.response.write('frame unavailable');
+          } else if (afterSequence != null &&
+              afterSequence >= _latestJpegSequence) {
+            request.response
+              ..statusCode = HttpStatus.noContent
+              ..headers.set(HttpHeaders.cacheControlHeader, 'no-store, max-age=0')
+              ..headers.set(
+                'x-vigia-frame-sequence',
+                _latestJpegSequence.toString(),
+              );
           } else {
             request.response.headers.contentType = ContentType('image', 'jpeg');
+            request.response.headers
+              ..set(HttpHeaders.cacheControlHeader, 'no-store, max-age=0')
+              ..set(HttpHeaders.pragmaHeader, 'no-cache')
+              ..set('x-vigia-frame-sequence', _latestJpegSequence.toString());
             final capturedAt = _latestJpegCapturedAt;
             if (capturedAt != null) {
               request.response.headers.set(
                 'x-vigia-frame-captured-at',
-                capturedAt.toIso8601String(),
+                capturedAt.toUtc().toIso8601String(),
               );
             }
             request.response.add(jpeg);
@@ -306,6 +326,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     _deviceTelemetry = null;
     _latestJpeg = null;
     _latestJpegCapturedAt = null;
+    _latestJpegSequence = 0;
     _lastFrameAt = null;
     _lastFpsFrameAt = null;
     _streamFps = 0;

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.70 corrige o empacotamento da entrega para incluir o .gitignore e impedir o versionamento acidental de chaves JKS/keystore e android/key.properties.",
-  "version": "1.0.70",
-  "build": 70
+  "notes": "A 1.0.71 reduz a latência da câmera remota, mantém visível o estado energético dos dois aparelhos, reorganiza o HUD e torna a resolução dos áudios Android mais robusta.",
+  "version": "1.0.71",
+  "build": 71
 }

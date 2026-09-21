@@ -8,6 +8,8 @@ import '../services/system_ui_service.dart';
 import '../services/bike_sensor_service.dart';
 import '../core/video_source_status.dart';
 import '../models/monitoring_zone.dart';
+import '../models/device_telemetry.dart';
+import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
@@ -1043,6 +1045,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     final standardHudTop = approach.visible
         ? bikeHudBottom + (compactBikeHud ? 48.0 : 58.0)
         : (bikeHudActive ? bikeHudBottom : 12.0);
+    final deviceStripTop = standardHudTop + insets.top;
+    final standardControlsTop = deviceStripTop + 48;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -1081,10 +1085,25 @@ class _MonitorScreenState extends State<MonitorScreen>
               top: bikeHudBottom + insets.top,
               child: BikeApproachBanner(status: approach),
             ),
+          Positioned(
+            left: 8 + insets.left,
+            right: 8 + insets.right,
+            top: deviceStripTop,
+            child: _DeviceStatusStrip(
+              localDevice: _controller.localDeviceTelemetry,
+              remoteStatus: remoteStatus,
+              sourceType: _controller.sourceConfig.type,
+              sourceStatus: status,
+              receiverActive:
+                  !_controller.initializing && _controller.error == null,
+              networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+              onTap: () => unawaited(_showSessionStatus()),
+            ),
+          ),
           if (!_fullscreen) Positioned(
             left: 12,
             right: 12,
-            top: standardHudTop,
+            top: standardControlsTop,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1105,15 +1124,6 @@ class _MonitorScreenState extends State<MonitorScreen>
                           _controller.processing ? 'IA analisando' : 'IA ativa',
                       active: !_controller.initializing,
                     ),
-                    if (_controller.isRemotePhoneSource)
-                      _HudPill(
-                        icon: remoteStatus?.device?.batteryCharging == true
-                            ? Icons.battery_charging_full_rounded
-                            : Icons.directions_bike_rounded,
-                        label: remoteBikeCompactSummary(remoteStatus),
-                        active: remoteStatus != null && remoteStatus.warnings().isEmpty,
-                        onTap: _showRemoteBikeStatus,
-                      ),
                     _HudPill(
                       icon: _hudExpanded
                           ? Icons.expand_less_rounded
