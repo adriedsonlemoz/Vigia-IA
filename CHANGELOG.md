@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.69+69 — 2026-09-21
+
+- Corrigido o único lint restante do `flutter analyze` em `speech_service.dart`.
+- A telemetria de fala agora usa elemento de mapa null-aware (`'error': ?error`), compatível com a regra `use_null_aware_elements` do Dart 3.8+.
+- Nenhum comportamento de áudio, TTS, IA, alertas ou tela inteira foi removido ou alterado funcionalmente.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README/ARCHITECTURE, testes e verificadores sincronizados em `1.0.69+69`.
+
 ## 1.0.68+68 — 2026-09-21
 
 - Corrigida a null-safety do worker de detecção ao trocar entre EfficientDet-Lite0 e o modelo fallback.

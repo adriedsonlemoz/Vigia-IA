@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.68',
+          version: '1.0.69',
           current: true,
+          changes: [
+            'Corrige o único lint restante do flutter analyze no serviço de fala.',
+            'Usa elemento null-aware para registrar erro na telemetria somente quando houver valor.',
+            'Mantém sem alteração funcional a IA, os alertas, o áudio e a tela inteira.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.68',
           changes: [
             'Corrige a compilação do worker da IA e das Regras Inteligentes encontrada pelo flutter analyze.',
             'Mantém as melhorias de detecção, áudio integrado e tela inteira da versão 1.0.67.',

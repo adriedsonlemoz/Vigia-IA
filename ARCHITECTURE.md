@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.68+68
+# Arquitetura — Vigia IA 1.0.69+69
 
 ## 1. Princípios
+
+## Evolução 1.0.69 — Lint null-aware no serviço de fala
+
+- `SpeechService._trace` usa entrada de mapa null-aware para o campo opcional de erro.
+- O campo `error` continua ausente quando não há falha; não é serializado como `null` nem como texto vazio.
+- A mudança atende `use_null_aware_elements` sem alterar a semântica da telemetria ou do áudio.
+
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 

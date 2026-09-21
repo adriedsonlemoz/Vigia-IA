@@ -114,7 +114,7 @@ class SpeechService {
   void _trace(String event, [String? error]) {
     PerformanceTelemetryService.instance.recordAlertEvent({
       'timestamp': DateTime.now().toIso8601String(), 'event': event,
-      if (error case final error?) 'error': error,
+      'error': ?error,
     });
   }
 

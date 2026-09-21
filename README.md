@@ -2,17 +2,24 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.68+68`
+> **Versão atual:** `1.0.69+69`
 
 ## Estado atual
 
-A `1.0.68+68` corrige a compilação da entrega anterior sem remover as melhorias de processamento da câmera/IA, a confirmação de alertas, a reprodução dos áudios e o modo de tela inteira. O código foi atualizado a partir da `1.0.67+67`. Ganhos de FPS e latência precisam ser medidos no aparelho; não há promessa de identificação instantânea.
+A `1.0.69+69` corrige o único lint restante encontrado pelo workflow no serviço de fala. A alteração é pontual e preserva as melhorias de IA, alertas, áudio integrado e tela inteira das versões anteriores.
+
+### Evolução 1.0.69 — Buildfix do serviço de fala
+
+- corrige o lint `use_null_aware_elements` em `speech_service.dart`;
+- usa elemento de mapa null-aware para incluir `error` somente quando houver valor;
+- preserva o comportamento funcional de TTS, áudio, detecção, alertas e tela inteira;
+- mantém a `1.0.68` no histórico como a correção dos erros de compilação anteriores.
 
 ### Evolução 1.0.68 — Correção de build da IA
 
 - corrige null-safety no worker de detecção durante a troca automática de modelo;
 - corrige a janela de observação das Regras Inteligentes;
-- remove os avisos restantes do analisador que faziam o workflow encerrar com código 1;
+- remove avisos do analisador encontrados na entrega anterior;
 - preserva integralmente as melhorias funcionais da 1.0.67.
 
 ### Evolução 1.0.67 — Detecção, áudio e tela inteira
@@ -28,7 +35,7 @@ A `1.0.68+68` corrige a compilação da entrega anterior sem remover as melhoria
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.68.md](RELEASE-1.0.68.md). Roteiro funcional da entrega anterior: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.69.md](RELEASE-1.0.69.md). Correção anterior: [RELEASE-1.0.68.md](RELEASE-1.0.68.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

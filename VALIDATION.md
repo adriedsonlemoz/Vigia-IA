@@ -1,8 +1,10 @@
-# Validação — Vigia IA 1.0.68+68
+# Validação — Vigia IA 1.0.69+69
 
-Data: 2026-09-21. Base preservada: 1.0.66+66.
+Data: 2026-09-21. Base preservada: 1.0.68+68; correção pontual aplicada sobre o serviço de fala.
 
 ## Executado nesta entrega
+
+O Android-APK-37 confirmou que preparação, dependências e verificação preventiva da 1.0.68 passaram. A falha ficou restrita ao lint `use_null_aware_elements` em `speech_service.dart:117`, corrigido na 1.0.69.
 
 | Verificação | Resultado |
 |---|---|
