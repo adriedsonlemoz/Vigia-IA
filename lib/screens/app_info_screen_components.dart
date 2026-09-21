@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.73',
+          version: '1.0.74',
           current: true,
+          changes: [
+            'Remove a AppBar fixa do Monitor em paisagem e usa HUD translúcido sobre a transmissão.',
+            'Agrupa status, IA, detecções, aparelhos e dados Bike na parte superior em paisagem/tela cheia.',
+            'Adiciona saída clara do monitoramento em paisagem e tela cheia.',
+            'Modo Câmera ganha estado parado integrado, saída clara, botão Parar e painel adaptativo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.73',
           changes: [
             'Adiciona a escolha inicial entre Modo normal, Modo Bike e Modo transmissão.',
             'A escolha fica salva e define a primeira tela nas próximas aberturas.',

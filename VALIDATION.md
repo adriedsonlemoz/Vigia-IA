@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.73+73
+# Validação — Vigia IA 1.0.74+74
 
-Data: 2026-09-21. Base preservada: 1.0.72+72.
+Data: 2026-09-22. Base preservada: 1.0.73+73.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, recursos, espelhos Android, contratos da 1.0.71, buildfix da 1.0.72 e seleção inicial da 1.0.73 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.73+73 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, recursos, espelhos Android, contratos da 1.0.71, buildfix da 1.0.72, seleção inicial da 1.0.73 e HUD paisagem da 1.0.74 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.74+74 |
 | Fontes Android espelhadas | `MainActivity.kt` e `AlertAudioPlayer.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -15,6 +15,19 @@ Data: 2026-09-21. Base preservada: 1.0.72+72.
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
 | Seleção de modo | Normal, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
+| Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |
+| Modo Câmera | Estado parado integrado, painel adaptativo e saída/parada claras protegidos pelo verificador |
+
+## Layout de paisagem e transmissão
+
+Validações manuais recomendadas no aparelho:
+
+- abrir Monitor em retrato e confirmar que o fluxo anterior permanece legível;
+- girar para paisagem e confirmar que a imagem preenche a tela sem AppBar fixa;
+- confirmar que pressão, velocidade, status dos aparelhos e ações ficam juntas no topo;
+- entrar em tela cheia e confirmar botões para sair da tela cheia e sair do monitoramento;
+- abrir Modo Câmera parado e confirmar o estado visual integrado;
+- iniciar transmissão e confirmar botão Parar e saída clara no topo.
 
 ## Seleção inicial de modo
 

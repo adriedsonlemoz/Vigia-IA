@@ -1,5 +1,173 @@
 part of 'monitor_screen.dart';
 
+class _CompactMonitorTopHud extends StatelessWidget {
+  const _CompactMonitorTopHud({
+    required this.sourceStatus,
+    required this.detectionCount,
+    required this.bikeSnapshot,
+    required this.approach,
+    required this.deviceStrip,
+    required this.fillPreview,
+    required this.fullscreen,
+    required this.fullscreenChanging,
+    required this.voiceEnabled,
+    required this.detectionDelayed,
+    required this.processing,
+    required this.onClose,
+    required this.onFullscreen,
+    required this.onToggleFill,
+    required this.onToggleVoice,
+    required this.menu,
+  });
+
+  final VideoSourceStatus sourceStatus;
+  final int detectionCount;
+  final BikeSensorSnapshot? bikeSnapshot;
+  final BikeApproachStatus approach;
+  final Widget deviceStrip;
+  final bool fillPreview;
+  final bool fullscreen;
+  final bool fullscreenChanging;
+  final bool voiceEnabled;
+  final bool detectionDelayed;
+  final bool processing;
+  final VoidCallback onClose;
+  final VoidCallback? onFullscreen;
+  final VoidCallback onToggleFill;
+  final VoidCallback onToggleVoice;
+  final Widget menu;
+
+  @override
+  Widget build(BuildContext context) {
+    final streaming = sourceStatus.state == VideoSourceState.streaming;
+    final title = sourceStatus.message ?? (streaming ? 'Ao vivo' : 'Monitor');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        return Material(
+          color: Colors.black.withValues(alpha: 0.50),
+          borderRadius: BorderRadius.circular(18),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Sair do monitoramento',
+                      onPressed: onClose,
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    _StatusDot(active: streaming),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    if (compact)
+                      IconButton(
+                        tooltip: 'Encerrar monitoramento',
+                        onPressed: onClose,
+                        icon: const Icon(Icons.stop_circle_outlined),
+                        visualDensity: VisualDensity.compact,
+                      )
+                    else
+                      TextButton.icon(
+                        onPressed: onClose,
+                        icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                        label: const Text('Encerrar'),
+                      ),
+                    if (!fullscreen)
+                      IconButton(
+                        tooltip: 'Tela inteira horizontal',
+                        onPressed: fullscreenChanging ? null : onFullscreen,
+                        icon: const Icon(Icons.fullscreen_rounded),
+                        visualDensity: VisualDensity.compact,
+                      )
+                    else
+                      IconButton(
+                        tooltip: 'Sair da tela inteira',
+                        onPressed: fullscreenChanging ? null : onFullscreen,
+                        icon: const Icon(Icons.fullscreen_exit_rounded),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    IconButton(
+                      tooltip: voiceEnabled ? 'Desativar voz' : 'Ativar voz',
+                      onPressed: onToggleVoice,
+                      icon: Icon(
+                        voiceEnabled
+                            ? Icons.volume_up_rounded
+                            : Icons.volume_off_rounded,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    menu,
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      _HudPill(
+                        icon: streaming
+                            ? Icons.fiber_manual_record_rounded
+                            : Icons.videocam_off_outlined,
+                        label: title,
+                        active: streaming,
+                      ),
+                      _HudPill(
+                        icon: Icons.psychology_alt_outlined,
+                        label: detectionDelayed
+                            ? 'IA atrasada'
+                            : processing
+                                ? 'IA analisando'
+                                : 'IA ativa',
+                        active: true,
+                      ),
+                      _HudPill(
+                        icon: Icons.radar_rounded,
+                        label: 'Detectados $detectionCount',
+                        active: detectionCount > 0,
+                      ),
+                      _HudPill(
+                        icon: fillPreview
+                            ? Icons.fullscreen_rounded
+                            : Icons.fit_screen_rounded,
+                        label: fillPreview ? 'Preencher' : 'Ajustar',
+                        active: fillPreview,
+                        onTap: onToggleFill,
+                      ),
+                    ],
+                  ),
+                ),
+                if (bikeSnapshot != null) ...[
+                  const SizedBox(height: 6),
+                  BikeRideHud(snapshot: bikeSnapshot!),
+                ],
+                if (approach.visible) ...[
+                  const SizedBox(height: 6),
+                  BikeApproachBanner(status: approach),
+                ],
+                const SizedBox(height: 6),
+                deviceStrip,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _DeviceStatusStrip extends StatelessWidget {
   const _DeviceStatusStrip({
     required this.localDevice,

@@ -87,6 +87,11 @@ extension _MonitorFullscreen on _MonitorScreenState {
             borderRadius: BorderRadius.circular(16),
             child: Row(children: [
               IconButton(
+                tooltip: 'Sair do monitoramento',
+                onPressed: () => unawaited(_closeMonitor()),
+                icon: const Icon(Icons.close_rounded),
+              ),
+              IconButton(
                 tooltip: 'Sair da tela inteira',
                 onPressed: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
                 icon: const Icon(Icons.fullscreen_exit_rounded),

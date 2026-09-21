@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.74+74 — 2026-09-22
+
+- O Monitor em paisagem deixa de usar AppBar fixa e passa a sobrepor controles translúcidos na própria transmissão.
+- Adicionada ação explícita para sair/encerrar o monitoramento no HUD superior e na tela cheia.
+- Em paisagem e tela cheia, informações de fonte, IA, detecções, voz, preenchimento, aparelhos e dados da Bike ficam agrupadas no topo.
+- O preview passa a preencher automaticamente em paisagem/tela cheia para reduzir faixas pretas e aproveitar melhor a imagem.
+- O Modo Câmera ganhou barra superior translúcida com saída clara e ação de parar quando estiver transmitindo.
+- O ícone isolado de câmera desligada foi substituído por um estado visual integrado, com descrição do papel do transmissor.
+- O painel do Modo Câmera fica sobreposto à câmera em retrato e vira painel lateral em paisagem.
+- O fluxo de permissões antes da escolha de modo foi preservado e documentado como requisito da entrega.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.74+74`.
+
 ## 1.0.73+73 — 2026-09-21
 
 - Adicionada seleção inicial de modo após o acesso inicial/permissões.

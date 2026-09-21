@@ -34,8 +34,9 @@ if "prepare()" in read("tool/android/AlertAudioPlayer.kt"):
     raise SystemExit("Player não pode preparar áudio sincronamente.")
 require("lib/services/alert_voice_service.dart", "_pending", "_generation", "_speech.speakMessage",
         "spokenFrameMaxAge", "tts_requested")
-require("lib/screens/monitor_screen.dart", "PopScope<void>", "_fullscreen ? null : AppBar",
-        "Tela inteira horizontal", "_fullscreen ? _buildFullscreen(context)")
+require("lib/screens/monitor_screen.dart", "PopScope<void>",
+        "_fullscreen || landscape ? null : AppBar",
+        "Tela inteira horizontal", "body: _fullscreen")
 require("lib/screens/monitor_screen_fullscreen.dart", "DeviceOrientation.landscapeLeft",
         "DeviceOrientation.landscapeRight", "Duration(seconds: 4)", "Sair da tela inteira")
 require("tool/android/MonitorSystemUi.kt", "hide(WindowInsets.Type.systemBars())",

@@ -1,6 +1,16 @@
-# Arquitetura — Vigia IA 1.0.73+73
+# Arquitetura — Vigia IA 1.0.74+74
 
 ## 1. Princípios
+
+## Evolução 1.0.74 — Layout de transmissão e monitoramento
+
+- Em paisagem, `MonitorScreen` remove a AppBar fixa e usa `extendBodyBehindAppBar`, mantendo controles em `_CompactMonitorTopHud`.
+- `_CompactMonitorTopHud` concentra saída, tela cheia, voz, menu, estado da fonte, IA, detecções, preenchimento, telemetria dos aparelhos e HUD Bike no topo.
+- A tela cheia ganhou saída explícita do monitoramento, separada da ação de sair apenas da tela cheia.
+- `_buildPreviewLayer` força preenchimento em paisagem e tela cheia para reduzir faixas pretas e priorizar a câmera.
+- `CameraModeScreen` passa a desenhar preview/estado parado em fundo integral, com barra superior translúcida e painel inferior/lateral conforme orientação.
+- `_CameraStandbyPanel` substitui o ícone isolado de câmera desligada por um estado visual integrado ao aplicativo.
+- O fluxo `AccessGuideScreen` → `LaunchModeScreen` continua obrigatório antes da Home/Bike/Transmissão em instalações novas.
 
 ## Evolução 1.0.73 — Escolha inicial de modo
 

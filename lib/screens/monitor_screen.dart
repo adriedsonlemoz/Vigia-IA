@@ -7,6 +7,8 @@ import '../controllers/monitor_controller.dart';
 import '../services/system_ui_service.dart';
 import '../services/bike_sensor_service.dart';
 import '../core/video_source_status.dart';
+import '../models/bike_approach_status.dart';
+import '../models/bike_sensor_snapshot.dart';
 import '../models/monitoring_zone.dart';
 import '../models/device_telemetry.dart';
 import '../models/remote_phone_status.dart';
@@ -813,10 +815,13 @@ class _MonitorScreenState extends State<MonitorScreen>
     if (_fullscreen) await _toggleFullscreen();
     await SystemUiService.edgeToEdge();
     if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => screen),
-    );
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
     if (mounted) await SystemUiService.edgeToEdge();
+  }
+
+  Future<void> _closeMonitor() async {
+    if (_fullscreen) await _toggleFullscreen();
+    if (mounted) await Navigator.of(context).maybePop();
   }
 
   @override
@@ -831,7 +836,8 @@ class _MonitorScreenState extends State<MonitorScreen>
         if (!didPop && _fullscreen) unawaited(_toggleFullscreen());
       },
       child: Scaffold(
-        appBar: _fullscreen ? null : AppBar(
+        extendBodyBehindAppBar: landscape || _fullscreen,
+        appBar: _fullscreen || landscape ? null : AppBar(
           title: Row(children: [
             _StatusDot(active: _controller.sourceStatus.state == VideoSourceState.streaming),
             const SizedBox(width: 9),
@@ -848,11 +854,11 @@ class _MonitorScreenState extends State<MonitorScreen>
             _monitorMenu(),
           ],
         ),
-        body: _fullscreen ? _buildFullscreen(context) : SafeArea(
-          child: landscape
-              ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
-              : _buildPortrait(context),
-        ),
+        body: _fullscreen
+            ? _buildFullscreen(context)
+            : landscape
+                ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
+                : SafeArea(child: _buildPortrait(context)),
       ),
     );
   }
@@ -922,9 +928,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  int get _currentDetectionCount => _controller.trackingEnabled
-      ? _controller.trackedDetections.length
-      : _controller.detections.length;
+  int get _currentDetectionCount => _controller.trackingEnabled ? _controller.trackedDetections.length : _controller.detections.length;
 
   Widget _buildLandscape(
     BuildContext context, {
@@ -1007,7 +1011,9 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   Widget _buildPreviewLayer(BuildContext context) {
     final preview = _controller.buildPreview();
-    if (!_fillPreview) return preview;
+    final forceFill = _fullscreen ||
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    if (!_fillPreview && !forceFill) return preview;
     final ratio = _controller.previewAspectRatio;
     if (ratio == null || ratio <= 0) return preview;
     return LayoutBuilder(
@@ -1016,9 +1022,8 @@ class _MonitorScreenState extends State<MonitorScreen>
           return preview;
         }
         final containerRatio = constraints.maxWidth / constraints.maxHeight;
-        final scale = containerRatio > ratio
-            ? containerRatio / ratio
-            : ratio / containerRatio;
+        final scale =
+            containerRatio > ratio ? containerRatio / ratio : ratio / containerRatio;
         return ClipRect(
           child: Transform.scale(
             scale: scale,
@@ -1030,12 +1035,18 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Widget _buildCameraStage(BuildContext context) {
-    final insets = _fullscreen ? MediaQuery.viewPaddingOf(context) : EdgeInsets.zero;
+    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    final insets = _fullscreen || landscape
+        ? MediaQuery.viewPaddingOf(context)
+        : EdgeInsets.zero;
     final status = _controller.sourceStatus;
     final remoteStatus = _controller.remotePhoneStatus;
     final bikeSnapshot = _bikeSensors.snapshot;
     final bikeHudActive = bikeSnapshot != null;
     final approach = _controller.bikeApproachStatus;
+    final compactTopHud = landscape || _fullscreen;
+    final showCompactTopHud = compactTopHud &&
+        (!_fullscreen || _fullscreenControlsVisible);
     final compactBikeHud = MediaQuery.sizeOf(context).height < 500;
     final bikeHudBottom = bikeHudActive
         ? (bikeSnapshot.primaryWarning == null
@@ -1070,7 +1081,39 @@ class _MonitorScreenState extends State<MonitorScreen>
               fillPreview: _fillPreview,
               onChanged: _applyZone,
             ),
-          if (bikeHudActive)
+          if (showCompactTopHud)
+            Positioned(
+              left: 8 + insets.left,
+              right: 8 + insets.right,
+              top: 6 + insets.top,
+              child: _CompactMonitorTopHud(
+                sourceStatus: status,
+                detectionCount: _currentDetectionCount,
+                bikeSnapshot: bikeSnapshot,
+                approach: approach,
+                deviceStrip: _DeviceStatusStrip(
+                  localDevice: _controller.localDeviceTelemetry,
+                  remoteStatus: remoteStatus,
+                  sourceType: _controller.sourceConfig.type,
+                  sourceStatus: status,
+                  receiverActive: !_controller.initializing && _controller.error == null,
+                  networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+                  onTap: () => unawaited(_showSessionStatus()),
+                ),
+                fillPreview: _fillPreview || landscape || _fullscreen,
+                fullscreen: _fullscreen,
+                fullscreenChanging: _fullscreenChanging,
+                voiceEnabled: _controller.voiceEnabled,
+                detectionDelayed: _controller.detectionDelayed,
+                processing: _controller.processing,
+                onClose: () => unawaited(_closeMonitor()),
+                onFullscreen: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
+                onToggleFill: () => setState(() => _fillPreview = !_fillPreview),
+                onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
+                menu: _monitorMenu(),
+              ),
+            ),
+          if (!compactTopHud && bikeHudActive)
             Positioned(
               left: 0,
               right: 0,
@@ -1078,14 +1121,14 @@ class _MonitorScreenState extends State<MonitorScreen>
               child: Padding(padding: EdgeInsets.only(left: insets.left, right: insets.right),
                 child: BikeRideHud(snapshot: bikeSnapshot)),
             ),
-          if (approach.visible)
+          if (!compactTopHud && approach.visible)
             Positioned(
               left: 10,
               right: 10,
               top: bikeHudBottom + insets.top,
               child: BikeApproachBanner(status: approach),
             ),
-          Positioned(
+          if (!compactTopHud) Positioned(
             left: 8 + insets.left,
             right: 8 + insets.right,
             top: deviceStripTop,
@@ -1094,13 +1137,12 @@ class _MonitorScreenState extends State<MonitorScreen>
               remoteStatus: remoteStatus,
               sourceType: _controller.sourceConfig.type,
               sourceStatus: status,
-              receiverActive:
-                  !_controller.initializing && _controller.error == null,
+              receiverActive: !_controller.initializing && _controller.error == null,
               networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
               onTap: () => unawaited(_showSessionStatus()),
             ),
           ),
-          if (!_fullscreen) Positioned(
+          if (!_fullscreen && !compactTopHud) Positioned(
             left: 12,
             right: 12,
             top: standardControlsTop,
@@ -1345,8 +1387,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  String _statusText(VideoSourceStatus status) {
-    return status.message ?? switch (status.state) {
+  String _statusText(VideoSourceStatus status) =>
+      status.message ?? switch (status.state) {
       VideoSourceState.idle => 'Aguardando',
       VideoSourceState.connecting => 'Conectando',
       VideoSourceState.streaming => 'Ao vivo',
@@ -1354,5 +1396,4 @@ class _MonitorScreenState extends State<MonitorScreen>
       VideoSourceState.stopped => 'Pausado',
       VideoSourceState.error => 'Erro na câmera',
     };
-  }
 }
