@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.68+68 — 2026-09-21
+
+- Corrigida a null-safety do worker de detecção ao trocar entre EfficientDet-Lite0 e o modelo fallback.
+- Corrigida a janela de observação das Regras Inteligentes, que referenciava a própria variável antes da declaração.
+- Removidos avisos do analisador em import, blocos condicionais e telemetria de fala.
+- Mantidas as melhorias da 1.0.67 em detecção, áudio integrado e tela inteira.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README/ARCHITECTURE, testes e verificadores sincronizados em `1.0.68+68`.
+
 ## 1.0.67+67 — 2026-09-21
 
 - Otimiza conversão da câmera e tensor de entrada com buffers planos/reutilizáveis, preservando letterbox e coordenadas.

@@ -1,9 +1,15 @@
-# Arquitetura — Vigia IA 1.0.67+67
+# Arquitetura — Vigia IA 1.0.68+68
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
 
+
+## Evolução 1.0.68 — Estabilidade de compilação
+
+- o worker mantém uma referência não nula ao detector ativo após a inicialização e durante a troca de modelo;
+- a janela de observação das regras usa `absenceReset` como base sem auto-referência;
+- ajustes de lint mantêm o `flutter analyze` limpo sem mudar o comportamento funcional.
 
 ## Evolução 1.0.67 — Latência e ciclo de reprodução
 

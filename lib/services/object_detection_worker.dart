@@ -28,6 +28,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
     if (loaded == null) {
       throw StateError('Nenhum modelo compatível pôde ser iniciado. ${failures.join(' | ')}');
     }
+    var activeDetector = loaded;
     final policy = DetectorRuntimePolicy();
     var switchPending = false;
 
@@ -35,7 +36,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
     replyPort.send(<String, Object>{
       'type': 'ready',
       'port': commands.sendPort,
-      'diagnostics': loaded.runtime.diagnostics,
+      'diagnostics': activeDetector.runtime.diagnostics,
     });
 
     await for (final rawMessage in commands) {
@@ -51,8 +52,9 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         try {
           final replacement = _loadDetector(next.$2, next.$1,
               reason: 'troca automática por latência sustentada >1200ms');
-          loaded.close();
+          activeDetector.close();
           loaded = replacement;
+          activeDetector = replacement;
           modelIndex++;
         } catch (_) {
           // Mantém o modelo funcional se o modelo leve falhar na inicialização.
@@ -74,8 +76,8 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         materializeWatch.stop();
 
         final payload = _runDetection(
-          interpreter: loaded.interpreter,
-          runtime: loaded.runtime,
+          interpreter: activeDetector.interpreter,
+          runtime: activeDetector.runtime,
           labels: labels,
           rgbBytes: rgbBytes,
           width: width,
@@ -88,7 +90,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         switchPending = modelIndex + 1 < models.length &&
             policy.shouldUseLightModel(workerWatch.elapsedMicroseconds / 1000.0);
         replyPort.send(<String, Object>{
-          'diagnostics': loaded.runtime.diagnostics,
+          'diagnostics': activeDetector.runtime.diagnostics,
           'type': 'result',
           'id': id,
           'results': payload.results,

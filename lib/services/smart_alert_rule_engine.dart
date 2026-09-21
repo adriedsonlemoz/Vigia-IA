@@ -21,8 +21,9 @@ class SmartAlertRuleEngine {
     required DateTime now,
     Duration? observationWindow,
   }) {
-    final window = observationWindow != null && observationWindow > window
-        ? observationWindow : absenceReset;
+    final window = observationWindow != null && observationWindow > absenceReset
+        ? observationWindow
+        : absenceReset;
     _expireAbsent(now, window);
     final eligible = <String>{};
 

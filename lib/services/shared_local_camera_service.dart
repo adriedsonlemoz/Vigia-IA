@@ -172,8 +172,12 @@ class SharedLocalCameraService extends ChangeNotifier {
         data,
         capturedAt: capturedAt,
       );
-      if (generation == _generation && identical(controller, _controller) &&
-          _consumers.isNotEmpty && !_frames.isClosed) _frames.add(converted);
+      if (generation == _generation &&
+          identical(controller, _controller) &&
+          _consumers.isNotEmpty &&
+          !_frames.isClosed) {
+        _frames.add(converted);
+      }
     } catch (error, stackTrace) {
       // Um quadro inválido isolado não significa que a câmera física caiu.
       // O watchdog de frames decide se o pipeline realmente ficou offline.

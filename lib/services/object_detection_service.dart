@@ -7,7 +7,6 @@ import 'detector_input_buffer.dart';
 import 'detector_runtime_policy.dart';
 import '../models/detection.dart';
 import '../models/rgb_frame.dart';
-import 'detector_image_transform.dart';
 import 'label_translator.dart';
 
 part 'object_detection_worker.dart';

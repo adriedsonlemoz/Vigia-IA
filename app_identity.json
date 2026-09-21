@@ -5,6 +5,6 @@
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
   "notes": "A 1.0.66 corrige o teste de SessionStatus após a telemetria granular: o hotspot considera etapas locais mensuradas e não o round-trip agregado da inferência principal.",
-  "version": "1.0.67",
-  "build": 67
+  "version": "1.0.68",
+  "build": 68
 }

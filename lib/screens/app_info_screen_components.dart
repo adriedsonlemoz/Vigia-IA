@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.67',
+          version: '1.0.68',
           current: true,
+          changes: [
+            'Corrige a compilação do worker da IA e das Regras Inteligentes encontrada pelo flutter analyze.',
+            'Mantém as melhorias de detecção, áudio integrado e tela inteira da versão 1.0.67.',
+            'Remove avisos restantes do analisador sem alterar o comportamento esperado do monitoramento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.67',
           changes: [
             'IA com buffers reutilizáveis, processamento de imagem mais leve e troca automática para modelo leve em caso de lentidão persistente.',
             'Confirmação acompanha a cadência real; recortes extras respeitam o orçamento da análise.',

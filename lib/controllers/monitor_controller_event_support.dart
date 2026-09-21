@@ -374,8 +374,14 @@ extension _MonitorControllerEventSupport on MonitorController {
     DateTime? capturedAt,
   }) async {
     if (_disposed || _suspended || !_scheduleActive) return;
-    if (capturedAt != null && !DetectionCadencePolicy.fresh(capturedAt,
-        DateTime.now(), DetectionCadencePolicy.spokenFrameMaxAge)) return;
+    if (capturedAt != null &&
+        !DetectionCadencePolicy.fresh(
+          capturedAt,
+          DateTime.now(),
+          DetectionCadencePolicy.spokenFrameMaxAge,
+        )) {
+      return;
+    }
     final futures = <Future<void>>[];
     if (_settings.alertOutputs.voice && _speech.enabled) {
       futures.add(_speech.deliver(message, audioSlot: audioSlot,
