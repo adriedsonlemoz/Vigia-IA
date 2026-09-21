@@ -10,6 +10,7 @@ import 'app_info_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
+import 'launch_mode_screen.dart';
 import 'multi_camera_screen.dart';
 import 'presets_screen.dart';
 import 'statistics_screen.dart';
@@ -95,6 +96,15 @@ class SettingsScreen extends StatelessWidget {
             title: 'Modo Câmera',
             subtitle: 'Use este celular como câmera na rede local.',
             onTap: () => _push(context, const CameraModeScreen()),
+          ),
+          _SettingsTile(
+            icon: Icons.dashboard_customize_outlined,
+            title: 'Modo inicial',
+            subtitle: 'Escolha entre Normal, Bike ou Transmissão ao abrir o app.',
+            onTap: () => _push(
+              context,
+              const LaunchModeScreen(manualReview: true),
+            ),
           ),
           _SettingsTile(
             icon: Icons.video_settings_outlined,

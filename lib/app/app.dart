@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../screens/access_guide_screen.dart';
+import '../screens/bike_mode_screen.dart';
+import '../screens/camera_mode_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/launch_mode_screen.dart';
 import '../services/appearance_settings_service.dart';
+import '../services/app_launch_mode_service.dart';
 import '../services/native_platform_service.dart';
 
 class VigiaIaApp extends StatelessWidget {
@@ -139,6 +143,8 @@ class _StartupGate extends StatefulWidget {
 
 class _StartupGateState extends State<_StartupGate> {
   bool? _onboardingCompleted;
+  AppLaunchMode? _launchMode;
+  bool _launchModeLoaded = false;
 
   @override
   void initState() {
@@ -148,19 +154,34 @@ class _StartupGateState extends State<_StartupGate> {
 
   Future<void> _load() async {
     final completed = await NativePlatformService.instance.onboardingCompleted();
+    final launchMode = completed
+        ? await AppLaunchModeService.instance.initialize()
+        : null;
     if (!mounted) return;
-    setState(() => _onboardingCompleted = completed);
+    setState(() {
+      _onboardingCompleted = completed;
+      _launchMode = launchMode;
+      _launchModeLoaded = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final completed = _onboardingCompleted;
-    if (completed == null) {
+    if (completed == null || !_launchModeLoaded) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    if (completed) return const HomeScreen();
+    if (completed) {
+      final launchMode = _launchMode;
+      return switch (launchMode) {
+        AppLaunchMode.normal => const HomeScreen(),
+        AppLaunchMode.bike => const BikeModeScreen(),
+        AppLaunchMode.transmission => const CameraModeScreen(),
+        null => const LaunchModeScreen(),
+      };
+    }
     return const AccessGuideScreen();
   }
 }

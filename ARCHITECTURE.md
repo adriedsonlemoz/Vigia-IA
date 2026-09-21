@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.72+72
+# Arquitetura — Vigia IA 1.0.73+73
 
 ## 1. Princípios
+
+## Evolução 1.0.73 — Escolha inicial de modo
+
+- `_StartupGate` continua respeitando o guia inicial de permissões antes de liberar o app.
+- Depois do onboarding, `LaunchModeScreen` solicita a escolha entre Normal, Bike e Transmissão quando ainda não há modo salvo.
+- `AppLaunchModeService` persiste a escolha em `launch_mode.json`, no diretório de suporte do app.
+- Em aberturas futuras, Normal leva à Home, Bike leva ao painel Bike e Transmissão leva ao Modo Câmera.
+- Configurações > Monitoramento permite reabrir a seleção sem repetir o onboarding.
+- A arquitetura mantém o transmissor dedicado à câmera; mapa/GPS e identificação futura de contexto Bike devem ser trabalhados no receptor.
 
 ## Evolução 1.0.72 — Buildfix e mini mapa futuro
 

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/native_platform_service.dart';
-import 'home_screen.dart';
+import 'launch_mode_screen.dart';
 
 class AccessGuideScreen extends StatefulWidget {
   const AccessGuideScreen({
@@ -93,7 +93,9 @@ class _AccessGuideScreenState extends State<AccessGuideScreen> {
     }
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => HomeScreen(startMonitorOnLoad: widget.startMonitorOnLoad),
+        builder: (_) => LaunchModeScreen(
+          startMonitorOnLoad: widget.startMonitorOnLoad,
+        ),
       ),
     );
   }

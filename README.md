@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.72+72`
+> **Versão atual:** `1.0.73+73`
 
 ## Estado atual
 
-A `1.0.72+72` corrige a falha do `flutter analyze` reportada no Android-APK-40 e preserva as melhorias da `1.0.71+71` para recebimento remoto, HUD e áudio.
+A `1.0.73+73` adiciona a escolha inicial de modo entre Normal, Bike e Transmissão, preservando as correções da `1.0.72+72` e as melhorias remotas da `1.0.71+71`.
+
+### Evolução 1.0.73 — Escolha inicial de modo
+
+- após o acesso inicial/permissões, o app pergunta se este aparelho será usado em Modo normal, Modo Bike ou Modo transmissão;
+- a escolha fica salva em `launch_mode.json` e define a primeira tela em próximas aberturas;
+- Configurações > Monitoramento ganhou o item Modo inicial para trocar a decisão depois;
+- Modo normal abre a Home, Modo Bike abre o painel Bike e Modo transmissão abre o Modo Câmera;
+- o Modo transmissão segue leve e dedicado à câmera; mapa/GPS e futuras melhorias da Bike ficam no aparelho receptor/visualizador.
 
 ### Evolução 1.0.72 — Buildfix e direção do mini mapa
 
@@ -57,7 +65,7 @@ A `1.0.72+72` corrige a falha do `flutter analyze` reportada no Android-APK-40 e
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.72.md](RELEASE-1.0.72.md). Correção anterior: [RELEASE-1.0.71.md](RELEASE-1.0.71.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.73.md](RELEASE-1.0.73.md). Correção anterior: [RELEASE-1.0.72.md](RELEASE-1.0.72.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

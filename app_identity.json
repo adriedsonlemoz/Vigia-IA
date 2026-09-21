@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.72 corrige os avisos que travavam o flutter analyze do Android-APK-40 e registra que o futuro mini mapa deve ficar no aparelho receptor.",
-  "version": "1.0.72",
-  "build": 72
+  "notes": "A 1.0.73 adiciona a seleção inicial de modo entre Normal, Bike e Transmissão, mantendo a escolha persistida e alterável nas configurações.",
+  "version": "1.0.73",
+  "build": 73
 }

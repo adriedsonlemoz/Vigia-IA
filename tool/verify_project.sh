@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.72+72$' pubspec.yaml || fail 'Versao esperada 1.0.72+72 nao encontrada.'
+grep -q '^version: 1\.0\.73+73$' pubspec.yaml || fail 'Versao esperada 1.0.73+73 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.72';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.72.'
-grep -q 'static const int build = 72;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 72.'
-grep -q "version: '1.0.72'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.72.'
+grep -q "static const String version = '1.0.73';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.73.'
+grep -q 'static const int build = 73;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 73.'
+grep -q "version: '1.0.73'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.73.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.72+72$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.72+72.'
+grep -q '^version: 1.0.73+73$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.73+73.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.72"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.72.'
-grep -q '"build": 72' app_identity.json \
-  || fail 'app_identity.json nao esta no build 72.'
+grep -q '"version": "1.0.73"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.73.'
+grep -q '"build": 73' app_identity.json \
+  || fail 'app_identity.json nao esta no build 73.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.72+72' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.72+72.'
+grep -q 'Vigia IA 1.0.73+73' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.73+73.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1506,6 +1506,27 @@ if grep -q "import 'dart:async';" test/remote_phone_camera_source_test.dart; the
 fi
 grep -q 'mini mapa/GPS deve ficar no aparelho receptor' RELEASE-1.0.72.md \
   || fail 'Decisao do mini mapa no receptor nao foi documentada.'
+
+# Selecao inicial de modo - 1.0.73
+grep -q '^## 1.0.73+73' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.73.'
+grep -q 'Evolução 1.0.73' README.md || fail 'README nao documenta 1.0.73.'
+grep -q "version: '1.0.73'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.73.'
+[[ -f RELEASE-1.0.73.md ]] || fail 'Notas da entrega 1.0.73 ausentes.'
+[[ -f lib/services/app_launch_mode_service.dart ]] || fail 'Servico de modo inicial ausente.'
+[[ -f lib/screens/launch_mode_screen.dart ]] || fail 'Tela de escolha de modo ausente.'
+[[ -f test/app_launch_mode_service_test.dart ]] || fail 'Teste do modo inicial ausente.'
+grep -q 'AppLaunchMode.normal' lib/screens/launch_mode_screen.dart \
+  || fail 'Escolha de modo nao inclui Normal.'
+grep -q 'AppLaunchMode.bike' lib/screens/launch_mode_screen.dart \
+  || fail 'Escolha de modo nao inclui Bike.'
+grep -q 'AppLaunchMode.transmission' lib/screens/launch_mode_screen.dart \
+  || fail 'Escolha de modo nao inclui Transmissao.'
+grep -q 'launch_mode.json' lib/services/app_launch_mode_service.dart \
+  || fail 'Modo inicial nao esta persistido em arquivo proprio.'
+grep -q 'const LaunchModeScreen()' lib/app/app.dart \
+  || fail 'StartupGate nao abre escolha de modo quando ainda nao ha selecao.'
+grep -q 'LaunchModeScreen(manualReview: true)' lib/screens/settings_screen.dart \
+  || fail 'Configuracoes nao permite trocar o modo inicial.'
 cmp -s tool/android/AlertAudioPlayer.kt android/app/src/main/kotlin/com/vigiaia/app/AlertAudioPlayer.kt \
   || fail 'AlertAudioPlayer Android diverge da fonte versionada.'
 

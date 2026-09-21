@@ -1,19 +1,30 @@
-# Validação — Vigia IA 1.0.72+72
+# Validação — Vigia IA 1.0.73+73
 
-Data: 2026-09-21. Base preservada: 1.0.71+71.
+Data: 2026-09-21. Base preservada: 1.0.72+72.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, recursos, espelhos Android, contratos da 1.0.71 e buildfix da 1.0.72 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.72+72 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, recursos, espelhos Android, contratos da 1.0.71, buildfix da 1.0.72 e seleção inicial da 1.0.73 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.73+73 |
 | Fontes Android espelhadas | `MainActivity.kt` e `AlertAudioPlayer.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
 | Transporte remoto | Sequência, timestamp UTC, cache desativado, resposta 204 e descarte de duplicatas protegidos pelo verificador |
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
+| Seleção de modo | Normal, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
+
+## Seleção inicial de modo
+
+O fluxo atualizado mantém o guia de permissões em primeiro lugar. Quando ele termina, o app abre `LaunchModeScreen` e pede a escolha entre:
+
+- Modo normal: abre a Home;
+- Modo Bike: abre o painel Bike;
+- Modo transmissão: abre o Modo Câmera.
+
+A decisão é salva em `launch_mode.json` e pode ser revista em Configurações > Monitoramento > Modo inicial.
 
 ## Correção do Android-APK-40
 

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.73+73 — 2026-09-21
+
+- Adicionada seleção inicial de modo após o acesso inicial/permissões.
+- O usuário pode escolher entre Modo normal, Modo Bike e Modo transmissão.
+- A escolha fica persistida em `launch_mode.json` e passa a decidir a primeira tela do app.
+- Adicionado atalho em Configurações > Monitoramento para revisar e trocar o modo inicial.
+- O Modo transmissão continua dedicado a capturar/enviar imagem pela rede local; mapa/GPS e recursos futuros da Bike ficam concentrados no aparelho receptor.
+- Adicionado teste para proteger os valores aceitos de `AppLaunchMode`.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.73+73`.
+
 ## 1.0.72+72 — 2026-09-21
 
 - Corrigido o `flutter analyze` do Android-APK-40.
