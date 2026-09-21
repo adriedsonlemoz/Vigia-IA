@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.71 reduz a latência da câmera remota, mantém visível o estado energético dos dois aparelhos, reorganiza o HUD e torna a resolução dos áudios Android mais robusta.",
-  "version": "1.0.71",
-  "build": 71
+  "notes": "A 1.0.72 corrige os avisos que travavam o flutter analyze do Android-APK-40 e registra que o futuro mini mapa deve ficar no aparelho receptor.",
+  "version": "1.0.72",
+  "build": 72
 }

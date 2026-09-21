@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.71+71`
+> **Versão atual:** `1.0.72+72`
 
 ## Estado atual
 
-A `1.0.71+71` melhora o recebimento da câmera de outro celular, reorganiza o Monitor e mantém o estado energético do receptor e do transmissor sempre visível.
+A `1.0.72+72` corrige a falha do `flutter analyze` reportada no Android-APK-40 e preserva as melhorias da `1.0.71+71` para recebimento remoto, HUD e áudio.
+
+### Evolução 1.0.72 — Buildfix e direção do mini mapa
+
+- remove o operador nulo desnecessário no status da câmera remota;
+- remove import redundante no teste da câmera remota;
+- mantém a mudança funcional da 1.0.71 sem alterar o protocolo de vídeo;
+- define como decisão de produto que um futuro mini mapa/GPS deve ficar no aparelho receptor/visualizador; o transmissor deve continuar dedicado à câmera, enviando localização apenas como telemetria leve se esse recurso for implementado depois.
 
 ### Evolução 1.0.71 — Vídeo remoto e HUD
 
@@ -50,7 +57,7 @@ A `1.0.71+71` melhora o recebimento da câmera de outro celular, reorganiza o Mo
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.71.md](RELEASE-1.0.71.md). Correção anterior: [RELEASE-1.0.70.md](RELEASE-1.0.70.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.72.md](RELEASE-1.0.72.md). Correção anterior: [RELEASE-1.0.71.md](RELEASE-1.0.71.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

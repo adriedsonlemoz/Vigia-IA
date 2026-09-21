@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.71+71
+# Arquitetura — Vigia IA 1.0.72+72
 
 ## 1. Princípios
+
+## Evolução 1.0.72 — Buildfix e mini mapa futuro
+
+- A entrega corrige apenas avisos do analisador encontrados no Android-APK-40, sem mudar o transporte de imagem.
+- O status da câmera remota serializa telemetria não nula diretamente, mantendo o contrato de `/status`.
+- O teste da câmera remota remove import redundante e preserva a regressão da consulta rápida.
+- Se o mini mapa/GPS for implementado, a superfície principal deve existir no receptor/visualizador. O transmissor permanece dedicado à captura de câmera e pode enviar localização apenas como telemetria leve, separada dos quadros.
 
 ## Evolução 1.0.71 — Transporte remoto e estado operacional
 

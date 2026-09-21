@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.71',
+          version: '1.0.72',
           current: true,
+          changes: [
+            'Corrige os dois avisos do flutter analyze encontrados no Android-APK-40.',
+            'Remove o operador nulo desnecessário no status da câmera remota.',
+            'Remove import redundante do teste da câmera remota.',
+            'Registra que o mini mapa/GPS futuro pertence ao aparelho receptor, mantendo o transmissor dedicado à imagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.71',
           changes: [
             'A câmera remota consulta quadros novos rapidamente e evita baixar ou analisar novamente imagens repetidas.',
             'Receptor e transmissor permanecem visíveis no Monitor com bateria, estado, carregamento e acesso ao painel completo.',

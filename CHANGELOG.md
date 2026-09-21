@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.72+72 — 2026-09-21
+
+- Corrigido o `flutter analyze` do Android-APK-40.
+- `remote_camera_server_service.dart` deixou de usar operador nulo desnecessário ao serializar a telemetria do transmissor.
+- `remote_phone_camera_source_test.dart` deixou de importar `dart:async` sem necessidade.
+- Documentado que o futuro mini mapa/GPS deve ser exibido no aparelho receptor, mantendo o aparelho transmissor dedicado à captura e envio de imagem.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.72+72`.
+
 ## 1.0.71+71 — 2026-09-21
 
 - Desacoplada a recepção da câmera remota da cadência da IA, com polling entre 250 e 400 ms.

@@ -262,7 +262,7 @@ class RemoteCameraServerService extends ChangeNotifier {
             'bikeProfile': _bikeConfig.enabled ? _bikeConfig.powerProfile.name : null,
             'alertLowBattery': _bikeConfig.alertLowBattery,
             'lowBatteryPercent': _bikeConfig.lowBatteryPercent,
-            'device': telemetry?.toJson(),
+            'device': telemetry.toJson(),
             'name': 'Vigia IA - câmera remota',
           }));
         } else if (path == '/frame.jpg') {
