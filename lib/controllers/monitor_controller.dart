@@ -21,6 +21,7 @@ import '../models/system_health.dart';
 import '../models/tracked_detection.dart';
 import '../models/video_source_config.dart';
 import '../services/alert_repeat_guard.dart';
+import '../services/alert_voice_service.dart';
 import '../services/analysis_budget_policy.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
@@ -29,6 +30,7 @@ import '../services/bike_mode_service.dart';
 import '../services/camera_integrity_service.dart';
 import '../services/clip_recorder_service.dart';
 import '../services/detection_confidence_policy.dart';
+import '../services/detection_cadence_policy.dart';
 import '../services/detection_merger.dart';
 import '../services/detection_scan_planner.dart';
 import '../services/error_log_service.dart';
@@ -81,8 +83,11 @@ class MonitorController extends ChangeNotifier {
   MonitorSettings _settings;
   VideoSourceConfig sourceConfig;
   ObjectDetectionService _detector = ObjectDetectionService();
-  final SpeechService _speech = SpeechService();
+  final AlertVoiceService _speech = AlertVoiceService();
   final MotionDetectionService _motion = MotionDetectionService();
+  final DetectionCadencePolicy _cadence = DetectionCadencePolicy();
+  String _lastAlertDecision = 'aguardando análise';
+  double? _lastTensorTransferMs;
   final TemporalDetectionFilter _detectionFilter = TemporalDetectionFilter();
   final CameraIntegrityService _cameraIntegrity = CameraIntegrityService();
   final NativePlatformService _native = NativePlatformService.instance;
@@ -195,6 +200,8 @@ class MonitorController extends ChangeNotifier {
   String? get error => _error;
   bool get initializing => _initializing;
   bool get processing => _processing;
+  bool get detectionDelayed => (_lastEndToEndMs ?? 0) > 5000;
+  String get lastAlertDecision => _lastAlertDecision;
   bool get voiceEnabled => _speech.enabled;
   bool get voiceLanguageInstalled => _speech.languageInstalled;
   bool get motionOnly => _settings.motionOnly;
@@ -812,7 +819,7 @@ class MonitorController extends ChangeNotifier {
       _motionScore = motionResult.changedRatio;
       _cameraMotion = _settings.motionOnly && motionResult.cameraMotion;
       _motionActive = !_settings.motionOnly || motionResult.hasMotion;
-      final now = DateTime.now();
+      final now = frame.capturedAt;
 
       const idlePresenceRefresh = Duration(milliseconds: 800);
       if (_settings.motionOnly && !motionResult.hasMotion) {
@@ -830,6 +837,7 @@ class MonitorController extends ChangeNotifier {
         _lastIdleInferenceAt = now;
       }
 
+      final observationWindow = _cadence.observe(now);
       final previousDetections = _detections;
       final analysisStartedAt = DateTime.now();
       _framesAnalyzed++;
@@ -850,6 +858,7 @@ class MonitorController extends ChangeNotifier {
       _lastResizeLetterboxMs = null;
       _lastTensorBuildMs = null;
       _lastLiteRtMs = null;
+      _lastTensorTransferMs = null;
       _lastDetectorPostprocessMs = null;
       _lastAuxiliaryInferenceMs = 0;
       _lastPostprocessMs = null;
@@ -883,6 +892,7 @@ class MonitorController extends ChangeNotifier {
       _lastResizeLetterboxMs = detectorTimings.resizeLetterboxMs;
       _lastTensorBuildMs = detectorTimings.tensorBuildMs;
       _lastLiteRtMs = detectorTimings.liteRtMs;
+      _lastTensorTransferMs = detectorTimings.tensorTransferMs;
       _lastDetectorPostprocessMs = detectorTimings.detectorPostprocessMs;
       if (_shouldDiscardFrameResult(session)) return;
 
@@ -901,7 +911,12 @@ class MonitorController extends ChangeNotifier {
                 ),
               )
               .toList(growable: false);
-      _updateBikeApproachFastPath(primaryGlobalForBike, now);
+      if (DetectionCadencePolicy.fresh(now, DateTime.now(),
+          DetectionCadencePolicy.urgentFrameMaxAge)) {
+        _updateBikeApproachFastPath(primaryGlobalForBike, now);
+      } else {
+        _resetBikeApproach();
+      }
 
       var hasUsefulPrimary = candidates.any(
         (item) => DetectionConfidencePolicy.isCandidate(
@@ -917,6 +932,14 @@ class MonitorController extends ChangeNotifier {
       if (motionResult.hasMotion && !hasUsefulPrimary) {
         final focusBoxes = motionResult.focusRegions(maxRegions: 2);
         for (final focusBox in focusBoxes) {
+          if (!AnalysisBudgetPolicy.allowOptionalDetailScan(
+            intervalMs: effectiveAnalysisInterval.inMilliseconds,
+            elapsedMs: processingWatch.elapsedMicroseconds / 1000.0,
+            estimatedInferenceMs: _lastPrimaryInferenceMs ?? 0,
+          )) {
+            _detailScansSkippedByBudget++;
+            break;
+          }
           final focusZone = MonitoringZone(
             xMin: focusBox.xMin,
             yMin: focusBox.yMin,
@@ -1025,6 +1048,7 @@ class MonitorController extends ChangeNotifier {
         candidates: candidates,
         baseThreshold: _settings.confidenceThreshold,
         now: now,
+        observationWindow: observationWindow,
       );
       final movingSelected = selected
           .where((item) => motionResult.isBoxMoving(item.box))
@@ -1088,6 +1112,7 @@ class MonitorController extends ChangeNotifier {
               detections: _detections,
               zones: _trackingZones(activeZones),
               now: now,
+              observationWindow: observationWindow,
             )
           : const TrackingResult(
               active: <TrackedDetection>[],
@@ -1108,7 +1133,7 @@ class MonitorController extends ChangeNotifier {
       }
       _recentMotionByTrackId.removeWhere(
         (_, lastMotion) =>
-            now.difference(lastMotion) > const Duration(milliseconds: 1400),
+            now.difference(lastMotion) > observationWindow,
       );
 
       final visibleLabels = zoneFilteredSelected.map((item) => item.label).toSet();
@@ -1122,6 +1147,7 @@ class MonitorController extends ChangeNotifier {
         visibleLabels: visibleLabels,
         movingLabels: movingLabels,
         now: now,
+        observationWindow: observationWindow,
       );
       final alertTargets = <String, Detection>{};
       for (final detection in _detections) {
@@ -1145,7 +1171,23 @@ class MonitorController extends ChangeNotifier {
           alertTargets[key] = detection;
         }
       }
-      final alerts = _alertGuard.evaluate(alertTargets.keys.toSet(), now);
+      final freshForSpeech = DetectionCadencePolicy.fresh(now, DateTime.now(),
+          DetectionCadencePolicy.spokenFrameMaxAge);
+      final alerts = !freshForSpeech ? <String>[] : _alertGuard.evaluate(alertTargets.keys.toSet(), now,
+        observationWindow: observationWindow,
+        // Movimento e permanência já foram respeitados acima. Uma evidência
+        // forte dispensa somente a segunda confirmação genérica.
+        immediateKeys: alertTargets.entries.where((entry) =>
+          DetectionConfidencePolicy.isStrong(entry.value, _settings.confidenceThreshold))
+          .map((entry) => entry.key).toSet(),
+      );
+      _lastAlertDecision = !freshForSpeech ? 'frame antigo: fala suspensa' :
+          alerts.isNotEmpty ? 'alerta liberado' :
+          candidates.isEmpty && _detections.isEmpty ? 'nenhum candidato' :
+          _detections.isEmpty ? 'aguardando confiança/confirmação temporal' :
+          ruleEligibleLabels.isEmpty ? 'aguardando permanência/movimento da regra' :
+          alertTargets.isEmpty ? 'aguardando movimento na área' :
+          alerts.isEmpty ? 'confirmação ou intervalo de repetição' : 'alerta liberado';
       if (alerts.isNotEmpty) {
         unawaited(_recordConfirmedEvents(frame, alerts, alertTargets));
       }
@@ -1169,17 +1211,18 @@ class MonitorController extends ChangeNotifier {
         ),
       );
     } finally {
+      final resultCurrent = !_shouldDiscardFrameResult(session);
       if (inferenceWatch.isRunning) {
         inferenceWatch.stop();
-        if (inferenceWatch.elapsedMicroseconds > 0) {
+        if (resultCurrent && inferenceWatch.elapsedMicroseconds > 0) {
           _lastInferenceMs = inferenceWatch.elapsedMicroseconds / 1000.0;
         }
       }
       if (postprocessWatch.isRunning) {
         postprocessWatch.stop();
-        _lastPostprocessMs = postprocessWatch.elapsedMicroseconds / 1000.0;
+        if (resultCurrent) _lastPostprocessMs = postprocessWatch.elapsedMicroseconds / 1000.0;
       }
-      if (pipelineMeasured) {
+      if (pipelineMeasured && resultCurrent) {
         _lastAuxiliaryInferenceMs = auxiliaryInferenceMs;
         _lastDetectorRuns = detectorRuns;
         _lastAuxiliaryInferenceRuns = auxiliaryInferenceRuns;
@@ -1191,51 +1234,9 @@ class MonitorController extends ChangeNotifier {
         final networkLatency = remoteSource is RemotePhoneCameraSource
             ? (remoteSource.frameNetworkLatencyMs ?? remotePhoneStatus?.networkLatencyMs)
             : null;
-        _performanceTelemetry.record(
-          PerformanceFrameSample(
-            timestamp: DateTime.now(),
-            imageSource: _sourceDisplayName,
-            detectorDiagnostics: _detector.diagnostics ?? 'detector sem diagnóstico',
-            frameWidth: frame.width,
-            frameHeight: frame.height,
-            analysisWidth: analysisFrame.width,
-            analysisHeight: analysisFrame.height,
-            receivedFps: _receivedFps,
-            analyzedFps: _fps,
-            framesReceived: _framesReceived,
-            framesAnalyzed: _framesAnalyzed,
-            framesDroppedProcessing: _framesDroppedProcessing,
-            framesSkippedOptimization: _framesSkippedOptimization,
-            detectorRuns: detectorRuns,
-            auxiliaryInferenceRuns: auxiliaryInferenceRuns,
-            expectedFrameIntervalMs: effectiveAnalysisInterval.inMilliseconds,
-            deviceManufacturer: _localDeviceTelemetry?.deviceManufacturer,
-            deviceModel: _localDeviceTelemetry?.deviceModel,
-            androidVersion: _localDeviceTelemetry?.androidVersion,
-            androidSdk: _localDeviceTelemetry?.androidSdk,
-            sourceConversionMs: frame.sourceConversionMs,
-            sourceTransportMs: frame.sourceTransportMs,
-            controllerPreprocessMs: _lastPreprocessMs,
-            isolateTransferAndQueueMs: _lastIsolateTransferAndQueueMs,
-            workerMaterializeMs: _lastWorkerMaterializeMs,
-            detectorImageBuildMs: _lastDetectorImageBuildMs,
-            resizeLetterboxMs: _lastResizeLetterboxMs,
-            tensorBuildMs: _lastTensorBuildMs,
-            liteRtMs: _lastLiteRtMs,
-            detectorPostprocessMs: _lastDetectorPostprocessMs,
-            primaryRoundTripMs: _lastPrimaryInferenceMs,
-            auxiliaryInferenceMs: _lastAuxiliaryInferenceMs,
-            appPostprocessMs: _lastPostprocessMs,
-            totalProcessingMs: _lastTotalProcessingMs,
-            endToEndMs: _lastEndToEndMs,
-            frameDelayMs: _lastFrameDelayMs,
-            networkLatencyMs: networkLatency,
-            cpuPercent: _localDeviceTelemetry?.appCpuPercent,
-            ramBytes: _localDeviceTelemetry?.appMemoryUsedBytes,
-            batteryTemperatureC: _localDeviceTelemetry?.batteryTemperatureC,
-            batteryPercent: _localDeviceTelemetry?.batteryPercent,
-          ),
-        );
+        _recordPerformanceFrameImpl(frame, analysisFrame,
+          detectorRuns: detectorRuns, auxiliaryInferenceRuns: auxiliaryInferenceRuns,
+          networkLatency: networkLatency, frameDelayMs: rawDelay < 0 ? 0 : rawDelay);
       }
       _processing = false;
       if (!processingDone.isCompleted) processingDone.complete();
@@ -1637,6 +1638,8 @@ class MonitorController extends ChangeNotifier {
 
   Future<void> _stopSourceUnlocked() async {
     _frameSession++;
+    _resetTemporalForSourceStopImpl();
+    await _speech.stop();
     _motion.reset();
     if (_baseReady) _smartRuleEngine.reset();
     _tracker.reset();

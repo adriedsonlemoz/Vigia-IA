@@ -9,6 +9,7 @@ class DetectorStageTimings {
     required this.resizeLetterboxMs,
     required this.tensorBuildMs,
     required this.liteRtMs,
+    this.tensorTransferMs = 0,
     required this.detectorPostprocessMs,
     required this.workerTotalMs,
   });
@@ -20,6 +21,7 @@ class DetectorStageTimings {
   final double resizeLetterboxMs;
   final double tensorBuildMs;
   final double liteRtMs;
+  final double tensorTransferMs;
   final double detectorPostprocessMs;
   final double workerTotalMs;
 
@@ -31,6 +33,7 @@ class DetectorStageTimings {
         'resizeLetterboxMs': resizeLetterboxMs,
         'tensorBuildMs': tensorBuildMs,
         'liteRtMs': liteRtMs,
+        'tensorTransferMs': tensorTransferMs,
         'detectorPostprocessMs': detectorPostprocessMs,
         'workerTotalMs': workerTotalMs,
       };

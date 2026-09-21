@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:math' as math;
-
 import 'package:flutter/services.dart';
-import 'package:flutter_litert/flutter_litert.dart' hide Detection;
-import 'package:image/image.dart' as img;
-
+import 'package:flutter_litert/native.dart' hide Detection;
+import 'detector_input_buffer.dart';
+import 'detector_runtime_policy.dart';
 import '../models/detection.dart';
 import '../models/rgb_frame.dart';
 import 'detector_image_transform.dart';
 import 'label_translator.dart';
 
 part 'object_detection_worker.dart';
+part 'object_detection_runtime.dart';
 part 'object_detection_metrics.dart';
 
 class ObjectDetectionService {
@@ -126,6 +126,9 @@ class ObjectDetectionService {
       return;
     }
 
+    if (message['diagnostics'] is String) {
+      _diagnostics = message['diagnostics']! as String;
+    }
     final id = message['id'];
     if (id is! int) return;
     final pending = _pending.remove(id);
@@ -184,6 +187,7 @@ class ObjectDetectionService {
             resizeLetterboxMs: timing('resizeLetterboxMs'),
             tensorBuildMs: timing('tensorBuildMs'),
             liteRtMs: timing('liteRtMs'),
+            tensorTransferMs: timing('tensorTransferMs'),
             detectorPostprocessMs: timing('detectorPostprocessMs'),
             workerTotalMs: workerTotalMs,
           ),

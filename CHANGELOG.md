@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.67+67 — 2026-09-21
+
+- Otimiza conversão da câmera e tensor de entrada com buffers planos/reutilizáveis, preservando letterbox e coordenadas.
+- Solicita XNNPACK/2 threads, mantém fallback CPU e adiciona troca controlada para SSD MobileNet V1 sob lentidão persistente.
+- Corrige expiração prematura da confirmação/permanência em baixa cadência; evidências fortes deixam de esperar confirmação genérica extra.
+- Limita todas as inferências auxiliares pelo orçamento e reduz codificação LAN sem visualizadores.
+- Corrige o fluxo de áudio: volume de mídia, prepareAsync, foco transitório, prioridades, fila curta, cache por versão e fallback após erros assíncronos.
+- Acrescenta tela inteira horizontal com preenchimento proporcional, Ajustar/Preencher, controles temporários e Voltar sem encerrar a câmera.
+- Evita preview com CameraController descartado e frames de uma geração anterior.
+- Telemetria v2 separa inferência nativa da transferência dos tensores; inclui decisão de alerta, regras efetivas e eventos de áudio/TTS.
+- Atualiza metadados, Sobre/Mudanças, documentação, verificadores e testes de regressão. Flutter/Android SDK indisponíveis no ambiente desta entrega; analyze/test/build dependem do workflow.
+
+
 ## 1.0.66+66
 
 - Corrigido o único teste que falhou no Android-APK-34 após o `flutter analyze` passar sem problemas.

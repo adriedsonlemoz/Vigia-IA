@@ -58,8 +58,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.66',
+          version: '1.0.67',
           current: true,
+          changes: [
+            'IA com buffers reutilizáveis, processamento de imagem mais leve e troca automática para modelo leve em caso de lentidão persistente.',
+            'Confirmação acompanha a cadência real; recortes extras respeitam o orçamento da análise.',
+            'Áudios usam volume de mídia, preparação assíncrona, prioridade e fallback para voz quando a reprodução falha.',
+            'Tela inteira horizontal com Ajustar/Preencher, controles que somem e saída pelo botão Voltar.',
+            'Diagnóstico registra início/erro de áudio, regras ativas, idade do frame e o tempo nativo da inferência.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.66',
           changes: [
             'Buildfix do Android-APK-34: corrigido teste desatualizado do hotspot do pipeline após a telemetria granular.',
             'O hotspot continua considerando as etapas locais mensuradas; o round-trip agregado da inferência principal não disputa essa classificação.',

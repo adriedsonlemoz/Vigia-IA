@@ -1,8 +1,24 @@
-# Arquitetura — Vigia IA 1.0.66+66
+# Arquitetura — Vigia IA 1.0.67+67
 
 ## 1. Princípios
 
 A 1.0.57 inicia a refatoração estrutural preventiva do projeto em lotes de três arquivos. O primeiro lote reduz a concentração no Monitor sem trocar contratos públicos: o controller mantém a orquestração enquanto responsabilidades internas e componentes de UI passam para módulos menores.
+
+
+## Evolução 1.0.67 — Latência e ciclo de reprodução
+
+- `DetectorInputBuffer` funde resize bilinear, letterbox e normalização em `ByteBuffer`; `FrameConverter` funde conversão, rotação e espelhamento. Coordenadas continuam sendo remapeadas por `DetectorImageTransform`.
+- `object_detection_runtime.dart` gerencia interpreter/delegate/options e libera recursos na ordem correta. XNNPACK é uma solicitação de aceleração; operadores não delegados continuam na CPU. A escolha efetiva por operador não é medida.
+- `DetectorRuntimePolicy` desconsidera a primeira execução e solicita o modelo leve depois de três execuções consecutivas >1.200 ms. Troca única por worker do detector; falha no modelo substituto mantém o anterior.
+- `liteRtMs` mede apenas `invoke` via `lastInferenceDurationMicroseconds`. `tensorTransferMs` mede o restante da chamada `runForMultipleInputs`: cópias de entrada/saída e preparação interna da API. A nova semântica é identificada por `schemaVersion: 2`.
+- `DetectionCadencePolicy` observa timestamps de captura dos frames analisados; janela = `clamp(2 × intervalo observado + 250 ms, 1.500 ms, 30.000 ms)`. Filtro, tracker, permanência e guarda compartilham a janela. A retenção visual de objetos ausentes permanece curta; a janela maior não inventa novas observações.
+- Evidência forte dispensa apenas a confirmação genérica adicional; limiares, áreas, movimento e permanência continuam aplicados. Frames antigos não consomem a guarda de repetição de um futuro alerta recente.
+- `AlertVoiceService` coordena arquivos e TTS, protege alta prioridade, mantém somente a próxima mensagem normal e invalida solicitações ao desligar voz. `AlertAudioPlayer` usa MediaPlayer assíncrono, USAGE_MEDIA, foco transitório, timeout e cache por atualização do APK.
+- Retorno nativo `true` significa tratado: reproduzido, cancelado ou suprimido intencionalmente; `false` significa falha e permite TTS. Eventos nativos distinguem início, conclusão, erro e supressão. Não significa confirmação de que o usuário ouviu.
+- `MonitorSystemUi` controla Insets/barras nativamente; `monitor_screen_fullscreen.dart` controla orientação, controles e Voltar. SafeArea protege controles, sem reduzir o vídeo em tela inteira.
+- Troca/encerramento de fonte limpa candidatas, cadência e guarda. Resultados de gerações anteriores não entram na nova telemetria; o atraso de entrada corresponde ao próprio frame analisado.
+- `SharedLocalCameraService` notifica a remoção do controller antes do dispose, aguarda a árvore se atualizar com timeout e descarta frames convertidos de gerações anteriores.
+- Histórico de telemetria normal e captura profunda se sobrepõem. O relatório identifica o subconjunto escolhido, sem somar os dois conjuntos. Áudio mantém até 60 eventos nativos e 100 eventos de coordenação/TTS.
 
 
 ## Evolução 1.0.66 — Buildfix dos testes

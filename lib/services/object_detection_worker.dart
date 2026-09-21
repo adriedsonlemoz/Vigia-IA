@@ -2,7 +2,7 @@ part of 'object_detection_service.dart';
 
 Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
   final replyPort = bootstrap['replyPort']! as SendPort;
-  Interpreter? interpreter;
+  _LoadedDetector? loaded;
   ReceivePort? commands;
 
   try {
@@ -10,39 +10,32 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
     final rawModels = (bootstrap['models']! as List<Object?>)
         .cast<Map<String, Object>>();
     final failures = <String>[];
-    _DetectorRuntime? runtime;
-
-    for (final model in rawModels) {
-      final name = model['name']! as String;
-      final transfer = model['bytes']! as TransferableTypedData;
-      final modelBytes = transfer.materialize().asUint8List();
-      Interpreter? candidate;
+    final models = <(String, Uint8List)>[
+      for (final model in rawModels)
+        (model['name']! as String,
+         (model['bytes']! as TransferableTypedData).materialize().asUint8List()),
+    ];
+    var modelIndex = 0;
+    for (var i = 0; i < models.length; i++) {
       try {
-        final options = InterpreterOptions()..threads = 4;
-        candidate = Interpreter.fromBuffer(modelBytes, options: options);
-        final inspected = _inspectInterpreter(candidate, name);
-        interpreter = candidate;
-        runtime = inspected;
+        loaded = _loadDetector(models[i].$2, models[i].$1);
+        modelIndex = i;
         break;
       } catch (error) {
-        candidate?.close();
-        failures.add('$name: $error');
+        failures.add('$error');
       }
     }
-
-    final activeInterpreter = interpreter;
-    final activeRuntime = runtime;
-    if (activeInterpreter == null || activeRuntime == null) {
-      throw StateError(
-        'Nenhum modelo de detecção compatível pôde ser iniciado. ${failures.join(' | ')}',
-      );
+    if (loaded == null) {
+      throw StateError('Nenhum modelo compatível pôde ser iniciado. ${failures.join(' | ')}');
     }
+    final policy = DetectorRuntimePolicy();
+    var switchPending = false;
 
     commands = ReceivePort();
     replyPort.send(<String, Object>{
       'type': 'ready',
       'port': commands.sendPort,
-      'diagnostics': activeRuntime.diagnostics,
+      'diagnostics': loaded.runtime.diagnostics,
     });
 
     await for (final rawMessage in commands) {
@@ -52,6 +45,19 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
       if (type == 'dispose') break;
       if (type != 'detect') continue;
 
+      if (switchPending && modelIndex + 1 < models.length) {
+        switchPending = false;
+        final next = models[modelIndex + 1];
+        try {
+          final replacement = _loadDetector(next.$2, next.$1,
+              reason: 'troca automática por latência sustentada >1200ms');
+          loaded.close();
+          loaded = replacement;
+          modelIndex++;
+        } catch (_) {
+          // Mantém o modelo funcional se o modelo leve falhar na inicialização.
+        }
+      }
       final id = message['id']! as int;
       try {
         final width = message['width']! as int;
@@ -68,8 +74,8 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
         materializeWatch.stop();
 
         final payload = _runDetection(
-          interpreter: activeInterpreter,
-          runtime: activeRuntime,
+          interpreter: loaded.interpreter,
+          runtime: loaded.runtime,
           labels: labels,
           rgbBytes: rgbBytes,
           width: width,
@@ -79,7 +85,10 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
           allowedLabels: allowedLabels,
         );
         workerWatch.stop();
+        switchPending = modelIndex + 1 < models.length &&
+            policy.shouldUseLightModel(workerWatch.elapsedMicroseconds / 1000.0);
         replyPort.send(<String, Object>{
+          'diagnostics': loaded.runtime.diagnostics,
           'type': 'result',
           'id': id,
           'results': payload.results,
@@ -89,6 +98,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
             'resizeLetterboxMs': payload.resizeLetterboxMs,
             'tensorBuildMs': payload.tensorBuildMs,
             'liteRtMs': payload.liteRtMs,
+            'tensorTransferMs': payload.tensorTransferMs,
             'detectorPostprocessMs': payload.detectorPostprocessMs,
             'workerTotalMs': workerWatch.elapsedMicroseconds / 1000.0,
           },
@@ -108,7 +118,7 @@ Future<void> _detectorWorkerMain(Map<String, Object> bootstrap) async {
     });
   } finally {
     commands?.close();
-    interpreter?.close();
+    loaded?.close();
     replyPort.send(const <String, Object>{'type': 'disposed'});
   }
 }
@@ -149,7 +159,7 @@ _DetectorRuntime _inspectInterpreter(Interpreter interpreter, String modelName) 
     maxDetections: boxesShape[1],
     diagnostics: 'modelo=$modelName; entrada=$inputShape/$inputType; '
         'saidas=$outputSummary; maxDetections=${boxesShape[1]}; '
-        'preprocessamento=letterbox',
+        'preprocessamento=letterbox bilinear; buffers=reutilizados',
   );
 }
 
@@ -164,108 +174,20 @@ _WorkerDetectionPayload _runDetection({
   required int maxResults,
   Set<String>? allowedLabels,
 }) {
-  final imageBuildWatch = Stopwatch()..start();
-  final source = img.Image.fromBytes(
-    width: width,
-    height: height,
-    bytes: rgbBytes.buffer,
-    numChannels: 3,
-    order: img.ChannelOrder.rgb,
-  );
-  imageBuildWatch.stop();
-
   final resizeWatch = Stopwatch()..start();
-  final transform = DetectorImageTransform.fit(
-    sourceWidth: width,
-    sourceHeight: height,
-    inputWidth: runtime.inputWidth,
-    inputHeight: runtime.inputHeight,
-  );
-  final resized = img.copyResize(
-    source,
-    width: transform.resizedWidth,
-    height: transform.resizedHeight,
-    interpolation: img.Interpolation.linear,
-  );
-  final letterboxed = img.Image(
-    width: runtime.inputWidth,
-    height: runtime.inputHeight,
-    numChannels: 3,
-  );
-  img.compositeImage(
-    letterboxed,
-    resized,
-    dstX: transform.offsetX,
-    dstY: transform.offsetY,
-  );
+  final transform = runtime.input.fill(rgbBytes, width, height);
   resizeWatch.stop();
-
-  final tensorWatch = Stopwatch()..start();
-  late final Object batchedInput;
-  if (runtime.inputType == TensorType.uint8) {
-    final matrix = List<List<List<int>>>.generate(
-      runtime.inputHeight,
-      (y) => List<List<int>>.generate(
-        runtime.inputWidth,
-        (x) {
-          final pixel = letterboxed.getPixel(x, y);
-          return <int>[
-            pixel.r.toInt().clamp(0, 255).toInt(),
-            pixel.g.toInt().clamp(0, 255).toInt(),
-            pixel.b.toInt().clamp(0, 255).toInt(),
-          ];
-        },
-        growable: false,
-      ),
-      growable: false,
-    );
-    batchedInput = <List<List<List<int>>>>[matrix];
-  } else {
-    final matrix = List<List<List<double>>>.generate(
-      runtime.inputHeight,
-      (y) => List<List<double>>.generate(
-        runtime.inputWidth,
-        (x) {
-          final pixel = letterboxed.getPixel(x, y);
-          return <double>[
-            (pixel.r.toDouble() - 127.5) / 127.5,
-            (pixel.g.toDouble() - 127.5) / 127.5,
-            (pixel.b.toDouble() - 127.5) / 127.5,
-          ];
-        },
-        growable: false,
-      ),
-      growable: false,
-    );
-    batchedInput = <List<List<List<double>>>>[matrix];
-  }
-
-  final boxes = <List<List<double>>>[
-    List.generate(
-      runtime.maxDetections,
-      (_) => List<double>.filled(4, 0.0),
-      growable: false,
-    ),
-  ];
-  final classes = <List<double>>[
-    List<double>.filled(runtime.maxDetections, 0.0),
-  ];
-  final scores = <List<double>>[
-    List<double>.filled(runtime.maxDetections, 0.0),
-  ];
-  final count = <double>[0.0];
-  final output = <int, Object>{0: boxes, 1: classes, 2: scores, 3: count};
-  tensorWatch.stop();
-
-  final liteRtWatch = Stopwatch()..start();
-  interpreter.runForMultipleInputs(<Object>[batchedInput], output);
-  liteRtWatch.stop();
+  final bridgeWatch = Stopwatch()..start();
+  interpreter.runForMultipleInputs(<Object>[runtime.input.bytes.buffer], runtime.output);
+  bridgeWatch.stop();
+  final nativeMs = interpreter.lastInferenceDurationMicroseconds / 1000.0;
+  final transferMs = math.max(0.0, bridgeWatch.elapsedMicroseconds / 1000.0 - nativeMs);
 
   final postprocessWatch = Stopwatch()..start();
-  final boxList = boxes.first;
-  final classList = classes.first;
-  final scoreList = scores.first;
-  final reportedCount = count.first.round();
+  final boxList = runtime.boxes.first;
+  final classList = runtime.classes.first;
+  final scoreList = runtime.scores.first;
+  final reportedCount = runtime.count.first.round();
   final candidateCount = reportedCount > 0 ? reportedCount : runtime.maxDetections;
   final usableCount = math.min(
     math.min(candidateCount, runtime.maxDetections),
@@ -309,10 +231,11 @@ _WorkerDetectionPayload _runDetection({
   postprocessWatch.stop();
   return _WorkerDetectionPayload(
     results: limited,
-    imageBuildMs: imageBuildWatch.elapsedMicroseconds / 1000.0,
+    imageBuildMs: 0,
     resizeLetterboxMs: resizeWatch.elapsedMicroseconds / 1000.0,
-    tensorBuildMs: tensorWatch.elapsedMicroseconds / 1000.0,
-    liteRtMs: liteRtWatch.elapsedMicroseconds / 1000.0,
+    tensorBuildMs: 0,
+    liteRtMs: nativeMs,
+    tensorTransferMs: transferMs,
     detectorPostprocessMs: postprocessWatch.elapsedMicroseconds / 1000.0,
   );
 }
@@ -324,6 +247,7 @@ class _WorkerDetectionPayload {
     required this.resizeLetterboxMs,
     required this.tensorBuildMs,
     required this.liteRtMs,
+    required this.tensorTransferMs,
     required this.detectorPostprocessMs,
   });
 
@@ -332,21 +256,32 @@ class _WorkerDetectionPayload {
   final double resizeLetterboxMs;
   final double tensorBuildMs;
   final double liteRtMs;
+  final double tensorTransferMs;
   final double detectorPostprocessMs;
 }
 
 class _DetectorRuntime {
-  const _DetectorRuntime({
+  _DetectorRuntime({
     required this.inputWidth,
     required this.inputHeight,
     required this.inputType,
     required this.maxDetections,
     required this.diagnostics,
-  });
+  }) : input = DetectorInputBuffer(inputWidth, inputHeight,
+           floatingPoint: inputType == TensorType.float32),
+       boxes = [List.generate(maxDetections, (_) => List<double>.filled(4, 0))],
+       classes = [List<double>.filled(maxDetections, 0)],
+       scores = [List<double>.filled(maxDetections, 0)];
 
   final int inputWidth;
   final int inputHeight;
   final TensorType inputType;
   final int maxDetections;
   final String diagnostics;
+  final DetectorInputBuffer input;
+  final List<List<List<double>>> boxes;
+  final List<List<double>> classes;
+  final List<List<double>> scores;
+  final List<double> count = [0];
+  late final Map<int, Object> output = {0: boxes, 1: classes, 2: scores, 3: count};
 }

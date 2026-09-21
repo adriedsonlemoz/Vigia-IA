@@ -1,6 +1,14 @@
 part of 'monitor_controller.dart';
 
 extension _MonitorControllerStateSupport on MonitorController {
+  void _resetTemporalForSourceStopImpl() {
+    _cadence.reset();
+    _detectionFilter.reset();
+    _recentMotionByTrackId.clear();
+    _recentAlertMemory.clear();
+    if (_baseReady) _alertGuard.reset();
+  }
+
   void _resetSessionMetricsImpl() {
     _receivedFps = 0;
     _fps = 0;
@@ -26,6 +34,7 @@ extension _MonitorControllerStateSupport on MonitorController {
     _lastResizeLetterboxMs = null;
     _lastTensorBuildMs = null;
     _lastLiteRtMs = null;
+    _lastTensorTransferMs = null;
     _lastDetectorPostprocessMs = null;
     _lastPreprocessMs = null;
     _lastPrimaryInferenceMs = null;
@@ -54,6 +63,8 @@ extension _MonitorControllerStateSupport on MonitorController {
     }
     _tracker.reset();
     _detectionFilter.reset();
+    _cadence.reset();
+    _lastAlertDecision = 'aguardando análise';
     _recentMotionByTrackId.clear();
     _lastIdleInferenceAt = null;
     _lastDetailScanAt = null;
@@ -73,6 +84,8 @@ extension _MonitorControllerStateSupport on MonitorController {
     }
     _tracker.reset();
     _detectionFilter.reset();
+    _cadence.reset();
+    _lastAlertDecision = 'aguardando análise';
     _recentMotionByTrackId.clear();
     _lastIdleInferenceAt = null;
     _lastDetailScanAt = null;
@@ -131,6 +144,9 @@ extension _MonitorControllerStateSupport on MonitorController {
         'somenteMovimento': _settings.motionOnly,
         'movimento': _motionScore.toStringAsFixed(3),
         'detectorPronto': _detector.isReady,
+        'detectorRuntime': _detector.diagnostics,
+        'ultimaDecisaoAlerta': _lastAlertDecision,
+        'janelaObservacaoMs': _cadence.window.inMilliseconds,
         'suspenso': _suspended,
         'segundoPlano': _backgroundMonitoringEnabled,
         'transmissaoLan': _lanStream.running,

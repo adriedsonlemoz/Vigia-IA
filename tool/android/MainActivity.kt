@@ -11,13 +11,12 @@ import android.content.Context
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.media.MediaMuxer
-import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.media.RingtoneManager
 import android.os.BatteryManager
@@ -65,7 +64,8 @@ class MainActivity : FlutterActivity() {
     private var cameraPermissionRequestInFlight: Boolean = false
     private var localNetworkPermissionRequestInFlight: Boolean = false
     private var resumeMonitorRequested: Boolean = false
-    private var customAlertPlayer: MediaPlayer? = null
+    private val alertAudio by lazy { AlertAudioPlayer(this) }
+    private var monitorFullscreen = false
     private var pendingAudioImportResult: MethodChannel.Result? = null
     private var pendingAudioImportSlot: String? = null
     private var pendingDocumentSaveResult: MethodChannel.Result? = null
@@ -94,15 +94,13 @@ class MainActivity : FlutterActivity() {
 
     override fun onPostResume() {
         super.onPostResume()
+        volumeControlStream = AudioManager.STREAM_MUSIC
+        window.decorView.post { MonitorSystemUi.apply(window, monitorFullscreen) }
         maybePromptCameraPermissionOnFirstLaunch()
     }
 
     override fun onDestroy() {
-        customAlertPlayer?.let { player ->
-            try { player.stop() } catch (_: Throwable) {}
-            try { player.release() } catch (_: Throwable) {}
-        }
-        customAlertPlayer = null
+        alertAudio.close()
         try { audioRecorder?.stop() } catch (_: Throwable) {}
         try { audioRecorder?.release() } catch (_: Throwable) {}
         audioRecorder = null
@@ -257,7 +255,18 @@ class MainActivity : FlutterActivity() {
             "requestLocalNetworkPermission" -> requestLocalNetworkPermission(result)
             "playCustomAlertAudio" -> {
                 val slot = call.argument<String>("slot") ?: ""
-                result.success(playCustomAlertAudio(slot))
+                val normalized = normalizeAudioSlot(slot)
+                alertAudio.play(normalized, findAudioOverride(normalized),
+                    resources.getIdentifier(normalized, "raw", packageName),
+                    call.argument<Int>("priority") ?: 0,
+                    call.argument<Number>("capturedAtMs")?.toLong(), result)
+            }
+            "stopAlertAudio" -> { alertAudio.stop(); result.success(true) }
+            "audioDiagnostics" -> result.success(alertAudio.diagnostics())
+            "setMonitorFullscreen" -> {
+                monitorFullscreen = call.argument<Boolean>("enabled") ?: false
+                MonitorSystemUi.apply(window, monitorFullscreen)
+                result.success(true)
             }
             "audioOverrideSlots" -> result.success(listAudioOverrideSlots())
             "importAudioOverride" -> {
@@ -797,101 +806,6 @@ class MainActivity : FlutterActivity() {
             temporary.delete()
             false
         }
-    }
-
-    private fun configureAudioPlayer(player: MediaPlayer): Boolean {
-        return try {
-            customAlertPlayer?.let { active ->
-                try { active.stop() } catch (_: Throwable) {}
-                try { active.release() } catch (_: Throwable) {}
-            }
-            customAlertPlayer = player
-            player.setOnCompletionListener { completed ->
-                try { completed.release() } catch (_: Throwable) {}
-                if (customAlertPlayer === completed) customAlertPlayer = null
-            }
-            player.setOnErrorListener { failed, _, _ ->
-                try { failed.release() } catch (_: Throwable) {}
-                if (customAlertPlayer === failed) customAlertPlayer = null
-                true
-            }
-            player.start()
-            true
-        } catch (_: Throwable) {
-            try { player.release() } catch (_: Throwable) {}
-            if (customAlertPlayer === player) customAlertPlayer = null
-            false
-        }
-    }
-
-    private fun alertAudioAttributes(): AudioAttributes =
-        AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-            .build()
-
-    private fun newAlertMediaPlayer(): MediaPlayer = MediaPlayer().apply {
-        setAudioAttributes(alertAudioAttributes())
-    }
-
-    private fun copyBundledAlertToCache(slot: String, resourceId: Int): File? {
-        val normalized = normalizeAudioSlot(slot)
-        if (normalized.isBlank() || resourceId == 0) return null
-        return try {
-            val directory = File(cacheDir, "bundled_alert_audio").also { it.mkdirs() }
-            val temporary = File(directory, ".$normalized.tmp")
-            val target = File(directory, "$normalized.m4a")
-            resources.openRawResource(resourceId).use { input ->
-                temporary.outputStream().use { output -> input.copyTo(output) }
-            }
-            if (temporary.length() <= 0L) {
-                temporary.delete()
-                return null
-            }
-            if (target.exists()) target.delete()
-            if (!temporary.renameTo(target)) {
-                temporary.copyTo(target, overwrite = true)
-                temporary.delete()
-            }
-            target.takeIf { it.exists() && it.length() > 0L }
-        } catch (_: Throwable) {
-            null
-        }
-    }
-
-    private fun playBundledAlertAudio(slot: String, resourceId: Int): Boolean {
-        val cached = copyBundledAlertToCache(slot, resourceId) ?: return false
-        return try {
-            val player = newAlertMediaPlayer().apply {
-                setDataSource(cached.absolutePath)
-                prepare()
-            }
-            configureAudioPlayer(player)
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
-    private fun playCustomAlertAudio(slot: String): Boolean {
-        val normalized = normalizeAudioSlot(slot)
-        if (normalized.isBlank()) return false
-
-        val override = findAudioOverride(normalized)
-        if (override != null) {
-            try {
-                val player = newAlertMediaPlayer().apply {
-                    setDataSource(override.absolutePath)
-                    prepare()
-                }
-                if (configureAudioPlayer(player)) return true
-            } catch (_: Throwable) {
-                // Arquivo personalizado inválido: tenta o áudio padrão embarcado.
-            }
-        }
-
-        val resourceId = resources.getIdentifier(normalized, "raw", packageName)
-        if (resourceId == 0) return false
-        return playBundledAlertAudio(normalized, resourceId)
     }
 
     private fun showAlertNotification(title: String, message: String, notificationEnabled: Boolean, sound: Boolean, vibration: Boolean) {

@@ -87,6 +87,7 @@ extension _MonitorControllerEventSupport on MonitorController {
       _deliverAlertImpl(
         status.simulated ? 'Teste. $message' : message,
         priority: SpeechPriority.high,
+        capturedAt: now,
       ),
     );
   }
@@ -135,10 +136,12 @@ extension _MonitorControllerEventSupport on MonitorController {
     List<String> alertKeys,
     Map<String, Detection> alertTargets,
   ) async {
+    final session = _frameSession;
     final source = _sourceDisplayNameImpl;
     final eventIds = <String>[];
     final now = DateTime.now();
     for (final key in alertKeys) {
+      if (_shouldDiscardFrameResult(session)) return;
       final detection = alertTargets[key];
       if (detection == null) continue;
       final tracked = _trackedDetections
@@ -163,6 +166,7 @@ extension _MonitorControllerEventSupport on MonitorController {
           _deliverAlertImpl(
             message,
             audioSlot: _audioSlotForLabelImpl(detection.label),
+            capturedAt: frame.capturedAt,
           ),
         );
       }
@@ -179,6 +183,7 @@ extension _MonitorControllerEventSupport on MonitorController {
       if (event != null) eventIds.add(event.id);
     }
 
+    if (_shouldDiscardFrameResult(session)) return;
     if (_clipRecordingEnabled && eventIds.isNotEmpty) {
       final clipPath = await _clipRecorder.trigger();
       if (clipPath != null && clipPath.isNotEmpty) {
@@ -194,6 +199,7 @@ extension _MonitorControllerEventSupport on MonitorController {
     RgbFrame frame,
     List<ZoneTransition> transitions,
   ) async {
+    final session = _frameSession;
     final initialTrackIds = transitions
         .where((transition) =>
             transition.type == ZoneTransitionType.entered &&
@@ -203,6 +209,7 @@ extension _MonitorControllerEventSupport on MonitorController {
     _seenTrackIds.addAll(initialTrackIds);
 
     for (final transition in transitions) {
+      if (_shouldDiscardFrameResult(session)) return;
       final detection = transition.detection;
       if (detection == null) continue;
       if (transition.type == ZoneTransitionType.entered &&
@@ -225,6 +232,7 @@ extension _MonitorControllerEventSupport on MonitorController {
             message,
             priority: SpeechPriority.high,
             audioSlot: _audioSlotForTransitionImpl(transition),
+            capturedAt: frame.capturedAt,
           ),
         );
       }
@@ -363,17 +371,15 @@ extension _MonitorControllerEventSupport on MonitorController {
     String message, {
     SpeechPriority priority = SpeechPriority.normal,
     String? audioSlot,
+    DateTime? capturedAt,
   }) async {
+    if (_disposed || _suspended || !_scheduleActive) return;
+    if (capturedAt != null && !DetectionCadencePolicy.fresh(capturedAt,
+        DateTime.now(), DetectionCadencePolicy.spokenFrameMaxAge)) return;
     final futures = <Future<void>>[];
-    if (_settings.alertOutputs.voice) {
-      _speech.setEnabled(true);
-      futures.add(() async {
-        final customPlayed = audioSlot != null &&
-            await _native.playCustomAlertAudio(audioSlot);
-        if (!customPlayed) {
-          await _speech.speakMessage(message, priority: priority);
-        }
-      }());
+    if (_settings.alertOutputs.voice && _speech.enabled) {
+      futures.add(_speech.deliver(message, audioSlot: audioSlot,
+          priority: priority, capturedAt: capturedAt));
     }
     if (_settings.alertOutputs.androidNotification ||
         _settings.alertOutputs.sound ||

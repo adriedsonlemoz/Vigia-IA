@@ -256,9 +256,13 @@ class VideoSessionDetailsPanel extends StatelessWidget {
                   value: _millisecondsText(data.tensorBuildMs),
                 ),
                 _MetricRow(
-                  label: 'LiteRT / TFLite puro',
+                  label: 'LiteRT / TFLite nativo',
                   value: _millisecondsText(data.liteRtMs),
                   detail: 'Tempo efetivamente gasto pelo modelo, separado do código ao redor.',
+                ),
+                _MetricRow(
+                  label: 'Transferência dos tensores',
+                  value: _millisecondsText(data.tensorTransferMs),
                 ),
                 _MetricRow(
                   label: 'Pós-processamento do detector',

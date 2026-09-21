@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.66+66$' pubspec.yaml || fail 'Versao esperada 1.0.66+66 nao encontrada.'
+grep -q '^version: 1\.0\.67+67$' pubspec.yaml || fail 'Versao esperada 1.0.67+67 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -37,9 +37,9 @@ if grep -q '^  tflite_flutter:' pubspec.yaml; then
   fail 'Dependencia tflite_flutter antiga ainda presente.'
 fi
 
-grep -q "package:flutter_litert/flutter_litert.dart" lib/services/object_detection_service.dart \
+grep -q "package:flutter_litert/native.dart" lib/services/object_detection_service.dart \
   || fail 'ObjectDetectionService nao esta usando flutter_litert.'
-grep -q "flutter_litert/flutter_litert.dart' hide Detection" lib/services/object_detection_service.dart \
+grep -q "flutter_litert/native.dart' hide Detection" lib/services/object_detection_service.dart \
   || fail 'Import do flutter_litert deve ocultar Detection para evitar conflito com o modelo local.'
 grep -q "efficientdet_lite0.tflite" lib/services/object_detection_service.dart \
   || fail 'Detector principal EfficientDet-Lite0 nao esta configurado.'
@@ -48,7 +48,7 @@ grep -q "ssd_mobilenet_v1.tflite" lib/services/object_detection_service.dart \
 grep -q 'TensorType.uint8' lib/services/object_detection_service.dart lib/services/object_detection_worker.dart \
   || fail 'Pre-processamento uint8 do modelo SSD nao foi encontrado.'
 
-grep -q 'SettingsScreen' lib/screens/monitor_screen.dart \
+grep -q 'SettingsScreen' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Engrenagem de configuracoes nao esta acessivel pelo monitoramento.'
 grep -q 'ErrorLogService.instance' lib/main.dart \
   || fail 'Captura global de erros nao foi inicializada.'
@@ -68,7 +68,7 @@ grep -q 'MonitoringZoneService.crop' lib/controllers/monitor_controller.dart \
   || fail 'Areas de monitoramento nao estao recortando frames antes da IA.'
 grep -q 'MonitoringZoneService.filterToZones' lib/controllers/monitor_controller.dart \
   || fail 'Deteccoes nao estao sendo filtradas pelas zonas ativas.'
-grep -q 'MonitoringZoneOverlay' lib/screens/monitor_screen.dart \
+grep -q 'MonitoringZoneOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Editor visual das Areas de Monitoramento nao foi encontrado.'
 grep -q 'updateMonitoringZone' lib/controllers/monitor_controller.dart \
   || fail 'Atualizacao das Areas de Monitoramento nao esta ligada ao controller.'
@@ -84,7 +84,7 @@ grep -q 'ObjectFilterCatalog.recommended' lib/models/video_source_config.dart \
   || fail 'Preset recomendado de objetos nao esta configurado.'
 grep -q 'showObjectFilterDialog' lib/screens/home_screen.dart \
   || fail 'Filtro de objetos nao esta disponivel na Home.'
-grep -q 'showObjectFilterDialog' lib/screens/monitor_screen.dart \
+grep -q 'showObjectFilterDialog' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Filtro de objetos nao esta disponivel durante o monitoramento.'
 [[ -f lib/widgets/object_filter_dialog.dart ]] \
   || fail 'Dialogo de filtro de objetos nao encontrado.'
@@ -109,7 +109,7 @@ grep -q 'ruleEligibleLabels' lib/controllers/monitor_controller.dart \
   || fail 'Regras Inteligentes nao estao antes do anti-repeticao.'
 grep -q 'showSmartAlertRulesDialog' lib/screens/home_screen.dart \
   || fail 'Regras Inteligentes nao estao configuraveis na Home.'
-grep -q 'showSmartAlertRulesDialog' lib/screens/monitor_screen.dart \
+grep -q 'showSmartAlertRulesDialog' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Regras Inteligentes nao estao configuraveis durante o monitoramento.'
 grep -q 'ignoreStationaryVehicles' lib/models/smart_alert_rules.dart \
   || fail 'Regra para veiculos parados nao foi encontrada.'
@@ -136,7 +136,7 @@ grep -q '_recordConfirmedEvents' lib/controllers/monitor_controller.dart \
   || fail 'Eventos confirmados nao estao ligados ao anti-repeticao.'
 grep -q 'EventHistoryService.instance' lib/controllers/monitor_controller.dart \
   || fail 'Historico nao esta ligado ao MonitorController.'
-grep -q 'DetectionOverlay' lib/screens/monitor_screen.dart \
+grep -q 'DetectionOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Caixas de deteccao nao estao ligadas ao preview.'
 grep -q 'EventsScreen' lib/screens/home_screen.dart \
   || fail 'Historico de eventos nao esta acessivel pela Home.'
@@ -146,7 +146,7 @@ grep -q 'repeatWhilePresent: false' lib/controllers/monitor_controller.dart \
   || fail 'TTS ainda pode repetir durante o mesmo evento.'
 grep -q 'motionConfirmationHits' lib/models/video_source_config.dart \
   || fail 'Confirmacao de movimento nao esta configurada.'
-grep -q 'return Center(child: CameraPreview(controller));' lib/services/shared_local_camera_service.dart \
+grep -q 'CameraPreview(active, key: ObjectKey(active))' lib/services/shared_local_camera_service.dart \
   || fail 'Preview compartilhado deve deixar CameraPreview controlar a proporcao nativa.'
 grep -q '_waitForProcessing' lib/controllers/monitor_controller.dart \
   || fail 'Encerramento nao aguarda inferencia em andamento.'
@@ -251,11 +251,11 @@ grep -q 'DeviceOrientation.landscapeRight' lib/main.dart \
 if grep -q '_MonitorMenuAction' lib/screens/monitor_screen.dart; then
   fail 'Menu suspenso legado do monitor reapareceu.'
 fi
-grep -q "label: 'Áreas'" lib/screens/monitor_screen.dart \
+grep -q "label: 'Áreas'" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Acao direta de Areas nao encontrada no monitor.'
-grep -q "label: 'Objetos'" lib/screens/monitor_screen.dart \
+grep -q "label: 'Objetos'" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Acao direta de Objetos nao encontrada no monitor.'
-grep -q '_buildLandscape' lib/screens/monitor_screen.dart \
+grep -q '_buildLandscape' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Layout paisagem do monitor nao encontrado.'
 grep -q "Text('Diagnóstico'" lib/screens/error_center_screen.dart \
   || fail 'Tela visual de Diagnostico nao encontrada.'
@@ -271,7 +271,7 @@ grep -q 'adriedson@outlook.com' lib/core/app_metadata.dart \
   || fail 'Chave PIX esperada nao encontrada nos metadados do app.'
 grep -q 'COPIAR CHAVE PIX' lib/screens/app_info_screen*.dart \
   || fail 'Botao para copiar PIX nao encontrado.'
-grep -q '_detectionsExpanded' lib/screens/monitor_screen.dart \
+grep -q '_detectionsExpanded' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Painel recolhivel de deteccoes nao encontrado.'
 if grep -q 'Arraste para desenhar a área' lib/screens/monitor_screen.dart; then
   fail 'Instrucao duplicada de desenho de area reapareceu no MonitorScreen.'
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.66';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.66.'
-grep -q 'static const int build = 66;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 66.'
-grep -q "version: '1.0.66'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.66.'
+grep -q "static const String version = '1.0.67';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.67.'
+grep -q 'static const int build = 67;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 67.'
+grep -q "version: '1.0.67'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.67.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.66+66$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.66+66.'
+grep -q '^version: 1.0.67+67$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.67+67.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.66"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.66.'
-grep -q '"build": 66' app_identity.json \
-  || fail 'app_identity.json nao esta no build 66.'
+grep -q '"version": "1.0.67"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.67.'
+grep -q '"build": 67' app_identity.json \
+  || fail 'app_identity.json nao esta no build 67.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -579,7 +579,7 @@ grep -q 'await ensureLanStreaming();' lib/controllers/monitor_controller.dart \
   || fail 'Servidor LAN nao inicia junto com a fonte.'
 grep -q 'await _lanStream.stop();' lib/controllers/monitor_controller.dart \
   || fail 'Servidor LAN nao encerra junto com a fonte.'
-grep -q "tooltip: 'Rede local'" lib/screens/monitor_screen.dart \
+grep -q "Text('Rede local')" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Acesso a Rede local nao aparece no monitor.'
 grep -q 'NEARBY_WIFI_DEVICES' tool/AndroidManifest.xml \
   || fail 'Permissao NEARBY_WIFI_DEVICES nao declarada.'
@@ -656,7 +656,7 @@ grep -q "'countingEnabled': countingEnabled" lib/models/camera_endpoint.dart \
   || fail 'Reserva futura de contagem nao e persistida por camera.'
 grep -q 'Adicionar outra câmera não ativa contador' lib/screens/multi_camera_screen*.dart \
   || fail 'Central multicamera nao explica independencia da contagem.'
-grep -q 'Entrada e saída' lib/screens/monitor_screen.dart \
+grep -q 'Entrada e saída' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Monitor nao explica entrada/saida.'
 grep -q '^## 1.0.24+24' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.24.'
 grep -q 'Evolução 1.0.24' README.md || fail 'README nao documenta 1.0.24.'
@@ -765,7 +765,7 @@ grep -q 'SystemUiMode.edgeToEdge' lib/services/system_ui_service.dart \
   || fail 'Modo edge-to-edge global nao encontrado.'
 grep -q 'SystemUiMode.immersiveSticky' lib/services/system_ui_service.dart \
   || fail 'Modo imersivo das telas de camera nao encontrado.'
-grep -q 'SystemUiService.immersive' lib/screens/monitor_screen.dart \
+grep -q 'SystemUiService.immersive' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Monitor ao vivo nao entra em tela imersiva.'
 grep -q 'SystemUiService.immersive' lib/screens/camera_mode_screen.dart \
   || fail 'Modo Camera nao entra em tela imersiva.'
@@ -790,7 +790,7 @@ grep -q 'Evolução 1.0.35' README.md || fail 'README nao documenta 1.0.35.'
   || fail 'Filtro temporal de deteccoes nao encontrado.'
 [[ -f lib/services/detection_merger.dart ]] \
   || fail 'Mesclagem das duas passagens de deteccao nao encontrada.'
-grep -q 'DetectorImageTransform.fit' lib/services/object_detection_service.dart lib/services/object_detection_worker.dart \
+grep -q 'DetectorImageTransform.fit' lib/services/detector_input_buffer.dart \
   || fail 'Inferencia nao usa letterbox preservando proporcao.'
 grep -q 'EfficientDet-Lite0' lib/services/object_detection_service.dart \
   || fail 'EfficientDet-Lite0 nao e o detector principal.'
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.66+66' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.66+66.'
+grep -q 'Vigia IA 1.0.67+67' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.67+67.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -866,7 +866,7 @@ grep -q 'playCustomAlertAudio' lib/services/native_platform_service.dart \
   || fail 'Bridge Flutter para audio personalizado nao encontrada.'
 grep -q 'playCustomAlertAudio' tool/android/MainActivity.kt \
   || fail 'Reproducao nativa de audio personalizado nao encontrada.'
-grep -q 'MediaPlayer' tool/android/MainActivity.kt \
+grep -q 'MediaPlayer' tool/android/AlertAudioPlayer.kt \
   || fail 'MediaPlayer nativo para audio personalizado nao encontrado.'
 grep -q 'CUSTOM_AUDIO_DIR' tool/bootstrap_android.sh \
   || fail 'Bootstrap nao copia custom_audio para res/raw.'
@@ -911,7 +911,7 @@ done
   || fail 'Tela inicial de permissoes 1.0.39 nao encontrada.'
 grep -q 'Escanear QR do outro celular' lib/screens/home_screen.dart \
   || fail 'Pareamento por QR nao esta exposto na Home.'
-grep -q 'PhonePairingScannerScreen' lib/screens/monitor_screen.dart \
+grep -q 'PhonePairingScannerScreen' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Pareamento por QR nao esta ligado ao seletor de fonte.'
 [[ -f lib/services/partial_person_detection_service.dart ]] \
   || fail 'Heuristica de pessoa parcial nao encontrada.'
@@ -984,9 +984,9 @@ grep -q "'lowBatteryPercent': _bikeConfig.lowBatteryPercent" lib/services/remote
   || fail 'Modo Camera nao publica o limite de bateria baixa.'
 grep -q 'remoteStatusNotifier.addListener' lib/controllers/monitor_controller.dart \
   || fail 'MonitorController nao observa telemetria do celular traseiro.'
-grep -q 'RemoteBikeStatusPanel' lib/screens/monitor_screen.dart \
+grep -q 'RemoteBikeStatusPanel' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Monitor nao expoe painel do celular traseiro.'
-grep -q 'RemoteBikeWarningBanner' lib/screens/monitor_screen.dart \
+grep -q 'RemoteBikeWarningBanner' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Monitor nao destaca avisos do celular traseiro.'
 grep -q 'DeviceTelemetrySnapshot.fromJson' test/device_telemetry_test.dart \
   || fail 'Teste de telemetria remota com capturedAt ausente.'
@@ -1171,7 +1171,7 @@ grep -q '_framesAnalyzed' lib/controllers/monitor_controller.dart \
   || fail 'Contador de frames analisados nao encontrado.'
 grep -q '_lastInferenceMs' lib/controllers/monitor_controller.dart \
   || fail 'Tempo de inferencia nao esta sendo medido.'
-grep -q 'Status da sessão' lib/screens/monitor_screen.dart \
+grep -q 'Status da sessão' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Acesso ao Status da sessao nao foi adicionado ao Monitor.'
 grep -q 'x-vigia-frame-captured-at' lib/services/remote_camera_server_service.dart \
   || fail 'Servidor remoto nao envia timestamp real do frame.'
@@ -1191,9 +1191,9 @@ grep -q 'Evolução 1.0.49' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 grep -q '^## 1.0.48+48' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.48.'
 grep -q 'Evolução 1.0.48' README.md || fail 'README nao documenta 1.0.48.'
 grep -q 'Evolução 1.0.48' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.48.'
-grep -q 'AudioAttributes.USAGE_ASSISTANCE_SONIFICATION' tool/android/MainActivity.kt \
-  || fail 'Player de alertas nao define AudioAttributes de sonificacao.'
-grep -q 'setAudioAttributes(alertAudioAttributes())' tool/android/MainActivity.kt \
+grep -q 'AudioAttributes.USAGE_MEDIA' tool/android/AlertAudioPlayer.kt \
+  || fail 'Player de alertas nao define AudioAttributes de midia.'
+grep -q 'next.setAudioAttributes(attributes)' tool/android/AlertAudioPlayer.kt \
   || fail 'Player de alertas nao aplica AudioAttributes ao MediaPlayer.'
 grep -q 'class _AudioActionButton extends StatelessWidget' lib/screens/audio_settings_screen.dart \
   || fail 'Botao compacto de audio ausente.'
@@ -1230,15 +1230,15 @@ PY_AUDIO_MIRROR
 grep -q '^## 1.0.53+53' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.53.'
 grep -q 'Evolução 1.0.53' README.md || fail 'README nao documenta 1.0.53.'
 grep -q 'Evolução 1.0.53' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 1.0.53.'
-grep -q 'copyBundledAlertToCache' tool/android/MainActivity.kt \
-  || fail 'MainActivity nao materializa audio padrao no cache privado.'
-grep -q 'resources.openRawResource(resourceId)' tool/android/MainActivity.kt \
+grep -q 'private fun bundledFile' tool/android/AlertAudioPlayer.kt \
+  || fail 'Player nao materializa audio padrao no cache privado.'
+grep -q 'resources.openRawResource(request.resource)' tool/android/AlertAudioPlayer.kt \
   || fail 'Audio padrao nao e lido diretamente de res/raw.'
-grep -q 'File(cacheDir, "bundled_alert_audio")' tool/android/MainActivity.kt \
+grep -q 'File(context.cacheDir, "bundled_alert_audio/\$stamp")' tool/android/AlertAudioPlayer.kt \
   || fail 'Audio padrao nao usa cache privado do app.'
-grep -q 'playBundledAlertAudio(normalized, resourceId)' tool/android/MainActivity.kt \
+grep -q 'request.usingOverride = false' tool/android/AlertAudioPlayer.kt \
   || fail 'Fallback padrao nao usa o novo player por arquivo local.'
-if grep -q 'android.resource://' tool/android/MainActivity.kt; then
+if grep -q 'android.resource://' tool/android/MainActivity.kt tool/android/AlertAudioPlayer.kt; then
   fail 'Implementacao antiga por URI android.resource reapareceu no player padrao.'
 fi
 cmp -s tool/android/MainActivity.kt android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt \
@@ -1255,7 +1255,7 @@ grep -q 'Evolução 1.0.54' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f test/bike_sensor_snapshot_test.dart ]] || fail 'Testes dos sensores simulados nao encontrados.'
 grep -q 'sensorSimulationEnabled' lib/models/bike_mode_config.dart   || fail 'Configuracao do simulador nao e persistida no Modo Bike.'
 grep -q 'Teste do HUD sem ESP32' lib/screens/bike_mode_screen.dart   || fail 'Tela Bike nao oferece teste do HUD sem ESP32.'
-grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
+grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
 grep -q "'SIMULAÇÃO" lib/widgets/bike_ride_hud.dart   || fail 'HUD simulado nao identifica claramente dados sinteticos.'
 if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart; then
   fail 'Lint use_null_aware_elements da 1.0.53 reapareceu no Status da sessao.'
@@ -1270,10 +1270,10 @@ grep -q 'Evolução 1.0.55' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/core/adaptive_layout.dart ]] || fail 'Breakpoints adaptativos nao encontrados.'
 grep -q 'class AdaptiveMainScaffold' lib/widgets/main_navigation_bar.dart || fail 'Shell adaptativo principal ausente.'
 grep -q 'class MainNavigationRail' lib/widgets/main_navigation_bar.dart || fail 'NavigationRail principal ausente.'
-grep -q "label: _fillPreview ? 'Preencher' : 'Ajustar'" lib/screens/monitor_screen.dart || fail 'Alternancia Ajustar/Preencher ausente.'
-grep -q 'fillPreview: _fillPreview' lib/screens/monitor_screen.dart || fail 'Overlays nao acompanham o modo de preenchimento.'
+grep -q "label: _fillPreview ? 'Preencher' : 'Ajustar'" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Alternancia Ajustar/Preencher ausente.'
+grep -q 'fillPreview: _fillPreview' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Overlays nao acompanham o modo de preenchimento.'
 grep -q 'constraints.maxWidth >= 760' lib/screens/bike_mode_screen.dart || fail 'Modo Bike nao reorganiza a tela larga.'
-grep -q 'showCloseButton: true' lib/screens/monitor_screen.dart || fail 'Status da sessao nao usa superficie larga.'
+grep -q 'showCloseButton: true' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Status da sessao nao usa superficie larga.'
 [[ -f test/adaptive_main_scaffold_test.dart ]] || fail 'Teste do shell adaptativo nao encontrado.'
 if grep -q 'bikeSnapshot!' lib/screens/monitor_screen.dart; then fail 'Non-null assertion regressivo no HUD Bike.'; fi
 
@@ -1289,7 +1289,7 @@ grep -q 'Evolução 1.0.56' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 grep -q 'BikeSimulationScenario.vehicleApproaching' lib/models/bike_mode_config.dart || fail 'Simulacao de aproximacao nao configurada.'
 grep -q '_updateBikeApproachFastPath(primaryGlobalForBike, now);' lib/controllers/monitor_controller.dart || fail 'Caminho rapido Bike nao esta ligado apos a inferencia principal.'
 grep -q 'primaryAllowedLabels' lib/controllers/monitor_controller.dart || fail 'Inferencia principal nao separa labels de seguranca Bike.'
-grep -q 'BikeApproachBanner(status: approach)' lib/screens/monitor_screen.dart || fail 'Monitor nao exibe alerta visual de aproximacao.'
+grep -q 'BikeApproachBanner(status: approach)' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Monitor nao exibe alerta visual de aproximacao.'
 python3 - <<'PY_BIKE_FAST_PATH' || fail 'Caminho rapido Bike nao ocorre antes das inferencias auxiliares.'
 from pathlib import Path
 text = Path('lib/controllers/monitor_controller.dart').read_text(encoding='utf-8')
@@ -1309,7 +1309,7 @@ grep -q 'Evolução 1.0.57' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/screens/monitor_screen_components.dart ]] || fail 'Componentes extraidos do Monitor ausentes.'
 [[ -f lib/screens/home_screen_components.dart ]] || fail 'Componentes extraidos da Home ausentes.'
 grep -q "part 'monitor_controller_session_support.dart';" lib/controllers/monitor_controller.dart || fail 'MonitorController nao referencia modulo de sessao.'
-grep -q "part 'monitor_screen_components.dart';" lib/screens/monitor_screen.dart || fail 'MonitorScreen nao referencia componentes extraidos.'
+grep -q "part 'monitor_screen_components.dart';" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'MonitorScreen nao referencia componentes extraidos.'
 grep -q "part 'home_screen_components.dart';" lib/screens/home_screen.dart || fail 'HomeScreen nao referencia componentes extraidos.'
 python3 - <<'PY_REFACTOR_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 1.'
 from pathlib import Path
@@ -1383,7 +1383,7 @@ grep -q "part 'session_status_health_analyzer.dart';" lib/models/session_status.
 grep -q "part 'system_health_screen_components.dart';" lib/screens/system_health_screen.dart || fail 'Saude do sistema nao referencia componentes extraidos.'
 grep -q "part 'object_detection_worker.dart';" lib/services/object_detection_service.dart || fail 'Detector nao referencia runtime extraido.'
 grep -q 'class SessionHealthAnalyzer' lib/models/session_status_health_analyzer.dart || fail 'Analisador de saude nao foi preservado no modulo extraido.'
-grep -q 'DetectorImageTransform.fit' lib/services/object_detection_worker.dart || fail 'Pre-processamento do detector nao foi preservado no runtime extraido.'
+grep -q 'DetectorImageTransform.fit' lib/services/detector_input_buffer.dart || fail 'Pre-processamento do detector nao foi preservado no runtime extraido.'
 grep -q 'interpreter.runForMultipleInputs' lib/services/object_detection_worker.dart || fail 'Inferencia TFLite nao foi preservada no runtime extraido.'
 python3 - <<'PY_REFACTOR4_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 4.'
 from pathlib import Path
@@ -1449,7 +1449,7 @@ grep -q 'home: const _StartupGate()' lib/app/app.dart || fail 'App voltou a abri
 grep -q 'manualReview: true' lib/screens/settings_screen.dart || fail 'Revisao manual de permissoes nao esta acessivel nas Configuracoes.'
 grep -q 'Local padrão de exportação' lib/screens/settings_screen.dart || fail 'Preferencia de destino nao esta nas Configuracoes.'
 grep -q 'onTap: onTap ??' lib/widgets/session_status_panel_components.dart || fail 'Detalhes do Status voltaram a depender apenas de bottom sheet empilhado.'
-grep -q 'showGeneralDialog<void>' lib/screens/monitor_screen.dart || fail 'Painel lateral do Status em paisagem nao encontrado.'
+grep -q 'showGeneralDialog<void>' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Painel lateral do Status em paisagem nao encontrado.'
 
 # Buildfix Android-APK-33 - 1.0.65
 if grep -q "import 'dart:typed_data';" lib/services/native_platform_service.dart; then
@@ -1467,5 +1467,7 @@ grep -q "expect(value.pipelineHotspot, 'Inferências auxiliares');" test/session
   || fail 'Teste do hotspot granular nao foi atualizado para a telemetria atual.'
 grep -q '^## 1.0.66+66' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.66.'
 grep -q 'Evolução 1.0.66' README.md || fail 'README nao documenta 1.0.66.'
+
+python3 tool/verify_release_67.py || fail 'Regressao das correcoes 1.0.67.'
 
 echo 'Verificacao preventiva concluida com sucesso.'

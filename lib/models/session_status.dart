@@ -114,6 +114,7 @@ class SessionStatusData {
     this.resizeLetterboxMs,
     this.tensorBuildMs,
     this.liteRtMs,
+    this.tensorTransferMs,
     this.detectorPostprocessMs,
     this.preprocessMs,
     this.primaryInferenceMs,
@@ -158,6 +159,7 @@ class SessionStatusData {
   final double? resizeLetterboxMs;
   final double? tensorBuildMs;
   final double? liteRtMs;
+  final double? tensorTransferMs;
   final double? detectorPostprocessMs;
   final double? preprocessMs;
   final double? primaryInferenceMs;
@@ -217,6 +219,7 @@ class SessionStatusData {
       'Resize + letterbox': resizeLetterboxMs,
       'Montagem do tensor': tensorBuildMs,
       'LiteRT / TFLite': liteRtMs,
+      'Transferência dos tensores': tensorTransferMs,
       'Pós-processamento do detector': detectorPostprocessMs,
       'Inferências auxiliares': auxiliaryInferenceMs,
       'Pós-processamento do Monitor': postprocessMs,

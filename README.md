@@ -2,11 +2,26 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.66+66`
+> **Versão atual:** `1.0.67+67`
 
 ## Estado atual
 
-A `1.0.66+66` é um buildfix do Android-APK-34 que corrige um teste desatualizado após a telemetria granular, sem alterar o comportamento funcional.
+A `1.0.67+67` corrige o processamento da câmera/IA, a confirmação de alertas, a reprodução dos áudios e o modo de tela inteira. O código foi atualizado a partir da `1.0.66+66`. Ganhos de FPS e latência precisam ser medidos no aparelho; não há promessa de identificação instantânea.
+
+### Evolução 1.0.67 — Detecção, áudio e tela inteira
+
+- conversão YUV/BGRA gera RGB já girado/espelhado, sem criar e girar uma imagem intermediária;
+- resize, letterbox e normalização escrevem em um tensor plano reutilizável; saídas do detector também são reutilizadas;
+- XNNPACK é solicitado com duas threads e há fallback CPU na inicialização; após o aquecimento, três execuções seguidas acima de 1.200 ms solicitam SSD MobileNet V1 na próxima análise;
+- confirmação e permanência acompanham a cadência observada. Evidências fortes passam direto pela confirmação genérica, mantendo regras de movimento, área e permanência;
+- todas as inferências auxiliares respeitam o orçamento; sem cliente LAN, o JPEG de boas-vindas é atualizado a cada dois segundos;
+- áudios usam **volume de mídia**, preparação assíncrona, foco de áudio, prioridade e fila curta. Falhas assíncronas chegam ao fallback de TTS;
+- o botão **Tela inteira horizontal** aparece em Ao vivo. A imagem preenche a tela inicialmente; **Ajustar** mostra a imagem completa e **Preencher** corta proporcionalmente as bordas. Toque para revelar controles; **Voltar** sai da tela inteira;
+- troca de orientação não reinicia a câmera. O preview é removido antes de descartar seu controller;
+- em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
+- quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
+
+Detalhes técnicos, roteiro de teste no celular e situação da validação: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

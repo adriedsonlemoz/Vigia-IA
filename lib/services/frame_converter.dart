@@ -112,7 +112,34 @@ Map<String, Object> _convertCameraFrame(Map<String, Object?> data) {
   final planeMaps = (data['planes']! as List<Object?>)
       .cast<Map<Object?, Object?>>();
 
-  var image = img.Image(width: width, height: height, numChannels: 3);
+  if (width <= 0 || height <= 0 || !const [0, 90, 180, 270].contains(rotation)) {
+    throw ArgumentError('Dimensões/rotação inválidas na câmera.');
+  }
+  final rotated = rotation == 90 || rotation == 270;
+  final outputWidth = rotated ? height : width;
+  final outputHeight = rotated ? width : height;
+  final rgb = Uint8List(outputWidth * outputHeight * 3);
+
+  void writePixel(int x, int y, int r, int g, int b) {
+    var ox = x;
+    var oy = y;
+    switch (rotation) {
+      case 90:
+        ox = height - 1 - y;
+        oy = x;
+      case 180:
+        ox = width - 1 - x;
+        oy = height - 1 - y;
+      case 270:
+        ox = y;
+        oy = width - 1 - x;
+    }
+    if (mirror) ox = outputWidth - 1 - ox;
+    final offset = (oy * outputWidth + ox) * 3;
+    rgb[offset] = r;
+    rgb[offset + 1] = g;
+    rgb[offset + 2] = b;
+  }
 
   if (isBgra) {
     final plane = planeMaps.first;
@@ -123,10 +150,7 @@ Map<String, Object> _convertCameraFrame(Map<String, Object?> data) {
       for (var x = 0; x < width; x++) {
         final offset = y * rowStride + x * pixelStride;
         if (offset + 2 >= bytes.length) continue;
-        final b = bytes[offset];
-        final g = bytes[offset + 1];
-        final r = bytes[offset + 2];
-        image.setPixelRgb(x, y, r, g, b);
+        writePixel(x, y, bytes[offset + 2], bytes[offset + 1], bytes[offset]);
       }
     }
   } else {
@@ -136,49 +160,34 @@ Map<String, Object> _convertCameraFrame(Map<String, Object?> data) {
     final yPlane = planeMaps[0];
     final uPlane = planeMaps[1];
     final vPlane = planeMaps[2];
-    final yBytes = yPlane['bytes']! as Uint8List;
-    final uBytes = uPlane['bytes']! as Uint8List;
-    final vBytes = vPlane['bytes']! as Uint8List;
-    final yRowStride = yPlane['bytesPerRow']! as int;
-    final uRowStride = uPlane['bytesPerRow']! as int;
-    final vRowStride = vPlane['bytesPerRow']! as int;
-    final uPixelStride = math.max(1, uPlane['bytesPerPixel']! as int);
-    final vPixelStride = math.max(1, vPlane['bytesPerPixel']! as int);
-
+    final ys = yPlane['bytes']! as Uint8List;
+    final us = uPlane['bytes']! as Uint8List;
+    final vs = vPlane['bytes']! as Uint8List;
+    final yr = yPlane['bytesPerRow']! as int;
+    final ur = uPlane['bytesPerRow']! as int;
+    final vr = vPlane['bytesPerRow']! as int;
+    final up = math.max(1, uPlane['bytesPerPixel']! as int);
+    final vp = math.max(1, vPlane['bytesPerPixel']! as int);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        final yIndex = y * yRowStride + x;
-        final uIndex = (y ~/ 2) * uRowStride + (x ~/ 2) * uPixelStride;
-        final vIndex = (y ~/ 2) * vRowStride + (x ~/ 2) * vPixelStride;
-        if (yIndex >= yBytes.length ||
-            uIndex >= uBytes.length ||
-            vIndex >= vBytes.length) {
-          continue;
-        }
-        final yValue = yBytes[yIndex].toDouble();
-        final uValue = uBytes[uIndex].toDouble() - 128.0;
-        final vValue = vBytes[vIndex].toDouble() - 128.0;
-        final r = (yValue + 1.402 * vValue).round().clamp(0, 255);
-        final g = (yValue - 0.344136 * uValue - 0.714136 * vValue)
-            .round()
-            .clamp(0, 255);
-        final b = (yValue + 1.772 * uValue).round().clamp(0, 255);
-        image.setPixelRgb(x, y, r, g, b);
+        final yi = y * yr + x;
+        final ui = (y ~/ 2) * ur + (x ~/ 2) * up;
+        final vi = (y ~/ 2) * vr + (x ~/ 2) * vp;
+        if (yi >= ys.length || ui >= us.length || vi >= vs.length) continue;
+        final yy = ys[yi];
+        final u = us[ui] - 128;
+        final v = vs[vi] - 128;
+        writePixel(x, y,
+            (yy + 1.402 * v).round().clamp(0, 255).toInt(),
+            (yy - 0.344136 * u - 0.714136 * v).round().clamp(0, 255).toInt(),
+            (yy + 1.772 * u).round().clamp(0, 255).toInt());
       }
     }
   }
-
-  if (rotation != 0) {
-    image = img.copyRotate(image, angle: rotation);
-  }
-  if (mirror) {
-    image = img.flipHorizontal(image);
-  }
-
   return <String, Object>{
-    'width': image.width,
-    'height': image.height,
-    'bytes': _rgbBytes(image),
+    'width': outputWidth,
+    'height': outputHeight,
+    'bytes': rgb,
   };
 }
 

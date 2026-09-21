@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_tts/flutter_tts.dart';
+import 'performance_telemetry_service.dart';
 
 enum SpeechPriority { normal, high }
 
@@ -18,6 +19,10 @@ class SpeechService {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    _tts.setStartHandler(() => _trace('tts_started'));
+    _tts.setCompletionHandler(() => _trace('tts_completed'));
+    _tts.setCancelHandler(() => _trace('tts_cancelled'));
+    _tts.setErrorHandler((message) => _trace('tts_error', '$message'));
     try {
       final installed = await _tts.isLanguageInstalled('pt-BR');
       _languageInstalled = installed == true;
@@ -104,6 +109,20 @@ class SpeechService {
   String _joinLabels(List<String> labels) {
     if (labels.length == 2) return '${labels[0]} e ${labels[1]}';
     return '${labels.sublist(0, labels.length - 1).join(', ')} e ${labels.last}';
+  }
+
+  void _trace(String event, [String? error]) {
+    PerformanceTelemetryService.instance.recordAlertEvent({
+      'timestamp': DateTime.now().toIso8601String(), 'event': event,
+      if (error != null) 'error': error,
+    });
+  }
+
+  Future<void> stop() async {
+    _generation++;
+    _activePriority = null;
+    _activeStartedAt = null;
+    await _tts.stop();
   }
 
   Future<void> dispose() async {

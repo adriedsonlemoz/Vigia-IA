@@ -38,6 +38,8 @@ class PerformanceFrameSample {
     this.resizeLetterboxMs,
     this.tensorBuildMs,
     this.liteRtMs,
+    this.tensorTransferMs,
+    this.alertContext = const <String, Object?>{},
     this.detectorPostprocessMs,
     this.primaryRoundTripMs,
     this.auxiliaryInferenceMs,
@@ -81,6 +83,8 @@ class PerformanceFrameSample {
   final double? resizeLetterboxMs;
   final double? tensorBuildMs;
   final double? liteRtMs;
+  final double? tensorTransferMs;
+  final Map<String, Object?> alertContext;
   final double? detectorPostprocessMs;
   final double? primaryRoundTripMs;
   final double? auxiliaryInferenceMs;
@@ -124,6 +128,8 @@ class PerformanceFrameSample {
         'resizeLetterboxMs': resizeLetterboxMs,
         'tensorBuildMs': tensorBuildMs,
         'liteRtMs': liteRtMs,
+        'tensorTransferMs': tensorTransferMs,
+        'alertContext': alertContext,
         'detectorPostprocessMs': detectorPostprocessMs,
         'primaryRoundTripMs': primaryRoundTripMs,
         'auxiliaryInferenceMs': auxiliaryInferenceMs,
@@ -216,6 +222,8 @@ class PerformanceTelemetryReport {
     required this.deepTraceSamples,
     required this.deepTraceStartedAt,
     required this.deepTraceEndedAt,
+    this.alertEvents = const [],
+    this.audioDiagnostics = const {},
   });
 
   final DateTime generatedAt;
@@ -224,6 +232,8 @@ class PerformanceTelemetryReport {
   final List<PerformanceFrameSample> deepTraceSamples;
   final DateTime? deepTraceStartedAt;
   final DateTime? deepTraceEndedAt;
+  final List<Map<String, Object?>> alertEvents;
+  final Map<String, Object?> audioDiagnostics;
 
   List<PerformanceFrameSample> get analysisSamples =>
       deepTraceSamples.isNotEmpty ? deepTraceSamples : samples;
@@ -255,7 +265,10 @@ class PerformanceTelemetryReport {
       'Montagem do tensor': PerformanceStageSummary.fromValues(
         source.map((sample) => sample.tensorBuildMs),
       ),
-      'LiteRT / TFLite puro': PerformanceStageSummary.fromValues(
+      'Transferência dos tensores + API Dart': PerformanceStageSummary.fromValues(
+        source.map((sample) => sample.tensorTransferMs),
+      ),
+      'LiteRT / TFLite nativo': PerformanceStageSummary.fromValues(
         source.map((sample) => sample.liteRtMs),
       ),
       'Pós-processamento do detector': PerformanceStageSummary.fromValues(
@@ -287,7 +300,8 @@ class PerformanceTelemetryReport {
       'Fila + transferência entre isolates',
       'Resize + letterbox',
       'Montagem do tensor',
-      'LiteRT / TFLite puro',
+      'LiteRT / TFLite nativo',
+      'Transferência dos tensores + API Dart',
       'Pós-processamento do detector',
       'Pré-processamento do Monitor',
       'Pós-processamento do Monitor',
@@ -316,6 +330,7 @@ class PerformanceTelemetryReport {
             ? 'Amostra usada: telemetria normal (${source.length} frames)'
             : 'Amostra usada: diagnóstico profundo (${source.length} frames)',
       )
+      ..writeln('Telemetria normal: ${samples.length}; diagnóstico profundo: ${deepTraceSamples.length} (subconjunto, não somar).')
       ..writeln('Gargalo provável pelos P50: $likelyBottleneck')
       ..writeln();
 
@@ -408,6 +423,11 @@ class PerformanceTelemetryReport {
               : 'Temperatura: média ${temp.mean.toStringAsFixed(1)} °C | máx ${temp.maximum.toStringAsFixed(1)} °C',
         );
     }
+    buffer
+      ..writeln('\n=== ÁUDIO / DECISÃO DE ALERTA ===')
+      ..writeln('Áudio Android: ${jsonEncode(audioDiagnostics)}')
+      ..writeln('Última decisão: ${source.isEmpty ? '{}' : jsonEncode(source.last.alertContext)}');
+    for (final event in alertEvents) { buffer.writeln(jsonEncode(event)); }
     return buffer.toString();
   }
 
@@ -447,6 +467,10 @@ class PerformanceTelemetryReport {
             'version': AppMetadata.version,
             'build': AppMetadata.build,
           },
+          'schemaVersion': 2,
+          'audioDiagnostics': audioDiagnostics,
+          'alertEvents': alertEvents,
+          'summaryScope': deepTraceSamples.isEmpty ? 'normal' : 'deepTraceSubset',
           'generatedAt': generatedAt.toIso8601String(),
           'sessionStartedAt': sessionStartedAt?.toIso8601String(),
           'deepTraceStartedAt': deepTraceStartedAt?.toIso8601String(),
@@ -479,6 +503,7 @@ class PerformanceTelemetryReport {
       'resizeLetterboxMs',
       'tensorBuildMs',
       'liteRtMs',
+      'tensorTransferMs',
       'detectorPostprocessMs',
       'primaryRoundTripMs',
       'auxiliaryInferenceMs',
@@ -524,6 +549,7 @@ class PerformanceTelemetryReport {
         sample.resizeLetterboxMs,
         sample.tensorBuildMs,
         sample.liteRtMs,
+        sample.tensorTransferMs,
         sample.detectorPostprocessMs,
         sample.primaryRoundTripMs,
         sample.auxiliaryInferenceMs,
@@ -561,6 +587,8 @@ class PerformanceTelemetryService extends ChangeNotifier {
   final List<PerformanceFrameSample> _samples = <PerformanceFrameSample>[];
   final List<PerformanceFrameSample> _deepTraceSamples =
       <PerformanceFrameSample>[];
+  final List<Map<String, Object?>> _alertEvents = [];
+  Map<String, Object?> _audioDiagnostics = {};
   DateTime? _sessionStartedAt;
   DateTime? _deepTraceStartedAt;
   DateTime? _deepTraceEndsAt;
@@ -578,6 +606,8 @@ class PerformanceTelemetryService extends ChangeNotifier {
 
   void resetSession() {
     _samples.clear();
+    _alertEvents.clear();
+    _audioDiagnostics = {};
     _deepTraceSamples.clear();
     _sessionStartedAt = DateTime.now();
     _deepTraceStartedAt = null;
@@ -598,6 +628,15 @@ class PerformanceTelemetryService extends ChangeNotifier {
       _deepTraceSamples.add(sample);
     }
     notifyListeners();
+  }
+
+  void recordAlertEvent(Map<String, Object?> event) {
+    _alertEvents.add(Map<String, Object?>.unmodifiable(event));
+    if (_alertEvents.length > 100) _alertEvents.removeAt(0);
+  }
+
+  Future<void> refreshAudioDiagnostics() async {
+    _audioDiagnostics = await NativePlatformService.instance.audioDiagnostics();
   }
 
   void startDeepTrace(Duration duration) {
@@ -629,6 +668,8 @@ class PerformanceTelemetryService extends ChangeNotifier {
 
   PerformanceTelemetryReport createReport() => PerformanceTelemetryReport(
         generatedAt: DateTime.now(),
+        alertEvents: List.unmodifiable(_alertEvents),
+        audioDiagnostics: Map.unmodifiable(_audioDiagnostics),
         sessionStartedAt: _sessionStartedAt,
         samples: List<PerformanceFrameSample>.unmodifiable(_samples),
         deepTraceSamples:
@@ -638,6 +679,7 @@ class PerformanceTelemetryService extends ChangeNotifier {
       );
 
   Future<String?> exportToDownloads() async {
+    await refreshAudioDiagnostics();
     final report = createReport();
     final bytes = _buildReportZip(report);
     return NativePlatformService.instance.saveBytesToDownloads(
@@ -648,6 +690,7 @@ class PerformanceTelemetryService extends ChangeNotifier {
   }
 
   Future<String?> exportWithPicker() async {
+    await refreshAudioDiagnostics();
     final report = createReport();
     final bytes = _buildReportZip(report);
     return NativePlatformService.instance.saveBytesWithPicker(

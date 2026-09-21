@@ -132,7 +132,9 @@ class MonitorLanStreamService extends ChangeNotifier {
 
   Future<void> publishFrame(RgbFrame frame) async {
     if (!running || _encoding) return;
-    final cap = _maxFps;
+    // Mantém uma imagem de boas-vindas fresca sem codificar cada frame
+    // quando não há cliente LAN. A conexão seguinte retoma a cadência normal.
+    final cap = connectedViewers == 0 ? 0.5 : _maxFps;
     if (cap != null) {
       final previousAttempt = _lastPublishAttemptAt;
       final minimumInterval = Duration(microseconds: (1000000 / cap).round());

@@ -24,6 +24,7 @@ import 'phone_pairing_scanner_screen.dart';
 import 'settings_screen.dart';
 
 part 'monitor_screen_components.dart';
+part 'monitor_screen_fullscreen.dart';
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
@@ -47,6 +48,12 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _detectionsExpanded = false;
   bool _hudExpanded = false;
   bool _fillPreview = false;
+  bool _fullscreen = false;
+  bool _fullscreenChanging = false;
+  bool _fullscreenControlsVisible = true;
+  bool _fillBeforeFullscreen = false;
+  Orientation? _orientationBeforeFullscreen;
+  Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false;
   int _lastDetectionCount = 0;
 
@@ -54,7 +61,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(SystemUiService.immersive());
+    unawaited(SystemUiService.edgeToEdge());
     _controller = MonitorController(
       sourceConfig: widget.initialSource,
       settings: widget.settings,
@@ -63,6 +70,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
   }
+
+  void _updateFullscreenState(VoidCallback update) => setState(update);
 
   void _refresh() {
     if (!mounted) return;
@@ -80,10 +89,11 @@ class _MonitorScreenState extends State<MonitorScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(SystemUiService.immersive());
+      unawaited(_fullscreen ? SystemUiService.immersive() : SystemUiService.edgeToEdge());
       unawaited(_controller.resume());
       return;
     }
+    if (state == AppLifecycleState.inactive && _fullscreenChanging) return;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
@@ -93,6 +103,8 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   @override
   void dispose() {
+    _fullscreenControlsTimer?.cancel();
+    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_refresh);
     _bikeSensors.removeListener(_refresh);
@@ -796,85 +808,49 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Future<void> _openStandardScreen(Widget screen) async {
+    if (_fullscreen) await _toggleFullscreen();
     await SystemUiService.edgeToEdge();
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => screen),
     );
-    if (mounted) await SystemUiService.immersive();
+    if (mounted) await SystemUiService.edgeToEdge();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final landscape = MediaQuery.of(context).orientation == Orientation.landscape &&
-        size.width >= 700;
+    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
     final permanentLandscapePanel = size.shortestSide >= 600 && size.width >= 980;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
+    return PopScope<void>(
+      canPop: !_fullscreen && !_fullscreenChanging,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _fullscreen) unawaited(_toggleFullscreen());
+      },
+      child: Scaffold(
+        appBar: _fullscreen ? null : AppBar(
+          title: Row(children: [
             _StatusDot(active: _controller.sourceStatus.state == VideoSourceState.streaming),
             const SizedBox(width: 9),
-            const Text('Ao vivo', style: TextStyle(fontWeight: FontWeight.w800)),
+            const Flexible(child: Text('Ao vivo', overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.w800))),
+          ]),
+          actions: [
+            IconButton(
+              tooltip: 'Tela inteira horizontal',
+              onPressed: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
+              icon: const Icon(Icons.fullscreen_rounded),
+            ),
+            _voiceButton(),
+            _monitorMenu(),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Rede local',
-            onPressed: _showLanAccess,
-            icon: _controller.lanConnectedViewers > 0
-                ? Badge(
-                    label: Text('${_controller.lanConnectedViewers}'),
-                    child: const Icon(Icons.wifi_tethering_rounded),
-                  )
-                : Icon(
-                    _controller.lanStreamRunning
-                        ? Icons.wifi_tethering_rounded
-                        : Icons.lan_outlined,
-                  ),
-          ),
-          IconButton(
-            tooltip: 'Status da sessão',
-            onPressed: _showSessionStatus,
-            icon: _controller.remotePhoneWarningCount > 0
-                ? Badge(
-                    label: Text('${_controller.remotePhoneWarningCount}'),
-                    child: const Icon(Icons.monitor_heart_outlined),
-                  )
-                : const Icon(Icons.monitor_heart_outlined),
-          ),
-          IconButton(
-            tooltip: 'Eventos',
-            onPressed: () => unawaited(
-              _openStandardScreen(const EventsScreen()),
-            ),
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
-          IconButton(
-            tooltip: 'Configurações',
-            onPressed: () => unawaited(
-              _openStandardScreen(const SettingsScreen()),
-            ),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-          IconButton(
-            tooltip: _controller.voiceEnabled ? 'Desativar voz' : 'Ativar voz',
-            onPressed: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
-            icon: Icon(
-              _controller.voiceEnabled
-                  ? Icons.volume_up_rounded
-                  : Icons.volume_off_rounded,
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SafeArea(
-        child: landscape
-            ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
-            : _buildPortrait(context),
+        body: _fullscreen ? _buildFullscreen(context) : SafeArea(
+          child: landscape
+              ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
+              : _buildPortrait(context),
+        ),
       ),
     );
   }
@@ -1052,6 +1028,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Widget _buildCameraStage(BuildContext context) {
+    final insets = _fullscreen ? MediaQuery.viewPaddingOf(context) : EdgeInsets.zero;
     final status = _controller.sourceStatus;
     final remoteStatus = _controller.remotePhoneStatus;
     final bikeSnapshot = _bikeSensors.snapshot;
@@ -1093,17 +1070,18 @@ class _MonitorScreenState extends State<MonitorScreen>
             Positioned(
               left: 0,
               right: 0,
-              top: 6,
-              child: BikeRideHud(snapshot: bikeSnapshot),
+              top: 6 + insets.top,
+              child: Padding(padding: EdgeInsets.only(left: insets.left, right: insets.right),
+                child: BikeRideHud(snapshot: bikeSnapshot)),
             ),
           if (approach.visible)
             Positioned(
               left: 10,
               right: 10,
-              top: bikeHudBottom,
+              top: bikeHudBottom + insets.top,
               child: BikeApproachBanner(status: approach),
             ),
-          Positioned(
+          if (!_fullscreen) Positioned(
             left: 12,
             right: 12,
             top: standardHudTop,
@@ -1123,7 +1101,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                     ),
                     _HudPill(
                       icon: Icons.psychology_alt_outlined,
-                      label: _controller.processing ? 'IA analisando' : 'IA ativa',
+                      label: _controller.detectionDelayed ? 'IA atrasada' :
+                          _controller.processing ? 'IA analisando' : 'IA ativa',
                       active: !_controller.initializing,
                     ),
                     if (_controller.isRemotePhoneSource)
@@ -1191,6 +1170,14 @@ class _MonitorScreenState extends State<MonitorScreen>
               ],
             ),
           ),
+          if (_controller.detectionDelayed)
+            Positioned(left: 12 + insets.left, right: 12 + insets.right,
+              bottom: (_fullscreen ? 78 : 160) + insets.bottom,
+              child: const IgnorePointer(child: Material(color: Colors.black87,
+                child: Padding(padding: EdgeInsets.all(8), child: Text(
+                  'IA atrasada · alertas aguardam imagem recente', textAlign: TextAlign.center)),
+              )),
+            ),
           if (_editingZoneId != null)
             Positioned(
               right: 12,
@@ -1317,7 +1304,7 @@ class _MonitorScreenState extends State<MonitorScreen>
           const SizedBox(height: 8),
           const _InfoStrip(
             icon: Icons.volume_off_outlined,
-            text: 'A voz pt-BR não está instalada. A IA continua funcionando.',
+            text: 'A voz do Android em pt-BR não está instalada. Os áudios integrados continuam disponíveis.',
           ),
         ],
         const SizedBox(height: 10),

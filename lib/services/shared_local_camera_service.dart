@@ -26,6 +26,7 @@ class SharedLocalCameraService extends ChangeNotifier {
   CameraDescription? _description;
   DateTime _lastConvertedAt = DateTime.fromMillisecondsSinceEpoch(0);
   bool _converting = false;
+  int _generation = 0;
   Future<void> _transitionTail = Future<void>.value();
 
   Stream<RgbFrame> get frames => _frames.stream;
@@ -64,13 +65,16 @@ class SharedLocalCameraService extends ChangeNotifier {
     });
   }
 
-  Widget buildPreview() {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return Center(child: CameraPreview(controller));
-  }
+  Widget buildPreview() => AnimatedBuilder(
+    animation: this,
+    builder: (context, _) {
+      final active = _controller;
+      if (active == null || !active.value.isInitialized) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return Center(child: CameraPreview(active, key: ObjectKey(active)));
+    },
+  );
 
   Future<void> _startUnlocked() async {
     _statuses.add(const VideoSourceStatus(VideoSourceState.connecting));
@@ -95,10 +99,17 @@ class SharedLocalCameraService extends ChangeNotifier {
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
+    _generation++;
     _controller = controller;
     try {
       await controller.initialize();
       if (!identical(_controller, controller) || _consumers.isEmpty) {
+        if (identical(_controller, controller)) {
+          _controller = null;
+          _generation++;
+          notifyListeners();
+          await _detachPreview();
+        }
         await _safeDisposeController(controller);
         return;
       }
@@ -107,7 +118,12 @@ class SharedLocalCameraService extends ChangeNotifier {
       _statuses.add(const VideoSourceStatus(VideoSourceState.streaming));
       notifyListeners();
     } catch (error) {
-      if (identical(_controller, controller)) _controller = null;
+      if (identical(_controller, controller)) {
+        _controller = null;
+        _generation++;
+        notifyListeners();
+        await _detachPreview();
+      }
       await _safeDisposeController(controller);
       _statuses.add(VideoSourceStatus(
         VideoSourceState.error,
@@ -124,6 +140,7 @@ class SharedLocalCameraService extends ChangeNotifier {
     if (capturedAt.difference(_lastConvertedAt) < _minimumInterval) return;
     _lastConvertedAt = capturedAt;
     _converting = true;
+    final generation = _generation;
 
     try {
       final controller = _controller;
@@ -155,7 +172,8 @@ class SharedLocalCameraService extends ChangeNotifier {
         data,
         capturedAt: capturedAt,
       );
-      if (_consumers.isNotEmpty && !_frames.isClosed) _frames.add(converted);
+      if (generation == _generation && identical(controller, _controller) &&
+          _consumers.isNotEmpty && !_frames.isClosed) _frames.add(converted);
     } catch (error, stackTrace) {
       // Um quadro inválido isolado não significa que a câmera física caiu.
       // O watchdog de frames decide se o pipeline realmente ficou offline.
@@ -186,8 +204,11 @@ class SharedLocalCameraService extends ChangeNotifier {
 
   Future<void> _stopUnlocked({required bool notifyStopped}) async {
     final controller = _controller;
+    _generation++;
     _controller = null;
     _description = null;
+    notifyListeners();
+    await _detachPreview();
     _lastConvertedAt = DateTime.fromMillisecondsSinceEpoch(0);
     if (controller != null) {
       try {
@@ -203,6 +224,16 @@ class SharedLocalCameraService extends ChangeNotifier {
       _statuses.add(const VideoSourceStatus(VideoSourceState.stopped));
     }
     notifyListeners();
+  }
+
+  Future<void> _detachPreview() async {
+    // A árvore remove o CameraPreview antes da liberação do controller.
+    // Em segundo plano pode não haver frame de UI; não bloqueia a recuperação.
+    try {
+      await WidgetsBinding.instance.endOfFrame.timeout(const Duration(milliseconds: 250));
+    } on TimeoutException {
+      // Não há tela sendo desenhada neste momento.
+    }
   }
 
   Future<void> _safeDisposeController(CameraController controller) async {

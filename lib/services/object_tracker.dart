@@ -26,10 +26,15 @@ class ObjectTracker {
     required List<Detection> detections,
     required List<MonitoringZoneProfile> zones,
     required DateTime now,
+    Duration? observationWindow,
   }) {
+    final retention = observationWindow != null && observationWindow > identityRetention
+        ? observationWindow : identityRetention;
+    final missingWindow = observationWindow != null && observationWindow > maxMissing
+        ? observationWindow : maxMissing;
     final transitions = <ZoneTransition>[];
     final active = <TrackedDetection>[];
-    final assignments = _associateGlobally(detections, now);
+    final assignments = _associateGlobally(detections, now, retention, missingWindow);
     final assignedDetections = <int>{};
     final assignedTracks = <int>{};
 
@@ -62,7 +67,7 @@ class ObjectTracker {
       // A saida da area continua responsiva, mas a identidade visual fica em
       // memoria por mais tempo. Assim uma perda curta do detector nao cria um
       // novo ID e nao repete a mesma fala ao reaquirir a pessoa/veiculo/animal.
-      if (missingFor > maxMissing && track.zoneIds.isNotEmpty) {
+      if (missingFor > missingWindow && track.zoneIds.isNotEmpty) {
         for (final zoneId in track.zoneIds) {
           transitions.add(
             ZoneTransition(
@@ -81,7 +86,7 @@ class ObjectTracker {
           ..zoneIds = <String>{}
           ..zoneNames = <String, String>{};
       }
-      if (missingFor > identityRetention) expired.add(entry.key);
+      if (missingFor > retention) expired.add(entry.key);
     }
     for (final id in expired) {
       _tracks.remove(id);
@@ -91,11 +96,12 @@ class ObjectTracker {
     return TrackingResult(active: active, transitions: transitions);
   }
 
-  List<_Assignment> _associateGlobally(List<Detection> detections, DateTime now) {
+  List<_Assignment> _associateGlobally(List<Detection> detections, DateTime now,
+      Duration retention, Duration missingWindow) {
     final candidates = <_Assignment>[];
     for (final track in _tracks.values) {
       final missingFor = now.difference(track.lastSeen);
-      if (missingFor > identityRetention) continue;
+      if (missingFor > retention) continue;
       for (var i = 0; i < detections.length; i++) {
         final detection = detections[i];
         if (!_compatibleLabels(track.detection.label, detection.label)) continue;
@@ -107,7 +113,7 @@ class ObjectTracker {
           track.detection.appearance,
           detection.appearance,
         );
-        final dormant = missingFor > maxMissing;
+        final dormant = missingFor > missingWindow;
         final allowedDistance = dormant
             ? (appearance >= 0.68 ? 0.42 : 0.24)
             : maxCenterDistance;
@@ -117,7 +123,7 @@ class ObjectTracker {
 
         final agePenalty = math.min(
           missingFor.inMilliseconds /
-              math.max(1, identityRetention.inMilliseconds).toDouble(),
+              math.max(1, retention.inMilliseconds).toDouble(),
           1.0,
         );
         final exactLabelBonus =

@@ -236,12 +236,30 @@ class NativePlatformService {
     }
   }
 
-  Future<bool> playCustomAlertAudio(String slot) async {
+  Future<void> stopAlertAudio() async {
+    try { await _channel.invokeMethod<bool>('stopAlertAudio'); } catch (_) {}
+  }
+
+  Future<Map<String, Object?>> audioDiagnostics() async {
+    try {
+      final data = await _channel.invokeMapMethod<String, Object?>('audioDiagnostics');
+      return data ?? <String, Object?>{};
+    } catch (_) { return <String, Object?>{'state': 'indisponível'}; }
+  }
+
+  Future<void> setMonitorFullscreen(bool enabled) async {
+    try {
+      await _channel.invokeMethod<bool>('setMonitorFullscreen', {'enabled': enabled});
+    } catch (_) { /* A API Flutter continua disponível em outras plataformas. */ }
+  }
+
+  Future<bool> playCustomAlertAudio(String slot, {int priority = 0, DateTime? capturedAt}) async {
     if (!Platform.isAndroid || slot.trim().isEmpty) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'playCustomAlertAudio',
-            <String, Object?>{'slot': slot.trim()},
+            <String, Object?>{'slot': slot.trim(), 'priority': priority,
+              if (capturedAt != null) 'capturedAtMs': capturedAt.millisecondsSinceEpoch},
           ) ??
           false;
     } catch (_) {

@@ -17,12 +17,17 @@ class AlertRepeatGuard {
   final Map<String, int> _candidateHits = <String, int>{};
   final Set<String> _active = <String>{};
 
-  List<String> evaluate(Set<String> visibleLabels, DateTime now) {
+  List<String> evaluate(Set<String> visibleLabels, DateTime now, {
+    Duration? observationWindow,
+    Set<String> immediateKeys = const <String>{},
+  }) {
+    final window = observationWindow != null && observationWindow > absenceReset
+        ? observationWindow : absenceReset;
     final alerts = <String>[];
 
     final expired = _active.where((label) {
       final lastSeen = _lastSeen[label];
-      return lastSeen == null || now.difference(lastSeen) >= absenceReset;
+      return lastSeen == null || now.difference(lastSeen) >= window;
     }).toList(growable: false);
     for (final label in expired) {
       _active.remove(label);
@@ -30,7 +35,7 @@ class AlertRepeatGuard {
     }
 
     final staleCandidates = _candidateLastSeen.entries
-        .where((entry) => now.difference(entry.value) >= absenceReset)
+        .where((entry) => now.difference(entry.value) >= window)
         .map((entry) => entry.key)
         .toList(growable: false);
     for (final label in staleCandidates) {
@@ -54,12 +59,12 @@ class AlertRepeatGuard {
 
       final previousCandidate = _candidateLastSeen[label];
       final continueCandidate = previousCandidate != null &&
-          now.difference(previousCandidate) < absenceReset;
+          now.difference(previousCandidate) < window;
       final hits = continueCandidate ? (_candidateHits[label] ?? 0) + 1 : 1;
       _candidateLastSeen[label] = now;
       _candidateHits[label] = hits;
 
-      if (hits < confirmationHits) continue;
+      if (hits < confirmationHits && !immediateKeys.contains(label)) continue;
 
       _active.add(label);
       _candidateLastSeen.remove(label);

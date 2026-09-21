@@ -26,8 +26,11 @@ class TemporalDetectionFilter {
     required Iterable<Detection> candidates,
     required double baseThreshold,
     required DateTime now,
+    Duration? observationWindow,
   }) {
-    _expire(now);
+    final effectiveMemory = observationWindow != null && observationWindow > memory
+        ? observationWindow : memory;
+    _expire(now, effectiveMemory);
     final accepted = <Detection>[];
     final usedTracks = <int>{};
     final ordered = candidates
@@ -36,7 +39,7 @@ class TemporalDetectionFilter {
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
 
     for (final detection in ordered) {
-      final match = _bestMatch(detection, usedTracks, now);
+      final match = _bestMatch(detection, usedTracks, now, effectiveMemory);
       late final _CandidateTrack track;
       if (match == null) {
         track = _CandidateTrack(
@@ -52,7 +55,7 @@ class TemporalDetectionFilter {
         _tracks[track.id] = track;
       } else {
         track = match;
-        final continuous = now.difference(track.lastSeen) <= memory;
+        final continuous = now.difference(track.lastSeen) <= effectiveMemory;
         track
           ..detection = detection
           ..lastSeen = now
@@ -91,6 +94,7 @@ class TemporalDetectionFilter {
     Detection detection,
     Set<int> usedTracks,
     DateTime now,
+    Duration effectiveMemory,
   ) {
     _CandidateTrack? best;
     var bestScore = double.negativeInfinity;
@@ -98,7 +102,7 @@ class TemporalDetectionFilter {
       if (usedTracks.contains(track.id) || track.detection.label != detection.label) {
         continue;
       }
-      if (now.difference(track.lastSeen) > memory) continue;
+      if (now.difference(track.lastSeen) > effectiveMemory) continue;
       final iou = _iou(track.detection.box, detection.box);
       final distance = _centerDistance(track.detection.box, detection.box);
       if (iou < 0.08 && distance > 0.18) continue;
@@ -111,9 +115,9 @@ class TemporalDetectionFilter {
     return best;
   }
 
-  void _expire(DateTime now) {
+  void _expire(DateTime now, Duration effectiveMemory) {
     final expired = _tracks.entries
-        .where((entry) => now.difference(entry.value.lastSeen) > memory)
+        .where((entry) => now.difference(entry.value.lastSeen) > effectiveMemory)
         .map((entry) => entry.key)
         .toList(growable: false);
     for (final id in expired) {

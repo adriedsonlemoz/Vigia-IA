@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vigiaia/services/performance_telemetry_service.dart';
 
@@ -8,6 +9,7 @@ PerformanceFrameSample sample({
   double resizeMs = 30,
   double tensorMs = 40,
   double liteRtMs = 200,
+  double tensorTransferMs = 0,
   double totalMs = 340,
 }) =>
     PerformanceFrameSample(
@@ -36,6 +38,7 @@ PerformanceFrameSample sample({
       resizeLetterboxMs: resizeMs,
       tensorBuildMs: tensorMs,
       liteRtMs: liteRtMs,
+      tensorTransferMs: tensorTransferMs,
       totalProcessingMs: totalMs,
       cpuPercent: 35,
       batteryTemperatureC: 38,
@@ -73,12 +76,12 @@ void main() {
       deepTraceEndedAt: null,
     );
 
-    expect(report.likelyBottleneck, 'LiteRT / TFLite puro');
+    expect(report.likelyBottleneck, 'LiteRT / TFLite nativo');
     final text = report.toText();
     expect(text, contains('Xiaomi Teste'));
     expect(text, contains('Android: 16 (SDK 36)'));
     expect(text, contains('OCORRÊNCIAS IMPORTANTES'));
-    expect(text, contains('LiteRT / TFLite puro'));
+    expect(text, contains('LiteRT / TFLite nativo'));
     expect(report.toCsv(), contains('liteRtMs'));
     expect(report.toJsonText(), contains('"likelyBottleneck"'));
   });
@@ -101,4 +104,26 @@ void main() {
     expect(report.analysisSamples, hasLength(1));
     expect(report.likelyBottleneck, 'Montagem do tensor');
   });
+  test('transferência não é atribuída à inferência nativa e CSV mantém colunas alinhadas', () {
+    final start = DateTime.utc(2026, 9, 21);
+    final report = PerformanceTelemetryReport(
+      generatedAt: start, sessionStartedAt: start,
+      samples: [sample(timestamp: start, liteRtMs: 50, tensorTransferMs: 700, totalMs: 900)],
+      deepTraceSamples: const [], deepTraceStartedAt: null, deepTraceEndedAt: null,
+      audioDiagnostics: const {'state': 'failed', 'lastError': 'audio_focus_denied'},
+      alertEvents: const [{'event': 'tts_started'}],
+    );
+    expect(report.likelyBottleneck, 'Transferência dos tensores + API Dart');
+    final json = jsonDecode(report.toJsonText()) as Map<String, dynamic>;
+    expect(json['schemaVersion'], 2);
+    expect(json['audioDiagnostics']['lastError'], 'audio_focus_denied');
+    expect(json['alertEvents'].first['event'], 'tts_started');
+    final rows = report.toCsv().trim().split('\n');
+    final columns = rows[0].split(',');
+    final values = rows[1].split(',');
+    expect(values.length, columns.length);
+    expect(double.parse(values[columns.indexOf('liteRtMs')]), 50);
+    expect(double.parse(values[columns.indexOf('tensorTransferMs')]), 700);
+  });
+
 }

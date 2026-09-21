@@ -47,6 +47,7 @@ extension _MonitorControllerSessionSupport on MonitorController {
       resizeLetterboxMs: _lastResizeLetterboxMs,
       tensorBuildMs: _lastTensorBuildMs,
       liteRtMs: _lastLiteRtMs,
+      tensorTransferMs: _lastTensorTransferMs,
       detectorPostprocessMs: _lastDetectorPostprocessMs,
       preprocessMs: _lastPreprocessMs,
       primaryInferenceMs: _lastPrimaryInferenceMs,
@@ -164,6 +165,70 @@ extension _MonitorControllerSessionSupport on MonitorController {
         ),
       );
     }
+  }
+
+  void _recordPerformanceFrameImpl(RgbFrame frame, RgbFrame analysisFrame, {
+    required int detectorRuns, required int auxiliaryInferenceRuns,
+    int? networkLatency, required int frameDelayMs,
+  }) {
+    _performanceTelemetry.record(
+      PerformanceFrameSample(
+        timestamp: DateTime.now(),
+        imageSource: _sourceDisplayName,
+        detectorDiagnostics: _detector.diagnostics ?? 'detector sem diagnóstico',
+        frameWidth: frame.width,
+        frameHeight: frame.height,
+        analysisWidth: analysisFrame.width,
+        analysisHeight: analysisFrame.height,
+        receivedFps: _receivedFps,
+        analyzedFps: _fps,
+        framesReceived: _framesReceived,
+        framesAnalyzed: _framesAnalyzed,
+        framesDroppedProcessing: _framesDroppedProcessing,
+        framesSkippedOptimization: _framesSkippedOptimization,
+        detectorRuns: detectorRuns,
+        auxiliaryInferenceRuns: auxiliaryInferenceRuns,
+        expectedFrameIntervalMs: effectiveAnalysisInterval.inMilliseconds,
+        deviceManufacturer: _localDeviceTelemetry?.deviceManufacturer,
+        deviceModel: _localDeviceTelemetry?.deviceModel,
+        androidVersion: _localDeviceTelemetry?.androidVersion,
+        androidSdk: _localDeviceTelemetry?.androidSdk,
+        sourceConversionMs: frame.sourceConversionMs,
+        sourceTransportMs: frame.sourceTransportMs,
+        controllerPreprocessMs: _lastPreprocessMs,
+        isolateTransferAndQueueMs: _lastIsolateTransferAndQueueMs,
+        workerMaterializeMs: _lastWorkerMaterializeMs,
+        detectorImageBuildMs: _lastDetectorImageBuildMs,
+        resizeLetterboxMs: _lastResizeLetterboxMs,
+        tensorBuildMs: _lastTensorBuildMs,
+        liteRtMs: _lastLiteRtMs,
+        tensorTransferMs: _lastTensorTransferMs,
+        alertContext: <String, Object?>{
+          'decision': _lastAlertDecision,
+          'frameCapturedAt': frame.capturedAt.toIso8601String(),
+          'observationWindowMs': _cadence.window.inMilliseconds,
+          'confidence': _settings.confidenceThreshold,
+          'voiceEnabled': voiceEnabled,
+          'ttsLanguageInstalled': _speech.languageInstalled,
+          'androidNotification': _settings.alertOutputs.androidNotification,
+          'motionOnly': _settings.motionOnly,
+          'confirmationHits': _settings.motionConfirmationHits,
+          'rules': _smartRulesDiagnosticContextImpl(),
+        },
+        detectorPostprocessMs: _lastDetectorPostprocessMs,
+        primaryRoundTripMs: _lastPrimaryInferenceMs,
+        auxiliaryInferenceMs: _lastAuxiliaryInferenceMs,
+        appPostprocessMs: _lastPostprocessMs,
+        totalProcessingMs: _lastTotalProcessingMs,
+        endToEndMs: _lastEndToEndMs,
+        frameDelayMs: frameDelayMs,
+        networkLatencyMs: networkLatency,
+        cpuPercent: _localDeviceTelemetry?.appCpuPercent,
+        ramBytes: _localDeviceTelemetry?.appMemoryUsedBytes,
+        batteryTemperatureC: _localDeviceTelemetry?.batteryTemperatureC,
+        batteryPercent: _localDeviceTelemetry?.batteryPercent,
+      ),
+    );
   }
 
 }

@@ -7,17 +7,22 @@ import '../models/system_health.dart';
 import '../utils/storage_size_formatter.dart';
 import 'error_log_service.dart';
 import 'native_platform_service.dart';
+import 'performance_telemetry_service.dart';
 import 'system_health_service.dart';
 
 class DiagnosticReport {
   DiagnosticReport({
     required this.generatedAt,
     required this.health,
+    this.audioDiagnostics = const {},
+    this.alertEvents = const [],
     required List<ErrorLogEntry> entries,
   }) : entries = List<ErrorLogEntry>.unmodifiable(entries);
 
   final DateTime generatedAt;
   final SystemHealthSnapshot health;
+  final Map<String, Object?> audioDiagnostics;
+  final List<Map<String, Object?>> alertEvents;
   final List<ErrorLogEntry> entries;
 
   int get problemCount => entries
@@ -117,6 +122,9 @@ class DiagnosticReport {
         buffer.writeln('---');
       }
     }
+    buffer.writeln('\n=== ÁUDIO ===');
+    buffer.writeln(jsonEncode(audioDiagnostics));
+    for (final event in alertEvents) { buffer.writeln(jsonEncode(event)); }
     return buffer.toString();
   }
 
@@ -146,6 +154,8 @@ class DiagnosticReportService {
     return DiagnosticReport(
       generatedAt: health.createdAt,
       health: health,
+      audioDiagnostics: await _native.audioDiagnostics(),
+      alertEvents: PerformanceTelemetryService.instance.createReport().alertEvents,
       entries: List<ErrorLogEntry>.of(_logs.entries),
     );
   }

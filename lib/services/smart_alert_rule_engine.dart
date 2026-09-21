@@ -19,14 +19,17 @@ class SmartAlertRuleEngine {
     required Set<String> visibleLabels,
     required Set<String> movingLabels,
     required DateTime now,
+    Duration? observationWindow,
   }) {
-    _expireAbsent(now);
+    final window = observationWindow != null && observationWindow > window
+        ? observationWindow : absenceReset;
+    _expireAbsent(now, window);
     final eligible = <String>{};
 
     for (final label in visibleLabels) {
       final previousLastSeen = _lastSeen[label];
       final isNewPresence = previousLastSeen == null ||
-          now.difference(previousLastSeen) > absenceReset;
+          now.difference(previousLastSeen) > window;
       if (isNewPresence) {
         _firstSeen[label] = now;
       }
@@ -64,9 +67,9 @@ class SmartAlertRuleEngine {
     _lastSeen.clear();
   }
 
-  void _expireAbsent(DateTime now) {
+  void _expireAbsent(DateTime now, Duration window) {
     final expired = _lastSeen.entries
-        .where((entry) => now.difference(entry.value) > absenceReset)
+        .where((entry) => now.difference(entry.value) > window)
         .map((entry) => entry.key)
         .toList(growable: false);
     for (final label in expired) {

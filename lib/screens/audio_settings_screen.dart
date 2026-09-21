@@ -16,6 +16,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   final _native = NativePlatformService.instance;
   Set<String> _overrides = <String>{};
   bool _loading = true;
+  bool _previewing = false;
   String _query = '';
 
   @override
@@ -34,7 +35,16 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   }
 
   Future<void> _preview(AudioSlotDefinition slot) async {
-    final played = await _native.playCustomAlertAudio(slot.id);
+    if (_previewing) return;
+    setState(() => _previewing = true);
+    final played = await _native.playCustomAlertAudio(slot.id, priority: 1);
+    final diagnostics = await _native.audioDiagnostics();
+    if (!mounted) return;
+    setState(() => _previewing = false);
+    if (diagnostics['mediaVolume'] == 0 || diagnostics['mediaMuted'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('O volume de mídia está zerado. Aumente o volume e teste novamente.')));
+    }
     if (!played && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Não foi possível reproduzir este áudio.')),
