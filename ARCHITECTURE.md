@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.69+69
+# Arquitetura — Vigia IA 1.0.70+70
 
 ## 1. Princípios
+
+## Evolução 1.0.70 — Empacotamento e assinatura
+
+- O pacote-fonte deve preservar arquivos ocultos necessários ao projeto, especialmente `.gitignore`.
+- `.gitignore` protege `*.jks`, `*.keystore` e `android/key.properties`; a chave de assinatura permanece apenas nos Secrets do workflow.
+- `verify_project.sh` continua rejeitando qualquer keystore incluída no código-fonte.
 
 ## Evolução 1.0.69 — Lint null-aware no serviço de fala
 

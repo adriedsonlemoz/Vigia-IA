@@ -58,8 +58,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.69',
+          version: '1.0.70',
           current: true,
+          changes: [
+            'Corrige o pacote-fonte para incluir o .gitignore exigido pela verificação preventiva.',
+            'Protege arquivos *.jks, *.keystore e android/key.properties contra versionamento acidental.',
+            'Não altera o comportamento funcional da IA, áudio, alertas ou tela inteira.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.69',
           changes: [
             'Corrige o único lint restante do flutter analyze no serviço de fala.',
             'Usa elemento null-aware para registrar erro na telemetria somente quando houver valor.',

@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.69+69`
+> **Versão atual:** `1.0.70+70`
 
 ## Estado atual
 
-A `1.0.69+69` corrige o único lint restante encontrado pelo workflow no serviço de fala. A alteração é pontual e preserva as melhorias de IA, alertas, áudio integrado e tela inteira das versões anteriores.
+A `1.0.70+70` corrige a falha de empacotamento encontrada no Android-APK-38: o ZIP anterior não continha o `.gitignore`, então a verificação preventiva interrompia o workflow antes do `flutter analyze`.
+
+### Evolução 1.0.70 — Empacotamento seguro
+
+- inclui o `.gitignore` no ZIP final;
+- bloqueia `*.jks`, `*.keystore` e `android/key.properties`;
+- mantém a checagem que impede qualquer keystore de ser incluída no projeto;
+- não altera o comportamento funcional da IA, áudio, alertas ou tela inteira.
 
 ### Evolução 1.0.69 — Buildfix do serviço de fala
 
@@ -35,7 +42,7 @@ A `1.0.69+69` corrige o único lint restante encontrado pelo workflow no serviç
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.69.md](RELEASE-1.0.69.md). Correção anterior: [RELEASE-1.0.68.md](RELEASE-1.0.68.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.70.md](RELEASE-1.0.70.md). Correção anterior: [RELEASE-1.0.69.md](RELEASE-1.0.69.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

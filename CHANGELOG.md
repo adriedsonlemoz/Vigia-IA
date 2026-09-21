@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.70+70 — 2026-09-21
+
+- Corrigido o empacotamento do código-fonte: o ZIP 1.0.69 não continha o arquivo oculto `.gitignore`.
+- O `.gitignore` volta a bloquear `*.jks`, `*.keystore` e `android/key.properties`, atendendo à verificação preventiva e protegendo a chave de assinatura.
+- Mantida a checagem que falha caso uma keystore seja incluída no projeto.
+- Nenhuma lógica funcional de IA, áudio, alertas, câmera ou tela inteira foi alterada.
+- Versionamento, AppMetadata, app_identity.json, tela de mudanças, README/ARCHITECTURE/VALIDATION, testes e verificadores sincronizados em `1.0.70+70`.
+
 ## 1.0.69+69 — 2026-09-21
 
 - Corrigido o único lint restante do `flutter analyze` em `speech_service.dart`.

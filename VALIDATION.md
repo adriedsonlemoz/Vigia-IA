@@ -1,10 +1,10 @@
-# Validação — Vigia IA 1.0.69+69
+# Validação — Vigia IA 1.0.70+70
 
-Data: 2026-09-21. Base preservada: 1.0.68+68; correção pontual aplicada sobre o serviço de fala.
+Data: 2026-09-21. Base preservada: 1.0.69+69; correção de empacotamento aplicada após o Android-APK-38.
 
 ## Executado nesta entrega
 
-O Android-APK-37 confirmou que preparação, dependências e verificação preventiva da 1.0.68 passaram. A falha ficou restrita ao lint `use_null_aware_elements` em `speech_service.dart:117`, corrigido na 1.0.69.
+O Android-APK-38 confirmou que dependências foram resolvidas e o versionamento 1.0.69+69 estava sincronizado. O workflow parou na verificação preventiva porque o ZIP entregue não continha o arquivo oculto `.gitignore`. A 1.0.70 restaura esse arquivo no pacote-fonte e mantém as regras de proteção da assinatura.
 
 | Verificação | Resultado |
 |---|---|
