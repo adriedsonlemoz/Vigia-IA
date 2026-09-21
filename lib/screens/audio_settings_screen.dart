@@ -41,14 +41,36 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
     final diagnostics = await _native.audioDiagnostics();
     if (!mounted) return;
     setState(() => _previewing = false);
-    if (diagnostics['mediaVolume'] == 0 || diagnostics['mediaMuted'] == true) {
+    if (!played) {
+      final code = diagnostics['lastErrorCode']?.toString();
+      final phase = diagnostics['lastErrorPhase']?.toString();
+      final detail = diagnostics['lastError']?.toString();
+      final technical = <String>[
+        if (code != null && code.isNotEmpty) code,
+        if (phase != null && phase.isNotEmpty) 'etapa $phase',
+        if (detail != null && detail.isNotEmpty) detail,
+      ].join(' • ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            technical.isEmpty
+                ? 'Não foi possível reproduzir este áudio. O erro foi registrado no Diagnóstico.'
+                : 'Falha no áudio: $technical. Registrado no Diagnóstico.',
+          ),
+        ),
+      );
+    } else if (diagnostics['lastPlaybackUsedFallback'] == true) {
+      final reason = diagnostics['lastFallbackReason']?.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'O áudio personalizado falhou${reason == null ? '' : ' ($reason)'}; o áudio padrão foi reproduzido. Registrado no Diagnóstico.',
+          ),
+        ),
+      );
+    } else if (diagnostics['mediaVolume'] == 0 || diagnostics['mediaMuted'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('O volume de mídia está zerado. Aumente o volume e teste novamente.')));
-    }
-    if (!played && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível reproduzir este áudio.')),
-      );
     }
   }
 
@@ -412,4 +434,3 @@ class _AudioActionButton extends StatelessWidget {
     );
   }
 }
-

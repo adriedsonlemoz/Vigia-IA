@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.74',
+          version: '1.0.75',
           current: true,
+          changes: [
+            'Corrige o lint que interrompeu o Android-APK-43 antes dos testes e do build.',
+            'Foco de áudio negado deixa de bloquear a reprodução; a tentativa continua e a condição fica registrada.',
+            'Telemetria registra código nativo, etapa, origem, arquivo, volume, rota, foco e tempos de cada tentativa.',
+            'Falhas aparecem no Diagnóstico e no relatório de desempenho com fallback para TTS identificado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.74',
           changes: [
             'Remove a AppBar fixa do Monitor em paisagem e usa HUD translúcido sobre a transmissão.',
             'Agrupa status, IA, detecções, aparelhos e dados Bike na parte superior em paisagem/tela cheia.',

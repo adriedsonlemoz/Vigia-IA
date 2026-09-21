@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.74+74
+# Arquitetura — Vigia IA 1.0.75+75
 
 ## 1. Princípios
+
+## Evolução 1.0.75 — Falhas reais de áudio na telemetria
+
+- `AlertAudioPlayer` mantém reprodução assíncrona e fila curta, mas o foco transitório passa a ser uma otimização: negação ou exceção é registrada e não impede a tentativa do `MediaPlayer`.
+- Cada solicitação recebe um identificador local e gera eventos com slot, prioridade, tentativa, origem integrada/personalizada, fase, nome e tamanho do arquivo, volume, rota e latências. Caminhos privados completos não são exportados.
+- `OnErrorListener` preserva os inteiros `what/extra` e também publica nomes estáveis para IO, conteúdo malformado, codec não suportado, timeout e erro de sistema.
+- `NativePlatformService` persiste falhas na `ErrorLogService`; `AlertVoiceService` anexa o snapshot nativo ao evento que decide usar TTS.
+- `DiagnosticReportService` e `PerformanceTelemetryService` incluem resumo humano e payload técnico. O JSON de desempenho usa `schemaVersion: 3`.
+- A biblioteca integrada continua em AAC-LC/M4A mono 24 kHz. Um override inválido tenta o recurso integrado antes de devolver falha para o fallback TTS.
 
 ## Evolução 1.0.74 — Layout de transmissão e monitoramento
 

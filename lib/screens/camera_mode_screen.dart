@@ -209,7 +209,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                 showInlineQr: showInlineQr && !landscape,
                 onCopyAddress: address == null
                     ? null
-                    : () => _copy(address!, 'Endereço'),
+                    : () => _copy(address, 'Endereço'),
                 onCopyKey: () => _copy(_server.accessKey, 'Chave'),
                 onShowQr: pairingCode == null
                     ? null

@@ -1,22 +1,25 @@
-# Validação — Vigia IA 1.0.74+74
+# Validação — Vigia IA 1.0.75+75
 
-Data: 2026-09-22. Base preservada: 1.0.73+73.
+Data: 2026-09-22. Base preservada: 1.0.74+74.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, recursos, espelhos Android, contratos da 1.0.71, buildfix da 1.0.72, seleção inicial da 1.0.73 e HUD paisagem da 1.0.74 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.74+74 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, espelhos Android, buildfix do Android-APK-43 e telemetria de áudio 1.0.75 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.75+75 |
 | Fontes Android espelhadas | `MainActivity.kt` e `AlertAudioPlayer.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
+| Codec dos áudios | `ffprobe` validou os 78 arquivos como AAC-LC, mono, 24 kHz e com duração positiva |
 | Transporte remoto | Sequência, timestamp UTC, cache desativado, resposta 204 e descarte de duplicatas protegidos pelo verificador |
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
 | Seleção de modo | Normal, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
 | Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |
 | Modo Câmera | Estado parado integrado, painel adaptativo e saída/parada claras protegidos pelo verificador |
+| Buildfix Android-APK-43 | `unnecessary_non_null_assertion` removido de `camera_mode_screen.dart` e protegido contra regressão |
+| Telemetria de áudio | Foco, fase, códigos MediaPlayer, origem, arquivo, volume, rota, tempos e fallback protegidos pelo verificador |
 
 ## Layout de paisagem e transmissão
 
@@ -39,25 +42,25 @@ O fluxo atualizado mantém o guia de permissões em primeiro lugar. Quando ele t
 
 A decisão é salva em `launch_mode.json` e pode ser revista em Configurações > Monitoramento > Modo inicial.
 
-## Correção do Android-APK-40
+## Correção do Android-APK-43
 
-O log falhou em `flutter analyze` com dois avisos tratados como erro:
+O pacote de logs anexado mostra que o workflow parou em `flutter analyze` antes dos testes e do APK:
 
-- `invalid_null_aware_operator` em `remote_camera_server_service.dart`;
-- `unnecessary_import` em `remote_phone_camera_source_test.dart`.
+- `unnecessary_non_null_assertion` em `camera_mode_screen.dart:212`.
 
-Ambos foram corrigidos sem alterar o comportamento funcional do vídeo remoto.
+O operador foi removido. O aviso de depreciação do Node apareceu apenas durante a tentativa posterior de enviar cobertura e não causou a falha do build.
 
 ## Teste acrescentado
 
-`remote_phone_camera_source_test.dart` cria um servidor HTTP local, entrega um JPEG com sequência e confirma que:
+Os testes de telemetria e coordenação de voz passam a confirmar que:
 
-- o receptor consulta novamente em menos de um segundo, mesmo com intervalo de análise maior;
-- a resposta `204` é tratada como conexão saudável;
-- o mesmo quadro remoto não é publicado duas vezes para a IA.
+- o relatório JSON usa `schemaVersion: 3`;
+- código e etapa da falha de áudio aparecem no resumo e no JSON;
+- a decisão de fallback para TTS carrega erro, fase, origem, foco e volume;
+- o diagnóstico textual inclui a causa nativa interpretada.
 
 ## Pendente no workflow e no dispositivo
 
 Este ambiente não possui Flutter, Dart ou Android SDK. Por isso, `flutter analyze`, `flutter test` e a compilação do APK não puderam ser executados localmente e continuam obrigatórios no workflow incluído.
 
-O teste final em dois celulares deve confirmar latência visual, atualização das duas baterias, reconexão, áudio padrão, rotação, tela inteira e Ajustar/Preencher. O diagnóstico de áudio agora informa também o identificador do recurso e o erro de abertura caso o aparelho ainda rejeite algum arquivo. Um futuro mini mapa/GPS deve ser validado no receptor, não como tela do transmissor.
+O teste final em aparelho deve confirmar áudio integrado, override importado/gravado, volume, Bluetooth/alto-falante e fallback TTS. Se houver falha, o diagnóstico agora informa código `what/extra`, etapa, origem, foco, arquivo, tamanho, rota e tempos da tentativa. O teste em dois celulares continua necessário para latência visual, baterias, reconexão, rotação e tela inteira.

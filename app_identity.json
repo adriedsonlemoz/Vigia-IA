@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.74 limpa o modo paisagem do Monitor/Modo Câmera, melhora os controles de saída e organiza o HUD superior sobre a transmissão.",
-  "version": "1.0.74",
-  "build": 74
+  "notes": "A 1.0.75 corrige o build, torna a negação de foco não fatal para os áudios e amplia a telemetria nativa de reprodução.",
+  "version": "1.0.75",
+  "build": 75
 }

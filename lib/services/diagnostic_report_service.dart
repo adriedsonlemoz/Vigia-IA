@@ -122,8 +122,19 @@ class DiagnosticReport {
         buffer.writeln('---');
       }
     }
-    buffer.writeln('\n=== ÁUDIO ===');
-    buffer.writeln(jsonEncode(audioDiagnostics));
+    buffer
+      ..writeln('\n=== ÁUDIO ===')
+      ..writeln('Estado: ${audioDiagnostics['state'] ?? 'indisponível'}')
+      ..writeln('Último resultado: ${audioDiagnostics['lastPlaybackResult'] ?? 'indisponível'}')
+      ..writeln('Origem: ${audioDiagnostics['lastSource'] ?? 'indisponível'}')
+      ..writeln('Fallback para áudio integrado: ${audioDiagnostics['lastPlaybackUsedFallback'] == true ? 'sim' : 'não'}')
+      ..writeln('Motivo do fallback: ${audioDiagnostics['lastFallbackReason'] ?? 'nenhum'}')
+      ..writeln('Erro: ${audioDiagnostics['lastErrorCode'] ?? 'nenhum'}')
+      ..writeln('Detalhe: ${audioDiagnostics['lastError'] ?? 'nenhum'}')
+      ..writeln('Etapa: ${audioDiagnostics['lastErrorPhase'] ?? 'indisponível'}')
+      ..writeln('Foco: ${audioDiagnostics['lastFocusResultName'] ?? 'indisponível'}')
+      ..writeln('Volume: ${audioDiagnostics['mediaVolume'] ?? '?'} / ${audioDiagnostics['mediaMaxVolume'] ?? '?'}')
+      ..writeln('Dados técnicos: ${jsonEncode(audioDiagnostics)}');
     for (final event in alertEvents) { buffer.writeln(jsonEncode(event)); }
     return buffer.toString();
   }

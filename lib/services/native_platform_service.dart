@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../models/alert_preferences.dart';
 import '../models/device_telemetry.dart';
 import '../models/system_health.dart';
+import 'error_log_service.dart';
 
 class CameraPermissionStatus {
   const CameraPermissionStatus({
@@ -244,7 +245,12 @@ class NativePlatformService {
     try {
       final data = await _channel.invokeMapMethod<String, Object?>('audioDiagnostics');
       return data ?? <String, Object?>{};
-    } catch (_) { return <String, Object?>{'state': 'indisponível'}; }
+    } catch (error) {
+      return <String, Object?>{
+        'state': 'indisponível',
+        'channelError': error.toString(),
+      };
+    }
   }
 
   Future<void> setMonitorFullscreen(bool enabled) async {
@@ -255,14 +261,49 @@ class NativePlatformService {
 
   Future<bool> playCustomAlertAudio(String slot, {int priority = 0, DateTime? capturedAt}) async {
     if (!Platform.isAndroid || slot.trim().isEmpty) return false;
+    final normalizedSlot = slot.trim();
     try {
-      return await _channel.invokeMethod<bool>(
+      final handled = await _channel.invokeMethod<bool>(
             'playCustomAlertAudio',
-            <String, Object?>{'slot': slot.trim(), 'priority': priority,
+            <String, Object?>{'slot': normalizedSlot, 'priority': priority,
               if (capturedAt != null) 'capturedAtMs': capturedAt.millisecondsSinceEpoch},
           ) ??
           false;
-    } catch (_) {
+      final diagnostics = await audioDiagnostics();
+      final usedFallback = diagnostics['lastPlaybackUsedFallback'] == true;
+      if (!handled || usedFallback) {
+        await ErrorLogService.instance.record(
+          level: handled ? ErrorLogLevel.warning : ErrorLogLevel.error,
+          source: 'Áudio nativo',
+          message: handled
+              ? 'O áudio personalizado $normalizedSlot falhou; o áudio integrado foi usado.'
+              : 'Falha ao reproduzir o áudio $normalizedSlot.',
+          details: jsonEncode(diagnostics),
+          context: <String, Object?>{
+            'slot': normalizedSlot,
+            'priority': priority,
+            'code': diagnostics['lastErrorCode'],
+            'phase': diagnostics['lastErrorPhase'],
+            'source': diagnostics['lastSource'],
+            'fallback': handled
+                ? 'áudio integrado reproduzido'
+                : 'TTS solicitado pelo fluxo de voz',
+          },
+        );
+      }
+      return handled;
+    } catch (error, stackTrace) {
+      await ErrorLogService.instance.recordException(
+        source: 'Áudio nativo',
+        error: error,
+        stackTrace: stackTrace,
+        message: 'A ponte Android falhou ao reproduzir o áudio $normalizedSlot.',
+        context: <String, Object?>{
+          'slot': normalizedSlot,
+          'priority': priority,
+          'capturedAt': capturedAt?.toIso8601String(),
+        },
+      );
       return false;
     }
   }

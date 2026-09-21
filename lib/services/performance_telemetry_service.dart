@@ -425,7 +425,17 @@ class PerformanceTelemetryReport {
     }
     buffer
       ..writeln('\n=== ÁUDIO / DECISÃO DE ALERTA ===')
-      ..writeln('Áudio Android: ${jsonEncode(audioDiagnostics)}')
+      ..writeln('Estado: ${audioDiagnostics['state'] ?? 'indisponível'}')
+      ..writeln('Último resultado: ${audioDiagnostics['lastPlaybackResult'] ?? 'indisponível'}')
+      ..writeln('Origem: ${audioDiagnostics['lastSource'] ?? 'indisponível'}')
+      ..writeln('Fallback para áudio integrado: ${audioDiagnostics['lastPlaybackUsedFallback'] == true ? 'sim' : 'não'}')
+      ..writeln('Motivo do fallback: ${audioDiagnostics['lastFallbackReason'] ?? 'nenhum'}')
+      ..writeln('Erro: ${audioDiagnostics['lastErrorCode'] ?? 'nenhum'}')
+      ..writeln('Detalhe: ${audioDiagnostics['lastError'] ?? 'nenhum'}')
+      ..writeln('Etapa: ${audioDiagnostics['lastErrorPhase'] ?? 'indisponível'}')
+      ..writeln('Foco de áudio: ${audioDiagnostics['lastFocusResultName'] ?? 'indisponível'}')
+      ..writeln('Volume: ${audioDiagnostics['mediaVolume'] ?? '?'} / ${audioDiagnostics['mediaMaxVolume'] ?? '?'}')
+      ..writeln('Diagnóstico Android completo: ${jsonEncode(audioDiagnostics)}')
       ..writeln('Última decisão: ${source.isEmpty ? '{}' : jsonEncode(source.last.alertContext)}');
     for (final event in alertEvents) { buffer.writeln(jsonEncode(event)); }
     return buffer.toString();
@@ -467,7 +477,7 @@ class PerformanceTelemetryReport {
             'version': AppMetadata.version,
             'build': AppMetadata.build,
           },
-          'schemaVersion': 2,
+          'schemaVersion': 3,
           'audioDiagnostics': audioDiagnostics,
           'alertEvents': alertEvents,
           'summaryScope': deepTraceSamples.isEmpty ? 'normal' : 'deepTraceSubset',

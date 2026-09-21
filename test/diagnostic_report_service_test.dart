@@ -32,6 +32,15 @@ DiagnosticReport buildReport() {
       totalStorageBytes: 128_000_000_000,
       memoryUsedBytes: 820_000_000,
     ),
+    audioDiagnostics: const {
+      'state': 'failed',
+      'lastPlaybackResult': 'failed',
+      'lastErrorCode': 'MEDIA_ERROR_UNSUPPORTED',
+      'lastErrorPhase': 'prepare_async',
+      'lastFocusResultName': 'GRANTED',
+      'mediaVolume': 6,
+      'mediaMaxVolume': 15,
+    },
     entries: [
       ErrorLogEntry(
         id: '1',
@@ -56,6 +65,8 @@ void main() {
     expect(text, contains('Rede local: não concedida'));
     expect(text, contains('Armazenamento livre: 74,5 GB'));
     expect(text, contains('Frames congelados'));
+    expect(text, contains('Erro: MEDIA_ERROR_UNSUPPORTED'));
+    expect(text, contains('Etapa: prepare_async'));
   });
 
   test('exportacao grava exatamente o texto do diagnostico', () async {

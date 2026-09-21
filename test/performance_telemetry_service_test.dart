@@ -110,14 +110,25 @@ void main() {
       generatedAt: start, sessionStartedAt: start,
       samples: [sample(timestamp: start, liteRtMs: 50, tensorTransferMs: 700, totalMs: 900)],
       deepTraceSamples: const [], deepTraceStartedAt: null, deepTraceEndedAt: null,
-      audioDiagnostics: const {'state': 'failed', 'lastError': 'audio_focus_denied'},
+      audioDiagnostics: const {
+        'state': 'failed',
+        'lastError': 'MEDIA_ERROR_UNKNOWN / MEDIA_ERROR_MALFORMED',
+        'lastErrorCode': 'MEDIA_ERROR_MALFORMED',
+        'lastErrorPhase': 'prepare_async',
+        'lastSource': 'override',
+        'lastFocusResultName': 'FAILED',
+        'mediaVolume': 7,
+        'mediaMaxVolume': 15,
+      },
       alertEvents: const [{'event': 'tts_started'}],
     );
     expect(report.likelyBottleneck, 'Transferência dos tensores + API Dart');
     final json = jsonDecode(report.toJsonText()) as Map<String, dynamic>;
-    expect(json['schemaVersion'], 2);
-    expect(json['audioDiagnostics']['lastError'], 'audio_focus_denied');
+    expect(json['schemaVersion'], 3);
+    expect(json['audioDiagnostics']['lastErrorCode'], 'MEDIA_ERROR_MALFORMED');
     expect(json['alertEvents'].first['event'], 'tts_started');
+    expect(report.toText(), contains('Etapa: prepare_async'));
+    expect(report.toText(), contains('Foco de áudio: FAILED'));
     final rows = report.toCsv().trim().split('\n');
     final columns = rows[0].split(',');
     final values = rows[1].split(',');

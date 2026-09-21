@@ -41,7 +41,7 @@ require("lib/screens/monitor_screen_fullscreen.dart", "DeviceOrientation.landsca
         "DeviceOrientation.landscapeRight", "Duration(seconds: 4)", "Sair da tela inteira")
 require("tool/android/MonitorSystemUi.kt", "hide(WindowInsets.Type.systemBars())",
         "show(WindowInsets.Type.systemBars())")
-require("lib/services/performance_telemetry_service.dart", "'schemaVersion': 2", "'audioDiagnostics'",
+require("lib/services/performance_telemetry_service.dart", "'schemaVersion': 3", "'audioDiagnostics'",
         "'alertEvents'", "'tensorTransferMs'", "summaryScope")
 for name in ("detector_input_buffer", "frame_converter", "detection_cadence_policy", "alert_voice_service"):
     require(f"test/{name}_test.dart", "test(")

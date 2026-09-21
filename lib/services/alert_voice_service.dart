@@ -10,15 +10,21 @@ class AlertVoiceService {
   AlertVoiceService({SpeechService? speech,
     Future<bool> Function(String, int, DateTime?)? playAudio,
     Future<void> Function()? stopAudio,
+    Future<Map<String, Object?>> Function()? audioDiagnostics,
   }) : _speech = speech ?? SpeechService(),
        _playAudio = playAudio ?? ((slot, priority, capturedAt) =>
            NativePlatformService.instance.playCustomAlertAudio(slot,
              priority: priority, capturedAt: capturedAt)),
-       _stopAudio = stopAudio ?? NativePlatformService.instance.stopAlertAudio;
+       _stopAudio = stopAudio ?? NativePlatformService.instance.stopAlertAudio,
+       _audioDiagnostics = audioDiagnostics ??
+           (playAudio == null
+               ? NativePlatformService.instance.audioDiagnostics
+               : () async => const <String, Object?>{});
 
   final SpeechService _speech;
   final Future<bool> Function(String, int, DateTime?) _playAudio;
   final Future<void> Function() _stopAudio;
+  final Future<Map<String, Object?>> Function() _audioDiagnostics;
   _VoiceRequest? _active;
   _VoiceRequest? _pending;
   int _generation = 0;
@@ -77,13 +83,16 @@ class AlertVoiceService {
         request.capturedAt,
       );
       if (handled) {
-        _trace(request, 'native_handled');
+        final diagnostics = await _audioDiagnostics();
+        _trace(request, 'native_handled', diagnostics: diagnostics);
       } else if (!current() || !fresh()) {
         _trace(request, 'cancelled_or_expired_before_tts');
       } else if (!languageInstalled) {
-        _trace(request, 'tts_unavailable');
+        final diagnostics = await _audioDiagnostics();
+        _trace(request, 'tts_unavailable', diagnostics: diagnostics);
       } else {
-        _trace(request, 'tts_requested');
+        final diagnostics = await _audioDiagnostics();
+        _trace(request, 'native_failed_tts_requested', diagnostics: diagnostics);
         await _speech.speakMessage(request.text, priority: request.priority);
         _trace(request, 'tts_returned');
       }
@@ -103,11 +112,28 @@ class AlertVoiceService {
     }
   }
 
-  void _trace(_VoiceRequest request, String event) {
+  void _trace(
+    _VoiceRequest request,
+    String event, {
+    Map<String, Object?> diagnostics = const <String, Object?>{},
+  }) {
     PerformanceTelemetryService.instance.recordAlertEvent({
       'timestamp': DateTime.now().toIso8601String(), 'event': event,
       'slot': request.audioSlot, 'priority': request.priority.name,
       'frameCapturedAt': request.capturedAt?.toIso8601String(),
+      if (diagnostics.isNotEmpty) ...<String, Object?>{
+        'audioState': diagnostics['state'],
+        'audioErrorCode': diagnostics['lastErrorCode'],
+        'audioError': diagnostics['lastError'],
+        'audioErrorPhase': diagnostics['lastErrorPhase'],
+        'audioSource': diagnostics['lastSource'],
+        'audioFocus': diagnostics['lastFocusResultName'],
+        'audioUsedFallback': diagnostics['lastPlaybackUsedFallback'],
+        'audioFallbackReason': diagnostics['lastFallbackReason'],
+        'mediaVolume': diagnostics['mediaVolume'],
+        'mediaMaxVolume': diagnostics['mediaMaxVolume'],
+        'mediaMuted': diagnostics['mediaMuted'],
+      },
     });
   }
 

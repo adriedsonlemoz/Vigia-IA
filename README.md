@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.74+74`
+> **Versão atual:** `1.0.75+75`
 
 ## Estado atual
 
-A `1.0.74+74` melhora o uso da área da câmera em paisagem/tela cheia, adiciona saída clara do monitoramento e preserva o fluxo de permissões antes da escolha de modo.
+A `1.0.75+75` corrige o build do Android-APK-43 e torna as falhas de áudio observáveis, com tentativa de reprodução mesmo quando o foco transitório é negado.
+
+### Evolução 1.0.75 — Áudio diagnosticável e build corrigido
+
+- remove o `!` desnecessário que fez o `flutter analyze` encerrar o workflow antes dos testes e do APK;
+- negação de foco de áudio não é mais tratada como falha fatal: o player tenta reproduzir e registra o resultado;
+- registra código nativo, etapa, fonte, arquivo, tamanho, volume, saída, foco e latências de cada tentativa;
+- converte os códigos `MediaPlayer what/extra` para nomes úteis no relatório;
+- falhas ficam persistidas na Central de Diagnóstico e são correlacionadas com o fallback para TTS;
+- o teste manual em Configurações > Áudios e voz mostra o erro e a etapa encontrados;
+- relatórios de desempenho usam o esquema 3 e incluem resumo legível mais o diagnóstico Android completo.
 
 ### Evolução 1.0.74 — Paisagem limpa e saída clara
 
@@ -76,7 +86,7 @@ A `1.0.74+74` melhora o uso da área da câmera em paisagem/tela cheia, adiciona
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.74.md](RELEASE-1.0.74.md). Correção anterior: [RELEASE-1.0.73.md](RELEASE-1.0.73.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da correção atual: [RELEASE-1.0.75.md](RELEASE-1.0.75.md). Correção anterior: [RELEASE-1.0.74.md](RELEASE-1.0.74.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.75+75 — 2026-09-22
+
+- Corrigido o `unnecessary_non_null_assertion` em `camera_mode_screen.dart` que interrompeu o Android-APK-43 no `flutter analyze`.
+- A negação ou exceção de foco de áudio deixou de cancelar a reprodução; o `MediaPlayer` tenta tocar e registra a condição para diagnóstico.
+- O player nativo agora registra solicitação, tentativa, origem `override`/`bundled`, etapa, arquivo sem caminho privado, tamanho, volume, rota, foco, tempo desde o frame e tempo desde a solicitação.
+- Erros do `MediaPlayer` passam a expor os nomes de `what` e `extra`, incluindo IO, arquivo malformado, formato não suportado, timeout e erro de sistema.
+- Falhas da ponte Android e da reprodução são persistidas na Central de Diagnóstico, com slot, prioridade, etapa, código e indicação do fallback para TTS.
+- A telemetria de desempenho passa ao esquema 3 e inclui um resumo humano do áudio, os dados nativos completos e a decisão de fallback.
+- A tela Áudios e voz exibe o código/etapa real da falha após o teste e informa que o registro foi salvo no Diagnóstico.
+- Mantidos os 78 M4A AAC-LC mono 24 kHz, o fallback do override para o áudio integrado e o fallback final para TTS.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.75+75`.
+
 ## 1.0.74+74 — 2026-09-22
 
 - O Monitor em paisagem deixa de usar AppBar fixa e passa a sobrepor controles translúcidos na própria transmissão.

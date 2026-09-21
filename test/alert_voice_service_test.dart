@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vigiaia/services/alert_voice_service.dart';
+import 'package:vigiaia/services/performance_telemetry_service.dart';
 import 'package:vigiaia/services/speech_service.dart';
 
 class FakeSpeech extends SpeechService {
@@ -88,5 +89,34 @@ void main() {
     await service.deliver('Antigo', audioSlot: 'old',
         capturedAt: DateTime.now().subtract(const Duration(seconds: 20)));
     expect(slots, isEmpty);
+  });
+
+  test('falha nativa registra código, etapa e fallback na telemetria', () async {
+    PerformanceTelemetryService.instance.resetSession();
+    final service = AlertVoiceService(
+      speech: FakeSpeech(),
+      stopAudio: () async {},
+      playAudio: (_, priority, capturedAt) async => false,
+      audioDiagnostics: () async => const <String, Object?>{
+        'state': 'failed',
+        'lastErrorCode': 'MEDIA_ERROR_UNSUPPORTED',
+        'lastError': 'MEDIA_ERROR_UNKNOWN / MEDIA_ERROR_UNSUPPORTED',
+        'lastErrorPhase': 'prepare_async',
+        'lastSource': 'override',
+        'lastFocusResultName': 'GRANTED',
+        'mediaVolume': 8,
+        'mediaMaxVolume': 15,
+        'mediaMuted': false,
+      },
+    );
+
+    await service.deliver('Pessoa detectada', audioSlot: 'person_detected');
+    final event = PerformanceTelemetryService.instance
+        .createReport()
+        .alertEvents
+        .firstWhere((item) => item['event'] == 'native_failed_tts_requested');
+    expect(event['audioErrorCode'], 'MEDIA_ERROR_UNSUPPORTED');
+    expect(event['audioErrorPhase'], 'prepare_async');
+    expect(event['audioSource'], 'override');
   });
 }
