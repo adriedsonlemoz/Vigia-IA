@@ -26,11 +26,23 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
             cameraId: camera.id,
             analysisInterval: analysisInterval,
           ),
+        CameraEndpointType.esp32 => VideoSourceConfig(
+            type: VideoSourceType.esp32,
+            remoteBaseUrl: camera.address,
+            remoteAccessKey: camera.accessKey,
+            displayName: camera.name,
+            cameraId: camera.id,
+            analysisInterval: analysisInterval,
+          ),
       };
 
   Future<void> _openWithSecond(CameraEndpoint primary) async {
     final candidates = _cameras
-        .where((camera) => camera.enabled && camera.id != primary.id)
+        .where((camera) =>
+            camera.enabled &&
+            camera.id != primary.id &&
+            (camera.type != CameraEndpointType.esp32 ||
+                camera.esp32CameraEnabled))
         .toList(growable: false);
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,6 +65,7 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
                       CameraEndpointType.local => Icons.camera_alt_outlined,
                       CameraEndpointType.rtsp => Icons.router_outlined,
                       CameraEndpointType.remotePhone => Icons.phone_android_rounded,
+                      CameraEndpointType.esp32 => Icons.memory_rounded,
                     }),
                     title: Text(camera.name),
                     subtitle: Text(_status[camera.id]?.online == true
@@ -75,6 +88,15 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
     if (!camera.enabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ative esta câmera antes de monitorar.')),
+      );
+      return;
+    }
+    if (camera.type == CameraEndpointType.esp32 &&
+        !camera.esp32CameraEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Habilite a câmera deste ESP32 antes de monitorar.'),
+        ),
       );
       return;
     }

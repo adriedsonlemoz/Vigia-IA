@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/monitor_schedule.dart';
+import '../models/camera_endpoint.dart';
 import '../models/monitoring_zone.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/smart_alert_rules.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
+import '../services/camera_registry_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
@@ -15,12 +17,14 @@ import '../widgets/main_navigation_bar.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
+import 'esp32_settings_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 
 part 'home_screen_components.dart';
+part 'home_screen_source_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.startMonitorOnLoad = false});
@@ -34,10 +38,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AppSettingsService _settingsService = AppSettingsService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
+  final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   VideoSourceType _sourceType = VideoSourceType.localCamera;
   final _rtspController = TextEditingController();
   final _remoteUrlController = TextEditingController();
   final _remoteKeyController = TextEditingController();
+  String? _selectedEsp32Id;
   MonitorSettings _loadedSettings = const MonitorSettings();
   Timer? _persistDebounce;
   bool _loading = true;
@@ -86,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadSettings() async {
+    await _cameraRegistry.initialize();
     final profile = await _settingsService.initialize();
     if (!mounted) return;
     final source = profile.source;
@@ -95,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _rtspController.text = source.rtspUrl ?? '';
       _remoteUrlController.text = source.remoteBaseUrl ?? '';
       _remoteKeyController.text = source.remoteAccessKey ?? '';
+      _selectedEsp32Id = source.cameraId;
       _loadedSettings = settings;
       _analysisMs = source.analysisInterval.inMilliseconds.toDouble();
       _confidence = settings.confidenceThreshold;
@@ -139,17 +147,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _persist() => _settingsService.saveProfile(_currentProfile());
 
+  void _updateSourcePanelState(VoidCallback update) => setState(update);
+
   PersistedMonitorProfile _currentProfile() {
     final rtsp = _rtspController.text.trim();
     final remoteUrl = _remoteUrlController.text.trim();
     final remoteKey = _remoteKeyController.text.trim();
     final outputs = _loadedSettings.alertOutputs.copyWith(voice: _voiceEnabled);
+    CameraEndpoint? selectedEsp32;
+    if (_sourceType == VideoSourceType.esp32 && _selectedEsp32Id != null) {
+      for (final camera in _cameraRegistry.items) {
+        if (camera.id == _selectedEsp32Id &&
+            camera.type == CameraEndpointType.esp32) {
+          selectedEsp32 = camera;
+          break;
+        }
+      }
+    }
     return PersistedMonitorProfile(
       source: VideoSourceConfig(
         type: _sourceType,
         rtspUrl: rtsp.isEmpty ? null : rtsp,
-        remoteBaseUrl: remoteUrl.isEmpty ? null : remoteUrl,
-        remoteAccessKey: remoteKey.isEmpty ? null : remoteKey,
+        remoteBaseUrl: _sourceType == VideoSourceType.esp32
+            ? selectedEsp32?.address
+            : (remoteUrl.isEmpty ? null : remoteUrl),
+        remoteAccessKey: _sourceType == VideoSourceType.esp32
+            ? selectedEsp32?.accessKey
+            : (remoteKey.isEmpty ? null : remoteKey),
+        displayName: selectedEsp32?.name,
+        cameraId: selectedEsp32?.id,
         analysisInterval: Duration(milliseconds: _analysisMs.round()),
       ),
       settings: _loadedSettings.copyWith(
@@ -411,6 +437,19 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
     }
+    if (_sourceType == VideoSourceType.esp32) {
+      final uri = Uri.tryParse(profile.source.remoteBaseUrl ?? '');
+      if (uri == null ||
+          !(uri.scheme == 'http' || uri.scheme == 'https') ||
+          uri.host.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cadastre e selecione um ESP32 com câmera.'),
+          ),
+        );
+        return;
+      }
+    }
 
     await _settingsService.saveProfile(profile);
     if (!mounted) return;
@@ -625,6 +664,7 @@ class _HomeScreenState extends State<HomeScreen> {
       VideoSourceType.localCamera => 'Dispositivo',
       VideoSourceType.rtsp => 'RTSP',
       VideoSourceType.remotePhone => 'Celular remoto',
+      VideoSourceType.esp32 => 'ESP32',
     };
     final scheduleText = _schedule.enabled
         ? '${formatMinuteOfDay(_schedule.startMinute)}–${formatMinuteOfDay(_schedule.endMinute)}'
@@ -686,113 +726,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSourcePanel(BuildContext context) {
-    return _SurfacePanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.cameraswitch_outlined, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Fonte de vídeo',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<VideoSourceType>(
-            segments: const [
-              ButtonSegment(
-                value: VideoSourceType.localCamera,
-                icon: Icon(Icons.phone_android_rounded),
-                label: FittedBox(fit: BoxFit.scaleDown, child: Text('Local')),
-              ),
-              ButtonSegment(
-                value: VideoSourceType.rtsp,
-                icon: Icon(Icons.router_outlined),
-                label: FittedBox(fit: BoxFit.scaleDown, child: Text('RTSP')),
-              ),
-              ButtonSegment(
-                value: VideoSourceType.remotePhone,
-                icon: Icon(Icons.phone_android_rounded),
-                label: FittedBox(fit: BoxFit.scaleDown, child: Text('Remoto')),
-              ),
-            ],
-            selected: {_sourceType},
-            onSelectionChanged: (values) {
-              setState(() => _sourceType = values.first);
-              _schedulePersist();
-            },
-          ),
-          if (_sourceType == VideoSourceType.rtsp) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: _rtspController,
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: const InputDecoration(
-                labelText: 'Endereço RTSP',
-                hintText: 'rtsp://usuario:senha@192.168.1.20:554/stream',
-                helperText: 'Salvo somente no armazenamento privado do aparelho.',
-                prefixIcon: Icon(Icons.link_rounded),
-              ),
-            ),
-          ],
-          if (_sourceType == VideoSourceType.remotePhone) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'Conecte outro aparelho pelo endereço manual ou lendo o QR exibido no Modo Câmera.',
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.tonalIcon(
-                  onPressed: _scanRemotePhoneQr,
-                  icon: const Icon(Icons.qr_code_scanner_rounded),
-                  label: const Text('Escanear QR do outro celular'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => setState(() {
-                    _remoteUrlController.clear();
-                    _remoteKeyController.clear();
-                  }),
-                  icon: const Icon(Icons.clear_rounded),
-                  label: const Text('Limpar campos'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _remoteUrlController,
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: const InputDecoration(
-                labelText: 'Endereço do celular',
-                hintText: 'http://192.168.1.10:8765',
-                helperText: 'Use o endereço exibido no Modo Câmera do outro aparelho.',
-                prefixIcon: Icon(Icons.wifi_rounded),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _remoteKeyController,
-              autocorrect: false,
-              enableSuggestions: false,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Chave de sessão',
-                prefixIcon: Icon(Icons.key_rounded),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }

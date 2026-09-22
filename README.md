@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.79+79`
+> **Versão atual:** `1.0.80+80`
 
 ## Estado atual
 
-A `1.0.79+79` corrige o bloqueio do `flutter analyze` da entrega anterior e simplifica a navegação principal, movendo o Modo Bike para Configurações.
+A `1.0.80+80` reorganiza o Histórico, cria o painel de gerenciamento do ESP32, integra a futura câmera do módulo às fontes e melhora a entrega e o diagnóstico de tamanho do APK.
+
+### Evolução 1.0.80 — Histórico, ESP32, câmeras e APK
+
+- filtros de Tudo, Pessoas, Automóveis e Animais ficam na mesma linha quando houver largura e usam ícones de identificação;
+- cards do Histórico agrupam câmera, horário e entrada/saída de modo compacto; o detalhe permite salvar a mídia ou excluir com confirmação;
+- Configurações > Monitoramento ganhou painel próprio para ESP32, com conexão, chave, teste, sensores Hall/temperatura/pneus, calibração, intervalo e envio de configuração ao módulo;
+- módulos com câmera habilitada aparecem como fonte ESP32 na Home, no seletor do Monitor e na página Câmeras;
+- o Monitor deixa explícita a ação `2ª câmera`; somente a fonte principal executa IA, histórico, alertas e áudio;
+- a página Câmeras identifica Local, RTSP, Celular remoto e ESP32, com ações de monitorar, combinar duas fontes e gerenciar o módulo;
+- o workflow nomeia o arquivo como `VigiaIA-v1.0.80.apk`, usa cache de Gradle/modelos e evita recomprimir o APK durante o upload;
+- cada build gera `apk-size-report.txt`, `flutter-dependencies.txt` e `gradle-release-dependencies.txt`, detalhando os maiores arquivos internos e as árvores de dependências para localizar o peso real sem remover recursos necessários.
 
 ### Evolução 1.0.79 — Buildfix e navegação essencial
 
@@ -124,7 +135,7 @@ A `1.0.79+79` corrige o bloqueio do `flutter analyze` da entrega anterior e simp
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da entrega atual: [RELEASE-1.0.79.md](RELEASE-1.0.79.md). Layout e sensores: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da entrega atual: [RELEASE-1.0.80.md](RELEASE-1.0.80.md). Layout e sensores: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

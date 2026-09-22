@@ -50,4 +50,30 @@ void main() {
     expect(renamed.name, 'Entrada principal');
     expect(renamed.address, original.address);
   });
+
+  test('ESP32 preserva sensores, calibração e câmera futura', () {
+    const original = CameraEndpoint(
+      id: 'esp32-bike',
+      name: 'ESP32 dianteiro',
+      type: CameraEndpointType.esp32,
+      address: 'http://192.168.4.1',
+      accessKey: 'CHAVE',
+      esp32CameraEnabled: true,
+      wheelCircumferenceMm: 2140,
+      hallMagnets: 2,
+      minimumTirePressurePsi: 32,
+      maximumTemperatureC: 60,
+      telemetryIntervalMs: 500,
+    );
+
+    final restored = CameraEndpoint.fromJson(
+      original.toJson().cast<String, dynamic>(),
+    );
+    expect(restored.type, CameraEndpointType.esp32);
+    expect(restored.esp32CameraEnabled, isTrue);
+    expect(restored.wheelCircumferenceMm, 2140);
+    expect(restored.hallMagnets, 2);
+    expect(restored.telemetryIntervalMs, 500);
+    expect(restored.toEsp32ConfigurationJson(), isNot(contains('accessKey')));
+  });
 }

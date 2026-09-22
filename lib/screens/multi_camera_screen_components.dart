@@ -9,6 +9,7 @@ class _CentralHeader extends StatelessWidget {
     required this.onScanPhone,
     required this.onAddPhone,
     required this.onAddRtsp,
+    required this.onManageEsp32,
   });
 
   final int total;
@@ -18,6 +19,7 @@ class _CentralHeader extends StatelessWidget {
   final VoidCallback onScanPhone;
   final VoidCallback onAddPhone;
   final VoidCallback onAddRtsp;
+  final VoidCallback onManageEsp32;
 
   @override
   Widget build(BuildContext context) {
@@ -95,15 +97,19 @@ class _CentralHeader extends StatelessWidget {
                     child: Text('Adicionar RTSP'),
                   ),
                 );
+                final esp32 = OutlinedButton.icon(
+                  onPressed: onManageEsp32,
+                  icon: const Icon(Icons.memory_rounded),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Gerenciar ESP32'),
+                  ),
+                );
                 if (wideActions) {
-                  return Row(
-                    children: [
-                      Expanded(child: scan),
-                      const SizedBox(width: 8),
-                      Expanded(child: manual),
-                      const SizedBox(width: 8),
-                      Expanded(child: rtsp),
-                    ],
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [scan, manual, rtsp, esp32],
                   );
                 }
                 return Column(
@@ -118,6 +124,8 @@ class _CentralHeader extends StatelessWidget {
                         Expanded(child: rtsp),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    esp32,
                   ],
                 );
               },
@@ -132,6 +140,7 @@ class _CentralHeader extends StatelessWidget {
 class _CameraCard extends StatelessWidget {
   const _CameraCard({
     required this.camera,
+    required this.cameraAvailable,
     required this.status,
     required this.lastEvent,
     required this.onOpen,
@@ -142,6 +151,7 @@ class _CameraCard extends StatelessWidget {
   });
 
   final CameraEndpoint camera;
+  final bool cameraAvailable;
   final CameraProbeResult? status;
   final MonitorEvent? lastEvent;
   final VoidCallback onOpen;
@@ -169,6 +179,12 @@ class _CameraCard extends StatelessWidget {
                 ? 'Online'
                 : 'Offline';
     final latency = status?.latency;
+    final sourceKind = switch (camera.type) {
+      CameraEndpointType.local => 'Local',
+      CameraEndpointType.rtsp => 'RTSP',
+      CameraEndpointType.remotePhone => 'Celular remoto',
+      CameraEndpointType.esp32 => 'ESP32',
+    };
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -185,6 +201,7 @@ class _CameraCard extends StatelessWidget {
                       CameraEndpointType.local => Icons.camera_alt_outlined,
                       CameraEndpointType.rtsp => Icons.router_outlined,
                       CameraEndpointType.remotePhone => Icons.phone_android_rounded,
+                      CameraEndpointType.esp32 => Icons.memory_rounded,
                     },
                   ),
                 ),
@@ -211,7 +228,7 @@ class _CameraCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            statusText,
+                            '$sourceKind · $statusText',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           if (online && latency != null) ...[
@@ -256,7 +273,9 @@ class _CameraCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              status?.message ?? 'Aguardando a primeira verificação.',
+              cameraAvailable
+                  ? status?.message ?? 'Aguardando a primeira verificação.'
+                  : 'Sensores ativos · câmera ESP32 ainda não habilitada.',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
@@ -283,7 +302,9 @@ class _CameraCard extends StatelessWidget {
                 if (onOpenWithSecond != null) ...[
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: camera.enabled ? onOpenWithSecond : null,
+                    onPressed: camera.enabled && cameraAvailable
+                        ? onOpenWithSecond
+                        : null,
                       icon: const Icon(Icons.video_collection_outlined),
                       label: const FittedBox(
                         fit: BoxFit.scaleDown,
@@ -295,7 +316,7 @@ class _CameraCard extends StatelessWidget {
                 ],
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: camera.enabled ? onOpen : null,
+                    onPressed: camera.enabled && cameraAvailable ? onOpen : null,
                     icon: const Icon(Icons.play_arrow_rounded),
                     label: const Text('Monitorar'),
                   ),

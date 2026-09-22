@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.80+80 — 2026-09-22
+
+- Reorganizado o Histórico com filtros adaptativos em uma linha quando houver espaço, ícones de categoria e metadados compactos nos cards.
+- Adicionados botões Salvar e Excluir no detalhe da captura; exclusões individuais agora exigem confirmação e removem a mídia associada.
+- Criado painel próprio em Configurações > Monitoramento > ESP32 e sensores.
+- O painel cadastra endereço/chave, testa conexão, configura Hall, circunferência/ímãs, temperatura, pressão, telemetria e câmera futura, e envia o contrato JSON para `/config`.
+- Adicionados `CameraEndpointType.esp32` e `VideoSourceType.esp32`, mantendo credenciais protegidas pelo armazenamento existente.
+- ESP32 com câmera habilitada aparece na Home, no seletor de fonte do Monitor, no seletor de segunda câmera e na página Câmeras.
+- Página Câmeras ganhou identificação explícita do tipo de fonte e acesso direto ao gerenciamento ESP32.
+- A ação de composição no Monitor passou a se chamar `2ª câmera`; a segunda fonte continua somente em preview, sem duplicar a IA.
+- Workflow renomeia o APK para `VigiaIA-v1.0.80.apk`, usa cache de Gradle e modelos e desativa recompressão do APK no artefato.
+- O build passa a gerar `apk-size-report.txt` com tamanho final, grupos internos e os 30 maiores arquivos do APK, além de `flutter-dependencies.txt` e `gradle-release-dependencies.txt` para atribuir o peso às dependências corretas.
+- Auditoria do projeto identificou como principais candidatos de tamanho os binários nativos universais do Flutter/VLC/LiteRT, dois modelos TFLite e 78 áudios integrados; nenhum recurso foi removido sem medição do APK real.
+- Versionamento, documentação, tela de informações, testes e verificadores sincronizados em `1.0.80+80`.
+
 ## 1.0.79+79 — 2026-09-22
 
 - Corrigidos os oito avisos `invalid_use_of_protected_member` causados por chamadas diretas a `setState` nos módulos multicâmera extraídos.

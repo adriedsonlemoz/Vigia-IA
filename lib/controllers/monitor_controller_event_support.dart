@@ -365,6 +365,7 @@ extension _MonitorControllerEventSupport on MonitorController {
         VideoSourceType.localCamera => 'Câmera do dispositivo',
         VideoSourceType.rtsp => 'Câmera RTSP',
         VideoSourceType.remotePhone => 'Celular remoto',
+        VideoSourceType.esp32 => 'Câmera ESP32',
       };
 
   Future<void> _deliverAlertImpl(

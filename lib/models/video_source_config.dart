@@ -6,7 +6,7 @@ import 'object_filter_catalog.dart';
 import 'smart_alert_rules.dart';
 import 'storage_policy.dart';
 
-enum VideoSourceType { localCamera, rtsp, remotePhone }
+enum VideoSourceType { localCamera, rtsp, remotePhone, esp32 }
 
 enum ClipFormatPreference { mp4WithGifFallback, gifOnly }
 

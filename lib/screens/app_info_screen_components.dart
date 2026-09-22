@@ -42,7 +42,7 @@ class _AboutPanel extends StatelessWidget {
           const _InfoRow(label: 'Desenvolvedor', value: AppMetadata.developer),
           const Divider(height: 28),
           const Text(
-            'O Vigia IA usa a câmera do dispositivo ou uma fonte RTSP para analisar objetos localmente, registrar eventos e emitir alertas sem depender de serviços de nuvem para a IA.',
+            'O Vigia IA usa a câmera do dispositivo, RTSP, outro celular ou uma câmera ESP32 para analisar objetos localmente no aparelho receptor, registrar eventos e emitir alertas sem depender de serviços de nuvem para a IA.',
           ),
         ],
       ),
@@ -58,8 +58,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.79',
+          version: '1.0.80',
           current: true,
+          changes: [
+            'Histórico reorganizado com filtros adaptativos, ícones, metadados compactos e melhor hierarquia visual.',
+            'Detalhes de detecção agora permitem salvar a captura ou excluir o registro após confirmação.',
+            'Painel ESP32 conecta e gerencia sensores Hall, temperatura, pneus, telemetria e câmera futura.',
+            'ESP32 passa a ser fonte selecionável na Home, no Monitor e na página Câmeras, inclusive como segunda câmera.',
+            'Workflow entrega VigiaIA-v1.0.80.apk, usa caches e gera relatório interno de tamanho sem remover recursos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.79',
           changes: [
             'Corrige os nove problemas do flutter analyze encontrados no Android-APK-47.',
             'Atualizações visuais dos módulos multicâmera agora passam pela classe State proprietária.',

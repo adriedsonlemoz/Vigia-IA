@@ -16,12 +16,14 @@ class RemotePhoneCameraSource implements VideoSource {
     required this.accessKey,
     this.analysisInterval = const Duration(milliseconds: 800),
     this.emitFrames = true,
+    this.deviceLabel = 'celular remoto',
   });
 
   final String baseUrl;
   final String accessKey;
   final Duration analysisInterval;
   final bool emitFrames;
+  final String deviceLabel;
   final StreamController<RgbFrame> _frames = StreamController<RgbFrame>.broadcast();
   final StreamController<VideoSourceStatus> _statuses = StreamController<VideoSourceStatus>.broadcast();
   final ValueNotifier<Uint8List?> _latestJpeg = ValueNotifier<Uint8List?>(null);
@@ -53,10 +55,13 @@ class RemotePhoneCameraSource implements VideoSource {
     if (_disposed) return;
     final uri = Uri.tryParse(baseUrl);
     if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty) {
-      throw ArgumentError('Endereço do celular remoto inválido.');
+      throw ArgumentError('Endereço do $deviceLabel inválido.');
     }
     _client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
-    _statuses.add(const VideoSourceStatus(VideoSourceState.connecting, message: 'Conectando ao celular remoto…'));
+    _statuses.add(VideoSourceStatus(
+      VideoSourceState.connecting,
+      message: 'Conectando ao $deviceLabel…',
+    ));
     unawaited(_poll());
     unawaited(_pollStatus());
     _statusTimer = Timer.periodic(
@@ -100,9 +105,9 @@ class RemotePhoneCameraSource implements VideoSource {
         _hasConnected = true;
         _consecutiveFailures = 0;
         if (!_statuses.isClosed) {
-          _statuses.add(const VideoSourceStatus(
+          _statuses.add(VideoSourceStatus(
             VideoSourceState.streaming,
-            message: 'Celular remoto online',
+            message: '${_sentenceCase(deviceLabel)} online',
           ));
         }
         return;
@@ -130,9 +135,9 @@ class RemotePhoneCameraSource implements VideoSource {
         _hasConnected = true;
         _consecutiveFailures = 0;
         if (!_statuses.isClosed) {
-          _statuses.add(const VideoSourceStatus(
+          _statuses.add(VideoSourceStatus(
             VideoSourceState.streaming,
-            message: 'Celular remoto online',
+            message: '${_sentenceCase(deviceLabel)} online',
           ));
         }
         return;
@@ -158,9 +163,9 @@ class RemotePhoneCameraSource implements VideoSource {
       _hasConnected = true;
       _consecutiveFailures = 0;
       if (!_statuses.isClosed) {
-        _statuses.add(const VideoSourceStatus(
+        _statuses.add(VideoSourceStatus(
           VideoSourceState.streaming,
-          message: 'Celular remoto online',
+          message: '${_sentenceCase(deviceLabel)} online',
         ));
       }
     } catch (error) {
@@ -170,8 +175,8 @@ class RemotePhoneCameraSource implements VideoSource {
             ? VideoSourceState.reconnecting
             : VideoSourceState.error;
         final prefix = state == VideoSourceState.reconnecting
-            ? 'Reconectando ao celular remoto'
-            : 'Celular remoto offline';
+            ? 'Reconectando ao $deviceLabel'
+            : '${_sentenceCase(deviceLabel)} offline';
         _statuses.add(VideoSourceStatus(state, message: '$prefix: $error'));
       }
     } finally {
@@ -211,7 +216,9 @@ class RemotePhoneCameraSource implements VideoSource {
   Widget buildPreview() => ValueListenableBuilder<Uint8List?>(
         valueListenable: _latestJpeg,
         builder: (context, bytes, _) {
-          if (bytes == null) return const Center(child: Text('Aguardando imagem do celular…'));
+          if (bytes == null) {
+            return Center(child: Text('Aguardando imagem do $deviceLabel…'));
+          }
           return Center(
             child: Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true),
           );
@@ -248,6 +255,11 @@ class RemotePhoneCameraSource implements VideoSource {
     await _frames.close();
     await _statuses.close();
   }
+}
+
+String _sentenceCase(String value) {
+  if (value.isEmpty) return value;
+  return '${value[0].toUpperCase()}${value.substring(1)}';
 }
 
 Map<String, Object>? _decodeJpeg(Uint8List bytes) {

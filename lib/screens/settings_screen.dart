@@ -11,6 +11,7 @@ import 'appearance_settings_screen.dart';
 import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
+import 'esp32_settings_screen.dart';
 import 'launch_mode_screen.dart';
 import 'multi_camera_screen.dart';
 import 'presets_screen.dart';
@@ -112,6 +113,12 @@ class SettingsScreen extends StatelessWidget {
             title: 'Modo Bike',
             subtitle: 'Configure energia, sensores e simulação da bike.',
             onTap: () => _push(context, const BikeModeScreen()),
+          ),
+          _SettingsTile(
+            icon: Icons.memory_rounded,
+            title: 'ESP32 e sensores',
+            subtitle: 'Conecte o módulo, calibre sensores e prepare a câmera ESP32.',
+            onTap: () => _push(context, const Esp32SettingsScreen()),
           ),
           _SettingsTile(
             icon: Icons.video_settings_outlined,

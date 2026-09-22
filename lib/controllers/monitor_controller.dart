@@ -238,7 +238,7 @@ class MonitorController extends ChangeNotifier {
   MonitorSettings get currentSettings => _runtimeSettings();
   BikeModeConfig get bikeModeConfig => _bikeConfig;
   BikeApproachStatus get bikeApproachStatus => _bikeApproachStatus;
-  bool get isRemotePhoneSource => sourceConfig.type == VideoSourceType.remotePhone;
+  bool get isRemotePhoneSource => sourceConfig.type == VideoSourceType.remotePhone || sourceConfig.type == VideoSourceType.esp32;
   RemotePhoneStatus? get remotePhoneStatus {
     final source = _source;
     return source is RemotePhoneCameraSource ? source.remoteStatus : null;
@@ -609,6 +609,10 @@ class MonitorController extends ChangeNotifier {
           baseUrl: config.remoteBaseUrl ?? '',
           accessKey: config.remoteAccessKey ?? '',
           analysisInterval: analysisInterval,
+        ),
+      VideoSourceType.esp32 => RemotePhoneCameraSource(
+          baseUrl: config.remoteBaseUrl ?? '', accessKey: config.remoteAccessKey ?? '',
+          analysisInterval: analysisInterval, deviceLabel: 'ESP32',
         ),
     };
     _source = source;

@@ -56,19 +56,30 @@ class _HistoryCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(event.source, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(
-                      _formatDateTime(event.createdAt),
-                      style: Theme.of(context).textTheme.bodySmall,
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 4,
+                      children: [
+                        _HistoryMeta(
+                          icon: Icons.videocam_outlined,
+                          text: event.source,
+                        ),
+                        _HistoryMeta(
+                          icon: Icons.schedule_rounded,
+                          text: _formatDateTime(event.createdAt),
+                        ),
+                        if (event.type != MonitorEventType.alert)
+                          _HistoryMeta(
+                            icon: event.type == MonitorEventType.entered
+                                ? Icons.login_rounded
+                                : Icons.logout_rounded,
+                            text: event.type == MonitorEventType.entered
+                                ? 'Entrada · não é contador'
+                                : 'Saída · não é contador',
+                          ),
+                      ],
                     ),
-                    if (event.type != MonitorEventType.alert)
-                      Text(
-                        event.type == MonitorEventType.entered
-                            ? 'Entrada registrada · não é contador'
-                            : 'Saída registrada · não é contador',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
                   ],
                 ),
               ),
@@ -87,6 +98,30 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HistoryMeta extends StatelessWidget {
+  const _HistoryMeta({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      );
 }
 
 class _EventThumbnail extends StatelessWidget {

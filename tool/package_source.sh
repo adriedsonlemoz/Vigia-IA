@@ -9,7 +9,7 @@ python3 - "$ROOT" "$OUT" <<'PY'
 from pathlib import Path
 import sys, zipfile
 root=Path(sys.argv[1]).resolve(); out=Path(sys.argv[2]).resolve()
-exclude_dirs={'.git','.dart_tool','build','.idea','.vscode'}
+exclude_dirs={'.git','.dart_tool','build','.idea','.vscode','__pycache__'}
 exclude_files={'android/local.properties'}
 with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
     for p in sorted(root.rglob('*')):

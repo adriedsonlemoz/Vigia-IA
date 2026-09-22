@@ -1,6 +1,17 @@
-# Arquitetura — Vigia IA 1.0.79+79
+# Arquitetura — Vigia IA 1.0.80+80
 
 ## 1. Princípios
+
+## Evolução 1.0.80 — ESP32, fontes e artefato Android
+
+- `CameraEndpoint` passa a representar também ESP32 e persiste câmera disponível, sensores habilitados, calibração Hall, limites e intervalo de telemetria junto do cadastro protegido de endereço/chave.
+- `Esp32SettingsScreen` centraliza conexão, teste, edição e aplicação do contrato em `POST /config`; `GET /status` continua sendo a verificação de disponibilidade.
+- `VideoSourceType.esp32` reutiliza o transporte JPEG local (`/frame.jpg`) e a telemetria (`/status`), mas identifica corretamente o módulo em mensagens, status e histórico.
+- Home, Monitor e Central de Câmeras consultam o mesmo `CameraRegistryService`. Somente ESP32 com `esp32CameraEnabled` pode entrar na composição visual.
+- `MonitorController` continua exclusivo da fonte principal. `SecondaryCameraController` abre Local, RTSP, Celular remoto ou ESP32 com `emitFrames: false`, sem segundo pipeline de IA.
+- Histórico exporta a mídia pelo mecanismo nativo já existente e mantém exclusão de índice, snapshot e clipe sob confirmação explícita.
+- O workflow copia o APK assinado para o nome versionado e analisa o ZIP interno. O relatório mede bibliotecas por ABI, modelos, recursos e demais entradas antes de qualquer decisão de redução.
+- Cache de Gradle e dos modelos reduz downloads repetidos; `compression-level: 0` evita tentar recomprimir um APK que já é compactado.
 
 ## Evolução 1.0.79 — Buildfix dos módulos e navegação
 

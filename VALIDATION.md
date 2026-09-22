@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.79+79
+# Validação — Vigia IA 1.0.80+80
 
-Data: 2026-09-22. Base preservada: 1.0.78+78.
+Data: 2026-09-22. Base preservada: 1.0.79+79.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
 | `bash tool/verify_project.sh` | Passou, incluindo versão, regressões do Android-APK-47 e navegação com quatro destinos |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.79+79 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.80+80 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -30,6 +30,20 @@ Data: 2026-09-22. Base preservada: 1.0.78+78.
 | Android-APK-47 | Oito usos protegidos de `setState` e uma referência estática sem qualificação corrigidos |
 | Navegação principal | Quatro destinos: Início, Histórico, Monitor e Câmeras; Bike ausente dos índices compartilhados |
 | Acesso ao Bike | Preservado na seleção inicial e adicionado em Configurações > Monitoramento |
+| Histórico | Filtros adaptativos, ícones, ação Salvar e confirmação obrigatória antes da exclusão |
+| ESP32 | Painel próprio, persistência protegida, `/status`, `POST /config`, sensores e câmera futura |
+| Fontes | Local, RTSP, Celular remoto e ESP32 disponíveis na Central; ESP32 também pode ser segunda câmera |
+| APK | Nome versionado, cache de Gradle/modelos, upload sem recompressão e relatório de tamanho |
+
+## Roteiro da 1.0.80
+
+- abrir Histórico em retrato e paisagem e confirmar filtros 2×2 ou em linha, sem cortes;
+- abrir uma detecção, salvar a captura e conferir o arquivo em Downloads/Vigia IA ou no local escolhido;
+- tentar excluir pelo card e pelo detalhe, cancelando e confirmando em testes separados;
+- cadastrar um ESP32, testar `/status`, ajustar sensores e aplicar a configuração em `/config`;
+- habilitar a câmera ESP32 e confirmar sua presença na Home, em Fonte, em `2ª câmera` e na página Câmeras;
+- confirmar que a câmera principal executa IA e que a segunda continua apenas como preview;
+- no workflow, confirmar `VigiaIA-v1.0.80.apk` e revisar `apk-size-report.txt` antes de qualquer redução de dependência.
 
 ## Roteiro da 1.0.79
 

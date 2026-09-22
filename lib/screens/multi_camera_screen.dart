@@ -13,6 +13,7 @@ import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/main_navigation_bar.dart';
 import 'events_screen.dart';
+import 'esp32_settings_screen.dart';
 import 'home_screen.dart';
 import 'monitor_screen.dart';
 import 'settings_screen.dart';
@@ -469,6 +470,15 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     );
   }
 
+  Future<void> _openEsp32Settings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const Esp32SettingsScreen()),
+    );
+    if (!mounted) return;
+    setState(() {});
+    unawaited(_refreshStatuses());
+  }
+
   @override
   Widget build(BuildContext context) {
     return AdaptiveMainScaffold(
@@ -478,9 +488,9 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Central multicâmera'),
+            Text('Câmeras'),
             Text(
-              'Câmeras independentes · sem contagem automática',
+              'Selecione, identifique e gerencie cada fonte',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
             ),
           ],
@@ -530,6 +540,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                           onScanPhone: _scanPhoneQr,
                           onAddPhone: () => _addCamera(CameraEndpointType.remotePhone),
                           onAddRtsp: () => _addCamera(CameraEndpointType.rtsp),
+                          onManageEsp32: _openEsp32Settings,
                         ),
                       ),
                     ),
@@ -540,23 +551,33 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          mainAxisExtent: 238,
+                          mainAxisExtent: 252,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final camera = cameras[index];
                             return _CameraCard(
                               camera: camera,
+                              cameraAvailable:
+                                  camera.type != CameraEndpointType.esp32 ||
+                                      camera.esp32CameraEnabled,
                               status: _status[camera.id],
                               lastEvent: _lastEvent(camera),
                               onOpen: () => _open(camera),
-                              onOpenWithSecond: cameras
-                                      .any((item) => item.enabled && item.id != camera.id)
+                              onOpenWithSecond: cameras.any(
+                                (item) =>
+                                    item.enabled &&
+                                    item.id != camera.id &&
+                                    (item.type != CameraEndpointType.esp32 ||
+                                        item.esp32CameraEnabled),
+                              )
                                   ? () => _openWithSecond(camera)
                                   : null,
                               onEdit: camera.id == '__local__'
                                   ? null
-                                  : () => _editCamera(camera),
+                                  : camera.type == CameraEndpointType.esp32
+                                      ? _openEsp32Settings
+                                      : () => _editCamera(camera),
                               onToggle: camera.id == '__local__'
                                   ? null
                                   : () => _toggleCamera(camera),

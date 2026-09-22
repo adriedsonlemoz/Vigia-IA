@@ -427,8 +427,20 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Future<void> _showSourceSwitcher() async {
+    await _cameraRegistry.initialize();
+    if (!mounted) return;
     final current = _controller.sourceConfig;
     var type = current.type;
+    final esp32Cameras = _cameraRegistry.items
+        .where((camera) =>
+            camera.enabled &&
+            camera.type == CameraEndpointType.esp32 &&
+            camera.esp32CameraEnabled)
+        .toList(growable: false);
+    var selectedEsp32Id = esp32Cameras
+            .any((camera) => camera.id == current.cameraId)
+        ? current.cameraId
+        : (esp32Cameras.isEmpty ? null : esp32Cameras.first.id);
     final rtspController = TextEditingController(text: current.rtspUrl ?? '');
     final remoteUrlController = TextEditingController(text: current.remoteBaseUrl ?? '');
     final remoteKeyController = TextEditingController(text: current.remoteAccessKey ?? '');
@@ -455,6 +467,16 @@ class _MonitorScreenState extends State<MonitorScreen>
                     selected: type == VideoSourceType.localCamera,
                     onTap: () => setDialogState(
                       () => type = VideoSourceType.localCamera,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _SourceOptionTile(
+                    icon: Icons.memory_rounded,
+                    title: 'Câmera ESP32',
+                    subtitle: 'Recebe imagem do módulo pela rede local.',
+                    selected: type == VideoSourceType.esp32,
+                    onTap: () => setDialogState(
+                      () => type = VideoSourceType.esp32,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -544,6 +566,32 @@ class _MonitorScreenState extends State<MonitorScreen>
                       ),
                     ),
                   ],
+                  if (type == VideoSourceType.esp32) ...[
+                    const SizedBox(height: 16),
+                    if (esp32Cameras.isEmpty)
+                      const Text(
+                        'Nenhum ESP32 com câmera está ativo. Cadastre o módulo em Configurações > ESP32 e sensores.',
+                      )
+                    else
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedEsp32Id,
+                        decoration: const InputDecoration(
+                          labelText: 'Módulo ESP32',
+                          prefixIcon: Icon(Icons.memory_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: esp32Cameras
+                            .map(
+                              (camera) => DropdownMenuItem<String>(
+                                value: camera.id,
+                                child: Text(camera.name),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) =>
+                            setDialogState(() => selectedEsp32Id = value),
+                      ),
+                  ],
                 ],
               ),
             ),
@@ -581,13 +629,36 @@ class _MonitorScreenState extends State<MonitorScreen>
                     return;
                   }
                 }
+                CameraEndpoint? selectedEsp32;
+                if (type == VideoSourceType.esp32 && selectedEsp32Id != null) {
+                  for (final camera in esp32Cameras) {
+                    if (camera.id == selectedEsp32Id) {
+                      selectedEsp32 = camera;
+                      break;
+                    }
+                  }
+                }
+                if (type == VideoSourceType.esp32 && selectedEsp32 == null) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cadastre e ative uma câmera ESP32 primeiro.'),
+                    ),
+                  );
+                  return;
+                }
                 Navigator.pop(
                   context,
                   VideoSourceConfig(
                     type: type,
                     rtspUrl: type == VideoSourceType.rtsp ? rtsp : null,
-                    remoteBaseUrl: type == VideoSourceType.remotePhone ? remoteUrl : null,
-                    remoteAccessKey: type == VideoSourceType.remotePhone ? remoteKey : null,
+                    remoteBaseUrl: type == VideoSourceType.remotePhone
+                        ? remoteUrl
+                        : selectedEsp32?.address,
+                    remoteAccessKey: type == VideoSourceType.remotePhone
+                        ? remoteKey
+                        : selectedEsp32?.accessKey,
+                    displayName: selectedEsp32?.name,
+                    cameraId: selectedEsp32?.id,
                     analysisInterval: current.analysisInterval,
                   ),
                 );
@@ -1096,7 +1167,7 @@ class _MonitorScreenState extends State<MonitorScreen>
       ),
       _MonitorActionButton(
         icon: Icons.video_collection_outlined,
-        label: 'Câmeras',
+        label: '2ª câmera',
         onTap: () => unawaited(_showSecondaryCameraSelector()),
       ),
       _MonitorActionButton(

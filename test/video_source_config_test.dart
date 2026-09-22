@@ -46,4 +46,21 @@ void main() {
     expect(restored.analysisInterval, const Duration(milliseconds: 400));
   });
 
+  test('fonte ESP32 usa endereço local e identificação do módulo', () {
+    const source = VideoSourceConfig(
+      type: VideoSourceType.esp32,
+      remoteBaseUrl: 'http://192.168.4.1',
+      remoteAccessKey: 'CHAVE',
+      displayName: 'ESP32 Bike',
+      cameraId: 'esp32-bike',
+    );
+
+    final restored = VideoSourceConfig.fromJson(
+      source.toJson().cast<String, dynamic>(),
+    );
+    expect(restored.type, VideoSourceType.esp32);
+    expect(restored.remoteBaseUrl, 'http://192.168.4.1');
+    expect(restored.cameraId, 'esp32-bike');
+  });
+
 }

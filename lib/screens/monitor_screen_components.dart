@@ -259,7 +259,8 @@ class _DeviceStatusStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remoteSource = sourceType == VideoSourceType.remotePhone;
+    final remoteSource = sourceType == VideoSourceType.remotePhone ||
+        sourceType == VideoSourceType.esp32;
     final transmitterTelemetry = remoteSource ? remoteStatus?.device : localDevice;
     final transmitterOnline = remoteSource
         ? sourceStatus.state == VideoSourceState.streaming &&
@@ -270,6 +271,7 @@ class _DeviceStatusStrip extends StatelessWidget {
       VideoSourceType.remotePhone => 'Transmissor',
       VideoSourceType.localCamera => 'Câmera local',
       VideoSourceType.rtsp => 'Câmera RTSP',
+      VideoSourceType.esp32 => 'ESP32',
     };
     final latency = remoteSource && networkLatencyMs != null
         ? '$networkLatencyMs ms'
@@ -277,16 +279,19 @@ class _DeviceStatusStrip extends StatelessWidget {
     final secondaryType = secondarySourceType;
     final secondaryOnline = secondaryType != null &&
         secondarySourceStatus?.state == VideoSourceState.streaming &&
-        (secondaryType != VideoSourceType.remotePhone ||
+        ((secondaryType != VideoSourceType.remotePhone &&
+                secondaryType != VideoSourceType.esp32) ||
             (secondaryRemoteStatus?.online != false &&
                 secondaryRemoteStatus?.isStale() != true));
     final secondaryTelemetry = switch (secondaryType) {
       VideoSourceType.localCamera => localDevice,
       VideoSourceType.remotePhone => secondaryRemoteStatus?.device,
       VideoSourceType.rtsp => null,
+      VideoSourceType.esp32 => secondaryRemoteStatus?.device,
       null => null,
     };
-    final secondaryDetail = secondaryType == VideoSourceType.remotePhone &&
+    final secondaryDetail = (secondaryType == VideoSourceType.remotePhone ||
+            secondaryType == VideoSourceType.esp32) &&
             secondaryRemoteStatus?.networkLatencyMs != null
         ? '${secondaryRemoteStatus!.networkLatencyMs} ms'
         : secondaryOnline

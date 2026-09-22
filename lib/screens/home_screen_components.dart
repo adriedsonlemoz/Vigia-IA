@@ -390,6 +390,7 @@ class _PrivacyCard extends StatelessWidget {
               switch (sourceType) {
                 VideoSourceType.rtsp => 'IA, histórico, clipes e configurações ficam no aparelho. A rede é usada apenas para acessar a câmera RTSP.',
                 VideoSourceType.remotePhone => 'IA, histórico e clipes ficam nesta Central. A imagem do outro celular trafega somente pela rede local ou hotspot.',
+                VideoSourceType.esp32 => 'O ESP32 envia imagem e sensores pela rede local. IA, histórico, alertas e clipes continuam sendo processados neste celular.',
                 VideoSourceType.localCamera => 'IA, histórico, clipes e configurações ficam no aparelho. O monitoramento não depende de nuvem.',
               },
               style: Theme.of(context).textTheme.bodySmall,

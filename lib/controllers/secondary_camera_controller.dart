@@ -31,6 +31,7 @@ class SecondaryCameraController extends ChangeNotifier {
           VideoSourceType.localCamera => 'Câmera local',
           VideoSourceType.rtsp => 'Câmera RTSP',
           VideoSourceType.remotePhone => 'Celular remoto',
+          VideoSourceType.esp32 => 'Câmera ESP32',
         };
   RemotePhoneStatus? get remoteStatus {
     final source = _source;
@@ -61,6 +62,13 @@ class SecondaryCameraController extends ChangeNotifier {
           accessKey: sourceConfig.remoteAccessKey ?? '',
           analysisInterval: sourceConfig.analysisInterval,
           emitFrames: false,
+        ),
+      VideoSourceType.esp32 => RemotePhoneCameraSource(
+          baseUrl: sourceConfig.remoteBaseUrl ?? '',
+          accessKey: sourceConfig.remoteAccessKey ?? '',
+          analysisInterval: sourceConfig.analysisInterval,
+          emitFrames: false,
+          deviceLabel: 'ESP32',
         ),
     };
     _source = source;

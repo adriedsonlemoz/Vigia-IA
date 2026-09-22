@@ -135,13 +135,20 @@ class CameraRegistryService {
         queryParameters: <String, String>{'key': endpoint.accessKey ?? ''},
       );
       final request = await client.getUrl(status);
+      if ((endpoint.accessKey ?? '').isNotEmpty) {
+        request.headers.set('x-monitor-key', endpoint.accessKey!);
+      }
       final response = await request.close().timeout(const Duration(seconds: 3));
       await response.drain<void>();
       stopwatch.stop();
       final online = response.statusCode == HttpStatus.ok;
       return CameraProbeResult(
         online,
-        message: online ? 'Celular online' : 'HTTP ${response.statusCode}',
+        message: online
+            ? endpoint.type == CameraEndpointType.esp32
+                ? 'ESP32 online'
+                : 'Celular online'
+            : 'HTTP ${response.statusCode}',
         checkedAt: checkedAt,
         latency: stopwatch.elapsed,
       );
@@ -149,7 +156,69 @@ class CameraRegistryService {
       stopwatch.stop();
       return CameraProbeResult(
         false,
-        message: 'Celular offline',
+        message: endpoint.type == CameraEndpointType.esp32
+            ? 'ESP32 offline'
+            : 'Celular offline',
+        checkedAt: checkedAt,
+        latency: stopwatch.elapsed,
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<CameraProbeResult> applyEsp32Configuration(
+    CameraEndpoint endpoint,
+  ) async {
+    final checkedAt = DateTime.now();
+    if (endpoint.type != CameraEndpointType.esp32) {
+      return CameraProbeResult(
+        false,
+        message: 'O dispositivo selecionado não é um ESP32.',
+        checkedAt: checkedAt,
+      );
+    }
+    final address = endpoint.address?.trim() ?? '';
+    final uri = Uri.tryParse(address);
+    if (uri == null || uri.host.isEmpty) {
+      return CameraProbeResult(
+        false,
+        message: 'Endereço inválido',
+        checkedAt: checkedAt,
+      );
+    }
+    final root = address.endsWith('/')
+        ? address.substring(0, address.length - 1)
+        : address;
+    final stopwatch = Stopwatch()..start();
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 3);
+    try {
+      final target = Uri.parse('$root/config').replace(
+        queryParameters: <String, String>{'key': endpoint.accessKey ?? ''},
+      );
+      final request = await client.postUrl(target);
+      request.headers.contentType = ContentType.json;
+      if ((endpoint.accessKey ?? '').isNotEmpty) {
+        request.headers.set('x-monitor-key', endpoint.accessKey!);
+      }
+      request.write(jsonEncode(endpoint.toEsp32ConfigurationJson()));
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      await response.drain<void>();
+      stopwatch.stop();
+      final success = response.statusCode >= 200 && response.statusCode < 300;
+      return CameraProbeResult(
+        success,
+        message: success
+            ? 'Configuração aplicada no ESP32'
+            : 'ESP32 recusou a configuração (HTTP ${response.statusCode})',
+        checkedAt: checkedAt,
+        latency: stopwatch.elapsed,
+      );
+    } catch (error) {
+      stopwatch.stop();
+      return CameraProbeResult(
+        false,
+        message: 'Não foi possível configurar o ESP32: $error',
         checkedAt: checkedAt,
         latency: stopwatch.elapsed,
       );

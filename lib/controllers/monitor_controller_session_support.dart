@@ -11,11 +11,13 @@ extension _MonitorControllerSessionSupport on MonitorController {
       VideoSourceType.localCamera => 'Câmera deste celular',
       VideoSourceType.rtsp => sourceConfig.displayName ?? 'Câmera RTSP',
       VideoSourceType.remotePhone => remote?.name ?? 'Celular remoto',
+      VideoSourceType.esp32 => sourceConfig.displayName ?? 'Câmera ESP32',
     };
     final connection = switch (sourceConfig.type) {
       VideoSourceType.localCamera => 'Local • sem rede para a imagem',
       VideoSourceType.rtsp => 'Rede • RTSP',
       VideoSourceType.remotePhone => 'Rede local / hotspot',
+      VideoSourceType.esp32 => 'Rede local • ESP32',
     };
     final sourceState = _sourceStatus.state;
     return SessionStatusData(

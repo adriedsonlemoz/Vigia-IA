@@ -11,17 +11,17 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.79+79$' pubspec.yaml || fail 'Versao esperada 1.0.79+79 nao encontrada.'
+grep -q '^version: 1\.0\.80+80$' pubspec.yaml || fail 'Versao esperada 1.0.80+80 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
 grep -q 'required this.sourceConfig' lib/controllers/monitor_controller.dart \
   || fail 'MonitorController deve usar initializing formal para sourceConfig.'
 
-if grep -q 'separatorBuilder: (_, __)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart; then
+if grep -q 'separatorBuilder: (_, __)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart lib/screens/events_screen_actions.dart; then
   fail 'Placeholder duplo desnecessario reapareceu em EventsScreen.'
 fi
-if grep -q 'errorBuilder: (_, __, ___)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart; then
+if grep -q 'errorBuilder: (_, __, ___)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart lib/screens/events_screen_actions.dart; then
   fail 'Placeholders multiplos desnecessarios reapareceram em EventsScreen.'
 fi
 if grep -q "import 'dart:typed_data';" lib/services/event_history_service.dart; then
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.79';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.79.'
-grep -q 'static const int build = 79;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 79.'
-grep -q "version: '1.0.79'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.79.'
+grep -q "static const String version = '1.0.80';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.80.'
+grep -q 'static const int build = 80;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 80.'
+grep -q "version: '1.0.80'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.80.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.79+79$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.79+79.'
+grep -q '^version: 1.0.80+80$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.80+80.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.79"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.79.'
-grep -q '"build": 79' app_identity.json \
-  || fail 'app_identity.json nao esta no build 79.'
+grep -q '"version": "1.0.80"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.80.'
+grep -q '"build": 80' app_identity.json \
+  || fail 'app_identity.json nao esta no build 80.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.79+79' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.79+79.'
+grep -q 'Vigia IA 1.0.80+80' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.80+80.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -909,7 +909,7 @@ done
 # Evolucao de UI/permissoes e compatibilidade Flutter 3.44 - 1.0.39
 [[ -f lib/screens/access_guide_screen.dart ]] \
   || fail 'Tela inicial de permissoes 1.0.39 nao encontrada.'
-grep -q 'Escanear QR do outro celular' lib/screens/home_screen.dart \
+grep -q 'Escanear QR do outro celular' lib/screens/home_screen.dart lib/screens/home_screen_source_panel.dart \
   || fail 'Pareamento por QR nao esta exposto na Home.'
 grep -q 'PhonePairingScannerScreen' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Pareamento por QR nao esta ligado ao seletor de fonte.'
@@ -1309,9 +1309,11 @@ grep -q 'Evolução 1.0.57' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/controllers/monitor_controller_state_support.dart ]] || fail 'Modulo de estado/diagnostico do MonitorController ausente.'
 [[ -f lib/screens/monitor_screen_components.dart ]] || fail 'Componentes extraidos do Monitor ausentes.'
 [[ -f lib/screens/home_screen_components.dart ]] || fail 'Componentes extraidos da Home ausentes.'
+[[ -f lib/screens/home_screen_source_panel.dart ]] || fail 'Painel de fontes extraido da Home ausente.'
 grep -q "part 'monitor_controller_session_support.dart';" lib/controllers/monitor_controller.dart || fail 'MonitorController nao referencia modulo de sessao.'
 grep -q "part 'monitor_screen_components.dart';" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'MonitorScreen nao referencia componentes extraidos.'
 grep -q "part 'home_screen_components.dart';" lib/screens/home_screen.dart || fail 'HomeScreen nao referencia componentes extraidos.'
+grep -q "part 'home_screen_source_panel.dart';" lib/screens/home_screen.dart || fail 'HomeScreen nao referencia o painel de fontes extraido.'
 python3 - <<'PY_REFACTOR_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 1.'
 from pathlib import Path
 limits = {
@@ -1356,9 +1358,11 @@ grep -q 'Evolução 1.0.59' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/widgets/session_status_panel_components.dart ]] || fail 'Componentes extraidos do Status da sessao ausentes.'
 [[ -f lib/screens/error_center_screen_components.dart ]] || fail 'Componentes extraidos da Central de diagnostico ausentes.'
 [[ -f lib/screens/events_screen_components.dart ]] || fail 'Componentes extraidos do Historico ausentes.'
+[[ -f lib/screens/events_screen_actions.dart ]] || fail 'Acoes extraidas do Historico ausentes.'
 grep -q "part 'session_status_panel_components.dart';" lib/widgets/session_status_panel.dart || fail 'Status da sessao nao referencia componentes extraidos.'
 grep -q "part 'error_center_screen_components.dart';" lib/screens/error_center_screen.dart || fail 'Central de diagnostico nao referencia componentes extraidos.'
 grep -q "part 'events_screen_components.dart';" lib/screens/events_screen.dart || fail 'Historico nao referencia componentes extraidos.'
+grep -q "part 'events_screen_actions.dart';" lib/screens/events_screen.dart || fail 'Historico nao referencia acoes extraidas.'
 python3 - <<'PY_REFACTOR3_SIZE' || fail 'Arquivos principais continuam acima do limite preventivo definido para o lote 3.'
 from pathlib import Path
 limits = {
@@ -1672,5 +1676,31 @@ grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart \
 if grep -q '4 => const BikeModeScreen()' lib/screens/home_screen.dart lib/screens/events_screen.dart lib/screens/multi_camera_screen.dart; then
   fail 'Indice Bike reapareceu nos manipuladores da navegacao principal.'
 fi
+
+# Historico, ESP32, cameras e artefato Android - 1.0.80
+grep -q '^## 1.0.80+80' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.80.'
+grep -q 'Evolução 1.0.80' README.md || fail 'README nao documenta 1.0.80.'
+grep -q "version: '1.0.80'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.80.'
+[[ -f RELEASE-1.0.80.md ]] || fail 'Notas da entrega 1.0.80 ausentes.'
+[[ -f lib/screens/esp32_settings_screen.dart ]] || fail 'Painel ESP32 ausente.'
+grep -q 'enum CameraEndpointType { local, rtsp, remotePhone, esp32 }' lib/models/camera_endpoint.dart \
+  || fail 'CameraEndpoint nao suporta ESP32.'
+grep -q 'enum VideoSourceType { localCamera, rtsp, remotePhone, esp32 }' lib/models/video_source_config.dart \
+  || fail 'VideoSourceConfig nao suporta ESP32.'
+grep -q 'applyEsp32Configuration' lib/services/camera_registry_service.dart lib/screens/esp32_settings_screen.dart \
+  || fail 'Aplicacao da configuracao ESP32 nao esta conectada.'
+grep -q "label: '2ª câmera'" lib/screens/monitor_screen.dart \
+  || fail 'Monitor nao deixa a segunda camera explicita.'
+grep -q "label: const Text('Salvar')" lib/screens/events_screen.dart lib/screens/events_screen_actions.dart \
+  || fail 'Historico nao oferece salvar captura.'
+grep -q 'Excluir este registro?' lib/screens/events_screen.dart lib/screens/events_screen_actions.dart \
+  || fail 'Exclusao individual do Historico nao exige confirmacao.'
+grep -q 'VigiaIA-v${APP_VERSION}.apk' .github/workflows/android-apk.yml \
+  || fail 'Workflow nao nomeia o APK com aplicativo e versao.'
+grep -q 'apk-size-report.txt' .github/workflows/android-apk.yml \
+  || fail 'Workflow nao gera relatorio de tamanho do APK.'
+grep -q 'compression-level: 0' .github/workflows/android-apk.yml \
+  || fail 'Workflow voltou a recomprimir o APK durante o upload.'
 
 echo 'Verificacao preventiva concluida com sucesso.'

@@ -23,6 +23,14 @@ extension _MonitorMulticamera on _MonitorScreenState {
             cameraId: camera.id,
             analysisInterval: _controller.sourceConfig.analysisInterval,
           ),
+        CameraEndpointType.esp32 => VideoSourceConfig(
+            type: VideoSourceType.esp32,
+            remoteBaseUrl: camera.address,
+            remoteAccessKey: camera.accessKey,
+            displayName: camera.name,
+            cameraId: camera.id,
+            analysisInterval: _controller.sourceConfig.analysisInterval,
+          ),
       };
 
   bool _sameSource(VideoSourceConfig first, VideoSourceConfig second) {
@@ -34,6 +42,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
       VideoSourceType.localCamera => true,
       VideoSourceType.rtsp => first.rtspUrl == second.rtspUrl,
       VideoSourceType.remotePhone => first.remoteBaseUrl == second.remoteBaseUrl,
+      VideoSourceType.esp32 => first.remoteBaseUrl == second.remoteBaseUrl,
     };
   }
 
@@ -58,7 +67,11 @@ extension _MonitorMulticamera on _MonitorScreenState {
         name: 'Câmera deste aparelho',
         type: CameraEndpointType.local,
       ),
-      ..._cameraRegistry.items.where((camera) => camera.enabled),
+      ..._cameraRegistry.items.where(
+        (camera) => camera.enabled &&
+            (camera.type != CameraEndpointType.esp32 ||
+                camera.esp32CameraEnabled),
+      ),
     ];
     final candidates = cameras.where((camera) {
       return !_sameSource(_controller.sourceConfig, _sourceForEndpoint(camera));
@@ -86,12 +99,14 @@ extension _MonitorMulticamera on _MonitorScreenState {
                     CameraEndpointType.local => Icons.camera_alt_outlined,
                     CameraEndpointType.rtsp => Icons.router_outlined,
                     CameraEndpointType.remotePhone => Icons.phone_android_rounded,
+                    CameraEndpointType.esp32 => Icons.memory_rounded,
                   }),
                   title: Text(camera.name),
                   subtitle: Text(switch (camera.type) {
                     CameraEndpointType.local => 'Segunda visualização local',
                     CameraEndpointType.rtsp => 'Segunda visualização RTSP',
                     CameraEndpointType.remotePhone => 'Segundo celular transmissor',
+                    CameraEndpointType.esp32 => 'Segunda câmera do ESP32',
                   }),
                   trailing: _secondaryController?.sourceConfig.cameraId == camera.id
                       ? const Icon(Icons.check_circle_rounded)

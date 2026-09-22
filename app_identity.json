@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.79 corrige o analyze dos módulos multicâmera e move o acesso ao Modo Bike do menu principal para Configurações.",
-  "version": "1.0.79",
-  "build": 79
+  "notes": "A 1.0.80 reorganiza o Histórico, adiciona exportação e exclusão confirmada, integra o painel ESP32 e melhora fontes, câmeras e o artefato APK.",
+  "version": "1.0.80",
+  "build": 80
 }

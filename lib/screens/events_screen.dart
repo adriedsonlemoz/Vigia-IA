@@ -7,12 +7,15 @@ import 'package:vlc_player/vlc_player.dart';
 import '../models/monitor_event.dart';
 import '../models/object_filter_catalog.dart';
 import '../services/event_history_service.dart';
+import '../services/native_platform_service.dart';
 import '../widgets/main_navigation_bar.dart';
+import '../widgets/export_destination_dialog.dart';
 import 'home_screen.dart';
 import 'multi_camera_screen.dart';
 import 'settings_screen.dart';
 
 part 'events_screen_components.dart';
+part 'events_screen_actions.dart';
 
 enum _HistoryGroupFilter { all, people, automobiles, animals }
 
@@ -25,6 +28,7 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   final EventHistoryService _history = EventHistoryService.instance;
+  final NativePlatformService _native = NativePlatformService.instance;
   bool _loading = true;
   String? _loadError;
   _HistoryGroupFilter _groupFilter = _HistoryGroupFilter.all;
@@ -135,61 +139,6 @@ class _EventsScreenState extends State<EventsScreen> {
     });
   }
 
-  void _openEvent(MonitorEvent event) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (event.clipPath != null)
-                  _Media(path: event.clipPath!, fit: BoxFit.contain)
-                else if (event.snapshotPath != null)
-                  _Media(path: event.snapshotPath!, fit: BoxFit.contain)
-                else
-                  const AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Center(
-                      child: Icon(Icons.image_not_supported_outlined, size: 48),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _categoryName(event),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('Horário: ${_formatDateTime(event.createdAt)}'),
-                      Text('Câmera: ${event.source}'),
-                      Text('Confiança: ${(event.confidence * 100).round()}%'),
-                      if (event.zoneName != null) Text('Área: ${event.zoneName}'),
-                      if (event.type != MonitorEventType.alert)
-                        Text(
-                          event.type == MonitorEventType.entered
-                              ? 'Registro: entrada na área (não é contador)'
-                              : 'Registro: saída da área (não é contador)',
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final relevant = _relevantEvents;
@@ -204,19 +153,37 @@ class _EventsScreenState extends State<EventsScreen> {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 7,
-              mainAxisSpacing: 7,
-              childAspectRatio: 2.8,
-              children: [
-                _filterChip('Tudo', _HistoryGroupFilter.all),
-                _filterChip('Pessoas', _HistoryGroupFilter.people),
-                _filterChip('Automóveis', _HistoryGroupFilter.automobiles),
-                _filterChip('Animais', _HistoryGroupFilter.animals),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) => GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: constraints.maxWidth >= 600 ? 4 : 2,
+                crossAxisSpacing: 7,
+                mainAxisSpacing: 7,
+                childAspectRatio: constraints.maxWidth >= 600 ? 2.35 : 2.8,
+                children: [
+                  _filterChip(
+                    'Tudo',
+                    Icons.select_all_rounded,
+                    _HistoryGroupFilter.all,
+                  ),
+                  _filterChip(
+                    'Pessoas',
+                    Icons.person_outline_rounded,
+                    _HistoryGroupFilter.people,
+                  ),
+                  _filterChip(
+                    'Automóveis',
+                    Icons.directions_car_outlined,
+                    _HistoryGroupFilter.automobiles,
+                  ),
+                  _filterChip(
+                    'Animais',
+                    Icons.pets_outlined,
+                    _HistoryGroupFilter.animals,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
@@ -260,7 +227,7 @@ class _EventsScreenState extends State<EventsScreen> {
               return _HistoryCard(
                 event: event,
                 onOpen: () => _openEvent(event),
-                onDelete: () => unawaited(_delete(event)),
+                onDelete: () => unawaited(_requestDelete(event)),
               );
             },
           );
@@ -347,10 +314,17 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  Widget _filterChip(String label, _HistoryGroupFilter filter) {
+  Widget _filterChip(
+    String label,
+    IconData icon,
+    _HistoryGroupFilter filter,
+  ) {
     return SizedBox.expand(
       child: ChoiceChip(
-        label: Center(child: Text(label, maxLines: 1)),
+        avatar: Icon(icon, size: 17),
+        label: Center(
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
         selected: _groupFilter == filter,
         onSelected: (_) => setState(() => _groupFilter = filter),
       ),
