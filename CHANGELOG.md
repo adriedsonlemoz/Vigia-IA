@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.81+81 — 2026-09-22
+
+- Redesenhado o Monitor vertical com blocos permanentes para status, modos, câmera, ações e detecções, seguindo a organização da referência fornecida.
+- A imagem deixa de ficar como fundo de toda a tela e passa a ocupar um cartão delimitado, inclusive com uma ou duas câmeras.
+- Removido o painel expansível de detecções que subia sobre a imagem; a lista agora permanece em área própria e rola internamente.
+- Adicionados atalhos compactos para Ao vivo, IA ativa, Painel e Ajustes acima do vídeo.
+- O status da câmera local não repete mais a bateria do receptor; a segunda bateria só aparece para celular remoto ou ESP32 com telemetria própria.
+- Corrigido `use_build_context_synchronously` em `events_screen_actions.dart`, causa da falha do Android-APK-49 no `flutter analyze`.
+- Layout de paisagem, tela cheia, sensores Bike, ESP32 e composição adaptativa de duas câmeras foram preservados.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.81+81`.
+
 ## 1.0.80+80 — 2026-09-22
 
 - Reorganizado o Histórico com filtros adaptativos em uma linha quando houver espaço, ícones de categoria e metadados compactos nos cards.

@@ -36,7 +36,9 @@ extension _EventsActions on _EventsScreenState {
     final path = event.clipPath ?? event.snapshotPath;
     if (path == null || path.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Este registro não possui imagem para salvar.')),
+        const SnackBar(
+          content: Text('Este registro não possui imagem para salvar.'),
+        ),
       );
       return;
     }
@@ -44,10 +46,13 @@ extension _EventsActions on _EventsScreenState {
     if (!await file.exists()) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('O arquivo deste registro não está mais disponível.')),
+        const SnackBar(
+          content: Text('O arquivo deste registro não está mais disponível.'),
+        ),
       );
       return;
     }
+    if (!mounted) return;
     final usePicker = await resolveExportLocation(
       context,
       title: 'Salvar captura',
@@ -56,8 +61,8 @@ extension _EventsActions on _EventsScreenState {
     final extension = path.toLowerCase().endsWith('.mp4')
         ? 'mp4'
         : path.toLowerCase().endsWith('.gif')
-            ? 'gif'
-            : 'jpg';
+        ? 'gif'
+        : 'jpg';
     final mimeType = switch (extension) {
       'mp4' => 'video/mp4',
       'gif' => 'image/gif',
@@ -115,7 +120,8 @@ extension _EventsActions on _EventsScreenState {
                     children: [
                       Expanded(
                         child: FilledButton.icon(
-                          onPressed: event.snapshotPath == null &&
+                          onPressed:
+                              event.snapshotPath == null &&
                                   event.clipPath == null
                               ? null
                               : () => unawaited(_saveEventMedia(event)),
@@ -127,10 +133,7 @@ extension _EventsActions on _EventsScreenState {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => unawaited(
-                            _requestDelete(
-                              event,
-                              detailContext: dialogContext,
-                            ),
+                            _requestDelete(event, detailContext: dialogContext),
                           ),
                           icon: const Icon(Icons.delete_outline_rounded),
                           label: const Text('Excluir'),
@@ -146,15 +149,15 @@ extension _EventsActions on _EventsScreenState {
                     children: [
                       Text(
                         _categoryName(event),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 8),
                       Text('Horário: ${_formatDateTime(event.createdAt)}'),
                       Text('Câmera: ${event.source}'),
                       Text('Confiança: ${(event.confidence * 100).round()}%'),
-                      if (event.zoneName != null) Text('Área: ${event.zoneName}'),
+                      if (event.zoneName != null)
+                        Text('Área: ${event.zoneName}'),
                       if (event.type != MonitorEventType.alert)
                         Text(
                           event.type == MonitorEventType.entered

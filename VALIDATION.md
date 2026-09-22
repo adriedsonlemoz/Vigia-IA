@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.80+80
+# Validação — Vigia IA 1.0.81+81
 
-Data: 2026-09-22. Base preservada: 1.0.79+79.
+Data: 2026-09-22. Base preservada: 1.0.80+80.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
 | `bash tool/verify_project.sh` | Passou, incluindo versão, regressões do Android-APK-47 e navegação com quatro destinos |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.80+80 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.81+81 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -34,6 +34,20 @@ Data: 2026-09-22. Base preservada: 1.0.79+79.
 | ESP32 | Painel próprio, persistência protegida, `/status`, `POST /config`, sensores e câmera futura |
 | Fontes | Local, RTSP, Celular remoto e ESP32 disponíveis na Central; ESP32 também pode ser segunda câmera |
 | APK | Nome versionado, cache de Gradle/modelos, upload sem recompressão e relatório de tamanho |
+| Android-APK-49 | `BuildContext` protegido por `mounted` antes da escolha do destino de exportação |
+| Monitor vertical | Câmera e detecções em regiões fixas; painel expansível removido |
+| Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
+
+## Roteiro da 1.0.81
+
+- abrir o Monitor com câmera local e confirmar apenas uma porcentagem de bateria;
+- confirmar que “Câmera local” mostra estado da imagem, sem repetir a bateria do receptor;
+- provocar uma detecção e confirmar que a câmera não muda de altura e que a parte inferior não sobe;
+- rolar apenas o conteúdo interno de `Detectados agora` quando houver vários objetos;
+- testar Ao vivo, IA ativa, Painel e Ajustes na faixa acima da câmera;
+- adicionar uma segunda câmera e confirmar divisão vertical dentro do mesmo cartão;
+- girar para paisagem e confirmar que o HUD e a composição lado a lado continuam funcionando;
+- executar o workflow e confirmar que `flutter analyze` ultrapassa o ponto que falhou no Android-APK-49.
 
 ## Roteiro da 1.0.80
 
@@ -115,6 +129,6 @@ Os testes de telemetria e coordenação de voz passam a confirmar que:
 
 ## Pendente no workflow e no dispositivo
 
-Este ambiente não possui Flutter, Dart ou Android SDK. Por isso, `flutter analyze`, `flutter test` e a compilação do APK não puderam ser executados localmente e continuam obrigatórios no workflow incluído.
+O formatador do Dart 3.13.3 validou e formatou os arquivos alterados. Um Flutter SDK temporário resolveu o próprio cache, mas sofreu falha nativa ao reconstruir a ferramenta antes de executar o comando do projeto; o analisador Dart isolado não consegue resolver `package:flutter` sem essa etapa. Por isso, `flutter analyze`, `flutter test` e a compilação do APK assinado continuam obrigatórios no workflow incluído.
 
 O teste final em aparelho deve confirmar áudio integrado, override importado/gravado, volume, Bluetooth/alto-falante e fallback TTS. Se houver falha, o diagnóstico agora informa código `what/extra`, etapa, origem, foco, arquivo, tamanho, rota e tempos da tentativa. O teste em dois celulares continua necessário para latência visual, baterias, reconexão, rotação e tela inteira.

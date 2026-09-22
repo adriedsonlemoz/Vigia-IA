@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.80+80
+# Arquitetura — Vigia IA 1.0.81+81
 
 ## 1. Princípios
+
+## Evolução 1.0.81 — composição fixa do Monitor
+
+- `monitor_screen_portrait.dart` concentra somente a composição visual vertical e mantém o arquivo principal responsável pelo ciclo de vida e pelas ações.
+- O retrato usa uma coluna estável: telemetria, atalhos de estado, cartão de câmera, comandos e painel de detecções com rolagem interna.
+- O estágio adaptativo recebe `portraitEmbedded` para ocultar HUDs sobrepostos apenas no retrato; paisagem e tela cheia mantêm os controles translúcidos existentes.
+- A faixa de dispositivos distingue papel de receptor e fonte. A bateria da fonte só é exibida para transmissor remoto ou ESP32, evitando repetir a mesma bateria quando a câmera é local.
+- A câmera secundária continua em preview leve e a IA permanece exclusiva da fonte principal.
 
 ## Evolução 1.0.80 — ESP32, fontes e artefato Android
 

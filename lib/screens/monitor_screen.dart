@@ -34,6 +34,7 @@ import 'settings_screen.dart';
 part 'monitor_screen_components.dart';
 part 'monitor_screen_fullscreen.dart';
 part 'monitor_screen_multicamera.dart';
+part 'monitor_screen_portrait.dart';
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
@@ -58,7 +59,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
   String? _editingZoneId;
-  bool _detectionsExpanded = false;
   bool _hudExpanded = false;
   bool _fillPreview = false;
   bool _fullscreen = false;
@@ -68,7 +68,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   Orientation? _orientationBeforeFullscreen;
   Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false;
-  int _lastDetectionCount = 0;
 
   @override
   void initState() {
@@ -97,21 +96,17 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   void _refresh() {
     if (!mounted) return;
-    final currentCount = _controller.trackingEnabled
-        ? _controller.trackedDetections.length
-        : _controller.detections.length;
-    setState(() {
-      if (currentCount > 0 && _lastDetectionCount == 0) {
-        _detectionsExpanded = true;
-      }
-      _lastDetectionCount = currentCount;
-    });
+    setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_fullscreen ? SystemUiService.immersive() : SystemUiService.edgeToEdge());
+      unawaited(
+        _fullscreen
+            ? SystemUiService.immersive()
+            : SystemUiService.edgeToEdge(),
+      );
       unawaited(_controller.resume());
       unawaited(_secondaryController?.resume());
       return;
@@ -330,7 +325,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.movie_outlined),
                 title: const Text('Clipes automáticos'),
-                subtitle: const Text('Salva um clipe local quando houver alerta confirmado.'),
+                subtitle: const Text(
+                  'Salva um clipe local quando houver alerta confirmado.',
+                ),
               ),
               SwitchListTile(
                 value: _controller.trackingEnabled,
@@ -340,7 +337,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.track_changes),
                 title: const Text('Rastreamento individual'),
-                subtitle: const Text('Mantém um ID temporário para acompanhar o mesmo objeto entre quadros e reduzir repetições.'),
+                subtitle: const Text(
+                  'Mantém um ID temporário para acompanhar o mesmo objeto entre quadros e reduzir repetições.',
+                ),
               ),
               SwitchListTile(
                 value: _controller.announceEntryExit,
@@ -352,13 +351,15 @@ class _MonitorScreenState extends State<MonitorScreen>
                     : null,
                 secondary: const Icon(Icons.compare_arrows),
                 title: const Text('Entrada e saída'),
-                subtitle: const Text('Registra quando um objeto entra ou sai de uma área monitorada. Não é uma contagem acumulada.'),
+                subtitle: const Text(
+                  'Registra quando um objeto entra ou sai de uma área monitorada. Não é uma contagem acumulada.',
+                ),
               ),
               SwitchListTile(
                 value: _controller.backgroundMonitoringEnabled,
                 onChanged: (value) async {
-                  final applied =
-                      await _controller.setBackgroundMonitoringEnabled(value);
+                  final applied = await _controller
+                      .setBackgroundMonitoringEnabled(value);
                   if (!mounted || !context.mounted) return;
                   setSheetState(() {});
                   if (value && !applied) {
@@ -373,7 +374,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                 },
                 secondary: const Icon(Icons.phone_android),
                 title: const Text('Segundo plano'),
-                subtitle: const Text('Tenta manter câmera e IA ativas com notificação persistente quando você sai da tela.'),
+                subtitle: const Text(
+                  'Tenta manter câmera e IA ativas com notificação persistente quando você sai da tela.',
+                ),
               ),
             ],
           ),
@@ -393,7 +396,9 @@ class _MonitorScreenState extends State<MonitorScreen>
     if (!cameraGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Permita a câmera para escanear o QR do outro celular.'),
+          content: const Text(
+            'Permita a câmera para escanear o QR do outro celular.',
+          ),
           action: SnackBarAction(
             label: 'AJUSTES',
             onPressed: () => unawaited(native.openAppSettings()),
@@ -420,9 +425,8 @@ class _MonitorScreenState extends State<MonitorScreen>
         SnackBar(content: Text('Celular remoto preenchido: ${pairing.name}.')),
       );
     } on FormatException catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message.toString())),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message.toString())));
     }
   }
 
@@ -432,18 +436,24 @@ class _MonitorScreenState extends State<MonitorScreen>
     final current = _controller.sourceConfig;
     var type = current.type;
     final esp32Cameras = _cameraRegistry.items
-        .where((camera) =>
-            camera.enabled &&
-            camera.type == CameraEndpointType.esp32 &&
-            camera.esp32CameraEnabled)
+        .where(
+          (camera) =>
+              camera.enabled &&
+              camera.type == CameraEndpointType.esp32 &&
+              camera.esp32CameraEnabled,
+        )
         .toList(growable: false);
-    var selectedEsp32Id = esp32Cameras
-            .any((camera) => camera.id == current.cameraId)
+    var selectedEsp32Id =
+        esp32Cameras.any((camera) => camera.id == current.cameraId)
         ? current.cameraId
         : (esp32Cameras.isEmpty ? null : esp32Cameras.first.id);
     final rtspController = TextEditingController(text: current.rtspUrl ?? '');
-    final remoteUrlController = TextEditingController(text: current.remoteBaseUrl ?? '');
-    final remoteKeyController = TextEditingController(text: current.remoteAccessKey ?? '');
+    final remoteUrlController = TextEditingController(
+      text: current.remoteBaseUrl ?? '',
+    );
+    final remoteKeyController = TextEditingController(
+      text: current.remoteAccessKey ?? '',
+    );
     final next = await showDialog<VideoSourceConfig>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -475,9 +485,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                     title: 'Câmera ESP32',
                     subtitle: 'Recebe imagem do módulo pela rede local.',
                     selected: type == VideoSourceType.esp32,
-                    onTap: () => setDialogState(
-                      () => type = VideoSourceType.esp32,
-                    ),
+                    onTap: () =>
+                        setDialogState(() => type = VideoSourceType.esp32),
                   ),
                   const SizedBox(height: 8),
                   _SourceOptionTile(
@@ -485,9 +494,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                     title: 'Câmera RTSP',
                     subtitle: 'Conecta a uma câmera ou DVR pela URL RTSP.',
                     selected: type == VideoSourceType.rtsp,
-                    onTap: () => setDialogState(
-                      () => type = VideoSourceType.rtsp,
-                    ),
+                    onTap: () =>
+                        setDialogState(() => type = VideoSourceType.rtsp),
                   ),
                   const SizedBox(height: 8),
                   _SourceOptionTile(
@@ -507,7 +515,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                       enableSuggestions: false,
                       decoration: const InputDecoration(
                         labelText: 'Endereço RTSP',
-                        hintText: 'rtsp://usuario:senha@192.168.1.20:554/stream',
+                        hintText:
+                            'rtsp://usuario:senha@192.168.1.20:554/stream',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -610,7 +619,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                   final uri = Uri.tryParse(rtsp);
                   if (uri == null || uri.scheme != 'rtsp' || uri.host.isEmpty) {
                     ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Informe uma URL RTSP válida.')),
+                      const SnackBar(
+                        content: Text('Informe uma URL RTSP válida.'),
+                      ),
                     );
                     return;
                   }
@@ -623,7 +634,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                       remoteKey.isEmpty) {
                     ScaffoldMessenger.of(this.context).showSnackBar(
                       const SnackBar(
-                        content: Text('Preencha o endereço local e a chave do outro celular.'),
+                        content: Text(
+                          'Preencha o endereço local e a chave do outro celular.',
+                        ),
                       ),
                     );
                     return;
@@ -641,7 +654,9 @@ class _MonitorScreenState extends State<MonitorScreen>
                 if (type == VideoSourceType.esp32 && selectedEsp32 == null) {
                   ScaffoldMessenger.of(this.context).showSnackBar(
                     const SnackBar(
-                      content: Text('Cadastre e ative uma câmera ESP32 primeiro.'),
+                      content: Text(
+                        'Cadastre e ative uma câmera ESP32 primeiro.',
+                      ),
                     ),
                   );
                   return;
@@ -737,9 +752,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                     _LanValueRow(
                       label: 'Endereço',
                       value: baseAddress,
-                      onCopy: () => Clipboard.setData(
-                        ClipboardData(text: baseAddress),
-                      ),
+                      onCopy: () =>
+                          Clipboard.setData(ClipboardData(text: baseAddress)),
                     ),
                     const SizedBox(height: 8),
                     _LanValueRow(
@@ -768,8 +782,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                       viewers == 0
                           ? 'Nenhum outro aparelho assistindo agora.'
                           : viewers == 1
-                              ? '1 aparelho assistindo agora.'
-                              : '$viewers aparelhos assistindo agora.',
+                          ? '1 aparelho assistindo agora.'
+                          : '$viewers aparelhos assistindo agora.',
                     ),
                     const SizedBox(height: 6),
                     const Text(
@@ -793,8 +807,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                       onPressed: _controller.lanStreamStarting
                           ? null
                           : () => _controller.ensureLanStreaming(
-                                requestPermission: true,
-                              ),
+                              requestPermission: true,
+                            ),
                       icon: _controller.lanStreamStarting
                           ? const SizedBox.square(
                               dimension: 18,
@@ -849,10 +863,10 @@ class _MonitorScreenState extends State<MonitorScreen>
         ),
       ),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final offset = Tween<Offset>(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        final offset =
+            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
         return SlideTransition(position: offset, child: child);
       },
     );
@@ -882,9 +896,8 @@ class _MonitorScreenState extends State<MonitorScreen>
         heightFactor: 0.86,
         child: ListenableBuilder(
           listenable: _controller,
-          builder: (context, _) => SessionStatusPanel(
-            data: _controller.sessionStatus,
-          ),
+          builder: (context, _) =>
+              SessionStatusPanel(data: _controller.sessionStatus),
         ),
       ),
     );
@@ -914,7 +927,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     if (_fullscreen) await _toggleFullscreen();
     await SystemUiService.edgeToEdge();
     if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => screen));
     if (mounted) await SystemUiService.edgeToEdge();
   }
 
@@ -926,8 +940,10 @@ class _MonitorScreenState extends State<MonitorScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    final permanentLandscapePanel = size.shortestSide >= 600 && size.width >= 980;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    final permanentLandscapePanel =
+        size.shortestSide >= 600 && size.width >= 980;
 
     return PopScope<void>(
       canPop: !_fullscreen && !_fullscreenChanging,
@@ -936,98 +952,63 @@ class _MonitorScreenState extends State<MonitorScreen>
       },
       child: Scaffold(
         extendBodyBehindAppBar: landscape || _fullscreen,
-        appBar: _fullscreen || landscape ? null : AppBar(
-          title: Row(children: [
-            _StatusDot(active: _controller.sourceStatus.state == VideoSourceState.streaming),
-            const SizedBox(width: 9),
-            const Flexible(child: Text('Ao vivo', overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.w800))),
-          ]),
-          actions: [
-            IconButton(
-              tooltip: 'Tela inteira horizontal',
-              onPressed: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
-              icon: const Icon(Icons.fullscreen_rounded),
-            ),
-            _voiceButton(),
-            _monitorMenu(),
-          ],
-        ),
+        appBar: _fullscreen || landscape
+            ? null
+            : AppBar(
+                title: Row(
+                  children: [
+                    _StatusDot(
+                      active:
+                          _controller.sourceStatus.state ==
+                          VideoSourceState.streaming,
+                    ),
+                    const SizedBox(width: 9),
+                    const Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ao vivo',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          Text(
+                            'Monitoramento em tempo real',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    tooltip: 'Tela inteira horizontal',
+                    onPressed: _fullscreenChanging
+                        ? null
+                        : () => unawaited(_toggleFullscreen()),
+                    icon: const Icon(Icons.fullscreen_rounded),
+                  ),
+                  _voiceButton(),
+                  _monitorMenu(),
+                ],
+              ),
         body: _fullscreen
             ? _buildFullscreen(context)
             : landscape
-                ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
-                : SafeArea(child: _buildPortrait(context)),
+            ? _buildLandscape(context, permanentPanel: permanentLandscapePanel)
+            : SafeArea(child: _buildPortrait(context)),
       ),
     );
   }
 
-  Widget _buildPortrait(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final expandedHeight = (size.height * 0.38).clamp(260.0, 360.0).toDouble();
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _buildAdaptiveCameraStage(context),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildControlDock(context, overlay: true),
-              Material(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.97),
-                elevation: 8,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  height: _detectionsExpanded ? expandedHeight : 58,
-                  child: Column(
-                    children: [
-                      InkWell(
-                        onTap: () => setState(() => _detectionsExpanded = !_detectionsExpanded),
-                        child: SizedBox(
-                          height: 58,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.radar_rounded, size: 20),
-                                const SizedBox(width: 9),
-                                const Expanded(
-                                  child: Text(
-                                    'Detectados agora',
-                                    style: TextStyle(fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                                _CountBadge(count: _currentDetectionCount),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  _detectionsExpanded
-                                      ? Icons.keyboard_arrow_down_rounded
-                                      : Icons.keyboard_arrow_up_rounded,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_detectionsExpanded)
-                        Expanded(child: _buildDetectionPanel(context, showHeader: false)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  int get _currentDetectionCount => _controller.trackingEnabled ? _controller.trackedDetections.length : _controller.detections.length;
+  int get _currentDetectionCount => _controller.trackingEnabled
+      ? _controller.trackedDetections.length
+      : _controller.detections.length;
 
   BikeSensorSnapshot? get _effectiveBikeSnapshot {
     final local = _bikeSensors.snapshot;
@@ -1039,10 +1020,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     return local ?? primaryRemote ?? secondaryRemote;
   }
 
-  Widget _buildLandscape(
-    BuildContext context, {
-    required bool permanentPanel,
-  }) {
+  Widget _buildLandscape(BuildContext context, {required bool permanentPanel}) {
     final width = MediaQuery.sizeOf(context).width;
     final panelWidth = (width * 0.31).clamp(300.0, 420.0).toDouble();
     final panel = DecoratedBox(
@@ -1050,7 +1028,8 @@ class _MonitorScreenState extends State<MonitorScreen>
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.98),
         border: Border(
           left: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.14),
+            color: Theme.of(context).colorScheme.outline
+                .withValues(alpha: 0.14),
           ),
         ),
       ),
@@ -1070,7 +1049,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                   ),
                   IconButton(
                     tooltip: 'Ocultar painel',
-                    onPressed: () => setState(() => _landscapePanelExpanded = false),
+                    onPressed: () =>
+                        setState(() => _landscapePanelExpanded = false),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -1120,7 +1100,8 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   Widget _buildPreviewLayer(BuildContext context) {
     final preview = _controller.buildPreview();
-    final forceFill = _fullscreen ||
+    final forceFill =
+        _fullscreen ||
         MediaQuery.orientationOf(context) == Orientation.landscape;
     if (!_fillPreview && !forceFill) return preview;
     final ratio = _controller.previewAspectRatio;
@@ -1131,19 +1112,21 @@ class _MonitorScreenState extends State<MonitorScreen>
           return preview;
         }
         final containerRatio = constraints.maxWidth / constraints.maxHeight;
-        final scale =
-            containerRatio > ratio ? containerRatio / ratio : ratio / containerRatio;
+        final scale = containerRatio > ratio
+            ? containerRatio / ratio
+            : ratio / containerRatio;
         return ClipRect(
-          child: Transform.scale(
-            scale: scale,
-            child: preview,
-          ),
+          child: Transform.scale(scale: scale, child: preview),
         );
       },
     );
   }
 
-  Widget _buildControlDock(BuildContext context, {bool compact = false, bool overlay = false}) {
+  Widget _buildControlDock(
+    BuildContext context, {
+    bool compact = false,
+    bool overlay = false,
+  }) {
     final buttons = <Widget>[
       _MonitorActionButton(
         icon: Icons.grid_view_rounded,
@@ -1214,13 +1197,22 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  Widget _buildDetectionPanel(BuildContext context, {bool compact = false, bool showHeader = true}) {
+  Widget _buildDetectionPanel(
+    BuildContext context, {
+    bool compact = false,
+    bool showHeader = true,
+  }) {
     final tracked = _controller.trackingEnabled;
     final count = tracked
         ? _controller.trackedDetections.length
         : _controller.detections.length;
     return ListView(
-      padding: EdgeInsets.fromLTRB(compact ? 12 : 14, 12, compact ? 12 : 14, 22),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 12 : 14,
+        12,
+        compact ? 12 : 14,
+        22,
+      ),
       children: [
         if (showHeader) ...[
           Row(
@@ -1231,9 +1223,14 @@ class _MonitorScreenState extends State<MonitorScreen>
                   children: [
                     Text(
                       'Detectados agora',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    Text('Quantidade visível neste instante; não é uma contagem acumulada.'),
+                    Text(
+                      'Quantidade visível neste instante; não é uma contagem acumulada.',
+                    ),
                   ],
                 ),
               ),
@@ -1243,7 +1240,8 @@ class _MonitorScreenState extends State<MonitorScreen>
           const SizedBox(height: 10),
         ],
         _RuntimeSummary(controller: _controller),
-        if (!_controller.voiceLanguageInstalled && !_controller.initializing) ...[
+        if (!_controller.voiceLanguageInstalled &&
+            !_controller.initializing) ...[
           const SizedBox(height: 8),
           const _InfoStrip(
             icon: Icons.volume_off_outlined,
@@ -1256,8 +1254,8 @@ class _MonitorScreenState extends State<MonitorScreen>
             text: !_controller.scheduleActive
                 ? 'Pausado pela agenda. O monitor retomará no próximo horário.'
                 : _controller.motionOnly
-                    ? 'Aguardando atividade relevante.'
-                    : 'Nenhum objeto acima do limite de confiança.',
+                ? 'Aguardando atividade relevante.'
+                : 'Nenhum objeto acima do limite de confiança.',
           )
         else if (tracked)
           ..._controller.trackedDetections.map(
@@ -1279,12 +1277,13 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   String _statusText(VideoSourceStatus status) =>
-      status.message ?? switch (status.state) {
-      VideoSourceState.idle => 'Aguardando',
-      VideoSourceState.connecting => 'Conectando',
-      VideoSourceState.streaming => 'Ao vivo',
-      VideoSourceState.reconnecting => 'Reconectando',
-      VideoSourceState.stopped => 'Pausado',
-      VideoSourceState.error => 'Erro na câmera',
-    };
+      status.message ??
+      switch (status.state) {
+        VideoSourceState.idle => 'Aguardando',
+        VideoSourceState.connecting => 'Conectando',
+        VideoSourceState.streaming => 'Ao vivo',
+        VideoSourceState.reconnecting => 'Reconectando',
+        VideoSourceState.stopped => 'Pausado',
+        VideoSourceState.error => 'Erro na câmera',
+      };
 }

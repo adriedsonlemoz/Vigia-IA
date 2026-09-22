@@ -13,53 +13,54 @@ class _CameraPaneLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        constraints: const BoxConstraints(maxWidth: 230),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.76),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+    constraints: const BoxConstraints(maxWidth: 230),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.76),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFF69D59C) : const Color(0xFFFFB4AB),
+            shape: BoxShape.circle,
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: active
-                    ? const Color(0xFF69D59C)
-                    : const Color(0xFFFFB4AB),
-                shape: BoxShape.circle,
+        const SizedBox(width: 7),
+        Flexible(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
-            const SizedBox(width: 7),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-                  ),
-                  Text(
-                    detail,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.white.withValues(alpha: 0.72),
-                    ),
-                  ),
-                ],
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withValues(alpha: 0.72),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _CompactMonitorTopHud extends StatelessWidget {
@@ -191,8 +192,8 @@ class _CompactMonitorTopHud extends StatelessWidget {
                         label: detectionDelayed
                             ? 'IA atrasada'
                             : processing
-                                ? 'IA analisando'
-                                : 'IA ativa',
+                            ? 'IA analisando'
+                            : 'IA ativa',
                         active: true,
                       ),
                       _HudPill(
@@ -243,6 +244,7 @@ class _DeviceStatusStrip extends StatelessWidget {
     this.secondarySourceStatus,
     this.secondaryRemoteStatus,
     this.secondaryLabel,
+    this.embedded = false,
   });
 
   final DeviceTelemetrySnapshot? localDevice;
@@ -256,16 +258,20 @@ class _DeviceStatusStrip extends StatelessWidget {
   final VideoSourceStatus? secondarySourceStatus;
   final RemotePhoneStatus? secondaryRemoteStatus;
   final String? secondaryLabel;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    final remoteSource = sourceType == VideoSourceType.remotePhone ||
+    final remoteSource =
+        sourceType == VideoSourceType.remotePhone ||
         sourceType == VideoSourceType.esp32;
-    final transmitterTelemetry = remoteSource ? remoteStatus?.device : localDevice;
+    final transmitterTelemetry = remoteSource
+        ? remoteStatus?.device
+        : localDevice;
     final transmitterOnline = remoteSource
         ? sourceStatus.state == VideoSourceState.streaming &&
-            remoteStatus?.online != false &&
-            remoteStatus?.isStale() != true
+              remoteStatus?.online != false &&
+              remoteStatus?.isStale() != true
         : sourceStatus.state == VideoSourceState.streaming;
     final transmitterLabel = switch (sourceType) {
       VideoSourceType.remotePhone => 'Transmissor',
@@ -277,7 +283,8 @@ class _DeviceStatusStrip extends StatelessWidget {
         ? '$networkLatencyMs ms'
         : null;
     final secondaryType = secondarySourceType;
-    final secondaryOnline = secondaryType != null &&
+    final secondaryOnline =
+        secondaryType != null &&
         secondarySourceStatus?.state == VideoSourceState.streaming &&
         ((secondaryType != VideoSourceType.remotePhone &&
                 secondaryType != VideoSourceType.esp32) ||
@@ -290,30 +297,40 @@ class _DeviceStatusStrip extends StatelessWidget {
       VideoSourceType.esp32 => secondaryRemoteStatus?.device,
       null => null,
     };
-    final secondaryDetail = (secondaryType == VideoSourceType.remotePhone ||
-            secondaryType == VideoSourceType.esp32) &&
+    final secondaryDetail =
+        (secondaryType == VideoSourceType.remotePhone ||
+                secondaryType == VideoSourceType.esp32) &&
             secondaryRemoteStatus?.networkLatencyMs != null
         ? '${secondaryRemoteStatus!.networkLatencyMs} ms'
         : secondaryOnline
-            ? 'Imagem ativa'
-            : 'Sem imagem';
+        ? 'Imagem ativa'
+        : 'Sem imagem';
 
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.black.withValues(alpha: 0.76),
-      borderRadius: BorderRadius.circular(8),
+      color: embedded
+          ? scheme.surfaceContainerLow
+          : Colors.black.withValues(alpha: 0.76),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(embedded ? 16 : 8),
+        side: embedded
+            ? BorderSide(color: scheme.primary.withValues(alpha: 0.28))
+            : BorderSide.none,
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 40,
+          height: embedded ? 52 : 40,
           child: Row(
             children: [
               Expanded(
                 child: _DeviceStatusItem(
-                  label: 'Receptor',
+                  label: embedded ? 'Receptor (IA)' : 'Receptor',
                   telemetry: localDevice,
                   online: receiverActive,
                   detail: receiverActive ? 'IA ativa' : 'Verificando',
+                  showBattery: true,
                 ),
               ),
               Container(
@@ -328,8 +345,10 @@ class _DeviceStatusStrip extends StatelessWidget {
                       ? null
                       : transmitterTelemetry,
                   online: transmitterOnline,
-                  detail: latency ??
+                  detail:
+                      latency ??
                       (transmitterOnline ? 'Imagem ativa' : 'Sem imagem'),
+                  showBattery: remoteSource,
                 ),
               ),
               if (secondaryType != null) ...[
@@ -344,6 +363,9 @@ class _DeviceStatusStrip extends StatelessWidget {
                     telemetry: secondaryTelemetry,
                     online: secondaryOnline,
                     detail: secondaryDetail,
+                    showBattery:
+                        secondaryType == VideoSourceType.remotePhone ||
+                        secondaryType == VideoSourceType.esp32,
                   ),
                 ),
               ],
@@ -365,12 +387,14 @@ class _DeviceStatusItem extends StatelessWidget {
     required this.telemetry,
     required this.online,
     required this.detail,
+    required this.showBattery,
   });
 
   final String label;
   final DeviceTelemetrySnapshot? telemetry;
   final bool online;
   final String detail;
+  final bool showBattery;
 
   @override
   Widget build(BuildContext context) {
@@ -419,18 +443,25 @@ class _DeviceStatusItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(
-            charging
-                ? Icons.battery_charging_full_rounded
-                : Icons.battery_5_bar_rounded,
-            size: 15,
-            color: battery == null ? Colors.white54 : Colors.white,
-          ),
-          const SizedBox(width: 2),
-          Text(
-            battery == null ? '—' : '$battery%',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-          ),
+          if (showBattery) ...[
+            Icon(
+              charging
+                  ? Icons.battery_charging_full_rounded
+                  : Icons.battery_5_bar_rounded,
+              size: 15,
+              color: battery == null ? Colors.white54 : Colors.white,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              battery == null ? '—' : '$battery%',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+            ),
+          ] else
+            const Icon(
+              Icons.videocam_outlined,
+              size: 16,
+              color: Colors.white70,
+            ),
         ],
       ),
     );
@@ -452,7 +483,7 @@ class _MonitorActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Material(
         color: scheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
@@ -460,7 +491,7 @@ class _MonitorActionButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            width: 68,
+            width: 64,
             height: 50,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -469,7 +500,10 @@ class _MonitorActionButton extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -579,23 +613,26 @@ class _HudPill extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withValues(alpha: 0.32)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: accent, size: 14),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.68),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: accent.withValues(alpha: 0.32)),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: accent, size: 14),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -609,14 +646,16 @@ class _RuntimeSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final percent = (controller.motionScore * 100).clamp(0, 100).toStringAsFixed(0);
+    final percent = (controller.motionScore * 100)
+        .clamp(0, 100)
+        .toStringAsFixed(0);
     final motion = !controller.motionOnly
         ? 'Movimento livre'
         : controller.cameraMotion
-            ? 'Movimento da câmera ignorado'
-            : controller.motionActive
-                ? 'Movimento $percent%'
-                : 'Aguardando movimento';
+        ? 'Movimento da câmera ignorado'
+        : controller.motionActive
+        ? 'Movimento $percent%'
+        : 'Aguardando movimento';
     final schedule = controller.schedule.enabled
         ? (controller.scheduleActive ? 'Agenda ativa agora' : 'Fora da agenda')
         : 'Modo manual';
@@ -652,7 +691,8 @@ class _MiniStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest
+            .withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ConstrainedBox(
@@ -671,7 +711,10 @@ class _MiniStatus extends StatelessWidget {
                 text,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -702,9 +745,7 @@ class _DetectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: scheme.outline.withValues(alpha: 0.16),
-        ),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.16)),
       ),
       child: Row(
         children: [
@@ -712,7 +753,11 @@ class _DetectionCard extends StatelessWidget {
             radius: 18,
             backgroundColor: scheme.primary.withValues(alpha: 0.12),
             child: trackId == null
-                ? Icon(Icons.center_focus_strong, color: scheme.primary, size: 18)
+                ? Icon(
+                    Icons.center_focus_strong,
+                    color: scheme.primary,
+                    size: 18,
+                  )
                 : Text(
                     '#$trackId',
                     style: TextStyle(
@@ -724,7 +769,10 @@ class _DetectionCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -734,7 +782,10 @@ class _DetectionCard extends StatelessWidget {
             ),
             child: Text(
               '$percent%',
-              style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                color: scheme.primary,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -757,7 +808,8 @@ class _EmptyDetectionState extends StatelessWidget {
           Icon(
             Icons.radar_rounded,
             size: 42,
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.65),
+            color: Theme.of(context).colorScheme.primary
+                .withValues(alpha: 0.65),
           ),
           const SizedBox(height: 9),
           Text(text, textAlign: TextAlign.center),
@@ -785,7 +837,9 @@ class _InfoStrip extends StatelessWidget {
         children: [
           Icon(icon, size: 18),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+          ),
         ],
       ),
     );
@@ -831,36 +885,36 @@ class _LanValueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: Theme.of(context).textTheme.bodySmall),
-                    const SizedBox(height: 2),
-                    SelectableText(
-                      value,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ],
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 2),
+                SelectableText(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Copiar $label',
-                onPressed: () => unawaited(onCopy()),
-                icon: const Icon(Icons.copy_rounded),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+          IconButton(
+            tooltip: 'Copiar $label',
+            onPressed: () => unawaited(onCopy()),
+            icon: const Icon(Icons.copy_rounded),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _StatusDot extends StatelessWidget {
@@ -870,7 +924,9 @@ class _StatusDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? Theme.of(context).colorScheme.primary : Colors.white38;
+    final color = active
+        ? Theme.of(context).colorScheme.primary
+        : Colors.white38;
     return Container(
       width: 9,
       height: 9,

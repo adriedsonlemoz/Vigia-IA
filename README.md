@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.80+80`
+> **Versão atual:** `1.0.81+81`
 
 ## Estado atual
 
-A `1.0.80+80` reorganiza o Histórico, cria o painel de gerenciamento do ESP32, integra a futura câmera do módulo às fontes e melhora a entrega e o diagnóstico de tamanho do APK.
+A `1.0.81+81` reorganiza o Monitor vertical para seguir a referência visual, mantém a área de detecções fixa, elimina a bateria local duplicada e corrige o build interrompido pelo analisador.
+
+### Evolução 1.0.81 — Monitor vertical fixo
+
+- status do receptor e da fonte fica em uma faixa própria no topo;
+- atalhos de Ao vivo, IA ativa, Painel e Ajustes ficam alinhados antes da câmera;
+- a câmera passa a usar um cartão delimitado e mantém sua altura quando surgem detecções;
+- ações de Áreas, Objetos, Regras, Fonte, segunda câmera e Recursos ficam logo abaixo da imagem;
+- `Detectados agora` deixa de ser um painel expansível sobreposto e passa a ter área fixa com rolagem interna;
+- quando a fonte é a câmera deste aparelho, somente o Receptor mostra bateria; fontes remotas continuam mostrando a bateria do transmissor;
+- corrigido o lint `use_build_context_synchronously` encontrado no Android-APK-49.
 
 ### Evolução 1.0.80 — Histórico, ESP32, câmeras e APK
 
@@ -135,7 +145,7 @@ A `1.0.80+80` reorganiza o Histórico, cria o painel de gerenciamento do ESP32, 
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da entrega atual: [RELEASE-1.0.80.md](RELEASE-1.0.80.md). Layout e sensores: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da entrega atual: [RELEASE-1.0.81.md](RELEASE-1.0.81.md). ESP32 e fontes: [RELEASE-1.0.80.md](RELEASE-1.0.80.md). Layout e sensores: [RELEASE-1.0.78.md](RELEASE-1.0.78.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.80 reorganiza o Histórico, adiciona exportação e exclusão confirmada, integra o painel ESP32 e melhora fontes, câmeras e o artefato APK.",
-  "version": "1.0.80",
-  "build": 80
+  "notes": "A 1.0.81 aproxima o Monitor vertical da referência, fixa câmera, controles e detecções, remove a bateria local duplicada e corrige o analyze do Android-APK-49.",
+  "version": "1.0.81",
+  "build": 81
 }

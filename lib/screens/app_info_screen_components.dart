@@ -28,7 +28,10 @@ class _AboutPanel extends StatelessWidget {
                   children: [
                     Text(
                       AppMetadata.name,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     SizedBox(height: 2),
                     Text('Vigilância local com IA offline'),
@@ -38,7 +41,10 @@ class _AboutPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          const _InfoRow(label: 'Versão', value: '${AppMetadata.version}+${AppMetadata.build}'),
+          const _InfoRow(
+            label: 'Versão',
+            value: '${AppMetadata.version}+${AppMetadata.build}',
+          ),
           const _InfoRow(label: 'Desenvolvedor', value: AppMetadata.developer),
           const Divider(height: 28),
           const Text(
@@ -58,8 +64,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.80',
+          version: '1.0.81',
           current: true,
+          changes: [
+            'Monitor vertical reorganizado com status, modos, câmera, atalhos e detecções em áreas fixas.',
+            'Detectados agora usa rolagem interna e não sobe mais sobre a câmera quando encontra objetos.',
+            'Câmera local deixa de repetir a bateria do receptor; bateria remota continua visível quando existe outro aparelho.',
+            'Corrigido o use_build_context_synchronously que interrompeu o Android-APK-49 no flutter analyze.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.80',
           changes: [
             'Histórico reorganizado com filtros adaptativos, ícones, metadados compactos e melhor hierarquia visual.',
             'Detalhes de detecção agora permitem salvar a captura ou excluir o registro após confirmação.',
@@ -719,7 +735,11 @@ class _DonationPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.volunteer_activism_outlined, size: 38, color: scheme.primary),
+          Icon(
+            Icons.volunteer_activism_outlined,
+            size: 38,
+            color: scheme.primary,
+          ),
           const SizedBox(height: 12),
           const Text(
             'Apoie o desenvolvimento',
@@ -759,7 +779,11 @@ class _DonationPanel extends StatelessWidget {
 }
 
 class _ReleaseCard extends StatelessWidget {
-  const _ReleaseCard({required this.version, required this.changes, this.current = false});
+  const _ReleaseCard({
+    required this.version,
+    required this.changes,
+    this.current = false,
+  });
 
   final String version;
   final List<String> changes;
@@ -774,16 +798,32 @@ class _ReleaseCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Versão $version', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text(
+                'Versão $version',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               if (current) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: scheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text('ATUAL', style: TextStyle(color: scheme.primary, fontSize: 10, fontWeight: FontWeight.w900)),
+                  child: Text(
+                    'ATUAL',
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -844,7 +884,9 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
         ],
       ),

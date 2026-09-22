@@ -1,36 +1,37 @@
 part of 'monitor_screen.dart';
 
 extension _MonitorMulticamera on _MonitorScreenState {
-  VideoSourceConfig _sourceForEndpoint(CameraEndpoint camera) => switch (camera.type) {
+  VideoSourceConfig _sourceForEndpoint(CameraEndpoint camera) =>
+      switch (camera.type) {
         CameraEndpointType.local => VideoSourceConfig(
-            type: VideoSourceType.localCamera,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: _controller.sourceConfig.analysisInterval,
-          ),
+          type: VideoSourceType.localCamera,
+          displayName: camera.name,
+          cameraId: camera.id,
+          analysisInterval: _controller.sourceConfig.analysisInterval,
+        ),
         CameraEndpointType.rtsp => VideoSourceConfig(
-            type: VideoSourceType.rtsp,
-            rtspUrl: camera.address,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: _controller.sourceConfig.analysisInterval,
-          ),
+          type: VideoSourceType.rtsp,
+          rtspUrl: camera.address,
+          displayName: camera.name,
+          cameraId: camera.id,
+          analysisInterval: _controller.sourceConfig.analysisInterval,
+        ),
         CameraEndpointType.remotePhone => VideoSourceConfig(
-            type: VideoSourceType.remotePhone,
-            remoteBaseUrl: camera.address,
-            remoteAccessKey: camera.accessKey,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: _controller.sourceConfig.analysisInterval,
-          ),
+          type: VideoSourceType.remotePhone,
+          remoteBaseUrl: camera.address,
+          remoteAccessKey: camera.accessKey,
+          displayName: camera.name,
+          cameraId: camera.id,
+          analysisInterval: _controller.sourceConfig.analysisInterval,
+        ),
         CameraEndpointType.esp32 => VideoSourceConfig(
-            type: VideoSourceType.esp32,
-            remoteBaseUrl: camera.address,
-            remoteAccessKey: camera.accessKey,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: _controller.sourceConfig.analysisInterval,
-          ),
+          type: VideoSourceType.esp32,
+          remoteBaseUrl: camera.address,
+          remoteAccessKey: camera.accessKey,
+          displayName: camera.name,
+          cameraId: camera.id,
+          analysisInterval: _controller.sourceConfig.analysisInterval,
+        ),
       };
 
   bool _sameSource(VideoSourceConfig first, VideoSourceConfig second) {
@@ -41,7 +42,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
     return switch (first.type) {
       VideoSourceType.localCamera => true,
       VideoSourceType.rtsp => first.rtspUrl == second.rtspUrl,
-      VideoSourceType.remotePhone => first.remoteBaseUrl == second.remoteBaseUrl,
+      VideoSourceType.remotePhone =>
+        first.remoteBaseUrl == second.remoteBaseUrl,
       VideoSourceType.esp32 => first.remoteBaseUrl == second.remoteBaseUrl,
     };
   }
@@ -68,14 +70,20 @@ extension _MonitorMulticamera on _MonitorScreenState {
         type: CameraEndpointType.local,
       ),
       ..._cameraRegistry.items.where(
-        (camera) => camera.enabled &&
+        (camera) =>
+            camera.enabled &&
             (camera.type != CameraEndpointType.esp32 ||
                 camera.esp32CameraEnabled),
       ),
     ];
-    final candidates = cameras.where((camera) {
-      return !_sameSource(_controller.sourceConfig, _sourceForEndpoint(camera));
-    }).toList(growable: false);
+    final candidates = cameras
+        .where((camera) {
+          return !_sameSource(
+            _controller.sourceConfig,
+            _sourceForEndpoint(camera),
+          );
+        })
+        .toList(growable: false);
 
     final selectedId = await showDialog<String>(
       context: context,
@@ -91,28 +99,32 @@ extension _MonitorMulticamera on _MonitorScreenState {
               subtitle: Text('A câmera principal ocupa toda a área de vídeo.'),
             ),
           ),
-          ...candidates.map((camera) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialogContext, camera.id),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(switch (camera.type) {
-                    CameraEndpointType.local => Icons.camera_alt_outlined,
-                    CameraEndpointType.rtsp => Icons.router_outlined,
-                    CameraEndpointType.remotePhone => Icons.phone_android_rounded,
-                    CameraEndpointType.esp32 => Icons.memory_rounded,
-                  }),
-                  title: Text(camera.name),
-                  subtitle: Text(switch (camera.type) {
-                    CameraEndpointType.local => 'Segunda visualização local',
-                    CameraEndpointType.rtsp => 'Segunda visualização RTSP',
-                    CameraEndpointType.remotePhone => 'Segundo celular transmissor',
-                    CameraEndpointType.esp32 => 'Segunda câmera do ESP32',
-                  }),
-                  trailing: _secondaryController?.sourceConfig.cameraId == camera.id
-                      ? const Icon(Icons.check_circle_rounded)
-                      : null,
-                ),
-              )),
+          ...candidates.map(
+            (camera) => SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, camera.id),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(switch (camera.type) {
+                  CameraEndpointType.local => Icons.camera_alt_outlined,
+                  CameraEndpointType.rtsp => Icons.router_outlined,
+                  CameraEndpointType.remotePhone => Icons.phone_android_rounded,
+                  CameraEndpointType.esp32 => Icons.memory_rounded,
+                }),
+                title: Text(camera.name),
+                subtitle: Text(switch (camera.type) {
+                  CameraEndpointType.local => 'Segunda visualização local',
+                  CameraEndpointType.rtsp => 'Segunda visualização RTSP',
+                  CameraEndpointType.remotePhone =>
+                    'Segundo celular transmissor',
+                  CameraEndpointType.esp32 => 'Segunda câmera do ESP32',
+                }),
+                trailing:
+                    _secondaryController?.sourceConfig.cameraId == camera.id
+                    ? const Icon(Icons.check_circle_rounded)
+                    : null,
+              ),
+            ),
+          ),
           if (candidates.isEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(24, 8, 24, 18),
@@ -128,15 +140,20 @@ extension _MonitorMulticamera on _MonitorScreenState {
       await _replaceSecondarySource(null);
       return;
     }
-    final selectedIndex = candidates.indexWhere((item) => item.id == selectedId);
+    final selectedIndex = candidates.indexWhere(
+      (item) => item.id == selectedId,
+    );
     if (selectedIndex < 0) return;
     final camera = candidates[selectedIndex];
     if (camera.type == CameraEndpointType.local) {
-      final granted = await NativePlatformService.instance.requestCameraPermission();
+      final granted = await NativePlatformService.instance
+          .requestCameraPermission();
       if (!mounted) return;
       if (!granted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permita a câmera para usar a segunda imagem local.')),
+          const SnackBar(
+            content: Text('Permita a câmera para usar a segunda imagem local.'),
+          ),
         );
         return;
       }
@@ -144,21 +161,31 @@ extension _MonitorMulticamera on _MonitorScreenState {
     await _replaceSecondarySource(_sourceForEndpoint(camera));
   }
 
-  Widget _buildAdaptiveCameraStage(BuildContext context) {
-    if (_secondaryController == null) return _buildCameraStage(context);
-    return _buildDualCameraStage(context);
+  Widget _buildAdaptiveCameraStage(
+    BuildContext context, {
+    bool portraitEmbedded = false,
+  }) {
+    if (_secondaryController == null) {
+      return _buildCameraStage(context, portraitEmbedded: portraitEmbedded);
+    }
+    return _buildDualCameraStage(context, portraitEmbedded: portraitEmbedded);
   }
 
-  Widget _buildDualCameraStage(BuildContext context) {
+  Widget _buildDualCameraStage(
+    BuildContext context, {
+    bool portraitEmbedded = false,
+  }) {
     final secondary = _secondaryController!;
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
     final insets = _fullscreen || landscape
         ? MediaQuery.viewPaddingOf(context)
         : EdgeInsets.zero;
     final bikeSnapshot = _effectiveBikeSnapshot;
     final status = _controller.sourceStatus;
     final approach = _controller.bikeApproachStatus;
-    final showCompactTopHud = (landscape || _fullscreen) &&
+    final showCompactTopHud =
+        (landscape || _fullscreen) &&
         (!_fullscreen || _fullscreenControlsVisible);
 
     return ColoredBox(
@@ -219,11 +246,12 @@ extension _MonitorMulticamera on _MonitorScreenState {
                     : () => unawaited(_toggleFullscreen()),
                 onToggleFill: () =>
                     _updateMulticameraState(() => _fillPreview = !_fillPreview),
-                onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
+                onToggleVoice: () =>
+                    _controller.setVoiceEnabled(!_controller.voiceEnabled),
                 menu: _monitorMenu(),
               ),
             )
-          else
+          else if (!portraitEmbedded)
             Positioned(
               left: 8,
               right: 8,
@@ -243,7 +271,9 @@ extension _MonitorMulticamera on _MonitorScreenState {
                       children: [
                         _HudPill(
                           icon: Icons.psychology_alt_outlined,
-                          label: _controller.processing ? 'IA analisando' : 'IA na principal',
+                          label: _controller.processing
+                              ? 'IA analisando'
+                              : 'IA na principal',
                           active: true,
                         ),
                         _HudPill(
@@ -283,19 +313,21 @@ extension _MonitorMulticamera on _MonitorScreenState {
   Widget _buildDeviceStrip({
     required VideoSourceStatus status,
     required SecondaryCameraController secondary,
+    bool embedded = false,
   }) => _DeviceStatusStrip(
-        localDevice: _controller.localDeviceTelemetry,
-        remoteStatus: _controller.remotePhoneStatus,
-        sourceType: _controller.sourceConfig.type,
-        sourceStatus: status,
-        receiverActive: !_controller.initializing && _controller.error == null,
-        networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
-        secondarySourceType: secondary.sourceConfig.type,
-        secondarySourceStatus: secondary.status,
-        secondaryRemoteStatus: secondary.remoteStatus,
-        secondaryLabel: secondary.displayName,
-        onTap: () => unawaited(_showSessionStatus()),
-      );
+    localDevice: _controller.localDeviceTelemetry,
+    remoteStatus: _controller.remotePhoneStatus,
+    sourceType: _controller.sourceConfig.type,
+    sourceStatus: status,
+    receiverActive: !_controller.initializing && _controller.error == null,
+    networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+    secondarySourceType: secondary.sourceConfig.type,
+    secondarySourceStatus: secondary.status,
+    secondaryRemoteStatus: secondary.remoteStatus,
+    secondaryLabel: secondary.displayName,
+    embedded: embedded,
+    onTap: () => unawaited(_showSessionStatus()),
+  );
 
   Widget _buildPrimaryCameraTile(BuildContext context) {
     return DecoratedBox(
@@ -329,7 +361,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
             child: _CameraPaneLabel(
               title: _controller.sourceConfig.displayName ?? 'Câmera principal',
               detail: 'Principal · IA e alertas',
-              active: _controller.sourceStatus.state == VideoSourceState.streaming,
+              active:
+                  _controller.sourceStatus.state == VideoSourceState.streaming,
             ),
           ),
           if (_controller.error != null)
@@ -390,8 +423,12 @@ extension _MonitorMulticamera on _MonitorScreenState {
     );
   }
 
-  Widget _buildCameraStage(BuildContext context) {
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+  Widget _buildCameraStage(
+    BuildContext context, {
+    bool portraitEmbedded = false,
+  }) {
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
     final insets = _fullscreen || landscape
         ? MediaQuery.viewPaddingOf(context)
         : EdgeInsets.zero;
@@ -401,13 +438,13 @@ extension _MonitorMulticamera on _MonitorScreenState {
     final bikeHudActive = bikeSnapshot != null;
     final approach = _controller.bikeApproachStatus;
     final compactTopHud = landscape || _fullscreen;
-    final showCompactTopHud = compactTopHud &&
-        (!_fullscreen || _fullscreenControlsVisible);
+    final showCompactTopHud =
+        compactTopHud && (!_fullscreen || _fullscreenControlsVisible);
     final compactBikeHud = MediaQuery.sizeOf(context).height < 500;
     final bikeHudBottom = bikeHudActive
         ? (bikeSnapshot.primaryWarning == null
-            ? (compactBikeHud ? 72.0 : 98.0)
-            : (compactBikeHud ? 108.0 : 138.0))
+              ? (compactBikeHud ? 72.0 : 98.0)
+              : (compactBikeHud ? 108.0 : 138.0))
         : 6.0;
     final standardHudTop = approach.visible
         ? bikeHudBottom + (compactBikeHud ? 48.0 : 58.0)
@@ -452,7 +489,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
                   remoteStatus: remoteStatus,
                   sourceType: _controller.sourceConfig.type,
                   sourceStatus: status,
-                  receiverActive: !_controller.initializing && _controller.error == null,
+                  receiverActive:
+                      !_controller.initializing && _controller.error == null,
                   networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
                   onTap: () => unawaited(_showSessionStatus()),
                 ),
@@ -463,132 +501,179 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 detectionDelayed: _controller.detectionDelayed,
                 processing: _controller.processing,
                 onClose: () => unawaited(_closeMonitor()),
-                onFullscreen: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
+                onFullscreen: _fullscreenChanging
+                    ? null
+                    : () => unawaited(_toggleFullscreen()),
                 onToggleFill: () =>
                     _updateMulticameraState(() => _fillPreview = !_fillPreview),
-                onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
+                onToggleVoice: () =>
+                    _controller.setVoiceEnabled(!_controller.voiceEnabled),
                 menu: _monitorMenu(),
               ),
             ),
-          if (!compactTopHud && bikeHudActive)
+          if (!portraitEmbedded && !compactTopHud && bikeHudActive)
             Positioned(
               left: 0,
               right: 0,
               top: 6 + insets.top,
-              child: Padding(padding: EdgeInsets.only(left: insets.left, right: insets.right),
-                child: BikeRideHud(snapshot: bikeSnapshot)),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: insets.left,
+                  right: insets.right,
+                ),
+                child: BikeRideHud(snapshot: bikeSnapshot),
+              ),
             ),
-          if (!compactTopHud && approach.visible)
+          if (!portraitEmbedded && !compactTopHud && approach.visible)
             Positioned(
               left: 10,
               right: 10,
               top: bikeHudBottom + insets.top,
               child: BikeApproachBanner(status: approach),
             ),
-          if (!compactTopHud) Positioned(
-            left: 8 + insets.left,
-            right: 8 + insets.right,
-            top: deviceStripTop,
-            child: _DeviceStatusStrip(
-              localDevice: _controller.localDeviceTelemetry,
-              remoteStatus: remoteStatus,
-              sourceType: _controller.sourceConfig.type,
-              sourceStatus: status,
-              receiverActive: !_controller.initializing && _controller.error == null,
-              networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
-              onTap: () => unawaited(_showSessionStatus()),
+          if (!portraitEmbedded && !compactTopHud)
+            Positioned(
+              left: 8 + insets.left,
+              right: 8 + insets.right,
+              top: deviceStripTop,
+              child: _DeviceStatusStrip(
+                localDevice: _controller.localDeviceTelemetry,
+                remoteStatus: remoteStatus,
+                sourceType: _controller.sourceConfig.type,
+                sourceStatus: status,
+                receiverActive:
+                    !_controller.initializing && _controller.error == null,
+                networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+                onTap: () => unawaited(_showSessionStatus()),
+              ),
             ),
-          ),
-          if (!_fullscreen && !compactTopHud) Positioned(
-            left: 12,
-            right: 12,
-            top: standardControlsTop,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    _HudPill(
-                      icon: status.state == VideoSourceState.streaming
-                          ? Icons.fiber_manual_record_rounded
-                          : Icons.videocam_off_outlined,
-                      label: _statusText(status),
-                      active: status.state == VideoSourceState.streaming,
-                    ),
-                    _HudPill(
-                      icon: Icons.psychology_alt_outlined,
-                      label: _controller.detectionDelayed ? 'IA atrasada' :
-                          _controller.processing ? 'IA analisando' : 'IA ativa',
-                      active: !_controller.initializing,
-                    ),
-                    _HudPill(
-                      icon: _hudExpanded
-                          ? Icons.expand_less_rounded
-                          : Icons.more_horiz_rounded,
-                      label: _hudExpanded ? 'Ocultar' : 'Painel',
-                      active: false,
-                      onTap: () =>
-                          _updateMulticameraState(() => _hudExpanded = !_hudExpanded),
-                    ),
-                  ],
-                ),
-                if (remoteStatus != null && remoteStatus.warnings().isNotEmpty) ...[
-                  const SizedBox(height: 7),
-                  RemoteBikeWarningBanner(
-                    status: remoteStatus,
-                    onTap: _showRemoteBikeStatus,
-                  ),
-                ],
-                if (_hudExpanded) ...[
-                  const SizedBox(height: 7),
+          if (!portraitEmbedded && !_fullscreen && !compactTopHud)
+            Positioned(
+              left: 12,
+              right: 12,
+              top: standardControlsTop,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Wrap(
                     spacing: 7,
                     runSpacing: 7,
                     children: [
                       _HudPill(
-                        icon: Icons.grid_view_rounded,
-                        label: _controller.activeMonitoringZones.isEmpty
-                            ? 'Tela inteira'
-                            : '${_controller.activeMonitoringZones.length} áreas',
-                        active: true,
+                        icon: status.state == VideoSourceState.streaming
+                            ? Icons.fiber_manual_record_rounded
+                            : Icons.videocam_off_outlined,
+                        label: _statusText(status),
+                        active: status.state == VideoSourceState.streaming,
                       ),
-                      if (_controller.backgroundMonitoringEnabled)
-                        const _HudPill(
-                          icon: Icons.phone_android_rounded,
-                          label: '2º plano',
-                          active: true,
-                        ),
-                      if (_controller.clipRecordingEnabled)
-                        _HudPill(
-                          icon: Icons.movie_outlined,
-                          label: _controller.clipRecording ? 'Gravando clipe' : 'Clipes',
-                          active: _controller.clipRecording,
-                        ),
                       _HudPill(
-                        icon: _fillPreview
-                            ? Icons.fullscreen_rounded
-                            : Icons.fit_screen_rounded,
-                        label: _fillPreview ? 'Preencher' : 'Ajustar',
-                        active: _fillPreview,
+                        icon: Icons.psychology_alt_outlined,
+                        label: _controller.detectionDelayed
+                            ? 'IA atrasada'
+                            : _controller.processing
+                            ? 'IA analisando'
+                            : 'IA ativa',
+                        active: !_controller.initializing,
+                      ),
+                      _HudPill(
+                        icon: _hudExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.more_horiz_rounded,
+                        label: _hudExpanded ? 'Ocultar' : 'Painel',
+                        active: false,
                         onTap: () => _updateMulticameraState(
-                          () => _fillPreview = !_fillPreview,
+                          () => _hudExpanded = !_hudExpanded,
                         ),
                       ),
                     ],
                   ),
+                  if (remoteStatus != null &&
+                      remoteStatus.warnings().isNotEmpty) ...[
+                    const SizedBox(height: 7),
+                    RemoteBikeWarningBanner(
+                      status: remoteStatus,
+                      onTap: _showRemoteBikeStatus,
+                    ),
+                  ],
+                  if (_hudExpanded) ...[
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 7,
+                      children: [
+                        _HudPill(
+                          icon: Icons.grid_view_rounded,
+                          label: _controller.activeMonitoringZones.isEmpty
+                              ? 'Tela inteira'
+                              : '${_controller.activeMonitoringZones.length} áreas',
+                          active: true,
+                        ),
+                        if (_controller.backgroundMonitoringEnabled)
+                          const _HudPill(
+                            icon: Icons.phone_android_rounded,
+                            label: '2º plano',
+                            active: true,
+                          ),
+                        if (_controller.clipRecordingEnabled)
+                          _HudPill(
+                            icon: Icons.movie_outlined,
+                            label: _controller.clipRecording
+                                ? 'Gravando clipe'
+                                : 'Clipes',
+                            active: _controller.clipRecording,
+                          ),
+                        _HudPill(
+                          icon: _fillPreview
+                              ? Icons.fullscreen_rounded
+                              : Icons.fit_screen_rounded,
+                          label: _fillPreview ? 'Preencher' : 'Ajustar',
+                          active: _fillPreview,
+                          onTap: () => _updateMulticameraState(
+                            () => _fillPreview = !_fillPreview,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
+          if (portraitEmbedded)
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: _CameraPaneLabel(
+                title:
+                    _controller.sourceConfig.displayName ??
+                    switch (_controller.sourceConfig.type) {
+                      VideoSourceType.localCamera => 'Câmera local',
+                      VideoSourceType.rtsp => 'Câmera RTSP',
+                      VideoSourceType.remotePhone => 'Celular remoto',
+                      VideoSourceType.esp32 => 'Câmera ESP32',
+                    },
+                detail: 'Principal · IA e alertas',
+                active: status.state == VideoSourceState.streaming,
+              ),
+            ),
           if (_controller.detectionDelayed)
-            Positioned(left: 12 + insets.left, right: 12 + insets.right,
-              bottom: (_fullscreen ? 78 : 160) + insets.bottom,
-              child: const IgnorePointer(child: Material(color: Colors.black87,
-                child: Padding(padding: EdgeInsets.all(8), child: Text(
-                  'IA atrasada · alertas aguardam imagem recente', textAlign: TextAlign.center)),
-              )),
+            Positioned(
+              left: 12 + insets.left,
+              right: 12 + insets.right,
+              bottom:
+                  (portraitEmbedded ? 58 : (_fullscreen ? 78 : 160)) +
+                  insets.bottom,
+              child: const IgnorePointer(
+                child: Material(
+                  color: Colors.black87,
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Text(
+                      'IA atrasada · alertas aguardam imagem recente',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
             ),
           if (_editingZoneId != null)
             Positioned(
@@ -617,5 +702,4 @@ extension _MonitorMulticamera on _MonitorScreenState {
       ),
     );
   }
-
 }
