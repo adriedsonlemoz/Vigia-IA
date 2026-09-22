@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.79+79 — 2026-09-22
+
+- Corrigidos os oito avisos `invalid_use_of_protected_member` causados por chamadas diretas a `setState` nos módulos multicâmera extraídos.
+- A classe `State` proprietária agora expõe atualizadores internos para os módulos `part`, preservando a separação dos arquivos sem ignorar o analisador.
+- Corrigido `unqualified_reference_to_static_member_of_extended_type` no intervalo automático da Central multicâmera.
+- Removido o destino Bike do menu inferior e da barra lateral principal.
+- O menu principal permanece com Início, Histórico, Monitor e Câmeras, com índices de navegação sincronizados.
+- Modo Bike permanece como modo inicial possível e ganhou acesso em Configurações > Monitoramento.
+- A tela Bike deixa de usar a navegação principal e oferece atalho próprio para Configurações e para testar o Monitor.
+- Teste do menu, verificadores, documentação, tela de mudanças e metadados sincronizados em `1.0.79+79`.
+
 ## 1.0.78+78 — 2026-09-22
 
 - Adicionado layout único e adaptativo no Monitor: uma câmera ocupa toda a área; duas câmeras ficam empilhadas no retrato e lado a lado na paisagem.

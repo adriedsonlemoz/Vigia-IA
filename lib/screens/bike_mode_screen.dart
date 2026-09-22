@@ -7,10 +7,8 @@ import '../models/device_telemetry.dart';
 import '../services/bike_mode_service.dart';
 import '../services/native_platform_service.dart';
 import '../utils/storage_size_formatter.dart';
-import '../widgets/main_navigation_bar.dart';
-import 'events_screen.dart';
 import 'home_screen.dart';
-import 'multi_camera_screen.dart';
+import 'settings_screen.dart';
 
 part 'bike_mode_screen_components.dart';
 
@@ -79,18 +77,17 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
     unawaited(_refreshTelemetry());
   }
 
-  void _navigateMain(int index) {
-    if (index == 4) return;
-    final Widget target = switch (index) {
-      0 => const HomeScreen(),
-      1 => const EventsScreen(),
-      2 => const HomeScreen(startMonitorOnLoad: true),
-      3 => const MultiCameraScreen(),
-      _ => const BikeModeScreen(),
-    };
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => target),
-      (route) => false,
+  void _openMonitor() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const HomeScreen(startMonitorOnLoad: true),
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
     );
   }
 
@@ -326,7 +323,7 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
             ),
             const SizedBox(height: 12),
             FilledButton.tonalIcon(
-              onPressed: () => _navigateMain(2),
+              onPressed: _openMonitor,
               icon: const Icon(Icons.play_circle_outline_rounded),
               label: const Text('Abrir Monitor e testar HUD'),
             ),
@@ -341,9 +338,7 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
       enabled: _config.enabled,
     );
 
-    return AdaptiveMainScaffold(
-      currentIndex: 4,
-      onDestinationSelected: _navigateMain,
+    return Scaffold(
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,6 +351,11 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Configurações',
+            onPressed: _openSettings,
+            icon: const Icon(Icons.settings_outlined),
+          ),
           IconButton(
             tooltip: 'Atualizar condições',
             onPressed: _readingTelemetry ? null : _refreshTelemetry,

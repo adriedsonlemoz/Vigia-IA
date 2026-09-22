@@ -40,12 +40,12 @@ extension _MonitorMulticamera on _MonitorScreenState {
   Future<void> _replaceSecondarySource(VideoSourceConfig? source) async {
     final previous = _secondaryController;
     previous?.removeListener(_refresh);
-    setState(() => _secondaryController = null);
+    _updateMulticameraState(() => _secondaryController = null);
     previous?.dispose();
     if (source == null || !mounted) return;
     final next = SecondaryCameraController(sourceConfig: source)
       ..addListener(_refresh);
-    setState(() => _secondaryController = next);
+    _updateMulticameraState(() => _secondaryController = next);
     await next.start();
   }
 
@@ -202,7 +202,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 onFullscreen: _fullscreenChanging
                     ? null
                     : () => unawaited(_toggleFullscreen()),
-                onToggleFill: () => setState(() => _fillPreview = !_fillPreview),
+                onToggleFill: () =>
+                    _updateMulticameraState(() => _fillPreview = !_fillPreview),
                 onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
                 menu: _monitorMenu(),
               ),
@@ -448,7 +449,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 processing: _controller.processing,
                 onClose: () => unawaited(_closeMonitor()),
                 onFullscreen: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
-                onToggleFill: () => setState(() => _fillPreview = !_fillPreview),
+                onToggleFill: () =>
+                    _updateMulticameraState(() => _fillPreview = !_fillPreview),
                 onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
                 menu: _monitorMenu(),
               ),
@@ -512,7 +514,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
                           : Icons.more_horiz_rounded,
                       label: _hudExpanded ? 'Ocultar' : 'Painel',
                       active: false,
-                      onTap: () => setState(() => _hudExpanded = !_hudExpanded),
+                      onTap: () =>
+                          _updateMulticameraState(() => _hudExpanded = !_hudExpanded),
                     ),
                   ],
                 ),
@@ -554,7 +557,9 @@ extension _MonitorMulticamera on _MonitorScreenState {
                             : Icons.fit_screen_rounded,
                         label: _fillPreview ? 'Preencher' : 'Ajustar',
                         active: _fillPreview,
-                        onTap: () => setState(() => _fillPreview = !_fillPreview),
+                        onTap: () => _updateMulticameraState(
+                          () => _fillPreview = !_fillPreview,
+                        ),
                       ),
                     ],
                   ),
@@ -576,7 +581,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
               bottom: 12,
               child: IconButton.filledTonal(
                 tooltip: 'Cancelar edição da área',
-                onPressed: () => setState(() => _editingZoneId = null),
+                onPressed: () =>
+                    _updateMulticameraState(() => _editingZoneId = null),
                 icon: const Icon(Icons.close_rounded),
               ),
             ),
@@ -598,4 +604,3 @@ extension _MonitorMulticamera on _MonitorScreenState {
   }
 
 }
-

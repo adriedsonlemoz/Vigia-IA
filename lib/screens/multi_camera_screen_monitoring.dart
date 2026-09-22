@@ -122,12 +122,11 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
     await _history.initialize();
     if (!mounted) return;
     _statusTimer = Timer.periodic(
-      _automaticRefreshInterval,
+      _MultiCameraScreenState._automaticRefreshInterval,
       (_) => unawaited(_refreshStatuses()),
     );
-    setState(() {});
+    _updateMonitoringState(() {});
     unawaited(_refreshStatuses());
   }
 
 }
-

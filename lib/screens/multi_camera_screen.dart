@@ -12,7 +12,6 @@ import '../services/event_history_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/main_navigation_bar.dart';
-import 'bike_mode_screen.dart';
 import 'events_screen.dart';
 import 'home_screen.dart';
 import 'monitor_screen.dart';
@@ -42,6 +41,8 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
   bool _loading = true;
   bool _refreshing = false;
   DateTime? _lastRefresh;
+
+  void _updateMonitoringState(VoidCallback update) => setState(update);
 
   @override
   void initState() {
@@ -454,7 +455,6 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
       0 => const HomeScreen(),
       1 => const EventsScreen(),
       2 => const HomeScreen(startMonitorOnLoad: true),
-      4 => const BikeModeScreen(),
       _ => const MultiCameraScreen(),
     };
     Navigator.of(context).pushAndRemoveUntil(

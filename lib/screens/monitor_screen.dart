@@ -93,6 +93,8 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   void _updateFullscreenState(VoidCallback update) => setState(update);
 
+  void _updateMulticameraState(VoidCallback update) => setState(update);
+
   void _refresh() {
     if (!mounted) return;
     final currentCount = _controller.trackingEnabled

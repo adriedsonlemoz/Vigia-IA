@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.78+78
+# Arquitetura — Vigia IA 1.0.79+79
 
 ## 1. Princípios
+
+## Evolução 1.0.79 — Buildfix dos módulos e navegação
+
+- extensões em arquivos `part` não chamam mais diretamente o membro protegido `State.setState`; `_MonitorScreenState` e `_MultiCameraScreenState` oferecem atualizadores privados usados pelos módulos;
+- o intervalo estático da Central multicâmera é referenciado por `_MultiCameraScreenState._automaticRefreshInterval`, como exige o Dart 3.12;
+- `_mainDestinations` volta a representar apenas as quatro áreas recorrentes: Início, Histórico, Monitor e Câmeras;
+- `BikeModeScreen` não participa mais do índice compartilhado da navegação, evitando um destino sem ação útil;
+- o Modo Bike continua sendo um modo operacional persistido por `AppLaunchModeService` e fica acessível pela seleção inicial ou por Configurações > Monitoramento.
 
 ## Evolução 1.0.78 — Monitor adaptativo e telemetria Bike
 

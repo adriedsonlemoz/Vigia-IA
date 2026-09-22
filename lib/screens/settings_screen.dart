@@ -8,6 +8,7 @@ import 'audio_settings_screen.dart';
 import 'alerts_clips_screen.dart';
 import 'app_info_screen.dart';
 import 'appearance_settings_screen.dart';
+import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
 import 'launch_mode_screen.dart';
@@ -105,6 +106,12 @@ class SettingsScreen extends StatelessWidget {
               context,
               const LaunchModeScreen(manualReview: true),
             ),
+          ),
+          _SettingsTile(
+            icon: Icons.directions_bike_outlined,
+            title: 'Modo Bike',
+            subtitle: 'Configure energia, sensores e simulação da bike.',
+            onTap: () => _push(context, const BikeModeScreen()),
           ),
           _SettingsTile(
             icon: Icons.video_settings_outlined,

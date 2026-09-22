@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.78+78`
+> **Versão atual:** `1.0.79+79`
 
 ## Estado atual
 
-A `1.0.78+78` organiza o Monitor para uma ou duas câmeras, prepara a telemetria dos sensores da bike e corrige o fluxo de permissões e a saída do transmissor.
+A `1.0.79+79` corrige o bloqueio do `flutter analyze` da entrega anterior e simplifica a navegação principal, movendo o Modo Bike para Configurações.
+
+### Evolução 1.0.79 — Buildfix e navegação essencial
+
+- corrige os oito usos protegidos de `setState` nos módulos multicâmera extraídos;
+- qualifica o intervalo estático da Central multicâmera, eliminando o erro restante do Android-APK-47;
+- o menu inferior e a barra lateral ficam apenas com Início, Histórico, Monitor e Câmeras;
+- Modo Bike continua disponível na seleção inicial e passa a ter acesso direto em Configurações > Monitoramento;
+- a tela Bike deixa de exibir um quinto destino sem função e ganha atalho claro para Configurações;
+- o teste da navegação protege os quatro destinos e confirma que Bike não reaparece no menu principal.
 
 ### Evolução 1.0.78 — Câmeras adaptativas e sensores Bike
 
@@ -115,7 +124,7 @@ A `1.0.78+78` organiza o Monitor para uma ou duas câmeras, prepara a telemetria
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da entrega atual: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Correção de áudio anterior: [RELEASE-1.0.77.md](RELEASE-1.0.77.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da entrega atual: [RELEASE-1.0.79.md](RELEASE-1.0.79.md). Layout e sensores: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

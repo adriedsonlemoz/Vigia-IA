@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.78+78
+# Validação — Vigia IA 1.0.79+79
 
-Data: 2026-09-22. Base preservada: 1.0.77+77.
+Data: 2026-09-22. Base preservada: 1.0.78+78.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, áudio, layout adaptativo, sensores, permissões e retorno do transmissor |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.78+78 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, regressões do Android-APK-47 e navegação com quatro destinos |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.79+79 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -27,6 +27,19 @@ Data: 2026-09-22. Base preservada: 1.0.77+77.
 | Sensores Bike | Hall, temperatura, pneus, bateria e distância normalizados, exibidos e enviados pelo status remoto |
 | Permissões | Pedido automático nativo removido; novo marcador exige guia antes da escolha de modo |
 | Retorno do transmissor | Botão superior e retorno do Android voltam à seleção, com confirmação de parada |
+| Android-APK-47 | Oito usos protegidos de `setState` e uma referência estática sem qualificação corrigidos |
+| Navegação principal | Quatro destinos: Início, Histórico, Monitor e Câmeras; Bike ausente dos índices compartilhados |
+| Acesso ao Bike | Preservado na seleção inicial e adicionado em Configurações > Monitoramento |
+
+## Roteiro da 1.0.79
+
+- confirmar que o menu inferior em retrato mostra exatamente quatro opções e não corta os rótulos;
+- confirmar que a barra lateral em paisagem mostra os mesmos quatro destinos;
+- navegar entre Início, Histórico, Monitor e Câmeras e verificar os índices selecionados;
+- abrir Configurações > Monitoramento > Modo Bike;
+- na tela Bike, usar a engrenagem para voltar às configurações e usar Abrir Monitor para testar o HUD;
+- selecionar Bike como modo inicial e confirmar que o app ainda abre diretamente nessa tela;
+- executar `flutter analyze` e confirmar que os nove apontamentos do Android-APK-47 não reaparecem.
 
 ## Roteiro da 1.0.78
 

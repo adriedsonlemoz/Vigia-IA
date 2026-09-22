@@ -14,7 +14,6 @@ import '../services/remote_camera_pairing_service.dart';
 import '../widgets/main_navigation_bar.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
-import 'bike_mode_screen.dart';
 import 'events_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
@@ -435,7 +434,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final Widget target = switch (index) {
       1 => const EventsScreen(),
       3 => const MultiCameraScreen(),
-      4 => const BikeModeScreen(),
       _ => const HomeScreen(),
     };
     Navigator.of(context).pushReplacement(

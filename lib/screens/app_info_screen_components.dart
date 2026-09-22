@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.78',
+          version: '1.0.79',
           current: true,
+          changes: [
+            'Corrige os nove problemas do flutter analyze encontrados no Android-APK-47.',
+            'Atualizações visuais dos módulos multicâmera agora passam pela classe State proprietária.',
+            'O menu principal volta a ter somente Início, Histórico, Monitor e Câmeras.',
+            'Modo Bike continua disponível na escolha inicial e foi movido para Configurações > Monitoramento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.78',
           changes: [
             'Monitor usa a mesma tela responsiva com uma câmera em área integral ou duas câmeras empilhadas/lado a lado.',
             'Velocidade Hall, temperatura, pressão dianteira/traseira, bateria dos sensores e distância aparecem em faixa compacta.',
