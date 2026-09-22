@@ -44,4 +44,43 @@ void main() {
     expect(data.health, BikeSensorHealth.disconnected);
     expect(data.primaryWarning, 'Sensores da bike sem conexão');
   });
+
+  test('telemetria ESP32 converte Hall, temperatura, pneus e bateria', () {
+    final data = BikeSensorSnapshot.fromEsp32Json(<String, dynamic>{
+      'capturedAt': '2026-09-22T10:30:00.000Z',
+      'connected': true,
+      'speedKmh': 31.4,
+      'temperatureC': 27.8,
+      'frontTirePsi': 41.2,
+      'rearTirePsi': 44.6,
+      'batteryPercent': 76,
+      'tripDistanceKm': 12.3,
+    });
+
+    expect(data.source, BikeSensorSource.esp32);
+    expect(data.speedKmh, 31.4);
+    expect(data.ambientTemperatureC, 27.8);
+    expect(data.frontTirePsi, 41.2);
+    expect(data.rearTirePsi, 44.6);
+    expect(data.sensorBatteryPercent, 76);
+    expect(data.toJson()['temperatureC'], 27.8);
+  });
+
+  test('telemetria fora do limite e normalizada antes de chegar ao HUD', () {
+    final data = BikeSensorSnapshot.fromEsp32Json(<String, dynamic>{
+      'speedKmh': -8,
+      'temperatureC': 180,
+      'frontTirePsi': -3,
+      'rearTirePsi': 220,
+      'batteryPercent': 130,
+      'tripDistanceKm': -1,
+    });
+
+    expect(data.speedKmh, 0);
+    expect(data.ambientTemperatureC, 125);
+    expect(data.frontTirePsi, 0);
+    expect(data.rearTirePsi, 150);
+    expect(data.sensorBatteryPercent, 100);
+    expect(data.tripDistanceKm, 0);
+  });
 }

@@ -9,9 +9,8 @@ import 'bike_mode_service.dart';
 
 /// Fonte única dos dados exibidos no HUD do Modo Bike.
 ///
-/// Nesta etapa apenas o simulador está conectado. O contrato foi separado da UI
-/// para que uma fonte ESP32 possa substituir o simulador posteriormente sem
-/// redesenhar o HUD.
+/// O simulador e a entrada ESP32 compartilham o mesmo contrato, permitindo ligar
+/// a futura ponte HTTP/Bluetooth sem redesenhar o HUD.
 class BikeSensorService extends ChangeNotifier {
   BikeSensorService._() {
     _bikeMode.addListener(_syncWithBikeConfig);
@@ -21,6 +20,7 @@ class BikeSensorService extends ChangeNotifier {
 
   final BikeModeService _bikeMode = BikeModeService.instance;
   Timer? _timer;
+  Timer? _staleTimer;
   BikeSensorSnapshot? _snapshot;
   bool _initialized = false;
   int _tick = 0;
@@ -40,7 +40,20 @@ class BikeSensorService extends ChangeNotifier {
     if (!config.sensorSimulationEnabled) {
       _timer?.cancel();
       _timer = null;
-      _snapshot = null;
+      _staleTimer?.cancel();
+      _staleTimer = null;
+      _snapshot = config.enabled
+          ? BikeSensorSnapshot(
+              capturedAt: DateTime.now(),
+              source: BikeSensorSource.esp32,
+              connected: false,
+              speedKmh: 0,
+              frontTirePsi: 0,
+              rearTirePsi: 0,
+              sensorBatteryPercent: 0,
+              tripDistanceKm: _tripDistanceKm,
+            )
+          : null;
       notifyListeners();
       return;
     }
@@ -52,8 +65,38 @@ class BikeSensorService extends ChangeNotifier {
     );
   }
 
+  /// Entrada única para a futura ponte HTTP/Bluetooth do ESP32.
+  void applyEsp32Telemetry(Map<String, dynamic> payload) {
+    if (!_initialized || !_bikeMode.config.enabled) return;
+    _timer?.cancel();
+    _timer = null;
+    final snapshot = BikeSensorSnapshot.fromEsp32Json(payload);
+    _tripDistanceKm = snapshot.tripDistanceKm;
+    _snapshot = snapshot;
+    _staleTimer?.cancel();
+    _staleTimer = Timer(const Duration(seconds: 6), () {
+      final current = _snapshot;
+      if (current == null || current.source != BikeSensorSource.esp32) return;
+      _snapshot = BikeSensorSnapshot(
+        capturedAt: current.capturedAt,
+        source: BikeSensorSource.esp32,
+        connected: false,
+        speedKmh: 0,
+        frontTirePsi: current.frontTirePsi,
+        rearTirePsi: current.rearTirePsi,
+        sensorBatteryPercent: current.sensorBatteryPercent,
+        tripDistanceKm: current.tripDistanceKm,
+        ambientTemperatureC: current.ambientTemperatureC,
+      );
+      notifyListeners();
+    });
+    notifyListeners();
+  }
+
   void _emitSimulation(BikeSimulationScenario scenario) {
     if (!_bikeMode.config.sensorSimulationEnabled) return;
+    _staleTimer?.cancel();
+    _staleTimer = null;
     _tick++;
     final wave = math.sin(_tick / 3.2);
     final speed = switch (scenario) {

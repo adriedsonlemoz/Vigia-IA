@@ -135,6 +135,7 @@ class _CameraCard extends StatelessWidget {
     required this.status,
     required this.lastEvent,
     required this.onOpen,
+    required this.onOpenWithSecond,
     required this.onEdit,
     required this.onToggle,
     required this.onDelete,
@@ -144,6 +145,7 @@ class _CameraCard extends StatelessWidget {
   final CameraProbeResult? status;
   final MonitorEvent? lastEvent;
   final VoidCallback onOpen;
+  final VoidCallback? onOpenWithSecond;
   final VoidCallback? onEdit;
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
@@ -276,13 +278,29 @@ class _CameraCard extends StatelessWidget {
                     ),
             ),
             const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: camera.enabled ? onOpen : null,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Monitorar'),
-              ),
+            Row(
+              children: [
+                if (onOpenWithSecond != null) ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: camera.enabled ? onOpenWithSecond : null,
+                      icon: const Icon(Icons.video_collection_outlined),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Duas câmeras'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: camera.enabled ? onOpen : null,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Monitorar'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.77',
+          version: '1.0.78',
           current: true,
+          changes: [
+            'Monitor usa a mesma tela responsiva com uma câmera em área integral ou duas câmeras empilhadas/lado a lado.',
+            'Velocidade Hall, temperatura, pressão dianteira/traseira, bateria dos sensores e distância aparecem em faixa compacta.',
+            'Telemetria dos sensores pode vir do ESP32 local ou do celular transmissor; somente a câmera principal executa IA.',
+            'Permissões voltam a ser explicadas antes da escolha de modo e o botão Voltar do transmissor retorna à seleção.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.77',
           changes: [
             'Corrige a falha resource_id_zero dos áudios integrados no Android.',
             'Os 78 slots agora usam referências R.raw explícitas, sem busca dinâmica por nome.',

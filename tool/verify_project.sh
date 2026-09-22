@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.77+77$' pubspec.yaml || fail 'Versao esperada 1.0.77+77 nao encontrada.'
+grep -q '^version: 1\.0\.78+78$' pubspec.yaml || fail 'Versao esperada 1.0.78+78 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -68,7 +68,7 @@ grep -q 'MonitoringZoneService.crop' lib/controllers/monitor_controller.dart \
   || fail 'Areas de monitoramento nao estao recortando frames antes da IA.'
 grep -q 'MonitoringZoneService.filterToZones' lib/controllers/monitor_controller.dart \
   || fail 'Deteccoes nao estao sendo filtradas pelas zonas ativas.'
-grep -q 'MonitoringZoneOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
+grep -q 'MonitoringZoneOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart \
   || fail 'Editor visual das Areas de Monitoramento nao foi encontrado.'
 grep -q 'updateMonitoringZone' lib/controllers/monitor_controller.dart \
   || fail 'Atualizacao das Areas de Monitoramento nao esta ligada ao controller.'
@@ -136,7 +136,7 @@ grep -q '_recordConfirmedEvents' lib/controllers/monitor_controller.dart \
   || fail 'Eventos confirmados nao estao ligados ao anti-repeticao.'
 grep -q 'EventHistoryService.instance' lib/controllers/monitor_controller.dart \
   || fail 'Historico nao esta ligado ao MonitorController.'
-grep -q 'DetectionOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
+grep -q 'DetectionOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart \
   || fail 'Caixas de deteccao nao estao ligadas ao preview.'
 grep -q 'EventsScreen' lib/screens/home_screen.dart \
   || fail 'Historico de eventos nao esta acessivel pela Home.'
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.77';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.77.'
-grep -q 'static const int build = 77;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 77.'
-grep -q "version: '1.0.77'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.77.'
+grep -q "static const String version = '1.0.78';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.78.'
+grep -q 'static const int build = 78;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 78.'
+grep -q "version: '1.0.78'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.78.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.77+77$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.77+77.'
+grep -q '^version: 1.0.78+78$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.78+78.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.77"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.77.'
-grep -q '"build": 77' app_identity.json \
-  || fail 'app_identity.json nao esta no build 77.'
+grep -q '"version": "1.0.78"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.78.'
+grep -q '"build": 78' app_identity.json \
+  || fail 'app_identity.json nao esta no build 78.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -545,8 +545,8 @@ grep -q 'Identidade e aparência 1.0.25' ARCHITECTURE.md \
 # Permissoes e segundo plano 1.0.26
 grep -q 'requestCameraPermission' tool/android/MainActivity.kt \
   || fail 'Bridge nativa nao solicita permissao da camera.'
-grep -q 'maybePromptCameraPermissionOnFirstLaunch' tool/android/MainActivity.kt \
-  || fail 'Camera nao e solicitada na primeira abertura.'
+grep -q '_requestCamera' lib/screens/access_guide_screen.dart \
+  || fail 'Acesso inicial nao oferece a solicitacao guiada da camera.'
 grep -q 'FOREGROUND_SERVICE_SPECIAL_USE' tool/AndroidManifest.xml \
   || fail 'Permissao specialUse do foreground service nao declarada.'
 grep -q 'camera|specialUse' tool/AndroidManifest.xml \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.77+77' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.77+77.'
+grep -q 'Vigia IA 1.0.78+78' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.78+78.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -986,7 +986,7 @@ grep -q 'remoteStatusNotifier.addListener' lib/controllers/monitor_controller.da
   || fail 'MonitorController nao observa telemetria do celular traseiro.'
 grep -q 'RemoteBikeStatusPanel' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
   || fail 'Monitor nao expoe painel do celular traseiro.'
-grep -q 'RemoteBikeWarningBanner' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
+grep -q 'RemoteBikeWarningBanner' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart \
   || fail 'Monitor nao destaca avisos do celular traseiro.'
 grep -q 'DeviceTelemetrySnapshot.fromJson' test/device_telemetry_test.dart \
   || fail 'Teste de telemetria remota com capturedAt ausente.'
@@ -1255,7 +1255,7 @@ grep -q 'Evolução 1.0.54' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f test/bike_sensor_snapshot_test.dart ]] || fail 'Testes dos sensores simulados nao encontrados.'
 grep -q 'sensorSimulationEnabled' lib/models/bike_mode_config.dart   || fail 'Configuracao do simulador nao e persistida no Modo Bike.'
 grep -q 'Teste do HUD sem ESP32' lib/screens/bike_mode_screen.dart   || fail 'Tela Bike nao oferece teste do HUD sem ESP32.'
-grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
+grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
 grep -q "'SIMULAÇÃO" lib/widgets/bike_ride_hud.dart   || fail 'HUD simulado nao identifica claramente dados sinteticos.'
 if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart; then
   fail 'Lint use_null_aware_elements da 1.0.53 reapareceu no Status da sessao.'
@@ -1270,8 +1270,8 @@ grep -q 'Evolução 1.0.55' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/core/adaptive_layout.dart ]] || fail 'Breakpoints adaptativos nao encontrados.'
 grep -q 'class AdaptiveMainScaffold' lib/widgets/main_navigation_bar.dart || fail 'Shell adaptativo principal ausente.'
 grep -q 'class MainNavigationRail' lib/widgets/main_navigation_bar.dart || fail 'NavigationRail principal ausente.'
-grep -q "label: _fillPreview ? 'Preencher' : 'Ajustar'" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Alternancia Ajustar/Preencher ausente.'
-grep -q 'fillPreview: _fillPreview' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Overlays nao acompanham o modo de preenchimento.'
+grep -q "label: _fillPreview ? 'Preencher' : 'Ajustar'" lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart || fail 'Alternancia Ajustar/Preencher ausente.'
+grep -q 'fillPreview: _fillPreview' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart || fail 'Overlays nao acompanham o modo de preenchimento.'
 grep -q 'constraints.maxWidth >= 760' lib/screens/bike_mode_screen.dart || fail 'Modo Bike nao reorganiza a tela larga.'
 grep -q 'showCloseButton: true' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Status da sessao nao usa superficie larga.'
 [[ -f test/adaptive_main_scaffold_test.dart ]] || fail 'Teste do shell adaptativo nao encontrado.'
@@ -1289,7 +1289,7 @@ grep -q 'Evolução 1.0.56' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 grep -q 'BikeSimulationScenario.vehicleApproaching' lib/models/bike_mode_config.dart || fail 'Simulacao de aproximacao nao configurada.'
 grep -q '_updateBikeApproachFastPath(primaryGlobalForBike, now);' lib/controllers/monitor_controller.dart || fail 'Caminho rapido Bike nao esta ligado apos a inferencia principal.'
 grep -q 'primaryAllowedLabels' lib/controllers/monitor_controller.dart || fail 'Inferencia principal nao separa labels de seguranca Bike.'
-grep -q 'BikeApproachBanner(status: approach)' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart || fail 'Monitor nao exibe alerta visual de aproximacao.'
+grep -q 'BikeApproachBanner(status: approach)' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart || fail 'Monitor nao exibe alerta visual de aproximacao.'
 python3 - <<'PY_BIKE_FAST_PATH' || fail 'Caminho rapido Bike nao ocorre antes das inferencias auxiliares.'
 from pathlib import Path
 text = Path('lib/controllers/monitor_controller.dart').read_text(encoding='utf-8')
@@ -1600,5 +1600,50 @@ grep -q 'Evolução 1.0.77' README.md || fail 'README nao documenta 1.0.77.'
 grep -q "version: '1.0.77'" lib/screens/app_info_screen_components.dart \
   || fail 'Tela de Mudancas nao documenta 1.0.77.'
 [[ -f RELEASE-1.0.77.md ]] || fail 'Notas da entrega 1.0.77 ausentes.'
+
+# Cameras adaptativas, sensores e permissoes - 1.0.78
+grep -q '^## 1.0.78+78' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.78.'
+grep -q 'Evolução 1.0.78' README.md || fail 'README nao documenta 1.0.78.'
+grep -q "version: '1.0.78'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.78.'
+[[ -f RELEASE-1.0.78.md ]] || fail 'Notas da entrega 1.0.78 ausentes.'
+[[ -f lib/core/adaptive_camera_layout.dart ]] || fail 'Politica adaptativa das cameras ausente.'
+[[ -f test/adaptive_camera_layout_test.dart ]] || fail 'Teste do layout adaptativo ausente.'
+[[ -f lib/controllers/secondary_camera_controller.dart ]] || fail 'Controller da segunda camera ausente.'
+grep -q 'this.secondarySource' lib/screens/monitor_screen.dart \
+  || fail 'Monitor nao aceita uma segunda fonte opcional.'
+grep -q 'AdaptiveCameraLayout.sideBySide' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Duas cameras nao usam composicao lado a lado quando apropriado.'
+grep -q 'AdaptiveCameraLayout.stacked' test/adaptive_camera_layout_test.dart \
+  || fail 'Retrato com duas cameras nao esta protegido por teste.'
+grep -q 'emitFrames: false' lib/controllers/secondary_camera_controller.dart \
+  || fail 'Segunda camera pode duplicar o pipeline de IA.'
+grep -q 'Duas câmeras' lib/screens/multi_camera_screen_components.dart \
+  || fail 'Central multicamera nao oferece composicao com duas cameras.'
+grep -q 'applyEsp32Telemetry' lib/services/bike_sensor_service.dart \
+  || fail 'Entrada de telemetria ESP32 ausente.'
+grep -q "'frontTirePsi'" lib/models/bike_sensor_snapshot.dart \
+  || fail 'Contrato dos sensores nao inclui pressao dianteira.'
+grep -q "'rearTirePsi'" lib/models/bike_sensor_snapshot.dart \
+  || fail 'Contrato dos sensores nao inclui pressao traseira.'
+grep -q "'temperatureC'" lib/models/bike_sensor_snapshot.dart \
+  || fail 'Contrato dos sensores nao inclui temperatura.'
+grep -q "'bikeSensors': _bikeSensors.snapshot" lib/services/remote_camera_server_service.dart \
+  || fail 'Transmissor nao publica os sensores no status.'
+grep -q 'rawBikeSensors' lib/models/remote_phone_status.dart \
+  || fail 'Receptor nao converte sensores recebidos.'
+grep -q 'access_guide_completed_v2' tool/android/MainActivity.kt \
+  || fail 'Novo marcador do guia de acesso ausente.'
+if grep -q 'maybePromptCameraPermissionOnFirstLaunch' tool/android/MainActivity.kt; then
+  fail 'Android ainda solicita camera antes da tela explicativa.'
+fi
+cmp -s tool/android/MainActivity.kt android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt \
+  || fail 'MainActivity Android diverge da fonte versionada.'
+grep -q 'class _PermissionReminderHost' lib/app/app.dart \
+  || fail 'Orientacao posterior para permissoes ausentes nao encontrada.'
+grep -q '_returnToModeSelection' lib/screens/camera_mode_screen.dart \
+  || fail 'Modo Transmissao nao retorna a selecao de modo.'
+grep -q 'receiverConnected' lib/services/remote_camera_server_service.dart lib/screens/camera_mode_screen.dart \
+  || fail 'Modo Transmissao nao informa se existe receptor conectado.'
 
 echo 'Verificacao preventiva concluida com sucesso.'

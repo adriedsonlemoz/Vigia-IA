@@ -8,12 +8,16 @@ import '../models/rgb_frame.dart';
 import '../services/shared_local_camera_service.dart';
 
 class LocalCameraSource implements VideoSource {
-  LocalCameraSource({required this.analysisInterval})
+  LocalCameraSource({
+    required this.analysisInterval,
+    this.emitFrames = true,
+  })
       : _consumerId = 'local-camera-${++_nextConsumerId}';
 
   static int _nextConsumerId = 0;
 
   final Duration analysisInterval;
+  final bool emitFrames;
   final String _consumerId;
   final SharedLocalCameraService _shared = SharedLocalCameraService.instance;
   final StreamController<RgbFrame> _frames = StreamController<RgbFrame>.broadcast();
@@ -38,7 +42,9 @@ class LocalCameraSource implements VideoSource {
     if (_started) return;
     _started = true;
     _lastForwardedAt = DateTime.fromMillisecondsSinceEpoch(0);
-    _frameSubscription = _shared.frames.listen(_onSharedFrame);
+    if (emitFrames) {
+      _frameSubscription = _shared.frames.listen(_onSharedFrame);
+    }
     _statusSubscription = _shared.statuses.listen((status) {
       if (!_statuses.isClosed) _statuses.add(status);
     });

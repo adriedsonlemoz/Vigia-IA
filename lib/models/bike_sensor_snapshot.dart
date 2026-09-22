@@ -25,6 +25,48 @@ class BikeSensorSnapshot {
   final double tripDistanceKm;
   final double? ambientTemperatureC;
 
+  Map<String, Object?> toJson() => <String, Object?>{
+        'capturedAt': capturedAt.toUtc().toIso8601String(),
+        'source': source.name,
+        'connected': connected,
+        'speedKmh': speedKmh,
+        'frontTirePsi': frontTirePsi,
+        'rearTirePsi': rearTirePsi,
+        'batteryPercent': sensorBatteryPercent,
+        'tripDistanceKm': tripDistanceKm,
+        'temperatureC': ambientTemperatureC,
+      };
+
+  factory BikeSensorSnapshot.fromEsp32Json(
+    Map<String, dynamic> json, {
+    DateTime? receivedAt,
+  }) {
+    double number(String key, [double fallback = 0]) =>
+        (json[key] as num?)?.toDouble() ?? fallback;
+    final capturedAt = DateTime.tryParse(json['capturedAt'] as String? ?? '') ??
+        receivedAt ??
+        DateTime.now();
+    final sourceName = json['source'] as String?;
+    final source = BikeSensorSource.values.firstWhere(
+      (value) => value.name == sourceName,
+      orElse: () => BikeSensorSource.esp32,
+    );
+    return BikeSensorSnapshot(
+      capturedAt: capturedAt,
+      source: source,
+      connected: json['connected'] as bool? ?? true,
+      speedKmh: number('speedKmh').clamp(0, 180).toDouble(),
+      frontTirePsi: number('frontTirePsi').clamp(0, 150).toDouble(),
+      rearTirePsi: number('rearTirePsi').clamp(0, 150).toDouble(),
+      sensorBatteryPercent:
+          ((json['batteryPercent'] as num?)?.toInt() ?? 0).clamp(0, 100).toInt(),
+      tripDistanceKm: number('tripDistanceKm').clamp(0, 999999).toDouble(),
+      ambientTemperatureC: json['temperatureC'] is num
+          ? (json['temperatureC'] as num).toDouble().clamp(-40, 125).toDouble()
+          : null,
+    );
+  }
+
   bool get simulated => source == BikeSensorSource.simulator;
 
   BikeSensorHealth get health {

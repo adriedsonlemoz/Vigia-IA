@@ -54,6 +54,7 @@ extension _MonitorFullscreen on _MonitorScreenState {
       if (_fullscreenChanging) return;
       switch (value) {
         case 'lan': unawaited(_showLanAccess());
+        case 'cameras': unawaited(_showSecondaryCameraSelector());
         case 'status': unawaited(_showSessionStatus());
         case 'events': unawaited(_openStandardScreen(const EventsScreen()));
         case 'settings': unawaited(_openStandardScreen(const SettingsScreen()));
@@ -61,6 +62,7 @@ extension _MonitorFullscreen on _MonitorScreenState {
     },
     itemBuilder: (_) => const [
       PopupMenuItem(value: 'lan', child: Text('Rede local')),
+      PopupMenuItem(value: 'cameras', child: Text('Uma ou duas câmeras')),
       PopupMenuItem(value: 'status', child: Text('Status da sessão')),
       PopupMenuItem(value: 'events', child: Text('Eventos')),
       PopupMenuItem(value: 'settings', child: Text('Configurações')),
@@ -77,7 +79,7 @@ extension _MonitorFullscreen on _MonitorScreenState {
     behavior: HitTestBehavior.translucent,
     onPointerDown: (_) => _revealFullscreenControls(),
     child: Stack(fit: StackFit.expand, children: [
-      _buildCameraStage(context),
+      _buildAdaptiveCameraStage(context),
       if (_fullscreenControlsVisible)
         Positioned(left: 0, right: 0, bottom: 0, child: SafeArea(
           top: false,

@@ -15,11 +15,13 @@ class RemotePhoneCameraSource implements VideoSource {
     required this.baseUrl,
     required this.accessKey,
     this.analysisInterval = const Duration(milliseconds: 800),
+    this.emitFrames = true,
   });
 
   final String baseUrl;
   final String accessKey;
   final Duration analysisInterval;
+  final bool emitFrames;
   final StreamController<RgbFrame> _frames = StreamController<RgbFrame>.broadcast();
   final StreamController<VideoSourceStatus> _statuses = StreamController<VideoSourceStatus>.broadcast();
   final ValueNotifier<Uint8List?> _latestJpeg = ValueNotifier<Uint8List?>(null);
@@ -135,21 +137,23 @@ class RemotePhoneCameraSource implements VideoSource {
         }
         return;
       }
-      final decodeWatch = Stopwatch()..start();
-      final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
-      decodeWatch.stop();
-      if (decoded != null && !_frames.isClosed) {
-        final frameCapturedAt = capturedAt ?? receivedAt;
-        _lastFrameSequence = sequence ?? _lastFrameSequence;
-        _lastRemoteCapturedAt = frameCapturedAt;
-        _frames.add(RgbFrame(
-          width: decoded['width']! as int,
-          height: decoded['height']! as int,
-          rgbBytes: decoded['bytes']! as Uint8List,
-          capturedAt: frameCapturedAt,
-          sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
-          sourceTransportMs: _frameNetworkLatencyMs?.toDouble(),
-        ));
+      final frameCapturedAt = capturedAt ?? receivedAt;
+      _lastFrameSequence = sequence ?? _lastFrameSequence;
+      _lastRemoteCapturedAt = frameCapturedAt;
+      if (emitFrames) {
+        final decodeWatch = Stopwatch()..start();
+        final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
+        decodeWatch.stop();
+        if (decoded != null && !_frames.isClosed) {
+          _frames.add(RgbFrame(
+            width: decoded['width']! as int,
+            height: decoded['height']! as int,
+            rgbBytes: decoded['bytes']! as Uint8List,
+            capturedAt: frameCapturedAt,
+            sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
+            sourceTransportMs: _frameNetworkLatencyMs?.toDouble(),
+          ));
+        }
       }
       _hasConnected = true;
       _consecutiveFailures = 0;

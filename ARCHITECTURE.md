@@ -1,6 +1,17 @@
-# Arquitetura — Vigia IA 1.0.77+77
+# Arquitetura — Vigia IA 1.0.78+78
 
 ## 1. Princípios
+
+## Evolução 1.0.78 — Monitor adaptativo e telemetria Bike
+
+- `MonitorScreen` recebe opcionalmente uma segunda `VideoSourceConfig`; `monitor_screen_multicamera.dart` mantém uma única composição que escolhe área integral, empilhamento ou lado a lado conforme quantidade, orientação e largura.
+- `SecondaryCameraController` mantém preview e estado da segunda fonte com `emitFrames: false`. Assim, somente a fonte principal alimenta o `MonitorController` e o pipeline de IA.
+- `CameraRegistryService` continua sendo a origem dos cadastros. A Central multicâmera e o seletor do Monitor apenas compõem duas fontes já existentes.
+- `BikeSensorSnapshot.fromEsp32Json` é o contrato de normalização para Hall, temperatura, pressões, bateria e distância; `BikeSensorService.applyEsp32Telemetry` é o ponto de entrada para a futura ponte física.
+- `RemoteCameraServerService` inclui `bikeSensors` em `/status`; `RemotePhoneStatus` converte o payload e o receptor escolhe a telemetria conectada disponível.
+- O guia inicial usa o marcador nativo `access_guide_completed_v2`. O Android não solicita mais a câmera em `onPostResume`, preservando explicação antes do pedido.
+- `_PermissionReminderHost` detecta câmera ou rede local obrigatória removida após o onboarding e oferece revisão pontual, sem apagar o modo salvo.
+- `CameraModeScreen` intercepta retorno superior e do sistema; se estiver transmitindo, confirma a parada e volta para `LaunchModeScreen`.
 
 ## Evolução 1.0.77 — Catálogo compilado de áudio
 

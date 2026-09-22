@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.77+77`
+> **Versão atual:** `1.0.78+78`
 
 ## Estado atual
 
-A `1.0.77+77` corrige a resolução dos áudios integrados no Android e preserva o novo fluxo explícito entre transmissor e receptor.
+A `1.0.78+78` organiza o Monitor para uma ou duas câmeras, prepara a telemetria dos sensores da bike e corrige o fluxo de permissões e a saída do transmissor.
+
+### Evolução 1.0.78 — Câmeras adaptativas e sensores Bike
+
+- a mesma tela do Monitor usa uma câmera em toda a área de vídeo ou duas câmeras empilhadas no retrato e lado a lado na paisagem;
+- a câmera principal continua responsável por IA, histórico, alertas, clipes e áudios; a segunda câmera usa uma visualização leve para preservar desempenho;
+- a Central multicâmera e o menu do Monitor permitem abrir ou remover a segunda câmera sem criar uma tela paralela;
+- velocidade do sensor Hall, temperatura, pressão dianteira/traseira, bateria dos sensores e distância ficam em uma faixa compacta no topo;
+- o contrato de telemetria aceita dados ESP32 e envia esses sensores, junto da bateria do transmissor, pelo endpoint de status local;
+- o Android deixa de pedir câmera antes da explicação: Acesso inicial → permissões → escolha de modo → modo escolhido;
+- permissões obrigatórias removidas depois geram orientação curta, sem refazer o onboarding;
+- o botão Voltar e o gesto Voltar do Modo Transmissão encerram a transmissão com confirmação e retornam à seleção de modo.
+- o transmissor mostra se há receptor conectado e deixa explícito que envia imagem, bateria e telemetria, sem executar a IA do receptor.
 
 ### Evolução 1.0.77 — Recursos de áudio compilados
 
@@ -103,7 +115,7 @@ A `1.0.77+77` corrige a resolução dos áudios integrados no Android e preserva
 - em **Mais opções → Status da sessão**, confira os tempos. Em **Configurações → Diagnóstico**, exporte os relatórios com eventos de áudio, decisão das regras e modelo usado;
 - quadros acima de 1,5 s não alimentam a aproximação urgente Bike; acima de 5 s não geram novos alertas falados e a tela informa o atraso.
 
-Detalhes da correção atual: [RELEASE-1.0.77.md](RELEASE-1.0.77.md). Fluxo anterior: [RELEASE-1.0.76.md](RELEASE-1.0.76.md). Roteiro funcional da 1.0.67: [RELEASE-1.0.67.md](RELEASE-1.0.67.md) e [VALIDATION.md](VALIDATION.md).
+Detalhes da entrega atual: [RELEASE-1.0.78.md](RELEASE-1.0.78.md). Correção de áudio anterior: [RELEASE-1.0.77.md](RELEASE-1.0.77.md). Fluxo Monitor: [RELEASE-1.0.76.md](RELEASE-1.0.76.md) e [VALIDATION.md](VALIDATION.md).
 
 ### Evolução 1.0.66 — Buildfix dos testes
 

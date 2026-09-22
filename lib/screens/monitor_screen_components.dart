@@ -1,5 +1,67 @@
 part of 'monitor_screen.dart';
 
+class _CameraPaneLabel extends StatelessWidget {
+  const _CameraPaneLabel({
+    required this.title,
+    required this.detail,
+    required this.active,
+  });
+
+  final String title;
+  final String detail;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 230),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.76),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: active
+                    ? const Color(0xFF69D59C)
+                    : const Color(0xFFFFB4AB),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    detail,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.white.withValues(alpha: 0.72),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class _CompactMonitorTopHud extends StatelessWidget {
   const _CompactMonitorTopHud({
     required this.sourceStatus,
@@ -177,6 +239,10 @@ class _DeviceStatusStrip extends StatelessWidget {
     required this.receiverActive,
     required this.networkLatencyMs,
     required this.onTap,
+    this.secondarySourceType,
+    this.secondarySourceStatus,
+    this.secondaryRemoteStatus,
+    this.secondaryLabel,
   });
 
   final DeviceTelemetrySnapshot? localDevice;
@@ -186,6 +252,10 @@ class _DeviceStatusStrip extends StatelessWidget {
   final bool receiverActive;
   final int? networkLatencyMs;
   final VoidCallback onTap;
+  final VideoSourceType? secondarySourceType;
+  final VideoSourceStatus? secondarySourceStatus;
+  final RemotePhoneStatus? secondaryRemoteStatus;
+  final String? secondaryLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +274,24 @@ class _DeviceStatusStrip extends StatelessWidget {
     final latency = remoteSource && networkLatencyMs != null
         ? '$networkLatencyMs ms'
         : null;
+    final secondaryType = secondarySourceType;
+    final secondaryOnline = secondaryType != null &&
+        secondarySourceStatus?.state == VideoSourceState.streaming &&
+        (secondaryType != VideoSourceType.remotePhone ||
+            (secondaryRemoteStatus?.online != false &&
+                secondaryRemoteStatus?.isStale() != true));
+    final secondaryTelemetry = switch (secondaryType) {
+      VideoSourceType.localCamera => localDevice,
+      VideoSourceType.remotePhone => secondaryRemoteStatus?.device,
+      VideoSourceType.rtsp => null,
+      null => null,
+    };
+    final secondaryDetail = secondaryType == VideoSourceType.remotePhone &&
+            secondaryRemoteStatus?.networkLatencyMs != null
+        ? '${secondaryRemoteStatus!.networkLatencyMs} ms'
+        : secondaryOnline
+            ? 'Imagem ativa'
+            : 'Sem imagem';
 
     return Material(
       color: Colors.black.withValues(alpha: 0.76),
@@ -239,6 +327,21 @@ class _DeviceStatusStrip extends StatelessWidget {
                       (transmitterOnline ? 'Imagem ativa' : 'Sem imagem'),
                 ),
               ),
+              if (secondaryType != null) ...[
+                Container(
+                  width: 1,
+                  height: 24,
+                  color: Colors.white.withValues(alpha: 0.18),
+                ),
+                Expanded(
+                  child: _DeviceStatusItem(
+                    label: secondaryLabel ?? 'Câmera 2',
+                    telemetry: secondaryTelemetry,
+                    online: secondaryOnline,
+                    detail: secondaryDetail,
+                  ),
+                ),
+              ],
               const Padding(
                 padding: EdgeInsets.only(right: 6),
                 child: Icon(Icons.chevron_right_rounded, size: 16),

@@ -13,6 +13,7 @@ import '../models/device_telemetry.dart';
 import '../models/rgb_frame.dart';
 import 'background_monitor_service.dart';
 import 'bike_mode_service.dart';
+import 'bike_sensor_service.dart';
 import 'native_platform_service.dart';
 import '../sources/local_camera_source.dart';
 
@@ -24,6 +25,7 @@ class RemoteCameraServerService extends ChangeNotifier {
   static final RemoteCameraServerService instance = RemoteCameraServerService._();
 
   final BikeModeService _bikeMode = BikeModeService.instance;
+  final BikeSensorService _bikeSensors = BikeSensorService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
   LocalCameraSource? _source;
   StreamSubscription<RgbFrame>? _subscription;
@@ -44,6 +46,9 @@ class RemoteCameraServerService extends ChangeNotifier {
   BikeModeConfig _bikeConfig = const BikeModeConfig();
   DeviceTelemetrySnapshot? _deviceTelemetry;
   Timer? _bikeTelemetryTimer;
+  Timer? _receiverActivityTimer;
+  DateTime? _lastReceiverRequestAt;
+  bool _receiverConnected = false;
   bool _bikeLowBatteryAlerted = false;
 
   bool get running => _server != null && _source != null;
@@ -55,6 +60,7 @@ class RemoteCameraServerService extends ChangeNotifier {
   int get port => _port;
   bool get bikeModeEnabled => _bikeConfig.enabled;
   String get bikePowerProfileLabel => _bikeConfig.powerProfile.label;
+  bool get receiverConnected => _receiverConnected;
 
   Widget buildPreview() => _source?.buildPreview() ?? const SizedBox.expand();
 
@@ -66,6 +72,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     notifyListeners();
     try {
       _bikeConfig = await _bikeMode.initialize();
+      await _bikeSensors.initialize();
       final foregroundStarted = await BackgroundMonitorService.acquire(
         owner: BackgroundMonitorService.cameraModeOwner,
         usesCamera: true,
@@ -246,6 +253,7 @@ class RemoteCameraServerService extends ChangeNotifier {
           await request.response.close();
           continue;
         }
+        _markReceiverActivity();
         final path = request.uri.path;
         if (path == '/status') {
           // Bateria e estado do transmissor são dados operacionais essenciais.
@@ -263,6 +271,7 @@ class RemoteCameraServerService extends ChangeNotifier {
             'alertLowBattery': _bikeConfig.alertLowBattery,
             'lowBatteryPercent': _bikeConfig.lowBatteryPercent,
             'device': telemetry.toJson(),
+            'bikeSensors': _bikeSensors.snapshot?.toJson(),
             'name': 'Vigia IA - câmera remota',
           }));
         } else if (path == '/frame.jpg') {
@@ -310,6 +319,28 @@ class RemoteCameraServerService extends ChangeNotifier {
     }
   }
 
+  void _markReceiverActivity() {
+    _lastReceiverRequestAt = DateTime.now();
+    if (!_receiverConnected) {
+      _receiverConnected = true;
+      notifyListeners();
+    }
+    _receiverActivityTimer ??= Timer.periodic(
+      const Duration(seconds: 2),
+      (_) {
+        final lastRequest = _lastReceiverRequestAt;
+        if (lastRequest != null &&
+            DateTime.now().difference(lastRequest) <= const Duration(seconds: 6)) {
+          return;
+        }
+        _receiverConnected = false;
+        _receiverActivityTimer?.cancel();
+        _receiverActivityTimer = null;
+        notifyListeners();
+      },
+    );
+  }
+
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
@@ -323,6 +354,10 @@ class RemoteCameraServerService extends ChangeNotifier {
     _server = null;
     _bikeTelemetryTimer?.cancel();
     _bikeTelemetryTimer = null;
+    _receiverActivityTimer?.cancel();
+    _receiverActivityTimer = null;
+    _lastReceiverRequestAt = null;
+    _receiverConnected = false;
     _deviceTelemetry = null;
     _latestJpeg = null;
     _latestJpegCapturedAt = null;

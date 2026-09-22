@@ -24,6 +24,15 @@ void main() {
           'memoryAvailableBytes': 3000,
           'memoryTotalBytes': 8000,
         },
+        'bikeSensors': <String, dynamic>{
+          'connected': true,
+          'speedKmh': 28.5,
+          'temperatureC': 26.0,
+          'frontTirePsi': 42.0,
+          'rearTirePsi': 45.0,
+          'batteryPercent': 81,
+          'tripDistanceKm': 4.2,
+        },
       },
       receivedAt: receivedAt,
       networkLatencyMs: 37,
@@ -36,6 +45,8 @@ void main() {
     expect(status.networkLatencyMs, 37);
     expect(status.device?.batteryPercent, 73);
     expect(status.device?.createdAt, DateTime.utc(2026, 9, 19, 20, 59, 58));
+    expect(status.bikeSensors?.speedKmh, 28.5);
+    expect(status.bikeSensors?.frontTirePsi, 42.0);
     expect(status.warnings(receivedAt), isEmpty);
   });
 

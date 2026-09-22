@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.77+77
+# Validação — Vigia IA 1.0.78+78
 
-Data: 2026-09-22. Base preservada: 1.0.76+76.
+Data: 2026-09-22. Base preservada: 1.0.77+77.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, catálogo de áudio e fluxo Monitor/transmissor |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.77+77 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, áudio, layout adaptativo, sensores, permissões e retorno do transmissor |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.78+78 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -22,6 +22,22 @@ Data: 2026-09-22. Base preservada: 1.0.76+76.
 | Telemetria de áudio | Foco, fase, códigos MediaPlayer, origem, arquivo, volume, rota, tempos e fallback protegidos pelo verificador |
 | Catálogo de áudio | 78 slots Dart, 78 referências `R.raw` explícitas e 78 M4A comparados automaticamente |
 | Fluxo Monitor | Tela receptora, QR, endereço/chave manual, Central multicâmera e fonte Celular remoto protegidos pelo verificador |
+| Câmeras adaptativas | Política testável para uma câmera integral, duas empilhadas no retrato e duas lado a lado na paisagem |
+| Segunda câmera | Preview e status independentes, sem duplicar o pipeline de IA da câmera principal |
+| Sensores Bike | Hall, temperatura, pneus, bateria e distância normalizados, exibidos e enviados pelo status remoto |
+| Permissões | Pedido automático nativo removido; novo marcador exige guia antes da escolha de modo |
+| Retorno do transmissor | Botão superior e retorno do Android voltam à seleção, com confirmação de parada |
+
+## Roteiro da 1.0.78
+
+- em retrato, abrir uma câmera e confirmar que ela ocupa toda a área reservada ao vídeo;
+- adicionar uma segunda câmera pelo Monitor ou pela Central e confirmar divisão vertical sem trocar de tela;
+- girar para paisagem e confirmar as duas imagens lado a lado; remover a segunda e confirmar expansão da principal;
+- validar no topo velocidade Hall, temperatura, pressão dianteira/traseira, bateria e distância sem texto cortado;
+- confirmar que detecções, histórico, alertas e áudio pertencem à câmera principal/receptor;
+- iniciar o transmissor, usar o botão Voltar e o gesto do Android, confirmar a parada e escolher outro modo;
+- em instalação limpa/atualizada, confirmar Acesso inicial antes do pedido de permissão e antes da seleção de modo;
+- remover câmera ou rede local nos ajustes e reabrir o app para conferir a orientação pontual.
 
 ## Layout de paisagem e transmissão
 
@@ -47,6 +63,7 @@ Validações manuais recomendadas no aparelho:
 O fluxo atualizado mantém o guia de permissões em primeiro lugar. Quando ele termina, o app abre `LaunchModeScreen` e pede a escolha entre:
 
 - Modo normal: abre a Home;
+- Modo Monitor: abre o fluxo de conexão do receptor;
 - Modo Bike: abre o painel Bike;
 - Modo transmissão: abre o Modo Câmera.
 

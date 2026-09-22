@@ -1,4 +1,5 @@
 import 'device_telemetry.dart';
+import 'bike_sensor_snapshot.dart';
 
 enum RemotePhoneWarningLevel { attention, critical }
 
@@ -29,6 +30,7 @@ class RemotePhoneStatus {
     this.lowBatteryPercent = 20,
     this.cameraFps,
     this.networkLatencyMs,
+    this.bikeSensors,
   });
 
   final DateTime receivedAt;
@@ -42,6 +44,7 @@ class RemotePhoneStatus {
   final String name;
   final double? cameraFps;
   final int? networkLatencyMs;
+  final BikeSensorSnapshot? bikeSensors;
 
   factory RemotePhoneStatus.fromJson(
     Map<String, dynamic> json, {
@@ -49,6 +52,7 @@ class RemotePhoneStatus {
     int? networkLatencyMs,
   }) {
     final rawDevice = json['device'];
+    final rawBikeSensors = json['bikeSensors'];
     return RemotePhoneStatus(
       receivedAt: receivedAt ?? DateTime.now(),
       online: json['online'] as bool? ?? json['serverActive'] as bool? ?? true,
@@ -68,6 +72,12 @@ class RemotePhoneStatus {
           : 'Celular traseiro',
       cameraFps: (json['fps'] as num?)?.toDouble(),
       networkLatencyMs: networkLatencyMs,
+      bikeSensors: rawBikeSensors is Map
+          ? BikeSensorSnapshot.fromEsp32Json(
+              Map<String, dynamic>.from(rawBikeSensors),
+              receivedAt: receivedAt,
+            )
+          : null,
     );
   }
 

@@ -20,6 +20,7 @@ import 'settings_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 
 part 'multi_camera_screen_components.dart';
+part 'multi_camera_screen_monitoring.dart';
 
 class MultiCameraScreen extends StatefulWidget {
   const MultiCameraScreen({super.key});
@@ -433,81 +434,6 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     setState(() => _status.remove(camera.id));
   }
 
-  Future<void> _open(CameraEndpoint camera) async {
-    if (!camera.enabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ative esta câmera antes de monitorar.')),
-      );
-      return;
-    }
-    final profile = await _settings.initialize();
-    if (camera.type == CameraEndpointType.local) {
-      final granted = await _native.requestCameraPermission();
-      if (!mounted) return;
-      if (!granted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'A permissão da câmera é necessária para monitorar este dispositivo.',
-            ),
-            action: SnackBarAction(
-              label: 'AJUSTES',
-              onPressed: () => unawaited(_native.openAppSettings()),
-            ),
-          ),
-        );
-        return;
-      }
-    }
-    if (profile.settings.backgroundMonitoringEnabled) {
-      await _native.requestNotificationPermission();
-      if (!mounted) return;
-    }
-    final source = switch (camera.type) {
-      CameraEndpointType.local => VideoSourceConfig(
-          type: VideoSourceType.localCamera,
-          displayName: camera.name,
-          cameraId: camera.id,
-          analysisInterval: profile.source.analysisInterval,
-        ),
-      CameraEndpointType.rtsp => VideoSourceConfig(
-          type: VideoSourceType.rtsp,
-          rtspUrl: camera.address,
-          displayName: camera.name,
-          cameraId: camera.id,
-          analysisInterval: profile.source.analysisInterval,
-        ),
-      CameraEndpointType.remotePhone => VideoSourceConfig(
-          type: VideoSourceType.remotePhone,
-          remoteBaseUrl: camera.address,
-          remoteAccessKey: camera.accessKey,
-          displayName: camera.name,
-          cameraId: camera.id,
-          analysisInterval: profile.source.analysisInterval,
-        ),
-    };
-    if (!mounted) return;
-    _statusTimer?.cancel();
-    _statusTimer = null;
-    await Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => MonitorScreen(
-          initialSource: source,
-          settings: profile.settings,
-        ),
-      ),
-    );
-    await _history.initialize();
-    if (!mounted) return;
-    _statusTimer = Timer.periodic(
-      _automaticRefreshInterval,
-      (_) => unawaited(_refreshStatuses()),
-    );
-    setState(() {});
-    unawaited(_refreshStatuses());
-  }
-
   MonitorEvent? _lastEvent(CameraEndpoint camera) {
     for (final event in _history.events) {
       if (ObjectFilterCatalog.groupKeyForLabel(event.label) == null) continue;
@@ -614,7 +540,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          mainAxisExtent: 224,
+                          mainAxisExtent: 238,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -624,6 +550,10 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                               status: _status[camera.id],
                               lastEvent: _lastEvent(camera),
                               onOpen: () => _open(camera),
+                              onOpenWithSecond: cameras
+                                      .any((item) => item.enabled && item.id != camera.id)
+                                  ? () => _openWithSecond(camera)
+                                  : null,
                               onEdit: camera.id == '__local__'
                                   ? null
                                   : () => _editCamera(camera),

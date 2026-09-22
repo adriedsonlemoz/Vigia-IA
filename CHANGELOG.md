@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.78+78 — 2026-09-22
+
+- Adicionado layout único e adaptativo no Monitor: uma câmera ocupa toda a área; duas câmeras ficam empilhadas no retrato e lado a lado na paisagem.
+- A câmera principal mantém IA, histórico, alertas, clipes e áudios; a segunda câmera opera como visualização leve, sem segundo pipeline de inferência.
+- Central multicâmera e menu do Monitor passam a permitir escolher uma segunda câmera ou retornar à composição de uma câmera.
+- Criada faixa compacta para velocidade Hall, temperatura, pressão dianteira/traseira, bateria dos sensores e distância.
+- Adicionado contrato de entrada para telemetria ESP32, controle de dados atrasados e serialização dos sensores no status do celular transmissor.
+- O receptor passa a aproveitar a telemetria Bike recebida da câmera remota, mantendo análise e alertas no aparelho receptor.
+- Corrigido o fluxo inicial Android para sempre explicar permissões antes de solicitá-las e antes da escolha de modo.
+- Instalações atualizadas recebem uma vez o novo guia de acesso; permissões obrigatórias removidas depois exibem orientação sem reiniciar o onboarding.
+- Corrigidos botão superior e gesto Voltar do Modo Transmissão para retornar à seleção de modo, com confirmação quando a transmissão estiver ativa.
+- O Modo Transmissão mostra de forma compacta se existe receptor conectado e informa que envia imagem, bateria e telemetria, enquanto a IA permanece no receptor.
+- Versionamento, metadados, tela de informações, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.78+78`.
+
 ## 1.0.77+77 — 2026-09-22
 
 - Corrigida a falha `FILE_UNAVAILABLE` / `resource_id_zero` observada nos áudios integrados do Android.

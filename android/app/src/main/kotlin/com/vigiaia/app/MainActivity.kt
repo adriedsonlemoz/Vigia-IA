@@ -96,7 +96,6 @@ class MainActivity : FlutterActivity() {
         super.onPostResume()
         volumeControlStream = AudioManager.STREAM_MUSIC
         window.decorView.post { MonitorSystemUi.apply(window, monitorFullscreen) }
-        maybePromptCameraPermissionOnFirstLaunch()
     }
 
     override fun onDestroy() {
@@ -415,19 +414,6 @@ class MainActivity : FlutterActivity() {
         requestPermissions(arrayOf(Manifest.permission.CAMERA), cameraPermissionRequestCode)
     }
 
-    private fun maybePromptCameraPermissionOnFirstLaunch() {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) return
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            markCameraPermissionPrompted()
-            return
-        }
-        val preferences = getSharedPreferences("runtime_permission_state", Context.MODE_PRIVATE)
-        if (preferences.getBoolean("camera_prompted", false) || cameraPermissionRequestInFlight) return
-        markCameraPermissionPrompted()
-        cameraPermissionRequestInFlight = true
-        requestPermissions(arrayOf(Manifest.permission.CAMERA), cameraPermissionRequestCode)
-    }
-
     private fun markCameraPermissionPrompted() {
         getSharedPreferences("runtime_permission_state", Context.MODE_PRIVATE)
             .edit()
@@ -527,23 +513,9 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun onboardingMarkerFile(): File = File(noBackupFilesDir, "onboarding_completed_v1")
+    private fun onboardingMarkerFile(): File = File(noBackupFilesDir, "access_guide_completed_v2")
 
-    private fun onboardingCompleted(): Boolean {
-        if (onboardingMarkerFile().exists()) return true
-        return try {
-            val info = packageManager.getPackageInfo(packageName, 0)
-            val upgradedExistingInstall = info.lastUpdateTime > info.firstInstallTime + 1000L
-            if (upgradedExistingInstall) {
-                markOnboardingCompleted()
-                true
-            } else {
-                false
-            }
-        } catch (_: Throwable) {
-            false
-        }
-    }
+    private fun onboardingCompleted(): Boolean = onboardingMarkerFile().exists()
 
     private fun markOnboardingCompleted(): Boolean = try {
         val marker = onboardingMarkerFile()

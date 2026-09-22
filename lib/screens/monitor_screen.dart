@@ -3,17 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/adaptive_camera_layout.dart';
 import '../controllers/monitor_controller.dart';
+import '../controllers/secondary_camera_controller.dart';
 import '../services/system_ui_service.dart';
 import '../services/bike_sensor_service.dart';
 import '../core/video_source_status.dart';
 import '../models/bike_approach_status.dart';
 import '../models/bike_sensor_snapshot.dart';
+import '../models/camera_endpoint.dart';
 import '../models/monitoring_zone.dart';
 import '../models/device_telemetry.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
+import '../services/camera_registry_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
 import '../widgets/bike_approach_banner.dart';
@@ -29,16 +33,19 @@ import 'settings_screen.dart';
 
 part 'monitor_screen_components.dart';
 part 'monitor_screen_fullscreen.dart';
+part 'monitor_screen_multicamera.dart';
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
     super.key,
     required this.initialSource,
     required this.settings,
+    this.secondarySource,
   });
 
   final VideoSourceConfig initialSource;
   final MonitorSettings settings;
+  final VideoSourceConfig? secondarySource;
 
   @override
   State<MonitorScreen> createState() => _MonitorScreenState();
@@ -47,6 +54,8 @@ class MonitorScreen extends StatefulWidget {
 class _MonitorScreenState extends State<MonitorScreen>
     with WidgetsBindingObserver {
   late final MonitorController _controller;
+  SecondaryCameraController? _secondaryController;
+  final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
   String? _editingZoneId;
   bool _detectionsExpanded = false;
@@ -70,6 +79,13 @@ class _MonitorScreenState extends State<MonitorScreen>
       sourceConfig: widget.initialSource,
       settings: widget.settings,
     )..addListener(_refresh);
+    final secondarySource = widget.secondarySource;
+    if (secondarySource != null) {
+      _secondaryController = SecondaryCameraController(
+        sourceConfig: secondarySource,
+      )..addListener(_refresh);
+      unawaited(_secondaryController!.start());
+    }
     _bikeSensors.addListener(_refresh);
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
@@ -95,6 +111,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     if (state == AppLifecycleState.resumed) {
       unawaited(_fullscreen ? SystemUiService.immersive() : SystemUiService.edgeToEdge());
       unawaited(_controller.resume());
+      unawaited(_secondaryController?.resume());
       return;
     }
     if (state == AppLifecycleState.inactive && _fullscreenChanging) return;
@@ -102,6 +119,7 @@ class _MonitorScreenState extends State<MonitorScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       unawaited(_controller.suspend());
+      unawaited(_secondaryController?.suspend());
     }
   }
 
@@ -111,6 +129,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_refresh);
+    _secondaryController?.removeListener(_refresh);
+    _secondaryController?.dispose();
     _bikeSensors.removeListener(_refresh);
     _controller.dispose();
     unawaited(SystemUiService.edgeToEdge());
@@ -579,7 +599,13 @@ class _MonitorScreenState extends State<MonitorScreen>
     rtspController.dispose();
     remoteUrlController.dispose();
     remoteKeyController.dispose();
-    if (next != null && mounted) await _controller.switchSource(next);
+    if (next != null && mounted) {
+      final secondary = _secondaryController?.sourceConfig;
+      if (secondary != null && _sameSource(next, secondary)) {
+        await _replaceSecondarySource(null);
+      }
+      await _controller.switchSource(next);
+    }
   }
 
   Future<void> _showLanAccess() async {
@@ -869,7 +895,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        _buildCameraStage(context),
+        _buildAdaptiveCameraStage(context),
         Positioned(
           left: 0,
           right: 0,
@@ -930,6 +956,16 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   int get _currentDetectionCount => _controller.trackingEnabled ? _controller.trackedDetections.length : _controller.detections.length;
 
+  BikeSensorSnapshot? get _effectiveBikeSnapshot {
+    final local = _bikeSensors.snapshot;
+    final primaryRemote = _controller.remotePhoneStatus?.bikeSensors;
+    final secondaryRemote = _secondaryController?.remoteStatus?.bikeSensors;
+    if (local?.connected == true) return local;
+    if (primaryRemote?.connected == true) return primaryRemote;
+    if (secondaryRemote?.connected == true) return secondaryRemote;
+    return local ?? primaryRemote ?? secondaryRemote;
+  }
+
   Widget _buildLandscape(
     BuildContext context, {
     required bool permanentPanel,
@@ -976,7 +1012,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     if (permanentPanel) {
       return Row(
         children: [
-          Expanded(child: _buildCameraStage(context)),
+          Expanded(child: _buildAdaptiveCameraStage(context)),
           SizedBox(width: panelWidth, child: panel),
         ],
       );
@@ -985,7 +1021,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        _buildCameraStage(context),
+        _buildAdaptiveCameraStage(context),
         AnimatedPositioned(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
@@ -1034,229 +1070,6 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  Widget _buildCameraStage(BuildContext context) {
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    final insets = _fullscreen || landscape
-        ? MediaQuery.viewPaddingOf(context)
-        : EdgeInsets.zero;
-    final status = _controller.sourceStatus;
-    final remoteStatus = _controller.remotePhoneStatus;
-    final bikeSnapshot = _bikeSensors.snapshot;
-    final bikeHudActive = bikeSnapshot != null;
-    final approach = _controller.bikeApproachStatus;
-    final compactTopHud = landscape || _fullscreen;
-    final showCompactTopHud = compactTopHud &&
-        (!_fullscreen || _fullscreenControlsVisible);
-    final compactBikeHud = MediaQuery.sizeOf(context).height < 500;
-    final bikeHudBottom = bikeHudActive
-        ? (bikeSnapshot.primaryWarning == null
-            ? (compactBikeHud ? 72.0 : 98.0)
-            : (compactBikeHud ? 108.0 : 138.0))
-        : 6.0;
-    final standardHudTop = approach.visible
-        ? bikeHudBottom + (compactBikeHud ? 48.0 : 58.0)
-        : (bikeHudActive ? bikeHudBottom : 12.0);
-    final deviceStripTop = standardHudTop + insets.top;
-    final standardControlsTop = deviceStripTop + 48;
-    return ColoredBox(
-      color: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (!_controller.initializing) _buildPreviewLayer(context),
-          if (_controller.initializing)
-            const Center(child: CircularProgressIndicator()),
-          if (!_controller.initializing)
-            DetectionOverlay(
-              detections: _controller.detections,
-              trackedDetections: _controller.trackedDetections,
-              previewAspectRatio: _controller.previewAspectRatio,
-              fillPreview: _fillPreview,
-            ),
-          if (!_controller.initializing)
-            MonitoringZoneOverlay(
-              zones: _controller.monitoringZones,
-              editingZoneId: _editingZoneId,
-              previewAspectRatio: _controller.previewAspectRatio,
-              fillPreview: _fillPreview,
-              onChanged: _applyZone,
-            ),
-          if (showCompactTopHud)
-            Positioned(
-              left: 8 + insets.left,
-              right: 8 + insets.right,
-              top: 6 + insets.top,
-              child: _CompactMonitorTopHud(
-                sourceStatus: status,
-                detectionCount: _currentDetectionCount,
-                bikeSnapshot: bikeSnapshot,
-                approach: approach,
-                deviceStrip: _DeviceStatusStrip(
-                  localDevice: _controller.localDeviceTelemetry,
-                  remoteStatus: remoteStatus,
-                  sourceType: _controller.sourceConfig.type,
-                  sourceStatus: status,
-                  receiverActive: !_controller.initializing && _controller.error == null,
-                  networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
-                  onTap: () => unawaited(_showSessionStatus()),
-                ),
-                fillPreview: _fillPreview || landscape || _fullscreen,
-                fullscreen: _fullscreen,
-                fullscreenChanging: _fullscreenChanging,
-                voiceEnabled: _controller.voiceEnabled,
-                detectionDelayed: _controller.detectionDelayed,
-                processing: _controller.processing,
-                onClose: () => unawaited(_closeMonitor()),
-                onFullscreen: _fullscreenChanging ? null : () => unawaited(_toggleFullscreen()),
-                onToggleFill: () => setState(() => _fillPreview = !_fillPreview),
-                onToggleVoice: () => _controller.setVoiceEnabled(!_controller.voiceEnabled),
-                menu: _monitorMenu(),
-              ),
-            ),
-          if (!compactTopHud && bikeHudActive)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 6 + insets.top,
-              child: Padding(padding: EdgeInsets.only(left: insets.left, right: insets.right),
-                child: BikeRideHud(snapshot: bikeSnapshot)),
-            ),
-          if (!compactTopHud && approach.visible)
-            Positioned(
-              left: 10,
-              right: 10,
-              top: bikeHudBottom + insets.top,
-              child: BikeApproachBanner(status: approach),
-            ),
-          if (!compactTopHud) Positioned(
-            left: 8 + insets.left,
-            right: 8 + insets.right,
-            top: deviceStripTop,
-            child: _DeviceStatusStrip(
-              localDevice: _controller.localDeviceTelemetry,
-              remoteStatus: remoteStatus,
-              sourceType: _controller.sourceConfig.type,
-              sourceStatus: status,
-              receiverActive: !_controller.initializing && _controller.error == null,
-              networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
-              onTap: () => unawaited(_showSessionStatus()),
-            ),
-          ),
-          if (!_fullscreen && !compactTopHud) Positioned(
-            left: 12,
-            right: 12,
-            top: standardControlsTop,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    _HudPill(
-                      icon: status.state == VideoSourceState.streaming
-                          ? Icons.fiber_manual_record_rounded
-                          : Icons.videocam_off_outlined,
-                      label: _statusText(status),
-                      active: status.state == VideoSourceState.streaming,
-                    ),
-                    _HudPill(
-                      icon: Icons.psychology_alt_outlined,
-                      label: _controller.detectionDelayed ? 'IA atrasada' :
-                          _controller.processing ? 'IA analisando' : 'IA ativa',
-                      active: !_controller.initializing,
-                    ),
-                    _HudPill(
-                      icon: _hudExpanded
-                          ? Icons.expand_less_rounded
-                          : Icons.more_horiz_rounded,
-                      label: _hudExpanded ? 'Ocultar' : 'Painel',
-                      active: false,
-                      onTap: () => setState(() => _hudExpanded = !_hudExpanded),
-                    ),
-                  ],
-                ),
-                if (remoteStatus != null && remoteStatus.warnings().isNotEmpty) ...[
-                  const SizedBox(height: 7),
-                  RemoteBikeWarningBanner(
-                    status: remoteStatus,
-                    onTap: _showRemoteBikeStatus,
-                  ),
-                ],
-                if (_hudExpanded) ...[
-                  const SizedBox(height: 7),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      _HudPill(
-                        icon: Icons.grid_view_rounded,
-                        label: _controller.activeMonitoringZones.isEmpty
-                            ? 'Tela inteira'
-                            : '${_controller.activeMonitoringZones.length} áreas',
-                        active: true,
-                      ),
-                      if (_controller.backgroundMonitoringEnabled)
-                        const _HudPill(
-                          icon: Icons.phone_android_rounded,
-                          label: '2º plano',
-                          active: true,
-                        ),
-                      if (_controller.clipRecordingEnabled)
-                        _HudPill(
-                          icon: Icons.movie_outlined,
-                          label: _controller.clipRecording ? 'Gravando clipe' : 'Clipes',
-                          active: _controller.clipRecording,
-                        ),
-                      _HudPill(
-                        icon: _fillPreview
-                            ? Icons.fullscreen_rounded
-                            : Icons.fit_screen_rounded,
-                        label: _fillPreview ? 'Preencher' : 'Ajustar',
-                        active: _fillPreview,
-                        onTap: () => setState(() => _fillPreview = !_fillPreview),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (_controller.detectionDelayed)
-            Positioned(left: 12 + insets.left, right: 12 + insets.right,
-              bottom: (_fullscreen ? 78 : 160) + insets.bottom,
-              child: const IgnorePointer(child: Material(color: Colors.black87,
-                child: Padding(padding: EdgeInsets.all(8), child: Text(
-                  'IA atrasada · alertas aguardam imagem recente', textAlign: TextAlign.center)),
-              )),
-            ),
-          if (_editingZoneId != null)
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: IconButton.filledTonal(
-                tooltip: 'Cancelar edição da área',
-                onPressed: () => setState(() => _editingZoneId = null),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ),
-          if (_controller.error != null)
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: _editingZoneId == null ? 12 : 72,
-              child: _CameraErrorCard(
-                message: _controller.error!,
-                onRetry: _controller.initializing
-                    ? null
-                    : () => unawaited(_controller.retry()),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildControlDock(BuildContext context, {bool compact = false, bool overlay = false}) {
     final buttons = <Widget>[
       _MonitorActionButton(
@@ -1278,6 +1091,11 @@ class _MonitorScreenState extends State<MonitorScreen>
         icon: Icons.cameraswitch_outlined,
         label: 'Fonte',
         onTap: () => unawaited(_showSourceSwitcher()),
+      ),
+      _MonitorActionButton(
+        icon: Icons.video_collection_outlined,
+        label: 'Câmeras',
+        onTap: () => unawaited(_showSecondaryCameraSelector()),
       ),
       _MonitorActionButton(
         icon: Icons.auto_awesome_motion_outlined,

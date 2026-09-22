@@ -8,6 +8,7 @@ import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../services/remote_camera_server_service.dart';
 import '../services/system_ui_service.dart';
+import 'launch_mode_screen.dart';
 
 class CameraModeScreen extends StatefulWidget {
   const CameraModeScreen({super.key});
@@ -146,6 +147,41 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
     );
   }
 
+  Future<void> _returnToModeSelection() async {
+    if (_server.starting) return;
+    if (_server.running) {
+      final stopAndLeave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Trocar de modo?'),
+          content: const Text(
+            'A transmissão deste celular será encerrada antes de voltar à seleção de modo.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Continuar transmitindo'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Parar e trocar'),
+            ),
+          ],
+        ),
+      );
+      if (stopAndLeave != true || !mounted) return;
+      await _server.stop();
+    }
+    await SystemUiService.edgeToEdge();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaunchModeScreen(manualReview: false),
+      ),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final address = _server.address;
@@ -160,11 +196,16 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
         : null;
     final showInlineQr = MediaQuery.sizeOf(context).height >= 700;
     final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_returnToModeSelection());
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
           ColoredBox(
             color: Colors.black,
             child: _server.running
@@ -182,7 +223,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                 child: _CameraModeTopBar(
                   running: _server.running,
                   starting: _server.starting,
-                  onBack: () => Navigator.of(context).maybePop(),
+                  onBack: () => unawaited(_returnToModeSelection()),
                   onToggle: _toggle,
                 ),
               ),
@@ -201,6 +242,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                 running: _server.running,
                 starting: _server.starting,
                 error: _server.error,
+                receiverConnected: _server.receiverConnected,
                 bikeModeEnabled: _server.bikeModeEnabled,
                 bikePowerProfileLabel: _server.bikePowerProfileLabel,
                 address: address,
@@ -218,7 +260,8 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -323,6 +366,7 @@ class _CameraModeControlPanel extends StatelessWidget {
     required this.running,
     required this.starting,
     required this.error,
+    required this.receiverConnected,
     required this.bikeModeEnabled,
     required this.bikePowerProfileLabel,
     required this.address,
@@ -338,6 +382,7 @@ class _CameraModeControlPanel extends StatelessWidget {
   final bool running;
   final bool starting;
   final String? error;
+  final bool receiverConnected;
   final bool bikeModeEnabled;
   final String bikePowerProfileLabel;
   final String? address;
@@ -383,6 +428,44 @@ class _CameraModeControlPanel extends StatelessWidget {
           if (error != null) ...[
             const SizedBox(height: 8),
             Text(error!, style: TextStyle(color: scheme.error)),
+          ],
+          if (running) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: (receiverConnected
+                        ? const Color(0xFF4ADE80)
+                        : scheme.outline)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    receiverConnected
+                        ? Icons.phone_android_rounded
+                        : Icons.hourglass_top_rounded,
+                    size: 18,
+                    color: receiverConnected ? const Color(0xFF4ADE80) : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      receiverConnected
+                          ? 'Aparelho receptor conectado'
+                          : 'Aguardando aparelho receptor',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Enviando imagem, bateria e telemetria disponível. A IA e os alertas ficam no receptor.',
+              style: TextStyle(fontSize: 12),
+            ),
           ],
           if (bikeModeEnabled) ...[
             const SizedBox(height: 8),

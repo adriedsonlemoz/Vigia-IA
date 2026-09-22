@@ -13,10 +13,12 @@ class RtspCameraSource implements VideoSource {
   RtspCameraSource({
     required this.url,
     required this.analysisInterval,
+    this.emitFrames = true,
   });
 
   final String url;
   final Duration analysisInterval;
+  final bool emitFrames;
   final _frames = StreamController<RgbFrame>.broadcast();
   final _statuses = StreamController<VideoSourceStatus>.broadcast();
   final ErrorLogService _logs = ErrorLogService.instance;
@@ -69,9 +71,11 @@ class RtspCameraSource implements VideoSource {
     _lastSuccessfulFrame = DateTime.now();
     controller.addListener(_onPlayerChanged);
 
-    _snapshotTimer = Timer.periodic(analysisInterval, (_) {
-      unawaited(_captureSnapshot());
-    });
+    if (emitFrames) {
+      _snapshotTimer = Timer.periodic(analysisInterval, (_) {
+        unawaited(_captureSnapshot());
+      });
+    }
   }
 
   void _onPlayerChanged() {
