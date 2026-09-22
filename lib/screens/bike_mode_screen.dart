@@ -8,6 +8,7 @@ import '../services/bike_mode_service.dart';
 import '../services/native_platform_service.dart';
 import '../utils/storage_size_formatter.dart';
 import 'home_screen.dart';
+import 'launch_mode_screen.dart';
 import 'settings_screen.dart';
 
 part 'bike_mode_screen_components.dart';
@@ -88,6 +89,15 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
   void _openSettings() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+    );
+  }
+
+  void _changeMode() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaunchModeScreen(manualReview: false),
+      ),
+      (_) => false,
     );
   }
 
@@ -380,6 +390,15 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth >= 760;
                   final left = <Widget>[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: _changeMode,
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: const Text('Alterar modo'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     hero,
                     const SizedBox(height: 12),
                     powerCard,

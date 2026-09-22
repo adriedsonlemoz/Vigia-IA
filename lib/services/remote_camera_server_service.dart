@@ -37,6 +37,8 @@ class RemoteCameraServerService extends ChangeNotifier {
   DateTime? _lastFpsFrameAt;
   DateTime? _lastNotificationUpdateAt;
   double _streamFps = 0;
+  int? _streamWidth;
+  int? _streamHeight;
   String _accessKey = '';
   int _port = 8765;
   String? _address;
@@ -226,13 +228,18 @@ class RemoteCameraServerService extends ChangeNotifier {
       );
     }
     try {
+      final maxWidth =
+          _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegWidth : 960;
+      final scale = frame.width > maxWidth ? maxWidth / frame.width : 1.0;
+      _streamWidth = (frame.width * scale).round();
+      _streamHeight = (frame.height * scale).round();
       _latestJpeg = await compute<Map<String, Object>, Uint8List>(
         _encodeJpeg,
         <String, Object>{
           'width': frame.width,
           'height': frame.height,
           'bytes': Uint8List.fromList(frame.rgbBytes),
-          'maxWidth': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegWidth : 960,
+          'maxWidth': maxWidth,
           'quality': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 78,
         },
       );
@@ -266,6 +273,8 @@ class RemoteCameraServerService extends ChangeNotifier {
             'lastFrameAt': _lastFrameAt?.toIso8601String(),
             'frameSequence': _latestJpegSequence,
             'fps': _streamFps,
+            'videoWidth': _streamWidth,
+            'videoHeight': _streamHeight,
             'bikeMode': _bikeConfig.enabled,
             'bikeProfile': _bikeConfig.enabled ? _bikeConfig.powerProfile.name : null,
             'alertLowBattery': _bikeConfig.alertLowBattery,
@@ -365,6 +374,8 @@ class RemoteCameraServerService extends ChangeNotifier {
     _lastFrameAt = null;
     _lastFpsFrameAt = null;
     _streamFps = 0;
+    _streamWidth = null;
+    _streamHeight = null;
     _lastNotificationUpdateAt = null;
     _address = null;
     _accessKey = '';

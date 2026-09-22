@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.82+82
+# Arquitetura — Vigia IA 1.0.83+83
 
 ## 1. Princípios
+
+## Evolução 1.0.83 — fontes e navegação de modo
+
+- `CameraRegistryService` lê a telemetria já fornecida por `/status` do celular transmissor, sem transformar uma falha de detalhes em falha de conexão.
+- O transmissor informa a resolução JPEG efetiva, além de FPS, nome e condições do aparelho; a Central exibe apenas os dados que a fonte realmente disponibiliza.
+- A seleção de modo continua persistida por `AppLaunchModeService`, mas passa a ser alcançável a partir de cada modo sem limpar dados nem reiniciar a configuração.
+- A tela Sobre mostra uma versão enxuta das cinco últimas mudanças; o histórico completo permanece preservado na documentação e no componente de consulta interno.
 
 ## Evolução 1.0.82 — distribuição Android por ABI
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/camera_endpoint.dart';
+import '../models/remote_phone_status.dart';
 import 'native_platform_service.dart';
 
 class CameraProbeResult {
@@ -12,12 +13,14 @@ class CameraProbeResult {
     this.message,
     required this.checkedAt,
     this.latency,
+    this.remoteStatus,
   });
 
   final bool online;
   final String? message;
   final DateTime checkedAt;
   final Duration? latency;
+  final RemotePhoneStatus? remoteStatus;
 }
 
 class CameraRegistryService {
@@ -139,9 +142,28 @@ class CameraRegistryService {
         request.headers.set('x-monitor-key', endpoint.accessKey!);
       }
       final response = await request.close().timeout(const Duration(seconds: 3));
-      await response.drain<void>();
+      final body = await utf8.decoder
+          .bind(response)
+          .join()
+          .timeout(const Duration(seconds: 3));
       stopwatch.stop();
       final online = response.statusCode == HttpStatus.ok;
+      RemotePhoneStatus? remoteStatus;
+      if (online && endpoint.type == CameraEndpointType.remotePhone) {
+        try {
+          final decoded = jsonDecode(body);
+          if (decoded is Map) {
+            remoteStatus = RemotePhoneStatus.fromJson(
+              Map<String, dynamic>.from(decoded),
+              receivedAt: checkedAt,
+              networkLatencyMs: stopwatch.elapsed.inMilliseconds,
+            );
+          }
+        } catch (_) {
+          // O status básico continua válido mesmo se uma versão antiga não
+          // responder JSON de telemetria.
+        }
+      }
       return CameraProbeResult(
         online,
         message: online
@@ -151,6 +173,7 @@ class CameraRegistryService {
             : 'HTTP ${response.statusCode}',
         checkedAt: checkedAt,
         latency: stopwatch.elapsed,
+        remoteStatus: remoteStatus,
       );
     } catch (_) {
       stopwatch.stop();

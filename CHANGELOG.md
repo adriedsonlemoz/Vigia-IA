@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.83+83 — 2026-09-22
+
+- Cadastro manual renomeado e reorganizado para identificar claramente Celular transmissor ou Câmera RTSP antes do preenchimento.
+- Central de Câmeras compactada em grade para QR, Celular, RTSP e ESP32; dados de modelo, resolução, FPS e bateria do celular remoto aparecem quando a transmissão os informa.
+- Transmissor passa a expor a resolução JPEG efetiva no status da rede local.
+- Filtros de Histórico ficam em uma linha nas telas usuais, menores e com o rótulo compacto `Carros`.
+- Adicionado `Alterar modo` no topo de Normal, Monitor, Bike e Transmissão; o Monitor ativo também permite trocar pelo menu, sem apagar dados.
+- Configurações reagrupadas: Preferências reúne áudio/aparência, Sistema reúne permissões/saúde/IA avançada e Sobre é o último grupo.
+- Tela Mudanças limitada visualmente às cinco versões recentes.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, testes e verificadores sincronizados em `1.0.83+83`.
+
 ## 1.0.82+82 — 2026-09-22
 
 - Workflow Android passa a gerar e assinar quatro APKs: universal, `arm64-v8a`, `armeabi-v7a` e `x86_64`.

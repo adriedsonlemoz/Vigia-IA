@@ -9,6 +9,7 @@ import '../services/remote_camera_pairing_service.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
+import 'launch_mode_screen.dart';
 
 class MonitorConnectScreen extends StatefulWidget {
   const MonitorConnectScreen({super.key});
@@ -127,6 +128,15 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
     );
   }
 
+  void _changeMode() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaunchModeScreen(manualReview: false),
+      ),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -140,6 +150,15 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      onPressed: _changeMode,
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      label: const Text('Alterar modo'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(

@@ -70,6 +70,13 @@ class _CentralHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            Text(
+              'Adicionar fonte',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 8),
             LayoutBuilder(
               builder: (context, constraints) {
                 final wideActions = constraints.maxWidth >= 720;
@@ -78,7 +85,7 @@ class _CentralHeader extends StatelessWidget {
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                   label: const FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Escanear QR'),
+                    child: Text(wideActions ? 'Escanear QR' : 'QR'),
                   ),
                 );
                 final manual = OutlinedButton.icon(
@@ -86,7 +93,7 @@ class _CentralHeader extends StatelessWidget {
                   icon: const Icon(Icons.edit_rounded),
                   label: const FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Adicionar manual'),
+                    child: Text(wideActions ? 'Adicionar celular' : 'Celular'),
                   ),
                 );
                 final rtsp = OutlinedButton.icon(
@@ -94,7 +101,7 @@ class _CentralHeader extends StatelessWidget {
                   icon: const Icon(Icons.router_outlined),
                   label: const FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Adicionar RTSP'),
+                    child: Text('RTSP'),
                   ),
                 );
                 final esp32 = OutlinedButton.icon(
@@ -102,31 +109,17 @@ class _CentralHeader extends StatelessWidget {
                   icon: const Icon(Icons.memory_rounded),
                   label: const FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Gerenciar ESP32'),
+                    child: Text(wideActions ? 'Gerenciar ESP32' : 'ESP32'),
                   ),
                 );
-                if (wideActions) {
-                  return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [scan, manual, rtsp, esp32],
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    scan,
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(child: manual),
-                        const SizedBox(width: 8),
-                        Expanded(child: rtsp),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    esp32,
-                  ],
+                return GridView.count(
+                  crossAxisCount: wideActions ? 4 : 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: wideActions ? 2.45 : 2.9,
+                  children: [scan, manual, rtsp, esp32],
                 );
               },
             ),
@@ -179,6 +172,7 @@ class _CameraCard extends StatelessWidget {
                 ? 'Online'
                 : 'Offline';
     final latency = status?.latency;
+    final remoteStatus = status?.remoteStatus;
     final sourceKind = switch (camera.type) {
       CameraEndpointType.local => 'Local',
       CameraEndpointType.rtsp => 'RTSP',
@@ -272,13 +266,11 @@ class _CameraCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              cameraAvailable
-                  ? status?.message ?? 'Aguardando a primeira verificação.'
-                  : 'Sensores ativos · câmera ESP32 ainda não habilitada.',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+            _CameraDetails(
+              camera: camera,
+              cameraAvailable: cameraAvailable,
+              status: status,
+              remoteStatus: remoteStatus,
             ),
             const SizedBox(height: 10),
             Container(

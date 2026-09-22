@@ -154,14 +154,16 @@ class _EventsScreenState extends State<EventsScreen> {
             ),
             const SizedBox(height: 8),
             LayoutBuilder(
-              builder: (context, constraints) => GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: constraints.maxWidth >= 600 ? 4 : 2,
-                crossAxisSpacing: 7,
-                mainAxisSpacing: 7,
-                childAspectRatio: constraints.maxWidth >= 600 ? 2.35 : 2.8,
-                children: [
+              builder: (context, constraints) {
+                final singleRow = constraints.maxWidth >= 300;
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: singleRow ? 4 : 2,
+                  crossAxisSpacing: 7,
+                  mainAxisSpacing: 7,
+                  childAspectRatio: singleRow ? 1.35 : 2.8,
+                  children: [
                   _filterChip(
                     'Tudo',
                     Icons.select_all_rounded,
@@ -173,7 +175,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     _HistoryGroupFilter.people,
                   ),
                   _filterChip(
-                    'Automóveis',
+                    'Carros',
                     Icons.directions_car_outlined,
                     _HistoryGroupFilter.automobiles,
                   ),
@@ -182,8 +184,9 @@ class _EventsScreenState extends State<EventsScreen> {
                     Icons.pets_outlined,
                     _HistoryGroupFilter.animals,
                   ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(

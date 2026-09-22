@@ -28,6 +28,7 @@ import '../widgets/remote_bike_status_panel.dart';
 import '../widgets/session_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
+import 'launch_mode_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 import 'settings_screen.dart';
 

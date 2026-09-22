@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.82+82`
+> **Versão atual:** `1.0.83+83`
 
 ## Estado atual
 
-A `1.0.82+82` publica APKs diretos e versionados por arquitetura, mantendo o APK universal e separando os relatórios técnicos do download instalável.
+A `1.0.83+83` torna o cadastro de fontes mais claro, compacta a Central de Câmeras e o Histórico, e permite alterar o modo do app sem apagar configurações.
+
+### Evolução 1.0.83 — Fontes, modos e organização
+
+- o cadastro manual passa a diferenciar explicitamente celular transmissor e câmera RTSP antes dos campos de conexão;
+- a Central de Câmeras organiza QR, celular, RTSP e ESP32 em uma grade compacta; fontes remotas mostram modelo, resolução transmitida, FPS e bateria quando informados;
+- os filtros de Histórico ficam em uma única linha em telas usuais, com altura menor e rótulo curto para carros;
+- Normal, Monitor, Bike e Transmissão oferecem acesso direto à seleção `Alterar modo`, sem limpar dados; o Monitor ativo também traz essa opção no menu;
+- Configurações agrupa preferências, monitoramento, sistema e diagnóstico; Sobre permanece como último grupo;
+- a tela Mudanças mostra somente as cinco versões mais recentes.
 
 ### Evolução 1.0.82 — APKs diretos por arquitetura
 

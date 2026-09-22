@@ -56,16 +56,26 @@ class _AboutPanel extends StatelessWidget {
   }
 }
 
-class _ChangesPanel extends StatelessWidget {
-  const _ChangesPanel({super.key});
+/// Histórico completo preservado para consulta de desenvolvimento.
+class AllChangesPanel extends StatelessWidget {
+  const AllChangesPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.82',
+          version: '1.0.83',
           current: true,
+          changes: [
+            'Cadastro de celular e câmera RTSP agora explica o tipo de fonte antes da conexão.',
+            'Central compacta ações e mostra modelo, resolução, FPS e bateria da câmera remota quando disponíveis.',
+            'Alterar modo fica acessível sem apagar dados; Configurações e Histórico também foram reorganizados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.82',
           changes: [
             'A Release passa a disponibilizar APKs diretos: universal, arm64-v8a, armeabi-v7a e x86_64.',
             'Cada arquivo inclui a versão no nome, facilitando escolher e identificar a instalação.',
@@ -725,6 +735,60 @@ class _ChangesPanel extends StatelessWidget {
           changes: [
             'Empacotamento do projeto-fonte corrigido para incluir workflow e arquivos ocultos.',
             'Preservação do monitoramento offline, histórico, áreas, rastreamento e segundo plano.',
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ChangesPanel extends StatelessWidget {
+  const _ChangesPanel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        _ReleaseCard(
+          version: '1.0.83',
+          current: true,
+          changes: [
+            'Cadastro de celular e câmera RTSP agora explica o tipo de fonte antes da conexão.',
+            'Central compacta ações e mostra modelo, resolução, FPS e bateria da câmera remota quando disponíveis.',
+            'Alterar modo fica acessível sem apagar dados; Configurações e Histórico também foram reorganizados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.82',
+          changes: [
+            'A Release passa a disponibilizar APKs diretos: universal, arm64-v8a, armeabi-v7a e x86_64.',
+            'Cada arquivo inclui a versão no nome, facilitando escolher e identificar a instalação.',
+            'Relatórios técnicos ficam separados do APK para o download não vir dentro de ZIP.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.81',
+          changes: [
+            'Monitor vertical reorganizado com status, modos, câmera, atalhos e detecções em áreas fixas.',
+            'Detectados agora usa rolagem interna e não sobe mais sobre a câmera.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.80',
+          changes: [
+            'Histórico reorganizado e detalhe da captura ganhou salvar e excluir com confirmação.',
+            'Painel ESP32 integra sensores e uma futura câmera como fonte do Monitor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.79',
+          changes: [
+            'Menu principal simplificado para Início, Histórico, Monitor e Câmeras.',
+            'Modo Bike continua disponível pela seleção inicial e por Configurações.',
           ],
         ),
       ],

@@ -29,6 +29,8 @@ class RemotePhoneStatus {
     this.alertLowBattery = true,
     this.lowBatteryPercent = 20,
     this.cameraFps,
+    this.videoWidth,
+    this.videoHeight,
     this.networkLatencyMs,
     this.bikeSensors,
   });
@@ -43,6 +45,8 @@ class RemotePhoneStatus {
   final int lowBatteryPercent;
   final String name;
   final double? cameraFps;
+  final int? videoWidth;
+  final int? videoHeight;
   final int? networkLatencyMs;
   final BikeSensorSnapshot? bikeSensors;
 
@@ -71,6 +75,8 @@ class RemotePhoneStatus {
           ? (json['name'] as String).trim()
           : 'Celular traseiro',
       cameraFps: (json['fps'] as num?)?.toDouble(),
+      videoWidth: (json['videoWidth'] as num?)?.toInt(),
+      videoHeight: (json['videoHeight'] as num?)?.toInt(),
       networkLatencyMs: networkLatencyMs,
       bikeSensors: rawBikeSensors is Map
           ? BikeSensorSnapshot.fromEsp32Json(

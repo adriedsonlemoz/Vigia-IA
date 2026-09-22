@@ -291,10 +291,10 @@ class _CameraModeTopBar extends StatelessWidget {
         padding: const EdgeInsets.only(right: 8),
         child: Row(
           children: [
-            IconButton(
-              tooltip: 'Sair do Modo Câmera',
+            TextButton.icon(
               onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded),
+              icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+              label: const Text('Alterar modo'),
             ),
             Container(
               width: 9,

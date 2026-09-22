@@ -48,6 +48,17 @@ extension _MonitorFullscreen on _MonitorScreenState {
     });
   }
 
+  Future<void> _changeMode() async {
+    if (_fullscreen) await _toggleFullscreen();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaunchModeScreen(manualReview: false),
+      ),
+      (_) => false,
+    );
+  }
+
   Widget _monitorMenu() => PopupMenuButton<String>(
     tooltip: 'Mais opções',
     onSelected: (value) {
@@ -58,6 +69,7 @@ extension _MonitorFullscreen on _MonitorScreenState {
         case 'status': unawaited(_showSessionStatus());
         case 'events': unawaited(_openStandardScreen(const EventsScreen()));
         case 'settings': unawaited(_openStandardScreen(const SettingsScreen()));
+        case 'mode': unawaited(_changeMode());
       }
     },
     itemBuilder: (_) => const [
@@ -66,6 +78,7 @@ extension _MonitorFullscreen on _MonitorScreenState {
       PopupMenuItem(value: 'status', child: Text('Status da sessão')),
       PopupMenuItem(value: 'events', child: Text('Eventos')),
       PopupMenuItem(value: 'settings', child: Text('Configurações')),
+      PopupMenuItem(value: 'mode', child: Text('Alterar modo')),
     ],
   );
 

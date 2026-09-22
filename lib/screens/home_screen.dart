@@ -18,6 +18,7 @@ import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
 import 'esp32_settings_screen.dart';
+import 'launch_mode_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
@@ -487,6 +488,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) await _loadSettings();
   }
 
+  void _changeMode() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const LaunchModeScreen(manualReview: false),
+      ),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -496,6 +506,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final activeZones = _monitoringZones.where((zone) => zone.enabled).length;
 
     final overview = <Widget>[
+      Align(
+        alignment: Alignment.centerRight,
+        child: OutlinedButton.icon(
+          onPressed: _changeMode,
+          icon: const Icon(Icons.swap_horiz_rounded),
+          label: const Text('Alterar modo'),
+        ),
+      ),
+      const SizedBox(height: 8),
       _buildHero(context, activeZones),
       const SizedBox(height: 16),
       _buildSourcePanel(context),

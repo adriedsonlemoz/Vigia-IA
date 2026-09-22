@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/camera_endpoint.dart';
 import '../models/monitor_event.dart';
 import '../models/object_filter_catalog.dart';
+import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
@@ -20,6 +21,7 @@ import 'settings_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 
 part 'multi_camera_screen_components.dart';
+part 'multi_camera_screen_details.dart';
 part 'multi_camera_screen_monitoring.dart';
 
 class MultiCameraScreen extends StatefulWidget {
@@ -290,6 +292,10 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     CameraEndpoint? existing,
   }) async {
     final isRtsp = type == CameraEndpointType.rtsp;
+    final sourceTitle = isRtsp ? 'Câmera RTSP' : 'Celular transmissor';
+    final sourceDescription = isRtsp
+        ? 'Conecta uma câmera IP ou DVR pela URL RTSP.'
+        : 'Recebe a imagem enviada por outro celular na mesma rede.';
     final name = TextEditingController(
       text: existing?.name ?? (isRtsp ? 'Câmera RTSP' : 'Celular remoto'),
     );
@@ -303,13 +309,50 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
         builder: (context, setDialogState) => AlertDialog(
           title: Text(
             existing == null
-                ? (isRtsp ? 'Adicionar RTSP' : 'Adicionar celular')
+                ? (isRtsp ? 'Adicionar câmera RTSP' : 'Adicionar celular remoto')
                 : 'Editar ${existing.name}',
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(dialogContext)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isRtsp
+                            ? Icons.router_outlined
+                            : Icons.phone_android_rounded,
+                        color: Theme.of(dialogContext).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sourceTitle,
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(sourceDescription),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
                 TextField(
                   controller: name,
                   decoration: const InputDecoration(labelText: 'Nome da câmera'),
@@ -551,7 +594,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          mainAxisExtent: 252,
+                          mainAxisExtent: 285,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {

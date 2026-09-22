@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.82 publica APKs diretos e versionados por arquitetura (universal, arm64-v8a, armeabi-v7a e x86_64), deixando os relatórios técnicos separados em artifact.",
-  "version": "1.0.82",
-  "build": 82
+  "notes": "A 1.0.83 reorganiza fontes, Câmeras, Histórico, troca de modo e Configurações, exibindo telemetria útil do celular remoto quando disponível.",
+  "version": "1.0.83",
+  "build": 83
 }

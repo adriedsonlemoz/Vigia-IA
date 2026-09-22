@@ -71,8 +71,8 @@ class SettingsScreen extends StatelessWidget {
     final left = <Widget>[
       _CategoryCard(
         icon: Icons.tune_rounded,
-        title: 'Geral',
-        subtitle: 'Preferências gerais do aplicativo.',
+        title: 'Preferências',
+        subtitle: 'Áudio, aparência e opções gerais do aplicativo.',
         children: [
           _SettingsTile(
             icon: Icons.library_music_outlined,
@@ -80,12 +80,18 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Ouça, troque, grave ou restaure os áudios do Vigia IA.',
             onTap: () => _push(context, const AudioSettingsScreen()),
           ),
+          _SettingsTile(
+            icon: Icons.color_lens_outlined,
+            title: 'Tema e cores',
+            subtitle: 'Sistema, Claro ou Escuro; Turquesa, Azul, Roxo ou Laranja.',
+            onTap: () => _push(context, const AppearanceSettingsScreen()),
+          ),
         ],
       ),
       _CategoryCard(
         icon: Icons.radar_rounded,
         title: 'Monitoramento',
-        subtitle: 'Câmeras, modos e perfis de monitoramento.',
+        subtitle: 'Modo, fontes, ESP32 e perfis de monitoramento.',
         children: [
           _SettingsTile(
             icon: Icons.auto_awesome_motion_outlined,
@@ -101,8 +107,8 @@ class SettingsScreen extends StatelessWidget {
           ),
           _SettingsTile(
             icon: Icons.dashboard_customize_outlined,
-            title: 'Modo inicial',
-            subtitle: 'Escolha entre Normal, Monitor, Bike ou Transmissão ao abrir o app.',
+            title: 'Alterar modo agora',
+            subtitle: 'Abra a seleção de Normal, Monitor, Bike ou Transmissão sem apagar dados.',
             onTap: () => _push(
               context,
               const LaunchModeScreen(manualReview: true),
@@ -138,19 +144,6 @@ class SettingsScreen extends StatelessWidget {
             title: 'Alertas e clipes',
             subtitle: 'Configure voz, som, vibração, notificações e gravações locais.',
             onTap: () => _push(context, const AlertsClipsScreen()),
-          ),
-        ],
-      ),
-      _CategoryCard(
-        icon: Icons.palette_outlined,
-        title: 'Aparência',
-        subtitle: 'Tema claro/escuro e cor principal.',
-        children: [
-          _SettingsTile(
-            icon: Icons.color_lens_outlined,
-            title: 'Tema e cores',
-            subtitle: 'Sistema, Claro ou Escuro; Turquesa, Azul, Roxo ou Laranja.',
-            onTap: () => _push(context, const AppearanceSettingsScreen()),
           ),
         ],
       ),
@@ -202,6 +195,12 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Câmera, IA, FPS, bateria, temperatura, memória e segundo plano.',
             onTap: () => _push(context, const SystemHealthScreen()),
           ),
+          _SettingsTile(
+            icon: Icons.memory_outlined,
+            title: 'Ajustes avançados da IA',
+            subtitle: 'Confiança, intervalo da IA, repetição e outros parâmetros técnicos.',
+            onTap: () => _push(context, const AdvancedSettingsScreen()),
+          ),
         ],
       ),
       _CategoryCard(
@@ -239,20 +238,6 @@ class SettingsScreen extends StatelessWidget {
             title: 'Doações',
             subtitle: 'PIX: ${AppMetadata.pixKey}',
             onTap: () => _openInfo(context, AppInfoSection.donations),
-          ),
-        ],
-      ),
-      _CategoryCard(
-        icon: Icons.tune_rounded,
-        title: 'Avançado',
-        subtitle: 'Parâmetros técnicos da IA, separados das telas principais.',
-        initiallyExpanded: false,
-        children: [
-          _SettingsTile(
-            icon: Icons.memory_outlined,
-            title: 'Ajustes avançados da IA',
-            subtitle: 'Confiança, intervalo da IA, repetição e outros parâmetros técnicos.',
-            onTap: () => _push(context, const AdvancedSettingsScreen()),
           ),
         ],
       ),
