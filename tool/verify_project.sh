@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.81+81$' pubspec.yaml || fail 'Versao esperada 1.0.81+81 nao encontrada.'
+grep -q '^version: 1\.0\.82+82$' pubspec.yaml || fail 'Versao esperada 1.0.82+82 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.81';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.81.'
-grep -q 'static const int build = 81;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 81.'
-grep -q "version: '1.0.81'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.81.'
+grep -q "static const String version = '1.0.82';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.82.'
+grep -q 'static const int build = 82;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 82.'
+grep -q "version: '1.0.82'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.82.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.81+81$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.81+81.'
+grep -q '^version: 1.0.82+82$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.82+82.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.81"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.81.'
-grep -q '"build": 81' app_identity.json \
-  || fail 'app_identity.json nao esta no build 81.'
+grep -q '"version": "1.0.82"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.82.'
+grep -q '"build": 82' app_identity.json \
+  || fail 'app_identity.json nao esta no build 82.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.81+81' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.81+81.'
+grep -q 'Vigia IA 1.0.82+82' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.82+82.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1697,12 +1697,23 @@ grep -q "label: const Text('Salvar')" lib/screens/events_screen.dart lib/screens
   || fail 'Historico nao oferece salvar captura.'
 grep -q 'Excluir este registro?' lib/screens/events_screen.dart lib/screens/events_screen_actions.dart \
   || fail 'Exclusao individual do Historico nao exige confirmacao.'
-grep -q 'VigiaIA-v${APP_VERSION}.apk' .github/workflows/android-apk.yml \
-  || fail 'Workflow nao nomeia o APK com aplicativo e versao.'
+grep -q 'flutter build apk --release --split-per-abi' .github/workflows/android-apk.yml \
+  || fail 'Workflow nao gera APKs separados por ABI.'
+grep -q 'VigiaIA-v${APP_VERSION}-universal.apk' .github/workflows/android-apk.yml \
+  || fail 'Workflow nao nomeia o APK universal com aplicativo e versao.'
+grep -q 'gh release create' .github/workflows/android-apk.yml \
+  || fail 'Workflow nao publica APKs como arquivos diretos na Release.'
 grep -q 'apk-size-report.txt' .github/workflows/android-apk.yml \
   || fail 'Workflow nao gera relatorio de tamanho do APK.'
 grep -q 'compression-level: 0' .github/workflows/android-apk.yml \
   || fail 'Workflow voltou a recomprimir o APK durante o upload.'
+
+# Distribuicao direta de APKs por ABI - 1.0.82
+grep -q '^## 1.0.82+82' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.82.'
+grep -q 'Evolução 1.0.82' README.md || fail 'README nao documenta 1.0.82.'
+grep -q "version: '1.0.82'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.82.'
+[[ -f RELEASE-1.0.82.md ]] || fail 'Notas da entrega 1.0.82 ausentes.'
 
 # Monitor vertical fixo e buildfix Android-APK-49 - 1.0.81
 grep -q '^## 1.0.81+81' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.81.'

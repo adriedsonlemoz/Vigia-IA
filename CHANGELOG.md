@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.82+82 — 2026-09-22
+
+- Workflow Android passa a gerar e assinar quatro APKs: universal, `arm64-v8a`, `armeabi-v7a` e `x86_64`.
+- Os arquivos usam o padrão `VigiaIA-v1.0.82+82-<arquitetura>.apk` e são publicados na GitHub Release como downloads diretos, sem ZIP.
+- O APK universal continua disponível; `x86_64` foi preservado para emuladores e dispositivos compatíveis.
+- Relatórios de tamanho e dependências passam a um artifact técnico separado, evitando misturá-los ao download instalável.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura e verificadores sincronizados em `1.0.82+82`.
+
 ## 1.0.81+81 — 2026-09-22
 
 - Redesenhado o Monitor vertical com blocos permanentes para status, modos, câmera, ações e detecções, seguindo a organização da referência fornecida.

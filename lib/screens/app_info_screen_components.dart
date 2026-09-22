@@ -64,8 +64,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.81',
+          version: '1.0.82',
           current: true,
+          changes: [
+            'A Release passa a disponibilizar APKs diretos: universal, arm64-v8a, armeabi-v7a e x86_64.',
+            'Cada arquivo inclui a versão no nome, facilitando escolher e identificar a instalação.',
+            'Relatórios técnicos ficam separados do APK para o download não vir dentro de ZIP.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.81',
           changes: [
             'Monitor vertical reorganizado com status, modos, câmera, atalhos e detecções em áreas fixas.',
             'Detectados agora usa rolagem interna e não sobe mais sobre a câmera quando encontra objetos.',

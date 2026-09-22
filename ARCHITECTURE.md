@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.81+81
+# Arquitetura — Vigia IA 1.0.82+82
 
 ## 1. Princípios
+
+## Evolução 1.0.82 — distribuição Android por ABI
+
+- O workflow mantém o APK universal e gera APKs separados para `arm64-v8a`, `armeabi-v7a` e `x86_64` com `flutter build apk --split-per-abi`.
+- Todos recebem nome com produto, versão e arquitetura; o `+build` permanece no nome para identificar exatamente o código instalado.
+- Os APKs são assets da GitHub Release, portanto o download entrega `.apk` diretamente. Os relatórios de auditoria continuam em artifact independente, que o GitHub compacta como ZIP por natureza.
 
 ## Evolução 1.0.81 — composição fixa do Monitor
 

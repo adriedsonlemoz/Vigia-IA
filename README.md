@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.81+81`
+> **Versão atual:** `1.0.82+82`
 
 ## Estado atual
 
-A `1.0.81+81` reorganiza o Monitor vertical para seguir a referência visual, mantém a área de detecções fixa, elimina a bateria local duplicada e corrige o build interrompido pelo analisador.
+A `1.0.82+82` publica APKs diretos e versionados por arquitetura, mantendo o APK universal e separando os relatórios técnicos do download instalável.
+
+### Evolução 1.0.82 — APKs diretos por arquitetura
+
+- cada execução gera `VigiaIA-v1.0.82+82-universal.apk` e também APKs individuais para `arm64-v8a`, `armeabi-v7a` e `x86_64`;
+- os APKs são anexados à GitHub Release e podem ser baixados diretamente, sem a camada ZIP dos artifacts;
+- relatórios de tamanho e dependências ficam em um artifact técnico separado;
+- o APK universal continua disponível para quem não quiser escolher arquitetura;
+- `x86_64` é preservado para emuladores e dispositivos compatíveis.
 
 ### Evolução 1.0.81 — Monitor vertical fixo
 
@@ -866,7 +874,7 @@ flutter test
 flutter build apk --release
 ```
 
-O workflow `.github/workflows/android-apk.yml` executa a mesma sequência e publica o APK como artefato quando tudo passa.
+O workflow `.github/workflows/android-apk.yml` executa a mesma sequência, publica os APKs como arquivos diretos na GitHub Release e guarda apenas os relatórios técnicos como artifact separado. Para instalação em celulares atuais, o arquivo recomendado é o `arm64-v8a`; o `universal` mantém todas as arquiteturas.
 
 O projeto-fonte pode ser empacotado com:
 
