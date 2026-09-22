@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.76+76
+# Arquitetura — Vigia IA 1.0.77+77
 
 ## 1. Princípios
+
+## Evolução 1.0.77 — Catálogo compilado de áudio
+
+- `AudioResourceCatalog` mantém os 78 pares `slot -> R.raw.*` como referências Android compiladas.
+- `MainActivity` não usa mais reflexão nem `Resources.getIdentifier`; o catálogo é injetado em `AlertAudioPlayer`.
+- O player resolve o recurso pelo mapa recebido e distingue `slot_not_mapped` de `resource_id_zero` na telemetria.
+- O diagnóstico publica `bundledResourceCount` e `bundledMissingSlots` para confirmar a cobertura no APK instalado.
+- `verify_audio_resource_catalog.py` exige igualdade entre os slots Dart, as referências Kotlin e os M4A em `res/raw`.
+- `bootstrap_android.sh` copia o catálogo junto com as demais fontes nativas ao recriar o projeto Android.
 
 ## Evolução 1.0.76 — Monitor explícito entre celulares
 

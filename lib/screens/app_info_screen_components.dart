@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.76',
+          version: '1.0.77',
           current: true,
+          changes: [
+            'Corrige a falha resource_id_zero dos áudios integrados no Android.',
+            'Os 78 slots agora usam referências R.raw explícitas, sem busca dinâmica por nome.',
+            'O diagnóstico informa a quantidade de recursos empacotados e qualquer slot ausente.',
+            'O verificador compara catálogo Dart, catálogo Android e arquivos M4A antes da entrega.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.76',
           changes: [
             'Modo Monitor agora aparece como opção explícita na escolha inicial.',
             'O receptor pode escanear QR, preencher endereço/chave ou abrir a Central multicâmera.',

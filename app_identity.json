@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.76 adiciona Modo Monitor explícito para receber e analisar transmissões de outro celular.",
-  "version": "1.0.76",
-  "build": 76
+  "notes": "A 1.0.77 corrige a resolução dos áudios integrados com catálogo R.raw explícito e verificável.",
+  "version": "1.0.77",
+  "build": 77
 }

@@ -1,14 +1,14 @@
-# Validação — Vigia IA 1.0.76+76
+# Validação — Vigia IA 1.0.77+77
 
-Data: 2026-09-22. Base preservada: 1.0.75+75.
+Data: 2026-09-22. Base preservada: 1.0.76+76.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, espelhos Android e fluxo Monitor/transmissor 1.0.76 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.76+76 |
-| Fontes Android espelhadas | `MainActivity.kt` e `AlertAudioPlayer.kt` são idênticos entre `tool/android` e o projeto Android gerado |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, catálogo de áudio e fluxo Monitor/transmissor |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.77+77 |
+| Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
 | Codec dos áudios | `ffprobe` validou os 78 arquivos como AAC-LC, mono, 24 kHz e com duração positiva |
@@ -20,6 +20,7 @@ Data: 2026-09-22. Base preservada: 1.0.75+75.
 | Modo Câmera | Estado parado integrado, painel adaptativo e saída/parada claras protegidos pelo verificador |
 | Buildfix Android-APK-43 | `unnecessary_non_null_assertion` removido de `camera_mode_screen.dart` e protegido contra regressão |
 | Telemetria de áudio | Foco, fase, códigos MediaPlayer, origem, arquivo, volume, rota, tempos e fallback protegidos pelo verificador |
+| Catálogo de áudio | 78 slots Dart, 78 referências `R.raw` explícitas e 78 M4A comparados automaticamente |
 | Fluxo Monitor | Tela receptora, QR, endereço/chave manual, Central multicâmera e fonte Celular remoto protegidos pelo verificador |
 
 ## Layout de paisagem e transmissão

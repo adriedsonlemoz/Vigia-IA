@@ -14,7 +14,10 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /** Um player e uma próxima mensagem, sem fila de alertas antigos. */
-class AlertAudioPlayer(private val context: Context) {
+class AlertAudioPlayer(
+    private val context: Context,
+    private val bundledResources: Map<String, Int>,
+) {
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
     private val audio = context.getSystemService(AudioManager::class.java)
@@ -58,9 +61,10 @@ class AlertAudioPlayer(private val context: Context) {
         }
     }
 
-    fun play(slot: String, override: File?, resource: Int, priority: Int,
+    fun play(slot: String, override: File?, priority: Int,
              capturedAt: Long?, result: MethodChannel.Result) {
         if (closed || slot.isBlank()) { result.success(false); return }
+        val resource = bundledResources[slot] ?: 0
         val request = Request(slot, override, resource, priority, capturedAt, result)
         val current = active
         if (current != null) {
@@ -200,7 +204,11 @@ class AlertAudioPlayer(private val context: Context) {
     private fun bundledFile(request: Request): File? {
         lastResource = request.resource
         if (request.resource == 0) {
-            lastResourceError = "resource_id_zero:${request.slot}"
+            lastResourceError = if (bundledResources.containsKey(request.slot)) {
+                "resource_id_zero:${request.slot}"
+            } else {
+                "slot_not_mapped:${request.slot}"
+            }
             return null
         }
         // O carimbo muda em uma atualização do APK; não reusa áudio de versão anterior.
@@ -313,6 +321,8 @@ class AlertAudioPlayer(private val context: Context) {
         "lastSource" to lastSource, "lastFileName" to lastFileName,
         "lastFileBytes" to lastFileBytes,
         "lastResource" to lastResource, "lastResourceError" to lastResourceError,
+        "bundledResourceCount" to bundledResources.size,
+        "bundledMissingSlots" to bundledResources.filterValues { it == 0 }.keys.sorted(),
         "pendingSlot" to pending?.slot, "activePriority" to active?.priority, "usage" to "USAGE_MEDIA",
         "mediaVolume" to audio.getStreamVolume(AudioManager.STREAM_MUSIC),
         "mediaMaxVolume" to audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.77+77 — 2026-09-22
+
+- Corrigida a falha `FILE_UNAVAILABLE` / `resource_id_zero` observada nos áudios integrados do Android.
+- Removidas reflexão e busca dinâmica por nome; os 78 slots agora apontam diretamente para constantes compiladas `R.raw`.
+- O player nativo passa a distinguir slot desconhecido de recurso com ID inválido e inclui cobertura do catálogo no diagnóstico.
+- Adicionado verificador que exige igualdade entre catálogo Dart, catálogo Android e os 78 arquivos M4A de `res/raw`.
+- O bootstrap Android passa a restaurar também `AudioResourceCatalog.kt` antes do build.
+- Corrigida a expectativa antiga do build no teste de metadados.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.77+77`.
+
 ## 1.0.76+76 — 2026-09-22
 
 - Adicionado Modo Monitor como opção explícita na seleção inicial.
