@@ -65,8 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.83',
+          version: '1.0.84',
           current: true,
+          changes: [
+            'Corrigida a compilação dos rótulos adaptativos na Central de Câmeras.',
+            'Configurações não mantém mais parâmetro interno de expansão sem uso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.83',
           changes: [
             'Cadastro de celular e câmera RTSP agora explica o tipo de fonte antes da conexão.',
             'Central compacta ações e mostra modelo, resolução, FPS e bateria da câmera remota quando disponíveis.',

@@ -1,6 +1,11 @@
-# Arquitetura — Vigia IA 1.0.83+83
+# Arquitetura — Vigia IA 1.0.84+84
 
 ## 1. Princípios
+
+## Evolução 1.0.84 — correção de compilação
+
+- Rótulos que dependem do `LayoutBuilder` são widgets não constantes, evitando `invalid_constant`.
+- `_CategoryCard` mantém expansão inicial fechada sem expor parâmetro interno nunca utilizado.
 
 ## Evolução 1.0.83 — fontes e navegação de modo
 

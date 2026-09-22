@@ -83,7 +83,7 @@ class _CentralHeader extends StatelessWidget {
                 final scan = FilledButton.icon(
                   onPressed: onScanPhone,
                   icon: const Icon(Icons.qr_code_scanner_rounded),
-                  label: const FittedBox(
+                  label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(wideActions ? 'Escanear QR' : 'QR'),
                   ),
@@ -91,7 +91,7 @@ class _CentralHeader extends StatelessWidget {
                 final manual = OutlinedButton.icon(
                   onPressed: onAddPhone,
                   icon: const Icon(Icons.edit_rounded),
-                  label: const FittedBox(
+                  label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(wideActions ? 'Adicionar celular' : 'Celular'),
                   ),
@@ -107,7 +107,7 @@ class _CentralHeader extends StatelessWidget {
                 final esp32 = OutlinedButton.icon(
                   onPressed: onManageEsp32,
                   icon: const Icon(Icons.memory_rounded),
-                  label: const FittedBox(
+                  label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(wideActions ? 'Gerenciar ESP32' : 'ESP32'),
                   ),

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.83 reorganiza fontes, Câmeras, Histórico, troca de modo e Configurações, exibindo telemetria útil do celular remoto quando disponível.",
-  "version": "1.0.83",
-  "build": 83
+  "notes": "A 1.0.84 corrige a compilação da interface adaptativa de Câmeras e limpa o aviso de análise em Configurações.",
+  "version": "1.0.84",
+  "build": 84
 }

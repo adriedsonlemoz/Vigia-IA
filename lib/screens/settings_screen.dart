@@ -303,14 +303,12 @@ class _CategoryCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.children,
-    this.initiallyExpanded = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final List<Widget> children;
-  final bool initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -319,7 +317,7 @@ class _CategoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
+        initiallyExpanded: false,
         leading: Container(
           width: 42,
           height: 42,

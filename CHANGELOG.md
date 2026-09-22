@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.84+84 — 2026-09-22
+
+- Corrigido `flutter analyze`: rótulos adaptativos da Central de Câmeras não são mais construídos como constantes quando dependem da largura disponível.
+- Removido parâmetro interno não utilizado de expansão em Configurações, eliminando o aviso restante da análise estática.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, testes e verificadores sincronizados em `1.0.84+84`.
+
 ## 1.0.83+83 — 2026-09-22
 
 - Cadastro manual renomeado e reorganizado para identificar claramente Celular transmissor ou Câmera RTSP antes do preenchimento.

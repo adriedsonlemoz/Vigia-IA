@@ -2,11 +2,16 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.83+83`
+> **Versão atual:** `1.0.84+84`
 
 ## Estado atual
 
-A `1.0.83+83` torna o cadastro de fontes mais claro, compacta a Central de Câmeras e o Histórico, e permite alterar o modo do app sem apagar configurações.
+A `1.0.84+84` corrige a análise estática da Central de Câmeras e de Configurações, preservando as melhorias de fontes e modos da versão anterior.
+
+### Evolução 1.0.84 — Correção de build
+
+- Corrigidos três `invalid_constant` nos rótulos responsivos da Central de Câmeras.
+- Removido o parâmetro interno não utilizado em Configurações.
 
 ### Evolução 1.0.83 — Fontes, modos e organização
 
