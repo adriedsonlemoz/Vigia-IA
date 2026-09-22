@@ -87,32 +87,42 @@ class _CurrentStateGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chips = [
+      _StateChip(label: 'Serviço', active: health.androidServiceActive),
+      _StateChip(label: 'Câmera', active: health.cameraActive),
+      _StateChip(label: 'Frames', active: health.framesActive),
+      _StateChip(label: 'IA', active: health.aiActive),
+      _StateChip(label: 'LAN', active: health.lanActive),
+      _StateChip(
+        label: '${health.connectedClients} cliente(s)',
+        active: health.connectedClients > 0,
+        neutralWhenOff: true,
+      ),
+      _StateChip(
+        label: 'Permissões',
+        active: health.permissionsReady,
+      ),
+      _StateChip(
+        label: '2º plano',
+        active: health.backgroundOperational,
+        neutralWhenOff: !health.backgroundRequested,
+      ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _StateChip(label: 'Serviço', active: health.androidServiceActive),
-          _StateChip(label: 'Câmera', active: health.cameraActive),
-          _StateChip(label: 'Frames', active: health.framesActive),
-          _StateChip(label: 'IA', active: health.aiActive),
-          _StateChip(label: 'LAN', active: health.lanActive),
-          _StateChip(
-            label: '${health.connectedClients} cliente(s)',
-            active: health.connectedClients > 0,
-            neutralWhenOff: true,
-          ),
-          _StateChip(
-            label: 'Permissões',
-            active: health.permissionsReady,
-          ),
-          _StateChip(
-            label: '2º plano',
-            active: health.backgroundOperational,
-            neutralWhenOff: !health.backgroundRequested,
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            for (var index = 0; index < chips.length; index++)
+              Padding(
+                padding: EdgeInsets.only(right: index == chips.length - 1 ? 0 : 8),
+                child: chips[index],
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -137,17 +147,28 @@ class _StateChip extends StatelessWidget {
             ? Theme.of(context).colorScheme.onSurfaceVariant
             : const Color(0xFFFFB74D);
     return Container(
-      constraints: const BoxConstraints(minWidth: 92, minHeight: 36),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      constraints: const BoxConstraints(minHeight: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.20)),
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(fontWeight: FontWeight.w800, color: color),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w800, color: color),
+          ),
+        ],
       ),
     );
   }
@@ -350,38 +371,44 @@ class _PerformanceTelemetryCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (!active) ...[
-                OutlinedButton.icon(
-                  onPressed: onTrace30,
-                  icon: const Icon(Icons.timer_outlined),
-                  label: const Text('Diagnóstico 30 s'),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                if (!active) ...[
+                  OutlinedButton.icon(
+                    onPressed: onTrace30,
+                    icon: const Icon(Icons.timer_outlined),
+                    label: const Text('Diagnóstico 30 s'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: onTrace60,
+                    icon: const Icon(Icons.timer_rounded),
+                    label: const Text('Diagnóstico 60 s'),
+                  ),
+                  const SizedBox(width: 8),
+                ] else ...[
+                  FilledButton.tonalIcon(
+                    onPressed: onStopTrace,
+                    icon: const Icon(Icons.stop_circle_outlined),
+                    label: const Text('Encerrar diagnóstico'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                FilledButton.icon(
+                  onPressed: service.sampleCount == 0 || exporting ? null : onExport,
+                  icon: exporting
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.archive_outlined),
+                  label: const Text('Exportar'),
                 ),
-                OutlinedButton.icon(
-                  onPressed: onTrace60,
-                  icon: const Icon(Icons.timer_rounded),
-                  label: const Text('Diagnóstico 60 s'),
-                ),
-              ] else
-                FilledButton.tonalIcon(
-                  onPressed: onStopTrace,
-                  icon: const Icon(Icons.stop_circle_outlined),
-                  label: const Text('Encerrar diagnóstico'),
-                ),
-              FilledButton.icon(
-                onPressed: service.sampleCount == 0 || exporting ? null : onExport,
-                icon: exporting
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.archive_outlined),
-                label: const Text('Exportar desempenho'),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 7),
           Text(

@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.84',
+          version: '1.0.85',
           current: true,
+          changes: [
+            'Faixa de telemetria ESP32/Bike reorganizada em uma única linha horizontal rolável.',
+            'Velocidade, temperatura, pneus, sensores/simulação e distância ficam mais compactos e liberam altura para a câmera.',
+            'Diagnóstico compacta estados e deixa os botões de desempenho alinhados na mesma linha.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.84',
           changes: [
             'Corrigida a compilação dos rótulos adaptativos na Central de Câmeras.',
             'Configurações não mantém mais parâmetro interno de expansão sem uso.',
@@ -758,8 +767,25 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.83',
+          version: '1.0.85',
           current: true,
+          changes: [
+            'Faixa de telemetria ESP32/Bike reorganizada em uma única linha horizontal rolável.',
+            'Velocidade, temperatura, pneus, sensores/simulação e distância ficam mais compactos e liberam altura para a câmera.',
+            'Diagnóstico compacta estados e deixa os botões de desempenho alinhados na mesma linha.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.84',
+          changes: [
+            'Corrigida a compilação dos rótulos adaptativos na Central de Câmeras.',
+            'Configurações não mantém mais parâmetro interno de expansão sem uso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.83',
           changes: [
             'Cadastro de celular e câmera RTSP agora explica o tipo de fonte antes da conexão.',
             'Central compacta ações e mostra modelo, resolução, FPS e bateria da câmera remota quando disponíveis.',
@@ -781,22 +807,6 @@ class _ChangesPanel extends StatelessWidget {
           changes: [
             'Monitor vertical reorganizado com status, modos, câmera, atalhos e detecções em áreas fixas.',
             'Detectados agora usa rolagem interna e não sobe mais sobre a câmera.',
-          ],
-        ),
-        SizedBox(height: 10),
-        _ReleaseCard(
-          version: '1.0.80',
-          changes: [
-            'Histórico reorganizado e detalhe da captura ganhou salvar e excluir com confirmação.',
-            'Painel ESP32 integra sensores e uma futura câmera como fonte do Monitor.',
-          ],
-        ),
-        SizedBox(height: 10),
-        _ReleaseCard(
-          version: '1.0.79',
-          changes: [
-            'Menu principal simplificado para Início, Histórico, Monitor e Câmeras.',
-            'Modo Bike continua disponível pela seleção inicial e por Configurações.',
           ],
         ),
       ],

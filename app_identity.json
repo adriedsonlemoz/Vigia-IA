@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.84 corrige a compilação da interface adaptativa de Câmeras e limpa o aviso de análise em Configurações.",
-  "version": "1.0.84",
-  "build": 84
+  "notes": "A 1.0.85 compacta a faixa de telemetria ESP32/Bike e reorganiza o Diagnóstico para manter estados e ações na mesma linha sempre que possível.",
+  "version": "1.0.85",
+  "build": 85
 }

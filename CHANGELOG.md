@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.85+85 — 2026-09-22
+
+- Faixa de telemetria do ESP32/Bike no Monitor passa a priorizar uma única linha horizontal rolável, mantendo o máximo de dados na mesma linha e liberando altura para a câmera.
+- Os blocos de Velocidade, Temperatura, Pneus, Sensores/Simulação e Distância foram compactados em mini-cards horizontais.
+- A tela Diagnóstico reorganiza Serviço, Câmera, Frames, IA, LAN, clientes, Permissões e 2º plano em uma faixa horizontal compacta com rolagem lateral.
+- Em Desempenho da sessão, `Diagnóstico 30 s`, `Diagnóstico 60 s` e `Exportar` agora ficam alinhados na mesma linha horizontal.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, testes e verificadores sincronizados em `1.0.85+85`.
+
 ## 1.0.84+84 — 2026-09-22
 
 - Corrigido `flutter analyze`: rótulos adaptativos da Central de Câmeras não são mais construídos como constantes quando dependem da largura disponível.

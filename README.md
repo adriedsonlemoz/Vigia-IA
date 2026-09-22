@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.84+84`
+> **Versão atual:** `1.0.85+85`
 
 ## Estado atual
 
-A `1.0.84+84` corrige a análise estática da Central de Câmeras e de Configurações, preservando as melhorias de fontes e modos da versão anterior.
+A `1.0.85+85` reorganiza a telemetria do ESP32/Bike e compacta a tela de Diagnóstico, preservando as melhorias visuais e funcionais já entregues.
+
+### Evolução 1.0.85 — Telemetria e diagnóstico mais compactos
+
+- a faixa de telemetria do ESP32/Bike deixa de quebrar em grade e passa a priorizar uma única linha horizontal rolável;
+- velocidade, temperatura, pneus, sensores/simulação e distância ficam em mini-cards horizontais, liberando mais altura para a câmera;
+- em Diagnóstico, os estados Serviço, Câmera, Frames, IA, LAN, clientes, Permissões e 2º plano passam a ficar em uma faixa horizontal compacta;
+- em Desempenho da sessão, os botões `Diagnóstico 30 s`, `Diagnóstico 60 s` e `Exportar` ficam juntos na mesma linha horizontal, com rolagem lateral quando necessário.
 
 ### Evolução 1.0.84 — Correção de build
 

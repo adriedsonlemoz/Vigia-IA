@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.84+84
+# Arquitetura — Vigia IA 1.0.85+85
 
 ## 1. Princípios
+
+## Evolução 1.0.85 — telemetria compacta e diagnóstico em linha
+
+- `BikeRideHud` deixa de usar grade 2x3 no retrato e passa a renderizar mini-cards horizontais dentro de uma faixa rolável, preservando todos os dados na mesma linha sempre que possível.
+- A faixa compacta remove o `IgnorePointer`, permitindo rolagem lateral direta quando houver mais métricas que a largura disponível.
+- `_CurrentStateGrid` do Diagnóstico deixa de quebrar em várias linhas e vira uma sequência horizontal de chips de estado.
+- `_PerformanceTelemetryCard` agrupa `Diagnóstico 30 s`, `Diagnóstico 60 s` e `Exportar` em uma única fileira horizontal rolável.
 
 ## Evolução 1.0.84 — correção de compilação
 

@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.81+81
+# Validação — Vigia IA 1.0.85+85
 
-Data: 2026-09-22. Base preservada: 1.0.80+80.
+Data: 2026-09-22. Base preservada: 1.0.84+84.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, regressões do Android-APK-47 e navegação com quatro destinos |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.81+81 |
+| `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de telemetria/diagnóstico desta entrega |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.85+85 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -37,6 +37,8 @@ Data: 2026-09-22. Base preservada: 1.0.80+80.
 | Android-APK-49 | `BuildContext` protegido por `mounted` antes da escolha do destino de exportação |
 | Monitor vertical | Câmera e detecções em regiões fixas; painel expansível removido |
 | Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
+| Telemetria ESP32/Bike | Faixa superior reorganizada em uma única linha horizontal rolável, sem grade quebrada no retrato |
+| Diagnóstico | Estados Serviço/Câmera/Frames/IA/LAN/clientes/Permissões/2º plano ficam em faixa horizontal compacta; ações de 30 s, 60 s e Exportar permanecem juntas |
 
 ## Roteiro da 1.0.81
 

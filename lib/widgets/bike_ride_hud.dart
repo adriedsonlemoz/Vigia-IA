@@ -65,78 +65,60 @@ class BikeRideHud extends StatelessWidget {
       ),
     ];
 
-    return IgnorePointer(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 720;
-                if (wide) {
-                  return Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: _stripDecoration(),
-                    child: Row(
-                      children: metrics
-                          .map((metric) => Expanded(
-                                child: _BikeMetricTile(data: metric),
-                              ))
-                          .toList(growable: false),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: _stripDecoration(),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  for (var index = 0; index < metrics.length; index++)
+                    Padding(
+                      padding: EdgeInsets.only(right: index == metrics.length - 1 ? 0 : 4),
+                      child: _BikeMetricTile(data: metrics[index]),
                     ),
-                  );
-                }
-                final tileWidth = (constraints.maxWidth - 8) / 3;
-                return Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: _stripDecoration(),
-                  child: Wrap(
-                    spacing: 0,
-                    runSpacing: 0,
-                    children: metrics
-                        .map((metric) => SizedBox(
-                              width: tileWidth,
-                              child: _BikeMetricTile(data: metric, compact: true),
-                            ))
-                        .toList(growable: false),
-                  ),
-                );
-              },
+                ],
+              ),
             ),
-            if (warning != null) ...[
-              const SizedBox(height: 4),
-              Container(
-                constraints: const BoxConstraints(maxWidth: 620),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, size: 17, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        warning,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
+          ),
+          if (warning != null) ...[
+            const SizedBox(height: 4),
+            Container(
+              constraints: const BoxConstraints(maxWidth: 620),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 17, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      warning,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -167,10 +149,9 @@ class _BikeMetricData {
 }
 
 class _BikeMetricTile extends StatelessWidget {
-  const _BikeMetricTile({required this.data, this.compact = false});
+  const _BikeMetricTile({required this.data});
 
   final _BikeMetricData data;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -180,59 +161,65 @@ class _BikeMetricTile extends StatelessWidget {
             ? Theme.of(context).colorScheme.primary
             : Colors.white70;
     return Container(
-      constraints: BoxConstraints(minHeight: compact ? 44 : 48),
-      padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 8, vertical: 5),
+      constraints: BoxConstraints(minWidth: data.featured ? 136 : 124, minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: data.alert ? accent.withValues(alpha: 0.22) : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
+        color: data.alert
+            ? accent.withValues(alpha: 0.18)
+            : Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: data.alert
+              ? accent.withValues(alpha: 0.28)
+              : Colors.white.withValues(alpha: 0.08),
+        ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(data.icon, size: compact ? 15 : 17, color: accent),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+          Icon(data.icon, size: 17, color: accent),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                data.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    data.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: data.featured ? 18 : 14,
+                      height: 1,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        data.value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: data.featured ? (compact ? 16 : 20) : 13,
-                          height: 1,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                  const SizedBox(width: 4),
+                  Text(
+                    data.unit,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      data.unit,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
