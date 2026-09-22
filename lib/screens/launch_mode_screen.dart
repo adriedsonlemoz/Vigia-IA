@@ -6,6 +6,7 @@ import '../services/app_launch_mode_service.dart';
 import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'home_screen.dart';
+import 'monitor_connect_screen.dart';
 
 class LaunchModeScreen extends StatefulWidget {
   const LaunchModeScreen({
@@ -60,6 +61,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
         AppLaunchMode.normal => HomeScreen(
             startMonitorOnLoad: widget.startMonitorOnLoad,
           ),
+        AppLaunchMode.monitor => const MonitorConnectScreen(),
         AppLaunchMode.bike => const BikeModeScreen(),
         AppLaunchMode.transmission => const CameraModeScreen(),
       };
@@ -102,8 +104,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'A escolha só define a primeira tela e o foco do uso. '
-                    'O monitor, a Bike e a transmissão continuam acessíveis pelo app.',
+                    'Escolha o papel deste aparelho. Um celular pode enviar imagem, outro pode receber e analisar, ou este mesmo aparelho pode fazer tudo sozinho.',
                   ),
                 ],
               ),
@@ -113,17 +114,27 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
               icon: Icons.shield_outlined,
               title: 'Modo normal',
               subtitle:
-                  'Para monitorar casa, cômodo, entrada, garagem, objetos, pessoas, animais e veículos.',
+                  'Este celular vai usar a própria câmera e analisar a imagem no próprio aparelho.',
               selected: selected == AppLaunchMode.normal,
               busy: _saving && selected == AppLaunchMode.normal,
               onTap: () => _select(AppLaunchMode.normal),
             ),
             const SizedBox(height: 10),
             _LaunchModeCard(
+              icon: Icons.cast_connected_rounded,
+              title: 'Modo Monitor',
+              subtitle:
+                  'Este celular vai receber imagem de outro aparelho e fazer a IA, histórico, alertas e áudios.',
+              selected: selected == AppLaunchMode.monitor,
+              busy: _saving && selected == AppLaunchMode.monitor,
+              onTap: () => _select(AppLaunchMode.monitor),
+            ),
+            const SizedBox(height: 10),
+            _LaunchModeCard(
               icon: Icons.directions_bike_rounded,
               title: 'Modo Bike',
               subtitle:
-                  'Abre o painel da bike, com foco em HUD, energia, sensores e alerta de veículo se aproximando.',
+                  'Modo próprio da bike. Ao usar câmera remota, este aparelho segue a lógica do receptor: recebe e analisa.',
               selected: selected == AppLaunchMode.bike,
               busy: _saving && selected == AppLaunchMode.bike,
               onTap: () => _select(AppLaunchMode.bike),
@@ -133,7 +144,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
               icon: Icons.wifi_tethering_rounded,
               title: 'Modo transmissão',
               subtitle:
-                  'Usa este aparelho como câmera remota dedicada. Ideal para o celular que só envia imagem pela rede local.',
+                  'Este celular vai enviar imagem pela rede local. No outro celular, escolha Modo Monitor para receber.',
               selected: selected == AppLaunchMode.transmission,
               busy: _saving && selected == AppLaunchMode.transmission,
               onTap: () => _select(AppLaunchMode.transmission),

@@ -6,7 +6,7 @@ Estas regras valem para qualquer correção, melhoria, refatoração, buildfix o
 
 - Nunca entregar uma nova modificação usando a mesma versão da entrega anterior.
 - Toda entrega nova incrementa a versão pública e o build, inclusive correções pequenas.
-- Sequência esperada: `1.0.49+49` → `1.0.50+50` → `1.0.51+51` → `1.0.52+52` → `1.0.53+53` → `1.0.54+54` → `1.0.55+55` → `1.0.56+56` → `1.0.57+57` → `1.0.58+58` → `1.0.59+59` → `1.0.60+60` → `1.0.61+61` → `1.0.62+62` → `1.0.63+63` → `1.0.64+64` → `1.0.65+65` → `1.0.66+66` → `1.0.67+67` → `1.0.68+68` → `1.0.69+69` → `1.0.70+70` → `1.0.71+71` → `1.0.72+72` → `1.0.73+73` → `1.0.74+74` → `1.0.75+75`.
+- Sequência esperada: `1.0.49+49` → `1.0.50+50` → `1.0.51+51` → `1.0.52+52` → `1.0.53+53` → `1.0.54+54` → `1.0.55+55` → `1.0.56+56` → `1.0.57+57` → `1.0.58+58` → `1.0.59+59` → `1.0.60+60` → `1.0.61+61` → `1.0.62+62` → `1.0.63+63` → `1.0.64+64` → `1.0.65+65` → `1.0.66+66` → `1.0.67+67` → `1.0.68+68` → `1.0.69+69` → `1.0.70+70` → `1.0.71+71` → `1.0.72+72` → `1.0.73+73` → `1.0.74+74` → `1.0.75+75` → `1.0.76+76`.
 - Nunca reutilizar uma versão que já tenha sido entregue em ZIP.
 
 Antes do ZIP final, manter sincronizados:

@@ -100,7 +100,7 @@ class SettingsScreen extends StatelessWidget {
           _SettingsTile(
             icon: Icons.dashboard_customize_outlined,
             title: 'Modo inicial',
-            subtitle: 'Escolha entre Normal, Bike ou Transmissão ao abrir o app.',
+            subtitle: 'Escolha entre Normal, Monitor, Bike ou Transmissão ao abrir o app.',
             onTap: () => _push(
               context,
               const LaunchModeScreen(manualReview: true),

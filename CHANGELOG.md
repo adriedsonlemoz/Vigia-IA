@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.76+76 — 2026-09-22
+
+- Adicionado Modo Monitor como opção explícita na seleção inicial.
+- Modo Monitor abre uma tela própria para receber transmissão de outro celular por QR, endereço/chave manual ou Central multicâmera.
+- Ao conectar, o Monitor abre usando a fonte `Celular remoto`, mantendo IA, histórico, alertas e áudios personalizados no aparelho receptor.
+- Modo Normal, Modo Bike e Modo Transmissão ganharam textos mais diretos sobre o papel deste celular: usar câmera própria, receber/analisar ou enviar imagem.
+- `AppLaunchModeService` passa a persistir e restaurar também o modo `monitor`.
+- Configurações > Monitoramento > Modo inicial foi atualizado para incluir Normal, Monitor, Bike e Transmissão.
+- Versionamento, metadados, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.76+76`.
+
 ## 1.0.75+75 — 2026-09-22
 
 - Corrigido o `unnecessary_non_null_assertion` em `camera_mode_screen.dart` que interrompeu o Android-APK-43 no `flutter analyze`.

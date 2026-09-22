@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.75+75
+# Validação — Vigia IA 1.0.76+76
 
-Data: 2026-09-22. Base preservada: 1.0.74+74.
+Data: 2026-09-22. Base preservada: 1.0.75+75.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, espelhos Android, buildfix do Android-APK-43 e telemetria de áudio 1.0.75 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.75+75 |
+| `bash tool/verify_project.sh` | Passou, incluindo versão, identidade, espelhos Android e fluxo Monitor/transmissor 1.0.76 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG e arquitetura em 1.0.76+76 |
 | Fontes Android espelhadas | `MainActivity.kt` e `AlertAudioPlayer.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -15,11 +15,12 @@ Data: 2026-09-22. Base preservada: 1.0.74+74.
 | Transporte remoto | Sequência, timestamp UTC, cache desativado, resposta 204 e descarte de duplicatas protegidos pelo verificador |
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
-| Seleção de modo | Normal, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
+| Seleção de modo | Normal, Monitor, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
 | Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |
 | Modo Câmera | Estado parado integrado, painel adaptativo e saída/parada claras protegidos pelo verificador |
 | Buildfix Android-APK-43 | `unnecessary_non_null_assertion` removido de `camera_mode_screen.dart` e protegido contra regressão |
 | Telemetria de áudio | Foco, fase, códigos MediaPlayer, origem, arquivo, volume, rota, tempos e fallback protegidos pelo verificador |
+| Fluxo Monitor | Tela receptora, QR, endereço/chave manual, Central multicâmera e fonte Celular remoto protegidos pelo verificador |
 
 ## Layout de paisagem e transmissão
 
@@ -33,6 +34,14 @@ Validações manuais recomendadas no aparelho:
 - iniciar transmissão e confirmar botão Parar e saída clara no topo.
 
 ## Seleção inicial de modo
+
+Validações manuais recomendadas no aparelho:
+
+- concluir Acesso inicial e conferir as quatro opções: Normal, Monitor, Bike e Transmissão;
+- escolher Modo Transmissão em um aparelho e confirmar endereço, chave, QR, status e conexão;
+- escolher Modo Monitor no receptor, escanear QR ou preencher endereço/chave;
+- confirmar que o Monitor abre como Celular remoto e que IA, alertas, histórico e áudios ficam no receptor;
+- trocar o modo em Configurações > Monitoramento > Modo inicial.
 
 O fluxo atualizado mantém o guia de permissões em primeiro lugar. Quando ele termina, o app abre `LaunchModeScreen` e pede a escolha entre:
 

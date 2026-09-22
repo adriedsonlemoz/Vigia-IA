@@ -58,8 +58,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.75',
+          version: '1.0.76',
           current: true,
+          changes: [
+            'Modo Monitor agora aparece como opção explícita na escolha inicial.',
+            'O receptor pode escanear QR, preencher endereço/chave ou abrir a Central multicâmera.',
+            'Ao conectar, o Monitor usa Celular remoto e mantém IA, histórico, alertas e áudios neste aparelho.',
+            'Textos de Normal, Bike e Transmissão deixam claro se este celular usa, recebe ou envia imagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.75',
           changes: [
             'Corrige o lint que interrompeu o Android-APK-43 antes dos testes e do build.',
             'Foco de áudio negado deixa de bloquear a reprodução; a tentativa continua e a condição fica registrada.',

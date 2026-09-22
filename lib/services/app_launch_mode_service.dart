@@ -8,6 +8,7 @@ import 'error_log_service.dart';
 
 enum AppLaunchMode {
   normal,
+  monitor,
   bike,
   transmission;
 

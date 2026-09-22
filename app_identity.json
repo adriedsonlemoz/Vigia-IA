@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.75 corrige o build, torna a negação de foco não fatal para os áudios e amplia a telemetria nativa de reprodução.",
-  "version": "1.0.75",
-  "build": 75
+  "notes": "A 1.0.76 adiciona Modo Monitor explícito para receber e analisar transmissões de outro celular.",
+  "version": "1.0.76",
+  "build": 76
 }

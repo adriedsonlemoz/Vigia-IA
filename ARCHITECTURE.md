@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.75+75
+# Arquitetura — Vigia IA 1.0.76+76
 
 ## 1. Princípios
+
+## Evolução 1.0.76 — Monitor explícito entre celulares
+
+- `AppLaunchMode` adiciona `monitor`, mantendo compatibilidade com os valores anteriores.
+- `_StartupGate` e `LaunchModeScreen` passam a abrir `MonitorConnectScreen` quando o modo salvo é Monitor.
+- `MonitorConnectScreen` centraliza o papel do receptor: ler QR, preencher endereço/chave manualmente ou abrir a Central multicâmera.
+- Ao iniciar o monitoramento por esse fluxo, a fonte é persistida como `VideoSourceType.remotePhone` e o `MonitorScreen` recebe essa origem diretamente.
+- O contrato permanece o mesmo: o transmissor usa `CameraModeScreen` e envia imagem/status; o receptor executa IA, histórico, alertas, clipes e áudios.
+- Modo Bike continua próprio, mas quando usar câmera remota segue a mesma decisão arquitetural do receptor.
 
 ## Evolução 1.0.75 — Falhas reais de áudio na telemetria
 
@@ -19,14 +28,14 @@
 - `_buildPreviewLayer` força preenchimento em paisagem e tela cheia para reduzir faixas pretas e priorizar a câmera.
 - `CameraModeScreen` passa a desenhar preview/estado parado em fundo integral, com barra superior translúcida e painel inferior/lateral conforme orientação.
 - `_CameraStandbyPanel` substitui o ícone isolado de câmera desligada por um estado visual integrado ao aplicativo.
-- O fluxo `AccessGuideScreen` → `LaunchModeScreen` continua obrigatório antes da Home/Bike/Transmissão em instalações novas.
+- O fluxo `AccessGuideScreen` → `LaunchModeScreen` continua obrigatório antes da Home/Monitor/Bike/Transmissão em instalações novas.
 
 ## Evolução 1.0.73 — Escolha inicial de modo
 
 - `_StartupGate` continua respeitando o guia inicial de permissões antes de liberar o app.
-- Depois do onboarding, `LaunchModeScreen` solicita a escolha entre Normal, Bike e Transmissão quando ainda não há modo salvo.
+- Depois do onboarding, `LaunchModeScreen` solicita a escolha entre Normal, Monitor, Bike e Transmissão quando ainda não há modo salvo.
 - `AppLaunchModeService` persiste a escolha em `launch_mode.json`, no diretório de suporte do app.
-- Em aberturas futuras, Normal leva à Home, Bike leva ao painel Bike e Transmissão leva ao Modo Câmera.
+- Em aberturas futuras, Normal leva à Home, Monitor leva ao fluxo receptor, Bike leva ao painel Bike e Transmissão leva ao Modo Câmera.
 - Configurações > Monitoramento permite reabrir a seleção sem repetir o onboarding.
 - A arquitetura mantém o transmissor dedicado à câmera; mapa/GPS e identificação futura de contexto Bike devem ser trabalhados no receptor.
 
