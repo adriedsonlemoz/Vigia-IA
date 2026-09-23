@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.86+86
+# Arquitetura — Vigia IA 1.0.87+87
 
 ## 1. Princípios
 

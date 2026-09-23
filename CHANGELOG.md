@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.87+87 — 2026-09-22
+
+- Corrigida a ordem da diretiva `part of` em `bike_mode_screen_components.dart`.
+- Eliminado o erro `directive_after_declaration` que interrompia o `flutter analyze` no workflow Android.
+- Mantida sem regressões a implementação de mapa/GPS, posição atual e registro de rota da 1.0.86.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.87+87`.
+
 ## 1.0.86+86 — 2026-09-22
 
 - Iniciada a implantação de mapas no Modo Bike com nova tela `Mapa do monitoramento`.

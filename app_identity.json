@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.86 inicia o mapa do Modo Bike com GPS local, posição atual, precisão, velocidade, distância, cronômetro e registro visual do trajeto.",
-  "version": "1.0.86",
-  "build": 86
+  "notes": "A 1.0.87 corrige a análise estática do Modo Bike após a introdução do mapa, mantendo GPS, rota e integração existentes.",
+  "version": "1.0.87",
+  "build": 87
 }

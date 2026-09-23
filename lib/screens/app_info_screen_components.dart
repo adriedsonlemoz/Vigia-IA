@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.86',
+          version: '1.0.87',
           current: true,
+          changes: [
+            'Corrigida a ordem da diretiva part of no componente do Modo Bike.',
+            'Eliminado o erro directive_after_declaration que bloqueava o flutter analyze no workflow.',
+            'Mapa, GPS e registro de rota da 1.0.86 foram preservados sem alteração funcional.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.86',
           changes: [
             'Modo Bike ganha Mapa do monitoramento com OpenStreetMap e GPS local.',
             'Mapa mostra posição, precisão, velocidade, distância, tempo e última atualização.',
@@ -776,8 +785,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.86',
+          version: '1.0.87',
           current: true,
+          changes: [
+            'Corrigida a ordem da diretiva part of no componente do Modo Bike.',
+            'Eliminado o erro directive_after_declaration que bloqueava o flutter analyze no workflow.',
+            'Mapa, GPS e registro de rota da 1.0.86 foram preservados sem alteração funcional.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.86',
           changes: [
             'Modo Bike ganha Mapa do monitoramento com OpenStreetMap e GPS local.',
             'Mapa mostra posição, precisão, velocidade, distância, tempo e última atualização.',

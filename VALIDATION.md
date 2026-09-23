@@ -1,4 +1,4 @@
-# Validação — Vigia IA 1.0.86+86
+# Validação — Vigia IA 1.0.87+87
 
 Data: 2026-09-22. Base preservada: 1.0.84+84.
 
@@ -7,7 +7,7 @@ Data: 2026-09-22. Base preservada: 1.0.84+84.
 | Verificação | Resultado |
 |---|---|
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de telemetria/diagnóstico desta entrega |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.86+86 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.87+87 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |

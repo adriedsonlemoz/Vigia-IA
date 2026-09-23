@@ -1,3 +1,5 @@
+part of 'bike_mode_screen.dart';
+
 
 class _BikeMapEntryCard extends StatelessWidget {
   const _BikeMapEntryCard({required this.onTap});
@@ -20,8 +22,6 @@ class _BikeMapEntryCard extends StatelessWidget {
         ),
       );
 }
-
-part of 'bike_mode_screen.dart';
 
 class _BikeHero extends StatelessWidget {
   const _BikeHero({required this.enabled, required this.onChanged});
