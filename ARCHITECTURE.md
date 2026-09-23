@@ -1,6 +1,18 @@
-# Arquitetura — Vigia IA 1.0.98+98
+# Arquitetura — Vigia IA 1.0.99+99
 
 ## 1. Princípios
+
+## Evolução 1.0.99 — download offline direto e GPX
+
+- `OfflineMapService` passa a gerar MBTiles raster no próprio aparelho a partir de tiles de uma fonte explicitamente configurada e autorizada, além de manter importação e download de MBTiles prontos.
+- A integração inicial usa **Stadia Maps Alidade Smooth** com API key fornecida pelo usuário; `NativePlatformService.protectSecret/unprotectSecret` protege a credencial pelo Android Keystore.
+- Downloads por região usam bounds/níveis de zoom; downloads por trajeto calculam um corredor em espaço de tiles ao redor dos segmentos registrados.
+- `sqlite3` cria `metadata`/`tiles` no padrão MBTiles e converte XYZ para TMS ao gravar `tile_row`; o arquivo é validado antes de virar pacote ativo.
+- O serviço mantém estado de progresso, bytes/tiles, pausa, retomada e cancelamento, e impede que o cache do provedor ultrapasse o limite configurado.
+- `OfflineMapPackage` passa a guardar provedor, bounds, min/max zoom, atualização e expiração estimada; o mapa usa os bounds para alertar quando a posição saiu da cobertura local.
+- `OfflineAreaSelectionScreen` permite escolher a área visível no mapa para preparar o download, enquanto Região atual e Trajeto reutilizam a mesma estimativa centralizada.
+- `MapRouteService` schema 2 persiste pausa, duração pausada e inícios de segmento. `routeSegments` impede linhas/distâncias artificiais entre uma pausa e sua retomada.
+- `buildGpx()` gera GPX 1.1 com um `<trkseg>` por segmento; `MapMonitoringScreen` salva o arquivo pelo seletor nativo e expõe Pausar/Continuar na mesma sessão compartilhada.
 
 ## Evolução 1.0.98 — mapa adaptativo e sessão única de trajeto
 

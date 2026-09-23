@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.98',
+          version: '1.0.99',
           current: true,
+          changes: [
+            'Mapas offline agora podem ser baixados diretamente por região ou corredor do trajeto usando uma fonte autorizada configurada pelo usuário.',
+            'O download mostra progresso, tiles e bytes, respeita limite de cache, pode ser pausado/retomado ou cancelado e mantém importação/link MBTiles.',
+            'A rota compartilhada ganhou Pausar/Continuar sem criar saltos de distância e pode ser exportada em GPX pelo seletor do Android.',
+            'Pacotes offline guardam limites geográficos e validade estimada para avisar quando a posição sair da área baixada ou quando a atualização for recomendada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.98',
           changes: [
             'O mapa do Monitor ganhou modos Automático, Sempre mostrar e Ocultar; no automático ele some em monitoramento doméstico e reaparece com Bike, rota ativa ou deslocamento por GPS.',
             'Mini-mapa e mapa completo agora compartilham uma única sessão de trajeto persistente, restaurada ao reabrir o app.',
@@ -894,8 +904,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.98',
+          version: '1.0.99',
           current: true,
+          changes: [
+            'Mapas offline agora podem ser baixados diretamente por região ou corredor do trajeto usando uma fonte autorizada configurada pelo usuário.',
+            'O download mostra progresso, tiles e bytes, respeita limite de cache, pode ser pausado/retomado ou cancelado e mantém importação/link MBTiles.',
+            'A rota compartilhada ganhou Pausar/Continuar sem criar saltos de distância e pode ser exportada em GPX pelo seletor do Android.',
+            'Pacotes offline guardam limites geográficos e validade estimada para avisar quando a posição sair da área baixada ou quando a atualização for recomendada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.98',
           changes: [
             'O mapa do Monitor ganhou modos Automático, Sempre mostrar e Ocultar; no automático ele some em monitoramento doméstico e reaparece com Bike, rota ativa ou deslocamento por GPS.',
             'Mini-mapa e mapa completo agora compartilham uma única sessão de trajeto persistente, restaurada ao reabrir o app.',

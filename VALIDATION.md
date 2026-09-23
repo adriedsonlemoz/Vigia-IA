@@ -1,4 +1,19 @@
-# Validação — Vigia IA 1.0.98+98
+# Validação — Vigia IA 1.0.99+99
+
+## 1.0.99+99 — download offline direto, pausa de rota e GPX
+
+Data: 2026-09-23. Base preservada: 1.0.98+98.
+
+- Configurar uma API key válida da fonte offline, fechar/reabrir o app e confirmar que a credencial continua utilizável sem aparecer em texto puro no manifesto.
+- Testar **Região atual**, **Selecionar região** e **Trajeto**; conferir estimativa de tiles/tamanho e bloqueio quando a soma dos mapas diretos exceder o limite de segurança ou o espaço livre.
+- Durante um download, testar **Pausar**, **Continuar** e **Cancelar**; confirmar progresso em tiles/bytes e remoção do arquivo parcial ao cancelar/falhar.
+- Concluir um download, ativar o MBTiles e testar modo Offline sem internet; sair dos bounds do pacote e confirmar aviso **Fora da área offline**.
+- Verificar atualização recomendada após expiração do cache declarada pelo servidor e opção de atualizar pacote gerado pela fonte integrada.
+- Iniciar rota, pausar, deslocar-se, continuar e confirmar que o novo trecho começa em outro segmento sem somar uma linha/salto artificial.
+- Exportar GPX e validar XML 1.1 com `<trkseg>`, `<trkpt>`, elevação/tempo quando disponíveis.
+- Confirmar que `OfflineMapService` não usa `tile.openstreetmap.org` para download em massa; o OSM público permanece apenas como camada online interativa.
+- `python3 tool/check_version_sync.py`: aprovado em `1.0.99+99`; `bash tool/verify_project.sh`: aprovado, incluindo limite estrutural, mapas offline, rota/GPX e proteções históricas.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados no workflow.
 
 ## 1.0.98+98 — mapa adaptativo, rota persistente e offline ampliado
 

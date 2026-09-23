@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -9,6 +11,7 @@ import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_route_service.dart';
+import '../services/native_platform_service.dart';
 import '../services/offline_map_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 
@@ -33,6 +36,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapRouteService _routeState = MapRouteService.instance;
+  final NativePlatformService _native = NativePlatformService.instance;
 
   MbTilesTileProvider? _offlineTileProvider;
   String? _offlineTilePackageId;
@@ -57,6 +61,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   void dispose() {
     _offlineMaps.removeListener(_onOfflineMapsChanged);
     _routeState.removeListener(_onRouteStateChanged);
+    _offlineTileProvider?.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -78,6 +83,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
       setState(() {});
       return;
     }
+    _offlineTileProvider?.dispose();
     _offlineTileProvider = null;
     _offlineTilePackageId = active?.id;
     _offlineTileError = null;
@@ -150,6 +156,46 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     unawaited(_routeState.finishRoute());
   }
 
+  void _togglePauseRoute() {
+    if (!_routeState.tracking) return;
+    if (_routeState.paused) {
+      unawaited(_routeState.resumeRoute());
+    } else {
+      unawaited(_routeState.pauseRoute());
+    }
+  }
+
+  Future<void> _exportGpx() async {
+    if (_routeState.route.isEmpty) return;
+    try {
+      final gpx = _routeState.buildGpx();
+      final now = DateTime.now();
+      String two(int value) => value.toString().padLeft(2, '0');
+      final name = 'VigiaIA-rota-${now.year}${two(now.month)}${two(now.day)}-'
+          '${two(now.hour)}${two(now.minute)}.gpx';
+      final saved = await _native.saveBytesWithPicker(
+        fileName: name,
+        mimeType: 'application/gpx+xml',
+        bytes: Uint8List.fromList(utf8.encode(gpx)),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved == null
+                ? 'Exportação cancelada ou não concluída.'
+                : 'Rota GPX exportada.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível exportar a rota: $error')),
+      );
+    }
+  }
+
   String _formatDistance() {
     final distanceMeters = _routeState.distanceMeters;
     if (distanceMeters < 1000) return '${distanceMeters.toStringAsFixed(0)} m';
@@ -178,9 +224,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     final center = current == null
         ? const LatLng(-14.2350, -51.9253)
         : LatLng(current.latitude, current.longitude);
-    final routePoints = _routeState.route
-        .map((point) => LatLng(point.latitude, point.longitude))
+    final routeSegments = _routeState.routeSegments
+        .map(
+          (segment) => segment
+              .map((point) => LatLng(point.latitude, point.longitude))
+              .toList(growable: false),
+        )
+        .where((segment) => segment.length >= 2)
         .toList(growable: false);
+    final activeOffline = _offlineMaps.activePackage;
+    final outsideOfflineArea = activeOffline != null &&
+        current != null &&
+        !activeOffline.contains(
+          latitude: current.latitude,
+          longitude: current.longitude,
+        );
 
     final offlineProvider = _offlineTileProvider;
     final mode = _offlineMaps.mode;
@@ -262,15 +320,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       userAgentPackageName: 'com.vigiaia.app',
                       maxNativeZoom: 19,
                     ),
-                  if (routePoints.length >= 2)
+                  if (routeSegments.isNotEmpty)
                     PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: routePoints,
-                          strokeWidth: 5,
-                          color: scheme.primary,
-                        ),
-                      ],
+                      polylines: routeSegments
+                          .map(
+                            (segment) => Polyline(
+                              points: segment,
+                              strokeWidth: 5,
+                              color: scheme.primary,
+                            ),
+                          )
+                          .toList(growable: false),
                     ),
                   MarkerLayer(
                     markers: [
@@ -326,9 +386,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                           vertical: 4,
                         ),
                         child: Text(
-                          mode == OfflineMapMode.offline
-                              ? 'Mapa offline · confira a licença do pacote'
-                              : '© OpenStreetMap contributors',
+                          mode != OfflineMapMode.online &&
+                                  activeOffline?.providerId ==
+                                      'stadia-alidade-smooth'
+                              ? '© Stadia Maps © OpenMapTiles © OpenStreetMap contributors'
+                              : mode == OfflineMapMode.offline
+                                  ? 'Mapa offline · confira a licença do pacote'
+                                  : '© OpenStreetMap contributors',
                           style: const TextStyle(fontSize: 10),
                         ),
                       ),
@@ -346,6 +410,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   onTap: () => unawaited(_openOfflineMaps()),
                 ),
               ),
+              if (outsideOfflineArea && mode != OfflineMapMode.online)
+                Positioned(
+                  top: 54,
+                  left: 12,
+                  child: _OfflineAreaWarning(
+                    onTap: () => unawaited(_openOfflineMaps()),
+                  ),
+                ),
               Positioned(
                 top: 12,
                 right: 12,
@@ -355,6 +427,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                 alignment: Alignment.bottomCenter,
                 child: _MapRidePanel(
                   tracking: _routeState.tracking,
+                  paused: _routeState.paused,
+                  canExport: _routeState.route.length >= 2,
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   distance: _formatDistance(),
                   elapsed: _formatDuration(_routeState.elapsed),
@@ -365,6 +439,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       : _routeState.tracking
                           ? _finishRoute
                           : _startRoute,
+                  onPauseResume: _routeState.tracking ? _togglePauseRoute : null,
+                  onExport: _routeState.route.length >= 2
+                      ? () => unawaited(_exportGpx())
+                      : null,
                   onCenter: current == null
                       ? null
                       : () {
@@ -614,6 +692,43 @@ class _MapSourceChip extends StatelessWidget {
   }
 }
 
+class _OfflineAreaWarning extends StatelessWidget {
+  const _OfflineAreaWarning({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.errorContainer.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.wrong_location_rounded, size: 16, color: scheme.onErrorContainer),
+              const SizedBox(width: 5),
+              Text(
+                'Fora da área offline',
+                style: TextStyle(
+                  color: scheme.onErrorContainer,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GpsChip extends StatelessWidget {
   const _GpsChip({required this.point});
 
@@ -647,22 +762,30 @@ class _GpsChip extends StatelessWidget {
 class _MapRidePanel extends StatelessWidget {
   const _MapRidePanel({
     required this.tracking,
+    required this.paused,
+    required this.canExport,
     required this.speedKmh,
     required this.distance,
     required this.elapsed,
     required this.lastUpdate,
     required this.accuracy,
     required this.onToggleTracking,
+    required this.onPauseResume,
+    required this.onExport,
     required this.onCenter,
   });
 
   final bool tracking;
+  final bool paused;
+  final bool canExport;
   final double speedKmh;
   final String distance;
   final String elapsed;
   final DateTime? lastUpdate;
   final double? accuracy;
   final VoidCallback? onToggleTracking;
+  final VoidCallback? onPauseResume;
+  final VoidCallback? onExport;
   final VoidCallback? onCenter;
 
   String _time(DateTime? value) {
@@ -701,20 +824,50 @@ class _MapRidePanel extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   IconButton.filledTonal(
                     tooltip: 'Centralizar no GPS',
                     onPressed: onCenter,
+                    visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.my_location_rounded),
                   ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: onToggleTracking,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: tracking ? scheme.error : null,
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  if (canExport) ...[
+                    IconButton.filledTonal(
+                      tooltip: 'Exportar GPX',
+                      onPressed: onExport,
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.file_upload_outlined),
                     ),
-                    icon: Icon(tracking ? Icons.stop_rounded : Icons.navigation_rounded),
-                    label: Text(tracking ? 'Encerrar' : 'Iniciar rota'),
+                    const SizedBox(width: 6),
+                  ],
+                  if (tracking) ...[
+                    IconButton.filledTonal(
+                      tooltip: paused ? 'Continuar rota' : 'Pausar rota',
+                      onPressed: onPauseResume,
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onToggleTracking,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: tracking ? scheme.error : null,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: Icon(
+                        tracking ? Icons.stop_rounded : Icons.navigation_rounded,
+                      ),
+                      label: Text(tracking ? 'Encerrar rota' : 'Iniciar rota'),
+                    ),
                   ),
                 ],
               ),

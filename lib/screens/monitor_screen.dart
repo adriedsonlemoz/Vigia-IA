@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/adaptive_camera_layout.dart';
@@ -18,11 +19,13 @@ import '../models/camera_endpoint.dart';
 import '../models/monitoring_zone.dart';
 import '../models/device_telemetry.dart';
 import '../models/map_route_point.dart';
+import '../models/offline_map_package.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_route_service.dart';
+import '../services/offline_map_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
@@ -42,6 +45,7 @@ import 'settings_screen.dart';
 part 'monitor_screen_components.dart';
 part 'monitor_screen_fullscreen.dart';
 part 'monitor_screen_multicamera.dart';
+part 'monitor_screen_offline_map.dart';
 part 'monitor_screen_portrait.dart';
 part 'monitor_screen_landscape_dashboard.dart';
 
@@ -68,10 +72,16 @@ class _MonitorScreenState extends State<MonitorScreen>
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
   final MapRouteService _mapRoute = MapRouteService.instance;
+  final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapController _miniMapController = MapController();
+  MbTilesTileProvider? _miniOfflineTileProvider;
+  String? _miniOfflinePackageId;
+  int _miniOfflineMinZoom = 0;
+  int _miniOfflineMaxZoom = 19;
   bool _miniMapReady = false;
 
   List<MapRoutePoint> get _miniMapRoute => _mapRoute.route;
+  List<List<MapRoutePoint>> get _miniMapSegments => _mapRoute.routeSegments;
   MapRoutePoint? get _miniMapCurrent => _mapRoute.current;
   LocationTrackingAvailability? get _miniMapAvailability =>
       _mapRoute.availability;
@@ -105,6 +115,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     }
     _bikeSensors.addListener(_refresh);
     _mapRoute.addListener(_onMapRouteChanged);
+    _offlineMaps.addListener(_onOfflineMapsChanged);
+    unawaited(_initializeOfflineMiniMap());
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
     unawaited(_initializeMiniMap(requestPermission: false));
@@ -166,6 +178,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     _secondaryController?.dispose();
     _bikeSensors.removeListener(_refresh);
     _mapRoute.removeListener(_onMapRouteChanged);
+    _offlineMaps.removeListener(_onOfflineMapsChanged);
+    _miniOfflineTileProvider?.dispose();
     _miniMapController.dispose();
     _controller.dispose();
     unawaited(SystemUiService.edgeToEdge());

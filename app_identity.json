@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.98 torna o mapa do Monitor adaptativo, unifica e persiste a rota entre mini-mapa e mapa completo e amplia o fluxo de mapas offline com importação MBTiles e planejamento de regiões/trajeto.",
-  "version": "1.0.98",
-  "build": 98
+  "notes": "A 1.0.99 fecha o ciclo inicial de mapas offline com download direto autorizado por região/trajeto, progresso e controle do download, além de pausa/retomada da rota e exportação GPX.",
+  "version": "1.0.99",
+  "build": 99
 }

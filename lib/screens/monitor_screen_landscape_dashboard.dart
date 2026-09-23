@@ -134,8 +134,13 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
     final mapCenter = mapCurrent == null
         ? const LatLng(-14.2350, -51.9253)
         : LatLng(mapCurrent.latitude, mapCurrent.longitude);
-    final mapPolyline = _miniMapRoute
-        .map((point) => LatLng(point.latitude, point.longitude))
+    final mapPolylines = _miniMapSegments
+        .map(
+          (segment) => segment
+              .map((point) => LatLng(point.latitude, point.longitude))
+              .toList(growable: false),
+        )
+        .where((segment) => segment.length >= 2)
         .toList(growable: false);
     final locationReady =
         _miniMapAvailability == LocationTrackingAvailability.ready;
@@ -493,22 +498,35 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                                               },
                                             ),
                                             children: [
-                                              TileLayer(
-                                                urlTemplate:
-                                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                                userAgentPackageName:
-                                                    'com.vigiaia.app',
-                                                maxNativeZoom: 19,
-                                              ),
-                                              if (mapPolyline.length >= 2)
+                                              if (_miniOfflineTileProvider != null)
+                                                TileLayer(
+                                                  key: ValueKey<String>(
+                                                    'mini-offline-${_miniOfflinePackageId ?? 'active'}',
+                                                  ),
+                                                  tileProvider: _miniOfflineTileProvider,
+                                                  minNativeZoom: _miniOfflineMinZoom,
+                                                  maxNativeZoom: _miniOfflineMaxZoom,
+                                                ),
+                                              if (_offlineMaps.mode !=
+                                                  OfflineMapMode.offline)
+                                                TileLayer(
+                                                  urlTemplate:
+                                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                                  userAgentPackageName:
+                                                      'com.vigiaia.app',
+                                                  maxNativeZoom: 19,
+                                                ),
+                                              if (mapPolylines.isNotEmpty)
                                                 PolylineLayer(
-                                                  polylines: [
-                                                    Polyline(
-                                                      points: mapPolyline,
-                                                      strokeWidth: 4,
-                                                      color: scheme.primary,
-                                                    ),
-                                                  ],
+                                                  polylines: mapPolylines
+                                                      .map(
+                                                        (points) => Polyline(
+                                                          points: points,
+                                                          strokeWidth: 4,
+                                                          color: scheme.primary,
+                                                        ),
+                                                      )
+                                                      .toList(growable: false),
                                                 ),
                                               MarkerLayer(
                                                 markers: [

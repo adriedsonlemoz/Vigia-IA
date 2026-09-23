@@ -10,3 +10,7 @@ A inferencia local usa o pacote `flutter_litert` fixado em `3.8.0`, com Interpre
 O pareamento por QR usa `qr_flutter` para renderização local e `mobile_scanner` para leitura. No Android, o projeto mantém a configuração padrão com o leitor ML Kit embarcado no aplicativo para que a leitura de QR não dependa de download em tempo de uso. Consulte as licenças resolvidas pelo `pub` antes da distribuição.
 
 O suporte a mapas offline raster usa `flutter_map_mbtiles` 1.0.4 (licença MIT), que integra arquivos MBTiles locais ao `flutter_map` e depende de `mbtiles`/SQLite. Os arquivos `.mbtiles` baixados pelo usuário continuam sujeitos à licença e aos termos da fonte que os distribui; o Vigia IA não realiza download em massa do servidor público `tile.openstreetmap.org`.
+
+A 1.0.99 adiciona uso direto de `sqlite3` 2.9.4 (licença MIT) para gerar e ler a estrutura MBTiles raster no aparelho.
+
+O download direto de região/trajeto oferece integração opcional com **Stadia Maps**. A API key é fornecida pelo próprio usuário e não acompanha o projeto. O cache offline exige uma conta/plano do provedor que autorize esse uso. O uso, cache, atribuição e limites continuam sujeitos aos termos vigentes; o aplicativo controla o total do cache direto em até 100 MB por aparelho e mantém a atribuição da camada.

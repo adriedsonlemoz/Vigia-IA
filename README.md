@@ -2,12 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.98+98`
+> **Versão atual:** `1.0.99+99`
 
 ## Estado atual
 
-A `1.0.98+98` torna o mapa do Monitor adaptativo ao contexto, unifica e persiste o trajeto entre mini-mapa e mapa completo e amplia o gerenciamento de mapas offline.
+A `1.0.99+99` fecha o primeiro ciclo de mapas offline baixáveis diretamente no app e adiciona controles de pausa/retomada da rota e exportação GPX.
 
+
+### Evolução 1.0.99 — Download offline direto, pausa de rota e GPX
+
+- **Mapas offline** agora pode baixar diretamente uma região retangular ou um corredor ao redor do trajeto usando a fonte Stadia Maps configurada pelo usuário, sem usar prefetch do servidor público do OpenStreetMap;
+- a chave da fonte é protegida pelo Android Keystore por meio da ponte nativa já existente e não é gravada em texto puro no manifesto;
+- antes do download, o app calcula tiles e tamanho aproximado, compara com espaço livre e aplica margem de segurança ao limite total do cache direto no aparelho;
+- o download mostra porcentagem, tiles concluídos e bytes, pode ser pausado/continuado ou cancelado e grava o resultado como MBTiles raster validado;
+- pacotes baixados registram limites geográficos, zoom e validade estimada do cache, permitindo avisar quando a posição sair da área offline ou quando a atualização for recomendada;
+- importação de `.mbtiles` e download de pacote pronto por link direto continuam disponíveis;
+- a rota compartilhada agora pode ser **Pausada/Continuada**; ao retomar, um novo segmento evita somar um salto artificial entre o ponto de pausa e o novo ponto;
+- a tela completa exporta o percurso em **GPX 1.1**, preservando segmentos, coordenadas, altitude e horário quando disponíveis.
 
 ### Evolução 1.0.98 — Mapa adaptativo, rota persistente e offline ampliado
 

@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.99+99 — 2026-09-23
+
+- Adicionado download direto de mapas offline por **região** ou **corredor do trajeto** usando fonte configurada explicitamente pelo usuário, sem prefetch de `tile.openstreetmap.org`.
+- Integração inicial com raster **Stadia Maps Alidade Smooth** mediante API key própria do usuário; a credencial é protegida pelo Android Keystore e não é incluída no projeto.
+- O downloader estima tiles/tamanho, verifica espaço livre, controla o limite pelo total de mapas diretos armazenados no aparelho, mostra progresso em tiles/bytes e permite **Pausar / Continuar / Cancelar**.
+- O pacote baixado é construído como MBTiles raster SQLite, validado antes da ativação e registra bounds, zoom, provedor e validade estimada do cache.
+- O mapa completo alerta quando a posição está **fora da área offline** ativa e o gerenciador sinaliza pacote que recomenda atualização.
+- `MapRouteService` ganhou **Pausar/Continuar** rota com segmentação para evitar salto de distância após a retomada.
+- Adicionada exportação **GPX 1.1** da rota compartilhada pelo seletor nativo, preservando segmentos, coordenadas, elevação e tempo quando disponíveis.
+- A importação de MBTiles local e o download de arquivo MBTiles por link direto foram preservados como alternativas.
+- Adicionada dependência direta `sqlite3 ^2.9.4` para criação/leitura controlada do banco MBTiles no aparelho.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.99+99`.
+
 ## 1.0.98+98 — 2026-09-23
 
 - Adicionado `MapRouteService` como sessão única e persistente de localização/trajeto para o mini-mapa do Monitor e o mapa completo.
