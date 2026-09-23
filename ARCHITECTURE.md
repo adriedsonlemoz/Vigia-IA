@@ -1,6 +1,16 @@
-# Arquitetura — Vigia IA 1.0.102+102
+# Arquitetura — Vigia IA 1.0.103+103
 
 ## 1. Princípios
+
+## Evolução 1.0.103 — orçamento local de créditos para mapas
+
+- `OfflineMapDownloadEstimate` deriva créditos diretamente da quantidade de tiles raster planejados; a regra atual centralizada é 1 crédito por tile padrão.
+- `OfflineMapService` mantém `stadiaCreditsUsedThisMonth`, `stadiaMonthlyCreditLimit` e a chave do mês no mesmo manifesto dos mapas offline.
+- A janela mensal é reiniciada localmente quando o mês muda; o padrão de limite é 150 mil créditos e pode ser ajustado pelo usuário conforme o plano da própria conta.
+- Antes de baixar, o serviço compara créditos estimados com o saldo local e bloqueia operações que ultrapassariam o orçamento configurado.
+- O consumo é incrementado após lotes de tiles efetivamente obtidos e persistido durante/finalmente no download para reduzir perda do contador em falhas.
+- `OfflineMapManagerSheet` exibe orçamento mensal, saldo, créditos estimados, alerta de 80% e explica que a medição é local e não lê o consumo global da Stadia.
+- A correção do Android-APK-71 remove o `!` desnecessário no cálculo de zoom para `baseBounds`, mantendo a mesma lógica funcional.
 
 ## Evolução 1.0.102 — onboarding da API de mapas offline
 

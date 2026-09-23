@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.102 explica como obter a API key da Stadia Maps e abre diretamente o painel/documentação oficiais para configurar mapas offline.",
-  "version": "1.0.102",
-  "build": 102
+  "notes": "A 1.0.103 corrige o Android-APK-71 e adiciona estimativa/limite mensal local de créditos para downloads diretos de mapas Stadia.",
+  "version": "1.0.103",
+  "build": 103
 }

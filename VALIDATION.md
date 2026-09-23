@@ -1,4 +1,19 @@
-# Validação — Vigia IA 1.0.102+102
+# Validação — Vigia IA 1.0.103+103
+
+## 1.0.103+103 — créditos de mapas + Android-APK-71
+
+Data: 2026-09-23. Base preservada: 1.0.102+102.
+
+- Confirmar que o `unnecessary_non_null_assertion` apontado em `offline_map_manager_sheet.dart` pelo Android-APK-71 foi removido.
+- Abrir o planejador de **Região atual / Selecionar região / Trajeto** e conferir **Créditos estimados** junto de tiles e tamanho.
+- Confirmar card mensal com usados/limite/restantes e configuração de limite local por presets e valor personalizado.
+- Tentar configurar um download acima do saldo local e confirmar botão **Baixar** bloqueado/aviso de créditos.
+- Projetar consumo acima de 80% e confirmar aviso preventivo.
+- Iniciar um download e conferir progresso com tiles, créditos aproximados e bytes.
+- Fechar/reabrir o app e confirmar persistência do contador mensal e do limite; a janela mensal deve reiniciar automaticamente quando o mês mudar.
+- Confirmar que importação de MBTiles/link externo não é somada como consumo Stadia direto.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.103+103`.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.102+102 — ajuda para API de mapas offline
 

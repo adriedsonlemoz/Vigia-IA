@@ -257,6 +257,98 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
     }
   }
 
+  Future<void> _configureMonthlyCreditLimit() async {
+    final controller = TextEditingController(
+      text: _service.stadiaMonthlyCreditLimit.toString(),
+    );
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Limite mensal de créditos'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'O Vigia IA usa um contador local para evitar downloads que consumam créditos demais. '
+                'Ele contabiliza somente tiles raster baixados diretamente por este aparelho; não consegue '
+                'ver o consumo da sua conta em outros apps ou serviços.',
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Referência atual: tile raster padrão = ${OfflineMapService.stadiaRasterCreditsPerTile} crédito e o plano gratuito da Stadia Maps inclui '
+                '${_compactNumber(OfflineMapService.stadiaFreePlanReferenceCredits)} créditos/mês. O limite local padrão do Vigia IA é 150 mil para deixar margem.',
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Limite local mensal',
+                  helperText: 'Ex.: 50000, 100000, 150000 ou 200000',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [50000, 100000, 150000, 200000]
+                    .map(
+                      (value) => ActionChip(
+                        label: Text(_compactNumber(value)),
+                        onPressed: () => controller.text = '$value',
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Registrado neste mês: ${_compactNumber(_service.stadiaCreditsUsedThisMonth)} créditos.',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < 1000) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Informe pelo menos 1.000 créditos.'),
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext, value);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result == null || !mounted) return;
+    await _service.configureStadiaMonthlyCreditLimit(result);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Limite local definido em ${_compactNumber(result)} créditos/mês.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _importFromDevice() async {
     if (_service.busy) return;
     final picked = await _native.pickOfflineMapPackage();
@@ -338,21 +430,30 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
       );
       return;
     }
+    final creditBudgetBytes = _service.stadiaCreditsRemainingThisMonth *
+        OfflineMapService.estimatedRasterTileBytes;
+    final planningBudgetBytes = math.min(safeBytes, creditBudgetBytes);
+    if (planningBudgetBytes <= 0) {
+      _showPlanUnavailable(
+        'O limite mensal local de créditos foi atingido. Ajuste o limite conforme seu plano ou aguarde a próxima janela mensal.',
+      );
+      return;
+    }
 
     if (kind == _OfflinePlanKind.current) {
       radiusKm = math.min(
         radiusKm,
-        _maxRadiusForZoom(planning.currentPosition!, maxZoom.round(), safeBytes),
+        _maxRadiusForZoom(planning.currentPosition!, maxZoom.round(), planningBudgetBytes),
       ).toDouble();
     } else if (kind == _OfflinePlanKind.route) {
       routeBufferKm = math.min(
         routeBufferKm,
-        _maxRouteBufferForZoom(planning.route, maxZoom.round(), safeBytes),
+        _maxRouteBufferForZoom(planning.route, maxZoom.round(), planningBudgetBytes),
       ).toDouble();
     } else {
       maxZoom = math.min(
         maxZoom,
-        _maxZoomForBounds(baseBounds!, safeBytes).toDouble(),
+        _maxZoomForBounds(baseBounds, planningBudgetBytes).toDouble(),
       ).toDouble();
     }
 
@@ -393,23 +494,31 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
               ? 1.0
               : (estimate.bytes / safeBytes).clamp(0.0, 1.0).toDouble();
           final nearLimit = !tooLarge && usage >= 0.85;
+          final estimatedCredits = estimate.credits;
+          final creditsRemaining = _service.stadiaCreditsRemainingThisMonth;
+          final creditTooLarge = estimatedCredits > creditsRemaining;
+          final projectedCredits =
+              _service.stadiaCreditsUsedThisMonth + estimatedCredits;
+          final creditNearLimit = !creditTooLarge &&
+              _service.stadiaMonthlyCreditLimit > 0 &&
+              projectedCredits / _service.stadiaMonthlyCreditLimit >= 0.8;
 
           final maxRadius = kind == _OfflinePlanKind.current
               ? _maxRadiusForZoom(
                   planning.currentPosition!,
                   13,
-                  safeBytes,
+                  planningBudgetBytes,
                 )
               : 50.0;
           final maxRouteBuffer = kind == _OfflinePlanKind.route
               ? _maxRouteBufferForZoom(
                   planning.route,
                   13,
-                  safeBytes,
+                  planningBudgetBytes,
                 )
               : 5.0;
           final visibleMaxZoom = kind == _OfflinePlanKind.visible
-              ? _maxZoomForBounds(baseBounds!, safeBytes)
+              ? _maxZoomForBounds(baseBounds!, planningBudgetBytes)
               : 17;
           final zoomSliderMax = math.max(13, visibleMaxZoom).toDouble();
 
@@ -420,18 +529,18 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   radiusKm = _maxRadiusForZoom(
                     planning.currentPosition!,
                     maxZoom.round(),
-                    safeBytes,
+                    planningBudgetBytes,
                   );
                   break;
                 case _OfflinePlanKind.route:
                   routeBufferKm = _maxRouteBufferForZoom(
                     planning.route,
                     maxZoom.round(),
-                    safeBytes,
+                    planningBudgetBytes,
                   );
                   break;
                 case _OfflinePlanKind.visible:
-                  maxZoom = _maxZoomForBounds(baseBounds!, safeBytes).toDouble();
+                  maxZoom = _maxZoomForBounds(baseBounds!, planningBudgetBytes).toDouble();
                   break;
               }
             });
@@ -461,7 +570,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                           child: Text('Raio: ${radiusKm.toStringAsFixed(1)} km'),
                         ),
                         Text(
-                          'máx. no cache ${maxRadius.toStringAsFixed(1)} km',
+                          'máx. permitido ${maxRadius.toStringAsFixed(1)} km',
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ],
@@ -478,7 +587,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                                 radiusKm = value;
                                 final allowedZoom = _maxZoomForBounds(
                                   _boundsAround(planning.currentPosition!, radiusKm),
-                                  safeBytes,
+                                  planningBudgetBytes,
                                 );
                                 if (maxZoom > allowedZoom) {
                                   maxZoom = allowedZoom.toDouble();
@@ -497,7 +606,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                           ),
                         ),
                         Text(
-                          'máx. no cache ${maxRouteBuffer.toStringAsFixed(1)} km',
+                          'máx. permitido ${maxRouteBuffer.toStringAsFixed(1)} km',
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ],
@@ -520,7 +629,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                                     planning.route,
                                     marginKm: routeBufferKm,
                                   ),
-                                  safeBytes,
+                                  planningBudgetBytes,
                                 );
                                 if (maxZoom > allowedZoom) {
                                   maxZoom = allowedZoom.toDouble();
@@ -561,14 +670,14 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                                 final allowedRadius = _maxRadiusForZoom(
                                   planning.currentPosition!,
                                   maxZoom.round(),
-                                  safeBytes,
+                                  planningBudgetBytes,
                                 );
                                 radiusKm = math.min(radiusKm, allowedRadius).toDouble();
                               } else if (kind == _OfflinePlanKind.route) {
                                 final allowedBuffer = _maxRouteBufferForZoom(
                                   planning.route,
                                   maxZoom.round(),
-                                  safeBytes,
+                                  planningBudgetBytes,
                                 );
                                 routeBufferKm = math
                                     .min(routeBufferKm, allowedBuffer)
@@ -578,7 +687,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                           },
                   ),
                   Text(
-                    'Os controles se limitam automaticamente ao espaço disponível. Mais detalhe reduz a área máxima e vice-versa.',
+                    'Os controles respeitam automaticamente o menor limite entre cache e créditos disponíveis. Mais detalhe reduz a área máxima e vice-versa.',
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
                   const SizedBox(height: 10),
@@ -588,6 +697,16 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                     icon: Icons.grid_view_rounded,
                     label: 'Tiles estimados',
                     value: _compactNumber(estimate.tiles),
+                  ),
+                  _PlanMetric(
+                    icon: Icons.toll_rounded,
+                    label: 'Créditos estimados',
+                    value: '~${_compactNumber(estimatedCredits)}',
+                  ),
+                  _PlanMetric(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Créditos locais restantes',
+                    value: _compactNumber(creditsRemaining),
                   ),
                   _PlanMetric(
                     icon: Icons.sd_storage_outlined,
@@ -644,6 +763,26 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                       ),
                     ),
                   ],
+                  if (creditNearLimit) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Este download deixará o contador local acima de 80% do limite mensal configurado.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                  if (creditTooLarge) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Este download ultrapassa o saldo mensal local de créditos. Reduza a área/zoom ou ajuste o limite conforme seu plano.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                   if (insufficientStorage) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -656,7 +795,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   ],
                   const SizedBox(height: 10),
                   const Text(
-                    'Fonte direta: Stadia Maps (Alidade Smooth). O app não usa tile.openstreetmap.org para download em massa.',
+                    'Fonte direta: Stadia Maps (Alidade Smooth). Cada tile raster padrão representa aproximadamente 1 crédito. O contador do Vigia IA é local e não substitui o painel da sua conta.',
                     style: TextStyle(fontSize: 11),
                   ),
                 ],
@@ -676,7 +815,10 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   child: const Text('Configurar fonte'),
                 ),
               FilledButton.icon(
-                onPressed: !_service.hasStadiaApiKey || tooLarge || insufficientStorage
+                onPressed: !_service.hasStadiaApiKey ||
+                        tooLarge ||
+                        creditTooLarge ||
+                        insufficientStorage
                     ? null
                     : () {
                         final name = nameController.text.trim();
@@ -1193,6 +1335,51 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.30),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.toll_rounded, size: 18),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          'Créditos: ${_compactNumber(_service.stadiaCreditsUsedThisMonth)} / ${_compactNumber(_service.stadiaMonthlyCreditLimit)} neste mês',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _service.busy
+                            ? null
+                            : () => unawaited(_configureMonthlyCreditLimit()),
+                        child: const Text('Limite'),
+                      ),
+                    ],
+                  ),
+                  LinearProgressIndicator(
+                    value: _service.stadiaMonthlyCreditUsageFraction,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Restam ${_compactNumber(_service.stadiaCreditsRemainingThisMonth)} no limite local. Conta somente downloads diretos da Stadia feitos neste aparelho; o mapa online atual não usa essa chave.',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -1257,7 +1444,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                       Expanded(
                         child: Text(
                           _service.downloadTilesTotal > 0
-                              ? '${_service.downloadTilesCompleted}/${_service.downloadTilesTotal} tiles · ${_size(_service.downloadBytes)}'
+                              ? '${_service.downloadTilesCompleted}/${_service.downloadTilesTotal} tiles · ~${_compactNumber(_service.downloadTilesCompleted)} créditos · ${_size(_service.downloadBytes)}'
                               : _service.progress == null
                                   ? _size(_service.downloadBytes)
                                   : '${(_service.progress! * 100).toStringAsFixed(0)}% · ${_size(_service.downloadBytes)}',

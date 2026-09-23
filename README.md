@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.102+102`
+> **Versão atual:** `1.0.103+103`
 
 ## Estado atual
 
-A `1.0.102+102` melhora a configuração da fonte de mapas offline, explicando como obter a API key da Stadia Maps e abrindo diretamente o painel e a documentação oficiais.
+A `1.0.103+103` corrige o Android-APK-71 e adiciona controle local de créditos para downloads diretos de mapas, com estimativa antes do download e limite mensal configurável.
+
+### Evolução 1.0.103 — Créditos de mapas e buildfix Android-APK-71
+
+- corrigido `unnecessary_non_null_assertion` no planejador de mapas offline que fazia o `flutter analyze` do Android-APK-71 encerrar com código 1;
+- cada planejamento direto exibe **Créditos estimados** junto de tiles, tamanho e espaço de cache;
+- para tiles raster padrão da Stadia Maps, o Vigia IA usa a relação atual de **1 tile = 1 crédito**;
+- contador mensal local persiste o consumo dos downloads diretos concluídos por este aparelho e reinicia automaticamente quando muda o mês;
+- limite local mensal configurável, com padrão conservador de **150 mil créditos** e atalhos de 50 mil, 100 mil, 150 mil e 200 mil;
+- downloads que ultrapassariam o saldo local são bloqueados antes de iniciar e há aviso ao passar de 80% do limite;
+- o app deixa explícito que esse contador **não lê a conta Stadia** nem inclui consumo de outros aparelhos, apps ou serviços;
+- o mapa online atual continua usando sua camada online existente e não consome a chave Stadia configurada para os downloads diretos.
+
 
 ### Evolução 1.0.102 — Ajuda para configurar a API de mapas
 

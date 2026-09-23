@@ -18,6 +18,9 @@ class OfflineMapDownloadEstimate {
 
   final int tiles;
   final int bytes;
+
+  /// Stadia Maps cobra 1 crédito por tile raster padrão.
+  int get credits => tiles * OfflineMapService.stadiaRasterCreditsPerTile;
 }
 
 class OfflineMapBounds {
@@ -41,7 +44,10 @@ class OfflineMapService extends ChangeNotifier {
 
   static const int stadiaCacheLimitBytes = 100 * 1024 * 1024;
   static const int _stadiaSafeLimitBytes = 95 * 1024 * 1024;
-  static const int _estimatedRasterTileBytes = 24 * 1024;
+  static const int estimatedRasterTileBytes = 24 * 1024;
+  static const int stadiaRasterCreditsPerTile = 1;
+  static const int stadiaFreePlanReferenceCredits = 200000;
+  static const int _defaultStadiaMonthlyCreditLimit = 150000;
   static const String _stadiaProviderId = 'stadia-alidade-smooth';
   final List<OfflineMapPackage> _packages = <OfflineMapPackage>[];
   final NativePlatformService _native = NativePlatformService.instance;
@@ -61,6 +67,9 @@ class OfflineMapService extends ChangeNotifier {
   bool _downloadPaused = false;
   bool _cancelRequested = false;
   Completer<void>? _resumeCompleter;
+  String _stadiaCreditMonth = _creditMonthKey(DateTime.now());
+  int _stadiaCreditsUsedThisMonth = 0;
+  int _stadiaMonthlyCreditLimit = _defaultStadiaMonthlyCreditLimit;
 
   List<OfflineMapPackage> get packages =>
       List<OfflineMapPackage>.unmodifiable(_packages);
@@ -75,6 +84,15 @@ class OfflineMapService extends ChangeNotifier {
   bool get downloadPaused => _downloadPaused;
   bool get canPauseDownload => _busy && _downloadTilesTotal > 0;
   bool get hasStadiaApiKey => _stadiaApiKey?.trim().isNotEmpty ?? false;
+  int get stadiaCreditsUsedThisMonth => _stadiaCreditsUsedThisMonth;
+  int get stadiaMonthlyCreditLimit => _stadiaMonthlyCreditLimit;
+  int get stadiaCreditsRemainingThisMonth =>
+      math.max(0, _stadiaMonthlyCreditLimit - _stadiaCreditsUsedThisMonth);
+  double get stadiaMonthlyCreditUsageFraction => _stadiaMonthlyCreditLimit <= 0
+      ? 1.0
+      : (_stadiaCreditsUsedThisMonth / _stadiaMonthlyCreditLimit)
+          .clamp(0.0, 1.0)
+          .toDouble();
 
   int get stadiaCachedBytes => _packages
       .where((item) => item.providerId == _stadiaProviderId)
@@ -96,7 +114,13 @@ class OfflineMapService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized) {
+      if (_resetCreditWindowIfNeeded()) {
+        await _persist();
+        notifyListeners();
+      }
+      return;
+    }
     final root = await getApplicationSupportDirectory();
     _directory = Directory(
       '${root.path}${Platform.pathSeparator}offline_maps',
@@ -117,6 +141,15 @@ class OfflineMapService extends ChangeNotifier {
             orElse: () => OfflineMapMode.automatic,
           );
           _stadiaApiKeyProtected = decoded['stadiaApiKeyProtected'] as String?;
+          _stadiaCreditMonth =
+              decoded['stadiaCreditMonth'] as String? ?? _stadiaCreditMonth;
+          _stadiaCreditsUsedThisMonth =
+              (decoded['stadiaCreditsUsedThisMonth'] as num?)?.toInt() ?? 0;
+          _stadiaMonthlyCreditLimit =
+              ((decoded['stadiaMonthlyCreditLimit'] as num?)?.toInt() ??
+                      _defaultStadiaMonthlyCreditLimit)
+                  .clamp(1000, 10000000)
+                  .toInt();
           final rawItems = decoded['packages'];
           if (rawItems is List) {
             for (final raw in rawItems.whereType<Map>()) {
@@ -137,6 +170,8 @@ class OfflineMapService extends ChangeNotifier {
         _mode = OfflineMapMode.automatic;
       }
     }
+
+    _resetCreditWindowIfNeeded();
 
     if (_stadiaApiKeyProtected != null) {
       _stadiaApiKey = await _native.unprotectSecret(_stadiaApiKeyProtected);
@@ -168,6 +203,17 @@ class OfflineMapService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> configureStadiaMonthlyCreditLimit(int credits) async {
+    await initialize();
+    _resetCreditWindowIfNeeded();
+    _stadiaMonthlyCreditLimit = credits.clamp(1000, 10000000).toInt();
+    await _persist();
+    notifyListeners();
+  }
+
+  static int creditsForRasterTiles(int tiles) =>
+      tiles <= 0 ? 0 : tiles * stadiaRasterCreditsPerTile;
+
   OfflineMapDownloadEstimate estimateBounds({
     required OfflineMapBounds bounds,
     int minZoom = 8,
@@ -176,7 +222,7 @@ class OfflineMapService extends ChangeNotifier {
     final tiles = _tilesForBounds(bounds, minZoom: minZoom, maxZoom: maxZoom).length;
     return OfflineMapDownloadEstimate(
       tiles: tiles,
-      bytes: tiles * _estimatedRasterTileBytes,
+      bytes: tiles * estimatedRasterTileBytes,
     );
   }
 
@@ -194,7 +240,7 @@ class OfflineMapService extends ChangeNotifier {
     ).length;
     return OfflineMapDownloadEstimate(
       tiles: tiles,
-      bytes: tiles * _estimatedRasterTileBytes,
+      bytes: tiles * estimatedRasterTileBytes,
     );
   }
 
@@ -250,6 +296,8 @@ class OfflineMapService extends ChangeNotifier {
     required String downloadKind,
   }) async {
     await initialize();
+    final monthChanged = _resetCreditWindowIfNeeded();
+    if (monthChanged) await _persist();
     if (_busy) throw StateError('Já existe um mapa sendo processado.');
     final apiKey = _stadiaApiKey?.trim();
     if (apiKey == null || apiKey.isEmpty) {
@@ -260,11 +308,19 @@ class OfflineMapService extends ChangeNotifier {
     if (tiles.isEmpty) throw StateError('A área selecionada não possui tiles.');
     final existingCacheBytes = stadiaCachedBytes;
     final safeRemainingBytes = math.max(0, _stadiaSafeLimitBytes - existingCacheBytes);
-    final estimated = tiles.length * _estimatedRasterTileBytes;
+    final estimated = tiles.length * estimatedRasterTileBytes;
     if (estimated > safeRemainingBytes) {
       throw StateError(
         'A área estimada ultrapassa o espaço seguro restante do cache offline. '
         'Exclua outro mapa direto ou reduza a região/zoom.',
+      );
+    }
+    final estimatedCredits = creditsForRasterTiles(tiles.length);
+    if (estimatedCredits > stadiaCreditsRemainingThisMonth) {
+      throw StateError(
+        'Este download usaria aproximadamente $estimatedCredits créditos e '
+        'ultrapassaria o limite mensal local configurado. '
+        'Aumente o limite apenas se sua conta permitir ou reduza a área/zoom.',
       );
     }
 
@@ -343,6 +399,12 @@ class OfflineMapService extends ChangeNotifier {
         final downloaded = await Future.wait(
           batch.map((tile) => _fetchStadiaTile(client, apiKey, tile)),
         );
+        // As requisições já foram concluídas neste ponto; registre o consumo
+        // mesmo se a gravação local do MBTiles falhar depois.
+        _stadiaCreditsUsedThisMonth += creditsForRasterTiles(batch.length);
+        if (_downloadTilesCompleted % 100 < batch.length) {
+          await _persist();
+        }
         db.execute('BEGIN;');
         try {
           for (var index = 0; index < batch.length; index++) {
@@ -416,6 +478,7 @@ class OfflineMapService extends ChangeNotifier {
       insertTile?.dispose();
       db?.dispose();
       client.close(force: true);
+      await _persist();
       _clearOperation();
     }
   }
@@ -965,12 +1028,27 @@ class OfflineMapService extends ChangeNotifier {
     notifyListeners();
   }
 
+  static String _creditMonthKey(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}';
+
+  bool _resetCreditWindowIfNeeded() {
+    final current = _creditMonthKey(DateTime.now());
+    if (_stadiaCreditMonth == current) return false;
+    _stadiaCreditMonth = current;
+    _stadiaCreditsUsedThisMonth = 0;
+    return true;
+  }
+
   Future<void> _persist() async {
     if (_manifest == null) return;
     final payload = <String, Object?>{
       'activeId': _activeId,
       'mode': _mode.name,
       'stadiaApiKeyProtected': _stadiaApiKeyProtected,
+      'stadiaCreditMonth': _stadiaCreditMonth,
+      'stadiaCreditsUsedThisMonth': _stadiaCreditsUsedThisMonth,
+      'stadiaMonthlyCreditLimit': _stadiaMonthlyCreditLimit,
       'packages': _packages.map((item) => item.toJson()).toList(growable: false),
     };
     await _manifest!.writeAsString(

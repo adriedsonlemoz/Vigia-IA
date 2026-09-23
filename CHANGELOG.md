@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.103+103 — 2026-09-23
+
+- Corrigido o `unnecessary_non_null_assertion` em `offline_map_manager_sheet.dart` apontado pelo Android-APK-71; o `flutter analyze` não deve mais parar nesse warning.
+- O planejamento de download direto passa a mostrar **créditos estimados**, usando 1 crédito por tile raster padrão.
+- `OfflineMapService` persiste contador mensal local de créditos, reinicia a janela automaticamente a cada mês e mantém limite local configurável.
+- O limite local padrão é 150.000 créditos; a interface oferece presets de 50k/100k/150k/200k e aceita valor personalizado.
+- Downloads são bloqueados antes de iniciar quando os créditos estimados ultrapassam o saldo mensal local; aviso preventivo aparece quando a projeção passa de 80%.
+- O contador registra somente tiles de downloads diretos da Stadia feitos pelo Vigia IA neste aparelho e não pretende substituir o painel de consumo da conta.
+- Progresso do download passa a exibir também a estimativa de créditos consumidos.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.103+103`.
+
 ## 1.0.102+102 — 2026-09-23
 
 - A configuração da fonte Stadia Maps ganhou ajuda embutida **Como conseguir a chave?** com passo a passo para criar/entrar na conta, abrir **Manage Properties**, acessar **Authentication Configuration**, gerar a API key e colá-la no Vigia IA.

@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.102',
+          version: '1.0.103',
           current: true,
+          changes: [
+            'Corrigido o warning unnecessary_non_null_assertion que interrompia o flutter analyze no Android-APK-71.',
+            'Mapas offline agora mostram créditos estimados antes do download: um tile raster padrão corresponde a aproximadamente um crédito.',
+            'Adicionado contador mensal local persistente, limite configurável e bloqueio preventivo quando o download ultrapassaria o saldo definido.',
+            'O contador deixa claro que mede apenas downloads diretos feitos neste aparelho e não substitui o consumo exibido no painel da Stadia Maps.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.102',
           changes: [
             'Configurar fonte ganhou ajuda Como conseguir a chave? com passo a passo para obter a API key da Stadia Maps.',
             'A ajuda abre diretamente o painel oficial da Stadia Maps e a documentação de API keys.',
