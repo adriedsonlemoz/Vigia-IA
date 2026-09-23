@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.91',
+          version: '1.0.92',
           current: true,
+          changes: [
+            'O aplicativo fica travado em retrato fora do modo Transmissão.',
+            'O modo Transmissão acompanha livremente a posição física do celular, sem forçar paisagem.',
+            'A tela inteira do Monitor permanece vertical e não altera mais a orientação do aparelho.',
+            'A rotação dos frames continua usando a orientação do sensor e do dispositivo antes do envio.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.91',
           changes: [
             'Corrigido o lint unnecessary_underscores no separador horizontal da tela vertical do Ao vivo.',
             'O flutter analyze deixa de falhar nesse ponto sem mudança visual ou funcional no Monitor.',
@@ -821,8 +831,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.91',
+          version: '1.0.92',
           current: true,
+          changes: [
+            'O aplicativo fica travado em retrato fora do modo Transmissão.',
+            'O modo Transmissão acompanha livremente a posição física do celular, sem forçar paisagem.',
+            'A tela inteira do Monitor permanece vertical e não altera mais a orientação do aparelho.',
+            'A rotação dos frames continua usando a orientação do sensor e do dispositivo antes do envio.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.91',
           changes: [
             'Corrigido o lint unnecessary_underscores no separador horizontal da tela vertical do Ao vivo.',
             'O flutter analyze deixa de falhar nesse ponto sem mudança visual ou funcional no Monitor.',

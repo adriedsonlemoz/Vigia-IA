@@ -6,7 +6,6 @@ extension _MonitorFullscreen on _MonitorScreenState {
     _fullscreenChanging = true;
     final entering = !_fullscreen;
     if (entering) {
-      _orientationBeforeFullscreen = MediaQuery.orientationOf(context);
       _fillBeforeFullscreen = _fillPreview;
     }
     _updateFullscreenState(() {
@@ -17,22 +16,13 @@ extension _MonitorFullscreen on _MonitorScreenState {
     });
     try {
       if (entering) {
-        await SystemChrome.setPreferredOrientations(const [
-          DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight,
-        ]);
+        // Tela inteira preserva a política global: o Monitor continua em retrato.
         if (mounted) await SystemUiService.immersive();
         _revealFullscreenControls();
       } else {
         _fullscreenControlsTimer?.cancel();
         await SystemUiService.edgeToEdge();
-        await SystemChrome.setPreferredOrientations(
-          _orientationBeforeFullscreen == Orientation.portrait
-              ? const [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
-              : const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
-        );
-        // Devolve a rotação automática depois de restaurar a orientação anterior.
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+        await AppOrientationService.lockPortrait();
       }
     } finally {
       if (mounted) _updateFullscreenState(() => _fullscreenChanging = false);

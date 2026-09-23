@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/adaptive_camera_layout.dart';
 import '../controllers/monitor_controller.dart';
 import '../controllers/secondary_camera_controller.dart';
+import '../services/app_orientation_service.dart';
 import '../services/system_ui_service.dart';
 import '../services/bike_sensor_service.dart';
 import '../core/video_source_status.dart';
@@ -81,7 +82,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _fullscreenChanging = false;
   bool _fullscreenControlsVisible = true;
   bool _fillBeforeFullscreen = false;
-  Orientation? _orientationBeforeFullscreen;
   Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false;
 
@@ -140,7 +140,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   @override
   void dispose() {
     _fullscreenControlsTimer?.cancel();
-    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+    unawaited(AppOrientationService.lockPortrait());
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_refresh);
     _secondaryController?.removeListener(_refresh);
@@ -1007,7 +1007,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                 ),
                 actions: [
                   IconButton(
-                    tooltip: 'Tela inteira horizontal',
+                    tooltip: 'Tela inteira',
                     onPressed: _fullscreenChanging
                         ? null
                         : () => unawaited(_toggleFullscreen()),

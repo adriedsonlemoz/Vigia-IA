@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.91+91`
+> **Versão atual:** `1.0.92+92`
 
 ## Estado atual
 
-A `1.0.91+91` corrige o lint `unnecessary_underscores` encontrado pelo workflow no separador horizontal da tela vertical do Ao vivo, preservando o visual e o comportamento da 1.0.90.
+A `1.0.92+92` aplica uma política única de orientação: o aplicativo permanece em retrato nas telas normais e somente o modo Transmissão acompanha a posição física do aparelho, sem forçar paisagem.
+
+### Evolução 1.0.92 — Orientação por modo
+
+- telas normais do Vigia IA ficam limitadas a `portraitUp`/`portraitDown`;
+- o modo Transmissão libera as quatro orientações e acompanha a posição física do celular sem forçar paisagem;
+- ao sair da Transmissão, a política de retrato é restaurada antes de voltar à seleção de modo;
+- a tela inteira do Monitor não força mais `landscapeLeft`/`landscapeRight` e mantém o monitor vertical;
+- a rotação dos frames continua calculada por `sensorOrientation` + `deviceOrientation`, preservando o envio correto quando o transmissor está deitado.
 
 ### Evolução 1.0.91 — Correção do analyzer
 

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.91 corrige o lint unnecessary_underscores no separador horizontal do Monitor vertical, destravando o flutter analyze sem alterar o comportamento funcional da tela.",
-  "version": "1.0.91",
-  "build": 91
+  "notes": "A 1.0.92 trava as telas normais em retrato e deixa somente o modo Transmissão acompanhar a orientação física do celular, preservando a rotação correta dos frames pela câmera.",
+  "version": "1.0.92",
+  "build": 92
 }

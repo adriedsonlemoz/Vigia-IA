@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.91+91
+# Arquitetura — Vigia IA 1.0.92+92
 
 ## 1. Princípios
+
+## Evolução 1.0.92 — política de orientação
+
+- `AppOrientationService` passa a ser a fonte única da política de rotação: retrato para o aplicativo normal e rotação automática apenas para Transmissão.
+- `main.dart` inicia o app em retrato, evitando que Home, Histórico, Diagnóstico, Bike, Mapas, Configurações e Monitor entrem em paisagem.
+- `CameraModeScreen` libera as quatro orientações ao entrar e restaura retrato ao sair; a interface já possui layout adaptativo para retrato/paisagem.
+- `MonitorScreen` e sua tela inteira não liberam nem forçam paisagem. O modo imersivo permanece independente da orientação.
+- `SharedLocalCameraService` continua usando `sensorOrientation` + `deviceOrientation`, então um transmissor fisicamente deitado envia o frame com a rotação correspondente sem exigir paisagem forçada.
 
 ## Evolução 1.0.91 — buildfix do Monitor vertical
 

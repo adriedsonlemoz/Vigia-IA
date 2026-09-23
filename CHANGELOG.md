@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.92+92 — 2026-09-23
+
+- Política de orientação centralizada em `AppOrientationService`.
+- Telas normais do Vigia IA passam a ficar limitadas ao modo retrato.
+- Modo Transmissão libera retrato e paisagem e acompanha a posição física do celular sem forçar uma orientação específica.
+- Ao sair da Transmissão, o retrato é restaurado antes da navegação para evitar que outras telas permaneçam deitadas.
+- Tela inteira do Monitor deixa de forçar paisagem e mantém apenas o comportamento imersivo/Ajustar-Preencher.
+- Pipeline de câmera preservado: a rotação do frame continua calculada com `sensorOrientation` e `deviceOrientation`.
+- Teste e verificador preventivo adicionados para proteger a nova política.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.92+92`.
+
 ## 1.0.91+91 — 2026-09-23
 
 - Corrigido o lint `unnecessary_underscores` em `monitor_screen_portrait.dart`, substituindo o segundo placeholder nomeado por `_`.

@@ -271,7 +271,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                               IconButton(
                                 tooltip: _fullscreen
                                     ? 'Sair da tela inteira'
-                                    : 'Tela inteira horizontal',
+                                    : 'Tela inteira',
                                 onPressed: _fullscreenChanging
                                     ? null
                                     : () => unawaited(_toggleFullscreen()),

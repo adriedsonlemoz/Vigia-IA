@@ -1,26 +1,29 @@
-# Validação — Vigia IA 1.0.91+91
+# Validação — Vigia IA 1.0.92+92
 
-Data: 2026-09-23. Base preservada: 1.0.90+90.
+Data: 2026-09-23. Base preservada: 1.0.91+91.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.91+91 |
+| `flutter analyze` / `flutter test` / build Android | Não executados localmente: Flutter, Dart e Android SDK não estão instalados neste ambiente; confirmar no workflow |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.92+92 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
 | Codec dos áudios | `ffprobe` validou os 78 arquivos como AAC-LC, mono, 24 kHz e com duração positiva |
 | Transporte remoto | Sequência, timestamp UTC, cache desativado, resposta 204 e descarte de duplicatas protegidos pelo verificador |
+| Política de orientação 1.0.92 | App normal limitado a retrato; Transmissão libera rotação automática; Monitor em tela inteira não força paisagem |
+| Rotação da câmera | `SharedLocalCameraService` preserva cálculo por `sensorOrientation` + `deviceOrientation` para envio coerente do frame |
 | Tela vertical do monitor | Câmera maior, mini-mapa em retrato, ações horizontais e painel avançado sob demanda implementados no `MonitorScreen` |
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
-| Painel ao vivo em paisagem | Cabeçalho, mini-mapa, cards de telemetria e barra de ações do novo dashboard implementados no `MonitorScreen` para câmera única |
+| Dashboard paisagem legado | Código preservado por compatibilidade histórica, mas não é alcançado pela política normal de orientação da 1.0.92 |
 | Buildfix Android-APK-57 | Extensão do dashboard sem chamadas diretas a `setState`, eliminando `invalid_use_of_protected_member` do `flutter analyze` |
 | Buildfix Android-APK-59 | Placeholder duplo do `separatorBuilder` corrigido em `monitor_screen_portrait.dart`, eliminando `unnecessary_underscores` do `flutter analyze` |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
 | Seleção de modo | Normal, Monitor, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
-| Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |
+| Monitor | Mantido em retrato inclusive na tela inteira; HUD e saída explícita continuam protegidos pelo verificador |
 | Modo Câmera | Estado parado integrado, painel adaptativo e saída/parada claras protegidos pelo verificador |
 | Buildfix Android-APK-43 | `unnecessary_non_null_assertion` removido de `camera_mode_screen.dart` e protegido contra regressão |
 | Telemetria de áudio | Foco, fase, códigos MediaPlayer, origem, arquivo, volume, rota, tempos e fallback protegidos pelo verificador |

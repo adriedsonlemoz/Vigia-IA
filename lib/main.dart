@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'app/app.dart';
+import 'services/app_orientation_service.dart';
 import 'services/appearance_settings_service.dart';
 import 'services/error_log_service.dart';
 import 'services/system_ui_service.dart';
@@ -12,12 +12,7 @@ import 'services/system_ui_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemUiService.edgeToEdge();
-  await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+  await AppOrientationService.lockPortrait();
   await ErrorLogService.instance.initialize();
   await AppearanceSettingsService.instance.initialize();
 

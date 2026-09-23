@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../services/app_orientation_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../services/remote_camera_server_service.dart';
@@ -20,10 +21,16 @@ class CameraModeScreen extends StatefulWidget {
 class _CameraModeScreenState extends State<CameraModeScreen> {
   final RemoteCameraServerService _server = RemoteCameraServerService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
+  late final Future<void> _orientationSetup;
 
   @override
   void initState() {
     super.initState();
+    // Somente o modo Transmissão acompanha a posição física do aparelho.
+    // O pipeline da câmera usa deviceOrientation + sensorOrientation para
+    // manter os frames enviados com a rotação correta.
+    _orientationSetup = AppOrientationService.allowTransmissionRotation();
+    unawaited(_orientationSetup);
     unawaited(SystemUiService.immersive());
     _server.addListener(_refresh);
   }
@@ -31,12 +38,21 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
   @override
   void dispose() {
     _server.removeListener(_refresh);
+    unawaited(_restorePortraitOrientation());
     unawaited(SystemUiService.edgeToEdge());
     super.dispose();
   }
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _restorePortraitOrientation() async {
+    try {
+      await _orientationSetup;
+    } finally {
+      await AppOrientationService.lockPortrait();
+    }
   }
 
   Future<void> _toggle() async {
@@ -172,6 +188,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
       if (stopAndLeave != true || !mounted) return;
       await _server.stop();
     }
+    await _restorePortraitOrientation();
     await SystemUiService.edgeToEdge();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(

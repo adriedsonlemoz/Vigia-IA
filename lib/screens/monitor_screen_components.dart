@@ -149,7 +149,7 @@ class _CompactMonitorTopHud extends StatelessWidget {
                       ),
                     if (!fullscreen)
                       IconButton(
-                        tooltip: 'Tela inteira horizontal',
+                        tooltip: 'Tela inteira',
                         onPressed: fullscreenChanging ? null : onFullscreen,
                         icon: const Icon(Icons.fullscreen_rounded),
                         visualDensity: VisualDensity.compact,

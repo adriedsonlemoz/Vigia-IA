@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.91+91$' pubspec.yaml || fail 'Versao esperada 1.0.91+91 nao encontrada.'
+grep -q '^version: 1\.0\.92+92$' pubspec.yaml || fail 'Versao esperada 1.0.92+92 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -247,10 +247,11 @@ grep -q 'final ObjectTracker _tracker;' lib/controllers/monitor_controller.dart 
 if grep -q "import 'dart:typed_data';" lib/services/clip_recorder_service.dart; then
   fail 'Import dart:typed_data redundante reapareceu no ClipRecorderService.'
 fi
-grep -q 'DeviceOrientation.landscapeLeft' lib/main.dart \
-  || fail 'Suporte explicito a paisagem nao encontrado.'
-grep -q 'DeviceOrientation.landscapeRight' lib/main.dart \
-  || fail 'Suporte aos dois sentidos de paisagem nao encontrado.'
+grep -q 'AppOrientationService.lockPortrait' lib/main.dart \
+  || fail 'Aplicativo nao inicia travado em retrato.'
+grep -q 'DeviceOrientation.landscapeLeft' lib/services/app_orientation_service.dart \
+  && grep -q 'DeviceOrientation.landscapeRight' lib/services/app_orientation_service.dart \
+  || fail 'Transmissao perdeu suporte aos dois sentidos de paisagem.'
 if grep -q '_MonitorMenuAction' lib/screens/monitor_screen.dart; then
   fail 'Menu suspenso legado do monitor reapareceu.'
 fi
@@ -320,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.91';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.91.'
-grep -q 'static const int build = 91;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 91.'
-grep -q "version: '1.0.91'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.91.'
+grep -q "static const String version = '1.0.92';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.92.'
+grep -q 'static const int build = 92;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 92.'
+grep -q "version: '1.0.92'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.92.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -491,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.91+91$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.91+91.'
+grep -q '^version: 1.0.92+92$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.92+92.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.91"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.91.'
-grep -q '"build": 91' app_identity.json \
-  || fail 'app_identity.json nao esta no build 91.'
+grep -q '"version": "1.0.92"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.92.'
+grep -q '"build": 92' app_identity.json \
+  || fail 'app_identity.json nao esta no build 92.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -819,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.91+91' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.91+91.'
+grep -q 'Vigia IA 1.0.92+92' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.92+92.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1710,6 +1711,34 @@ grep -q 'apk-size-report.txt' .github/workflows/android-apk.yml \
   || fail 'Workflow nao gera relatorio de tamanho do APK.'
 grep -q 'compression-level: 0' .github/workflows/android-apk.yml \
   || fail 'Workflow voltou a recomprimir o APK durante o upload.'
+
+# Politica de orientacao por modo - 1.0.92
+grep -q '^## 1.0.92+92' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.92.'
+grep -q 'Evolução 1.0.92' README.md || fail 'README nao documenta 1.0.92.'
+grep -q "version: '1.0.92'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.92.'
+[[ -f RELEASE-1.0.92.md ]] || fail 'Notas da entrega 1.0.92 ausentes.'
+[[ -f lib/services/app_orientation_service.dart ]] || fail 'Servico central de orientacao ausente.'
+grep -q 'AppOrientationService.lockPortrait' lib/main.dart \
+  || fail 'main.dart nao aplica retrato como politica padrao.'
+grep -q 'AppOrientationService.allowTransmissionRotation' lib/screens/camera_mode_screen.dart \
+  || fail 'Modo Transmissao nao libera rotacao conforme a posicao fisica.'
+grep -q 'AppOrientationService.lockPortrait' lib/screens/camera_mode_screen.dart \
+  || fail 'Modo Transmissao nao restaura retrato ao sair.'
+grep -q 'await _orientationSetup;' lib/screens/camera_mode_screen.dart \
+  || fail 'Saida da Transmissao nao aguarda a liberacao inicial antes de restaurar retrato.'
+grep -q 'AppOrientationService.lockPortrait' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
+  || fail 'Monitor nao preserva/restaura a politica de retrato.'
+if grep -q 'DeviceOrientation.landscapeLeft' lib/screens/monitor_screen_fullscreen.dart; then
+  fail 'Tela inteira do Monitor voltou a forcar paisagem.'
+fi
+if grep -q 'DeviceOrientation.values' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart; then
+  fail 'Monitor voltou a liberar rotacao automatica fora da Transmissao.'
+fi
+[[ -f test/app_orientation_service_test.dart ]] || fail 'Teste da politica de orientacao ausente.'
+grep -q 'sensorOrientation: description.sensorOrientation' lib/services/shared_local_camera_service.dart \
+  && grep -q 'deviceOrientation: controller.value.deviceOrientation' lib/services/shared_local_camera_service.dart \
+  || fail 'Pipeline da camera perdeu a rotacao baseada em sensor + orientacao fisica.'
 
 # Dashboard paisagem / buildfix - 1.0.89
 grep -q '^## 1.0.91+91' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.91.'
