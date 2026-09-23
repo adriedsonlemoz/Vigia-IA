@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.89+89
+# Arquitetura — Vigia IA 1.0.90+90
 
 ## 1. Princípios
+
+## Evolução 1.0.90 — monitor vertical com mapa
+
+- `monitor_screen_portrait.dart` deixa o layout antigo baseado em faixa fixa + dock permanente e passa a usar uma composição com câmera maior, mini-mapa, faixa de ações e painel avançado sob demanda.
+- A altura da câmera em retrato agora considera a proporção real da prévia (`previewAspectRatio`), melhorando o comportamento quando a câmera remota estiver em horizontal.
+- O mini-mapa do monitor foi reutilizado no retrato com os mesmos serviços de GPS/rota do dashboard em paisagem.
 
 ## Evolução 1.0.89 — correção de estado do dashboard
 

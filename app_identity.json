@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.89 corrige o flutter analyze do dashboard ao vivo, removendo uso direto de setState na extensão do monitor sem alterar o design implementado.",
-  "version": "1.0.89",
-  "build": 89
+  "notes": "A 1.0.90 redesenha a tela vertical do monitor, amplia a câmera, integra o mapa do trajeto e move os atalhos avançados para um painel próprio sem apertar a área de detecções.",
+  "version": "1.0.90",
+  "build": 90
 }

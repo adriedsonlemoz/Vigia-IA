@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.90+90 — 2026-09-22
+
+- Tela vertical do Ao vivo redesenhada para ampliar a câmera e adaptar melhor o enquadramento quando a fonte estiver em horizontal.
+- Mini-mapa integrado também ao modo retrato, com rota, distância, posição atual e atalho para a tela completa do mapa.
+- Barra fixa de botões grandes entre câmera e detecções foi substituída por ações horizontais e por um painel dedicado para áreas, objetos, regras, fonte e recursos.
+- Bloco **Detectados agora** continua presente, com altura ajustada para caber junto do mapa sem estrangular a interface vertical.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.90+90`.
+
 ## 1.0.89+89 — 2026-09-22
 
 - Corrigidos os quatro `invalid_use_of_protected_member` reportados pelo `flutter analyze` no dashboard paisagem.

@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.89+89`
+> **Versão atual:** `1.0.90+90`
 
 ## Estado atual
 
-A `1.0.89+89` corrige a análise estática do novo dashboard Ao vivo, preservando o layout com câmera, mapa do trajeto, telemetria da bike e ações rápidas.
+A `1.0.90+90` redesenha a tela vertical do Ao vivo para aproveitar melhor a câmera, integrar o mapa do trajeto e organizar os atalhos sem sacrificar a área de detecções.
+
+### Evolução 1.0.90 — Tela vertical com mapa
+
+- a tela vertical do monitor foi reorganizada para priorizar a imagem da câmera e se adaptar melhor quando a fonte remota estiver filmando em horizontal;
+- o mapa do trajeto passa a aparecer também no modo retrato, com botão para abrir a rota completa, recentralização e zoom rápido;
+- os atalhos avançados deixam de ocupar uma faixa fixa entre a câmera e as detecções e passam a ficar no botão **Painel**;
+- o bloco **Detectados agora** continua visível, mas com altura ajustada para coexistir com o mapa e as novas ações.
 
 ### Evolução 1.0.89 — Correção do dashboard
 

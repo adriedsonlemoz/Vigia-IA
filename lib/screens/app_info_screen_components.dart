@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.89',
+          version: '1.0.90',
           current: true,
+          changes: [
+            'Tela vertical do Ao vivo redesenhada com câmera maior, mapa do trajeto e ações mais organizadas.',
+            'Mini-mapa foi integrado ao modo retrato com rota, distância e botão para abrir a tela completa.',
+            'Atalhos avançados saíram da faixa fixa e agora ficam no botão Painel, liberando espaço para a câmera e as detecções.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.89',
           changes: [
             'Corrigidos quatro avisos invalid_use_of_protected_member do dashboard Ao vivo.',
             'A extensão do dashboard não chama mais setState diretamente; a atualização passa pela State do Monitor.',
@@ -803,8 +812,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.89',
+          version: '1.0.90',
           current: true,
+          changes: [
+            'Tela vertical do Ao vivo redesenhada com câmera maior, mapa do trajeto e ações mais organizadas.',
+            'Mini-mapa foi integrado ao modo retrato com rota, distância e botão para abrir a tela completa.',
+            'Atalhos avançados saíram da faixa fixa e agora ficam no botão Painel, liberando espaço para a câmera e as detecções.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.89',
           changes: [
             'Corrigidos quatro avisos invalid_use_of_protected_member do dashboard Ao vivo.',
             'A extensão do dashboard não chama mais setState diretamente; a atualização passa pela State do Monitor.',

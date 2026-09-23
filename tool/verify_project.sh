@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.89+89$' pubspec.yaml || fail 'Versao esperada 1.0.89+89 nao encontrada.'
+grep -q '^version: 1\.0\.90+90$' pubspec.yaml || fail 'Versao esperada 1.0.90+90 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -317,12 +317,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.89';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.89.'
-grep -q 'static const int build = 89;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 89.'
-grep -q "version: '1.0.89'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.89.'
+grep -q "static const String version = '1.0.90';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.90.'
+grep -q 'static const int build = 90;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 90.'
+grep -q "version: '1.0.90'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.90.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +488,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.89+89$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.89+89.'
+grep -q '^version: 1.0.90+90$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.90+90.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.89"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.89.'
-grep -q '"build": 89' app_identity.json \
-  || fail 'app_identity.json nao esta no build 89.'
+grep -q '"version": "1.0.90"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.90.'
+grep -q '"build": 90' app_identity.json \
+  || fail 'app_identity.json nao esta no build 90.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +816,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.89+89' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.89+89.'
+grep -q 'Vigia IA 1.0.90+90' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.90+90.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1709,11 +1709,11 @@ grep -q 'compression-level: 0' .github/workflows/android-apk.yml \
   || fail 'Workflow voltou a recomprimir o APK durante o upload.'
 
 # Dashboard paisagem / buildfix - 1.0.89
-grep -q '^## 1.0.89+89' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.89.'
-grep -q 'Evolução 1.0.89' README.md || fail 'README nao documenta 1.0.89.'
-grep -q "version: '1.0.89'" lib/screens/app_info_screen_components.dart \
-  || fail 'Tela de Mudancas nao documenta 1.0.89.'
-[[ -f RELEASE-1.0.89.md ]] || fail 'Notas da entrega 1.0.89 ausentes.'
+grep -q '^## 1.0.90+90' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.90.'
+grep -q 'Evolução 1.0.90' README.md || fail 'README nao documenta 1.0.90.'
+grep -q "version: '1.0.90'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.90.'
+[[ -f RELEASE-1.0.90.md ]] || fail 'Notas da entrega 1.0.90 ausentes.'
 if grep -q '^[[:space:]]*setState(' lib/screens/monitor_screen_landscape_dashboard.dart; then
   fail 'Dashboard paisagem voltou a chamar setState diretamente pela extensao.'
 fi
@@ -1749,8 +1749,10 @@ grep -q "part 'monitor_screen_portrait.dart';" lib/screens/monitor_screen.dart \
   || fail 'Monitor nao referencia a composicao vertical fixa.'
 grep -q 'portraitEmbedded: true' lib/screens/monitor_screen_portrait.dart \
   || fail 'Camera nao esta incorporada ao cartao vertical.'
-grep -q 'Expanded(' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Painel fixo de deteccoes nao ocupa a regiao restante.'
+grep -q '_buildPortraitMapCard' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical ainda nao integra o mini-mapa.'
+grep -q 'height: detectionHeight' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Painel Detectados agora nao foi redimensionado para coexistir com o mapa.'
 if grep -q '_detectionsExpanded' lib/screens/monitor_screen*.dart; then
   fail 'Painel expansivel de deteccoes reapareceu no Monitor.'
 fi
@@ -1762,3 +1764,11 @@ if ! grep -A3 'if (!mounted) return;' lib/screens/events_screen_actions.dart | \
 fi
 
 echo 'Verificacao preventiva concluida com sucesso.'
+
+# Tela vertical / mapa - 1.0.90
+grep -q 'Mostrar mapa' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao exibe a acao Mostrar mapa.'
+grep -q 'Mapa do trajeto' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao integra o mapa do trajeto.'
+grep -q '_showPortraitQuickPanel' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao moveu os atalhos avancados para o Painel.'
