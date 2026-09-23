@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.100+100$' pubspec.yaml || fail 'Versao esperada 1.0.100+100 nao encontrada.'
+grep -q '^version: 1\.0\.101+101$' pubspec.yaml || fail 'Versao esperada 1.0.101+101 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.100';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.100.'
-grep -q 'static const int build = 100;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 100.'
-grep -q "version: '1.0.100'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.100.'
+grep -q "static const String version = '1.0.101';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.101.'
+grep -q 'static const int build = 101;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 101.'
+grep -q "version: '1.0.101'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.101.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.100+100$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.100+100.'
+grep -q '^version: 1.0.101+101$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.101+101.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.100"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.100.'
-grep -q '"build": 100' app_identity.json \
-  || fail 'app_identity.json nao esta no build 100.'
+grep -q '"version": "1.0.101"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.101.'
+grep -q '"build": 101' app_identity.json \
+  || fail 'app_identity.json nao esta no build 101.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.100+100' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.100+100.'
+grep -q 'Vigia IA 1.0.101+101' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.101+101.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2079,4 +2079,27 @@ fi
 
 cmp -s android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt tool/android/MainActivity.kt \
   || fail 'MainActivity Android e template tool/android divergiram.'
+
+# Limite offline inteligente e mapa de navegacao - 1.0.101
+grep -q '^## 1.0.101+101' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.101.'
+grep -q 'Evolução 1.0.101' README.md || fail 'README nao documenta 1.0.101.'
+grep -q "version: '1.0.101'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.101.'
+[[ -f RELEASE-1.0.101.md ]] || fail 'Notas da entrega 1.0.101 ausentes.'
+grep -q 'Ajustar ao limite disponível' lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Planejador offline nao oferece ajuste automatico ao limite.'
+grep -q '_maxRadiusForZoom' lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Raio offline nao possui limite dinamico por zoom/cache.'
+grep -q '_maxRouteBufferForZoom' lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Margem do trajeto nao possui limite dinamico por zoom/cache.'
+grep -q '_resizeSelection' lib/screens/offline_area_selection_screen.dart \
+  || fail 'Selecao offline nao permite redimensionar a area visual.'
+grep -q 'Arraste a área' lib/screens/offline_area_selection_screen.dart \
+  || fail 'Selecao offline nao indica a area visual arrastavel.'
+grep -q "label: altitudeMeters == null" lib/screens/map_monitoring_screen.dart \
+  || fail 'Painel do mapa completo nao mostra altitude.'
+grep -q "label: _direction(headingDegrees)" lib/screens/map_monitoring_screen.dart \
+  || fail 'Painel do mapa completo nao mostra rumo.'
+grep -q "following ? 'Seguindo' : 'Mapa livre'" lib/screens/map_monitoring_screen.dart \
+  || fail 'Mapa completo nao explicita Seguindo/Mapa livre.'
 

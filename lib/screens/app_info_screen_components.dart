@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.100',
+          version: '1.0.101',
           current: true,
+          changes: [
+            'O planejamento de mapas offline agora limita raio, margem e zoom ao espaço seguro restante, sem permitir configurações impossíveis acima do cache disponível.',
+            'Ajustar ao limite disponível preenche automaticamente a maior combinação válida e a tela explica a reserva de segurança dentro do teto de 100 MB.',
+            'Selecionar região ganhou um quadro visual arrastável e redimensionável para escolher exatamente a área que será preparada para download.',
+            'O mapa completo ganhou painel de navegação mais informativo com altitude, rumo, precisão do GPS e estado Seguindo/Mapa livre.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.100',
           changes: [
             'Corrigidos quatro apontamentos do flutter analyze encontrados no Android-APK-68.',
             'O suporte MBTiles do mini-mapa deixou de chamar setState diretamente pela extension e reutiliza o refresh seguro do State.',
@@ -914,13 +924,28 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.99',
+          version: '1.0.101',
           current: true,
+          changes: [
+            'Planejamento offline limita raio, margem e zoom ao espaço seguro restante e oferece ajuste automático ao limite.',
+            'Selecionar região ganhou quadro visual arrastável e redimensionável sobre o mapa.',
+            'O mapa completo ganhou altitude, rumo, precisão GPS e estado Seguindo/Mapa livre.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.100',
+          changes: [
+            'Corrigidos quatro apontamentos do flutter analyze encontrados no Android-APK-68 sem alterar as funcionalidades da 1.0.99.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.99',
           changes: [
             'Mapas offline agora podem ser baixados diretamente por região ou corredor do trajeto usando uma fonte autorizada configurada pelo usuário.',
             'O download mostra progresso, tiles e bytes, respeita limite de cache, pode ser pausado/retomado ou cancelado e mantém importação/link MBTiles.',
             'A rota compartilhada ganhou Pausar/Continuar sem criar saltos de distância e pode ser exportada em GPX pelo seletor do Android.',
-            'Pacotes offline guardam limites geográficos e validade estimada para avisar quando a posição sair da área baixada ou quando a atualização for recomendada.',
           ],
         ),
         SizedBox(height: 10),

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.100 corrige os quatro avisos do flutter analyze encontrados no Android-APK-68 sem alterar as funcionalidades de mapas offline, rota ou GPX.",
-  "version": "1.0.100",
-  "build": 100
+  "notes": "A 1.0.101 torna o planejamento offline coerente com o limite de 100 MB, adiciona seleção visual redimensionável e melhora o painel de navegação do mapa completo.",
+  "version": "1.0.101",
+  "build": 101
 }

@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.100+100
+# Arquitetura — Vigia IA 1.0.101+101
 
 ## 1. Princípios
+
+## Evolução 1.0.101 — limite offline inteligente e navegação
+
+- `OfflineMapManagerSheet` calcula o maior raio/margem que cabe no cache seguro e reduz automaticamente área ou zoom quando o usuário aumenta o outro eixo.
+- O teto técnico continua em 100 MB, mas o planejador usa 95 MB como limite seguro para reservar margem contra variação do tamanho real dos tiles.
+- `OfflineAreaSelectionScreen` mantém um retângulo normalizado independente da viewport; o usuário move/redimensiona o quadro e a tela converte a seleção para `LatLngBounds`, interpolando latitude em WebMercator.
+- `MapMonitoringScreen` continua usando a sessão persistente única de rota e amplia o painel de navegação com altitude, rumo, precisão e estado de acompanhamento do mapa.
+- O marcador atual usa `headingDegrees` para indicar visualmente o sentido de deslocamento quando o GPS fornece rumo válido.
 
 ## Evolução 1.0.100 — buildfix Android-APK-68
 

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.101+101 — 2026-09-23
+
+- O planejador de mapas offline deixa de aceitar silenciosamente combinações acima do espaço seguro disponível: raio/margem e zoom se ajustam de forma coordenada antes do download.
+- O limite continua sendo 100 MB por aparelho para a fonte direta, com 5 MB de reserva técnica; a interface passa a mostrar claramente o valor disponível para o próximo download.
+- Adicionado botão **Ajustar ao limite disponível** para usar automaticamente a maior configuração válida sem ultrapassar a reserva.
+- **Selecionar região** agora usa um quadro visual que pode ser arrastado e redimensionado sobre o mapa; somente essa área é convertida em bounds para o download.
+- O mapa completo ganhou painel de navegação mais denso com velocidade, distância, tempo, altitude, rumo, precisão do GPS e alternância visível entre **Seguindo** e **Mapa livre**.
+- O marcador da posição atual usa a direção reportada pelo GPS quando disponível.
+- Versionamento e documentação sincronizados em `1.0.101+101`.
+
 ## 1.0.100+100 — 2026-09-23
 
 - Corrigidos os quatro apontamentos que faziam o `flutter analyze` encerrar o workflow do Android-APK-68 com código 1.

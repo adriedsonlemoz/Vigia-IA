@@ -2,12 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.100+100`
+> **Versão atual:** `1.0.101+101`
 
 ## Estado atual
 
-A `1.0.100+100` corrige o build interrompido pelo `flutter analyze` no Android-APK-68, preservando integralmente mapas offline, rota pausável e exportação GPX.
+A `1.0.101+101` refina o mapa completo e torna o planejamento offline coerente com o limite de cache, sem permitir combinações de área/zoom que não possam ser baixadas.
 
+
+### Evolução 1.0.101 — Limite offline inteligente e mapa de navegação
+
+- raio, margem do trajeto e zoom agora se ajustam entre si para permanecer dentro do espaço seguro restante do cache direto;
+- **Ajustar ao limite disponível** encontra automaticamente a maior configuração válida, deixando explícitos o limite de 100 MB e a reserva técnica de 5 MB;
+- a seleção de região ganhou um quadro arrastável e redimensionável sobre o mapa, em vez de depender de toda a viewport;
+- o mapa completo passa a mostrar altitude, rumo, precisão do GPS e estado **Seguindo / Mapa livre** em um painel compacto;
+- o marcador de posição usa a direção do GPS quando disponível, facilitando leitura do sentido de deslocamento.
 
 ### Evolução 1.0.100 — Correção do Android-APK-68
 

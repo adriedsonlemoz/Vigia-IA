@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -360,13 +361,27 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                             ),
                             alignment: Alignment.center,
                             child: Container(
-                              width: 22,
-                              height: 22,
+                              width: 30,
+                              height: 30,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: scheme.primary,
                                 border: Border.all(color: Colors.white, width: 3),
                               ),
+                              child: current.headingDegrees == null
+                                  ? const Icon(
+                                      Icons.circle,
+                                      size: 10,
+                                      color: Colors.white,
+                                    )
+                                  : Transform.rotate(
+                                      angle: current.headingDegrees! * math.pi / 180,
+                                      child: const Icon(
+                                        Icons.navigation_rounded,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -434,6 +449,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   elapsed: _formatDuration(_routeState.elapsed),
                   lastUpdate: current?.recordedAt,
                   accuracy: current?.accuracyMeters,
+                  altitudeMeters: current?.altitudeMeters,
+                  headingDegrees: current?.headingDegrees,
+                  following: _followPosition,
                   onToggleTracking: current == null
                       ? null
                       : _routeState.tracking
@@ -448,6 +466,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       : () {
                           setState(() => _followPosition = true);
                           _centerOn(current);
+                        },
+                  onToggleFollow: current == null
+                      ? null
+                      : () {
+                          final next = !_followPosition;
+                          setState(() => _followPosition = next);
+                          if (next) _centerOn(current);
                         },
                 ),
               ),
@@ -769,10 +794,14 @@ class _MapRidePanel extends StatelessWidget {
     required this.elapsed,
     required this.lastUpdate,
     required this.accuracy,
+    required this.altitudeMeters,
+    required this.headingDegrees,
+    required this.following,
     required this.onToggleTracking,
     required this.onPauseResume,
     required this.onExport,
     required this.onCenter,
+    required this.onToggleFollow,
   });
 
   final bool tracking;
@@ -783,10 +812,14 @@ class _MapRidePanel extends StatelessWidget {
   final String elapsed;
   final DateTime? lastUpdate;
   final double? accuracy;
+  final double? altitudeMeters;
+  final double? headingDegrees;
+  final bool following;
   final VoidCallback? onToggleTracking;
   final VoidCallback? onPauseResume;
   final VoidCallback? onExport;
   final VoidCallback? onCenter;
+  final VoidCallback? onToggleFollow;
 
   String _time(DateTime? value) {
     if (value == null) return '--:--:--';
@@ -794,37 +827,86 @@ class _MapRidePanel extends StatelessWidget {
     return '${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
   }
 
+  String _direction(double? degrees) {
+    if (degrees == null || degrees.isNaN) return '--';
+    const labels = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+    final normalized = ((degrees % 360) + 360) % 360;
+    final index = ((normalized + 22.5) ~/ 45) % 8;
+    return '${labels[index]} ${normalized.toStringAsFixed(0)}°';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 10),
       child: Card(
         elevation: 5,
+        margin: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
-                  Expanded(child: _Metric(label: 'Velocidade', value: '${speedKmh.toStringAsFixed(1)} km/h')),
+                  Expanded(
+                    child: _Metric(
+                      label: 'Velocidade',
+                      value: '${speedKmh.toStringAsFixed(1)} km/h',
+                    ),
+                  ),
                   Expanded(child: _Metric(label: 'Distância', value: distance)),
                   Expanded(child: _Metric(label: 'Tempo', value: elapsed)),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 7),
+              Wrap(
+                spacing: 6,
+                runSpacing: 5,
+                alignment: WrapAlignment.center,
+                children: [
+                  _MapInfoPill(
+                    icon: Icons.height_rounded,
+                    label: altitudeMeters == null
+                        ? 'Altitude --'
+                        : 'Altitude ${altitudeMeters!.toStringAsFixed(0)} m',
+                  ),
+                  _MapInfoPill(
+                    icon: Icons.explore_rounded,
+                    label: _direction(headingDegrees),
+                  ),
+                  _MapInfoPill(
+                    icon: Icons.gps_fixed_rounded,
+                    label: accuracy == null
+                        ? 'GPS --'
+                        : 'GPS ±${accuracy!.toStringAsFixed(0)} m',
+                  ),
+                  ActionChip(
+                    avatar: Icon(
+                      following
+                          ? Icons.navigation_rounded
+                          : Icons.pan_tool_alt_outlined,
+                      size: 16,
+                    ),
+                    label: Text(following ? 'Seguindo' : 'Mapa livre'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onToggleFollow,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Atualização ${_time(lastUpdate)}${accuracy == null ? '' : ' · ±${accuracy!.toStringAsFixed(0)} m'}',
+                      'GPS ${_time(lastUpdate)}${paused ? ' · rota pausada' : ''}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   IconButton.filledTonal(
                     tooltip: 'Centralizar no GPS',
                     onPressed: onCenter,
@@ -833,7 +915,7 @@ class _MapRidePanel extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   if (canExport) ...[
@@ -843,7 +925,7 @@ class _MapRidePanel extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Icons.file_upload_outlined),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                   ],
                   if (tracking) ...[
                     IconButton.filledTonal(
@@ -854,7 +936,7 @@ class _MapRidePanel extends StatelessWidget {
                         paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                   ],
                   Expanded(
                     child: FilledButton.icon(
@@ -874,6 +956,36 @@ class _MapRidePanel extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MapInfoPill extends StatelessWidget {
+  const _MapInfoPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: scheme.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          ),
+        ],
       ),
     );
   }

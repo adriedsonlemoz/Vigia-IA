@@ -1,4 +1,17 @@
-# Validação — Vigia IA 1.0.100+100
+# Validação — Vigia IA 1.0.101+101
+
+## 1.0.101+101 — limite offline inteligente e mapa de navegação
+
+Data: 2026-09-23. Base preservada: 1.0.100+100.
+
+- Em **Região atual**, mover raio e zoom e confirmar que a combinação nunca permanece acima do espaço seguro restante; aumentar zoom deve reduzir o raio quando necessário.
+- Em **Trajeto**, aumentar margem e detalhe e confirmar ajuste equivalente sem permitir download acima do limite.
+- Confirmar que **Ajustar ao limite disponível** aproxima a estimativa do máximo seguro sem excedê-lo e que a tela diferencia 100 MB totais da reserva técnica.
+- Em **Selecionar região**, arrastar o quadro e redimensionar pelos cantos; confirmar que o bounds retornado corresponde somente à área destacada, não à tela inteira.
+- No mapa completo, validar altitude, rumo, GPS, **Seguindo / Mapa livre** e marcador orientado pelo heading quando disponível.
+- Confirmar que câmera flutuante, rota compartilhada, pausa/retomada e GPX continuam operacionais.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.101+101`.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.100+100 — buildfix Android-APK-68
 

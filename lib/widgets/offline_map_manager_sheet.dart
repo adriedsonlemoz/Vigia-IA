@@ -214,7 +214,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
         );
         if (baseBounds == null || !mounted) return;
         title = 'Baixar região selecionada';
-        detail = 'Usa a área que você acabou de enquadrar no mapa.';
+        detail = 'Usa exatamente o quadro que você posicionou e redimensionou no mapa.';
         break;
       case _OfflinePlanKind.route:
         if (planning.route.length < 2) {
@@ -225,6 +225,31 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
         title = 'Baixar trajeto';
         detail = 'Baixa somente um corredor ao redor do percurso, economizando espaço.';
         break;
+    }
+
+    final safeBytes = _service.stadiaSafeAvailableCacheBytes;
+    if (safeBytes <= 0) {
+      _showPlanUnavailable(
+        'O limite seguro do cache direto está ocupado. Exclua um mapa direto antes de baixar outro.',
+      );
+      return;
+    }
+
+    if (kind == _OfflinePlanKind.current) {
+      radiusKm = math.min(
+        radiusKm,
+        _maxRadiusForZoom(planning.currentPosition!, maxZoom.round(), safeBytes),
+      ).toDouble();
+    } else if (kind == _OfflinePlanKind.route) {
+      routeBufferKm = math.min(
+        routeBufferKm,
+        _maxRouteBufferForZoom(planning.route, maxZoom.round(), safeBytes),
+      ).toDouble();
+    } else {
+      maxZoom = math.min(
+        maxZoom,
+        _maxZoomForBounds(baseBounds!, safeBytes).toDouble(),
+      ).toDouble();
     }
 
     final nameController = TextEditingController(text: switch (kind) {
@@ -257,10 +282,57 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   minZoom: 8,
                   maxZoom: maxZoom.round(),
                 );
-          final tooLarge =
-              estimate.bytes > _service.stadiaSafeAvailableCacheBytes;
+          final tooLarge = estimate.bytes > safeBytes;
           final insufficientStorage = _freeStorageBytes != null &&
               estimate.bytes > (_freeStorageBytes! * 0.85);
+          final usage = safeBytes <= 0
+              ? 1.0
+              : (estimate.bytes / safeBytes).clamp(0.0, 1.0).toDouble();
+          final nearLimit = !tooLarge && usage >= 0.85;
+
+          final maxRadius = kind == _OfflinePlanKind.current
+              ? _maxRadiusForZoom(
+                  planning.currentPosition!,
+                  13,
+                  safeBytes,
+                )
+              : 50.0;
+          final maxRouteBuffer = kind == _OfflinePlanKind.route
+              ? _maxRouteBufferForZoom(
+                  planning.route,
+                  13,
+                  safeBytes,
+                )
+              : 5.0;
+          final visibleMaxZoom = kind == _OfflinePlanKind.visible
+              ? _maxZoomForBounds(baseBounds!, safeBytes)
+              : 17;
+          final zoomSliderMax = math.max(13, visibleMaxZoom).toDouble();
+
+          void useMaximumAvailable() {
+            setDialogState(() {
+              switch (kind) {
+                case _OfflinePlanKind.current:
+                  radiusKm = _maxRadiusForZoom(
+                    planning.currentPosition!,
+                    maxZoom.round(),
+                    safeBytes,
+                  );
+                  break;
+                case _OfflinePlanKind.route:
+                  routeBufferKm = _maxRouteBufferForZoom(
+                    planning.route,
+                    maxZoom.round(),
+                    safeBytes,
+                  );
+                  break;
+                case _OfflinePlanKind.visible:
+                  maxZoom = _maxZoomForBounds(baseBounds!, safeBytes).toDouble();
+                  break;
+              }
+            });
+          }
+
           return AlertDialog(
             title: Text(title),
             content: SingleChildScrollView(
@@ -279,41 +351,134 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   ),
                   if (kind == _OfflinePlanKind.current) ...[
                     const SizedBox(height: 12),
-                    Text('Raio: ${radiusKm.toStringAsFixed(0)} km'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Raio: ${radiusKm.toStringAsFixed(1)} km'),
+                        ),
+                        Text(
+                          'máx. no cache ${maxRadius.toStringAsFixed(1)} km',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
                     Slider(
-                      value: radiusKm,
-                      min: 5,
-                      max: 50,
-                      divisions: 9,
-                      label: '${radiusKm.toStringAsFixed(0)} km',
-                      onChanged: (value) =>
-                          setDialogState(() => radiusKm = value),
+                      value: radiusKm.clamp(1.0, math.max(1.0, maxRadius)).toDouble(),
+                      min: 1,
+                      max: math.max(1.0, maxRadius).toDouble(),
+                      label: '${radiusKm.toStringAsFixed(1)} km',
+                      onChanged: maxRadius <= 1
+                          ? null
+                          : (value) {
+                              setDialogState(() {
+                                radiusKm = value;
+                                final allowedZoom = _maxZoomForBounds(
+                                  _boundsAround(planning.currentPosition!, radiusKm),
+                                  safeBytes,
+                                );
+                                if (maxZoom > allowedZoom) {
+                                  maxZoom = allowedZoom.toDouble();
+                                }
+                              });
+                            },
                     ),
                   ],
                   if (kind == _OfflinePlanKind.route) ...[
                     const SizedBox(height: 12),
-                    Text('Margem do trajeto: ${routeBufferKm.toStringAsFixed(1)} km'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Margem do trajeto: ${routeBufferKm.toStringAsFixed(1)} km',
+                          ),
+                        ),
+                        Text(
+                          'máx. no cache ${maxRouteBuffer.toStringAsFixed(1)} km',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
                     Slider(
-                      value: routeBufferKm,
+                      value: routeBufferKm.clamp(
+                        0.5,
+                        math.max(0.5, maxRouteBuffer),
+                      ).toDouble(),
                       min: 0.5,
-                      max: 5,
-                      divisions: 9,
+                      max: math.max(0.5, maxRouteBuffer).toDouble(),
                       label: '${routeBufferKm.toStringAsFixed(1)} km',
-                      onChanged: (value) =>
-                          setDialogState(() => routeBufferKm = value),
+                      onChanged: maxRouteBuffer <= 0.5
+                          ? null
+                          : (value) {
+                              setDialogState(() {
+                                routeBufferKm = value;
+                                final allowedZoom = _maxZoomForBounds(
+                                  _routeBounds(
+                                    planning.route,
+                                    marginKm: routeBufferKm,
+                                  ),
+                                  safeBytes,
+                                );
+                                if (maxZoom > allowedZoom) {
+                                  maxZoom = allowedZoom.toDouble();
+                                }
+                              });
+                            },
                     ),
                   ],
                   const SizedBox(height: 8),
-                  Text('Detalhe máximo: zoom ${maxZoom.round()}'),
-                  Slider(
-                    value: maxZoom,
-                    min: 13,
-                    max: 17,
-                    divisions: 4,
-                    label: 'z${maxZoom.round()}',
-                    onChanged: (value) =>
-                        setDialogState(() => maxZoom = value),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Detalhe: ${_qualityLabel(maxZoom.round())} · zoom ${maxZoom.round()}',
+                        ),
+                      ),
+                      if (kind == _OfflinePlanKind.visible)
+                        Text(
+                          'máx. z$visibleMaxZoom',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                    ],
                   ),
+                  Slider(
+                    value: maxZoom.clamp(13.0, zoomSliderMax).toDouble(),
+                    min: 13,
+                    max: zoomSliderMax,
+                    divisions: zoomSliderMax > 13
+                        ? (zoomSliderMax - 13).round()
+                        : null,
+                    label: 'z${maxZoom.round()}',
+                    onChanged: zoomSliderMax <= 13
+                        ? null
+                        : (value) {
+                            setDialogState(() {
+                              maxZoom = value;
+                              if (kind == _OfflinePlanKind.current) {
+                                final allowedRadius = _maxRadiusForZoom(
+                                  planning.currentPosition!,
+                                  maxZoom.round(),
+                                  safeBytes,
+                                );
+                                radiusKm = math.min(radiusKm, allowedRadius).toDouble();
+                              } else if (kind == _OfflinePlanKind.route) {
+                                final allowedBuffer = _maxRouteBufferForZoom(
+                                  planning.route,
+                                  maxZoom.round(),
+                                  safeBytes,
+                                );
+                                routeBufferKm = math
+                                    .min(routeBufferKm, allowedBuffer)
+                                    .toDouble();
+                              }
+                            });
+                          },
+                  ),
+                  Text(
+                    'Os controles se limitam automaticamente ao espaço disponível. Mais detalhe reduz a área máxima e vice-versa.',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: 10),
+                  LinearProgressIndicator(value: usage),
                   const SizedBox(height: 8),
                   _PlanMetric(
                     icon: Icons.grid_view_rounded,
@@ -326,16 +491,27 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                     value: '~${_size(estimate.bytes)}',
                   ),
                   _PlanMetric(
+                    icon: Icons.offline_pin_rounded,
+                    label: 'Disponível para download',
+                    value: _size(safeBytes),
+                  ),
+                  _PlanMetric(
+                    icon: Icons.shield_outlined,
+                    label: 'Limite do cache direto',
+                    value: '100 MB · reserva de 5 MB',
+                  ),
+                  _PlanMetric(
                     icon: Icons.phone_android_rounded,
-                    label: 'Espaço livre',
+                    label: 'Espaço livre no aparelho',
                     value: _freeStorageBytes == null
                         ? 'Calculando…'
                         : _size(_freeStorageBytes!),
                   ),
-                  _PlanMetric(
-                    icon: Icons.offline_pin_rounded,
-                    label: 'Cache direto restante',
-                    value: _size(_service.stadiaAvailableCacheBytes),
+                  const SizedBox(height: 6),
+                  OutlinedButton.icon(
+                    onPressed: useMaximumAvailable,
+                    icon: const Icon(Icons.auto_fix_high_rounded),
+                    label: const Text('Ajustar ao limite disponível'),
                   ),
                   if (!_service.hasStadiaApiKey) ...[
                     const SizedBox(height: 8),
@@ -344,10 +520,20 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                       style: TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ],
+                  if (nearLimit) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Configuração próxima do limite. A reserva de segurança já foi considerada.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                   if (tooLarge) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Área grande demais para o espaço restante do cache de 100 MB. Exclua outro mapa direto ou reduza o raio, margem ou zoom.',
+                      'Esta área ainda não cabe no espaço seguro restante. Reduza a seleção ou exclua outro mapa direto.',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.w800,
@@ -357,7 +543,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   if (insufficientStorage) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'O espaço livre pode não ser suficiente para concluir com segurança.',
+                      'O espaço livre do aparelho pode não ser suficiente para concluir com segurança.',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.w800,
@@ -493,6 +679,96 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
       LatLng(maxLat + latMargin, maxLon + lonMargin),
     );
   }
+
+  int _maxZoomForBounds(LatLngBounds bounds, int safeBytes) {
+    if (safeBytes <= 0) return 13;
+    for (var zoom = 17; zoom >= 13; zoom--) {
+      final estimate = _service.estimateBounds(
+        bounds: _toOfflineBounds(bounds),
+        minZoom: 8,
+        maxZoom: zoom,
+      );
+      if (estimate.bytes <= safeBytes) return zoom;
+    }
+    return 13;
+  }
+
+  double _maxRadiusForZoom(
+    LatLng center,
+    int zoom,
+    int safeBytes,
+  ) {
+    const minRadius = 1.0;
+    const maxRadius = 50.0;
+    if (safeBytes <= 0) return minRadius;
+
+    bool fits(double radius) => _service
+        .estimateBounds(
+          bounds: _toOfflineBounds(_boundsAround(center, radius)),
+          minZoom: 8,
+          maxZoom: zoom,
+        )
+        .bytes <=
+        safeBytes;
+
+    if (!fits(minRadius)) return minRadius;
+    if (fits(maxRadius)) return maxRadius;
+
+    var low = minRadius;
+    var high = maxRadius;
+    for (var i = 0; i < 14; i++) {
+      final middle = (low + high) / 2;
+      if (fits(middle)) {
+        low = middle;
+      } else {
+        high = middle;
+      }
+    }
+    return math.max(minRadius, (low * 10).floor() / 10);
+  }
+
+  double _maxRouteBufferForZoom(
+    List<LatLng> route,
+    int zoom,
+    int safeBytes,
+  ) {
+    const minBuffer = 0.5;
+    const maxBuffer = 5.0;
+    if (safeBytes <= 0 || route.length < 2) return minBuffer;
+
+    bool fits(double buffer) => _service
+        .estimateRoute(
+          route: route,
+          bufferKm: buffer,
+          minZoom: 8,
+          maxZoom: zoom,
+        )
+        .bytes <=
+        safeBytes;
+
+    if (!fits(minBuffer)) return minBuffer;
+    if (fits(maxBuffer)) return maxBuffer;
+
+    var low = minBuffer;
+    var high = maxBuffer;
+    for (var i = 0; i < 12; i++) {
+      final middle = (low + high) / 2;
+      if (fits(middle)) {
+        low = middle;
+      } else {
+        high = middle;
+      }
+    }
+    return math.max(minBuffer, (low * 10).floor() / 10);
+  }
+
+  String _qualityLabel(int zoom) => switch (zoom) {
+        <= 13 => 'Básico',
+        14 => 'Equilibrado',
+        15 => 'Detalhado',
+        16 => 'Alto',
+        _ => 'Máximo',
+      };
 
   OfflineMapBounds _toOfflineBounds(LatLngBounds bounds) => OfflineMapBounds(
         west: bounds.west,
