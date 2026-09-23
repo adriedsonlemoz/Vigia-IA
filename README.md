@@ -2,12 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.99+99`
+> **Versão atual:** `1.0.100+100`
 
 ## Estado atual
 
-A `1.0.99+99` fecha o primeiro ciclo de mapas offline baixáveis diretamente no app e adiciona controles de pausa/retomada da rota e exportação GPX.
+A `1.0.100+100` corrige o build interrompido pelo `flutter analyze` no Android-APK-68, preservando integralmente mapas offline, rota pausável e exportação GPX.
 
+
+### Evolução 1.0.100 — Correção do Android-APK-68
+
+- corrigidas duas ocorrências de `invalid_use_of_protected_member` no módulo MBTiles do mini-mapa, reutilizando o refresh seguro do próprio `State`;
+- o stream de localização passa a usar atribuição condicional (`??=`), eliminando `prefer_conditional_assignment`;
+- removido o `!` redundante na comparação de expiração de pacotes offline, eliminando `unnecessary_non_null_assertion`;
+- nenhuma funcionalidade de mapa offline, rota, GPX, câmera ou IA foi alterada nesta correção.
 
 ### Evolução 1.0.99 — Download offline direto, pausa de rota e GPX
 

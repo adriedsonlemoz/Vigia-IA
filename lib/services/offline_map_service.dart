@@ -364,7 +364,7 @@ class OfflineMapService extends ChangeNotifier {
             ]);
             final expiry = result.expiresAt;
             if (expiry != null &&
-                (earliestExpiry == null || expiry.isBefore(earliestExpiry!))) {
+                (earliestExpiry == null || expiry.isBefore(earliestExpiry))) {
               earliestExpiry = expiry;
             }
             _downloadTilesCompleted++;

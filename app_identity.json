@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.99 fecha o ciclo inicial de mapas offline com download direto autorizado por região/trajeto, progresso e controle do download, além de pausa/retomada da rota e exportação GPX.",
-  "version": "1.0.99",
-  "build": 99
+  "notes": "A 1.0.100 corrige os quatro avisos do flutter analyze encontrados no Android-APK-68 sem alterar as funcionalidades de mapas offline, rota ou GPX.",
+  "version": "1.0.100",
+  "build": 100
 }

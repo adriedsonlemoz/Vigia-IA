@@ -141,12 +141,10 @@ class MapRouteService extends ChangeNotifier {
       // O stream contínuo ainda pode se recuperar se a leitura pontual falhar.
     }
 
-    if (_positionSubscription == null) {
-      _positionSubscription = _location.positionStream().listen(
-        _acceptPosition,
-        onError: (_) {},
-      );
-    }
+    _positionSubscription ??= _location.positionStream().listen(
+      _acceptPosition,
+      onError: (_) {},
+    );
     return availability;
   }
 

@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.99+99
+# Arquitetura — Vigia IA 1.0.100+100
 
 ## 1. Princípios
+
+## Evolução 1.0.100 — buildfix Android-APK-68
+
+- A correção é estritamente de análise estática e não altera o desenho funcional introduzido na 1.0.99.
+- A extension `monitor_screen_offline_map.dart` delega atualizações visuais para `_MonitorScreenState._refresh()`, mantendo `setState` dentro de um membro válido de `State`.
+- `MapRouteService` usa atribuição condicional ao criar a assinatura do stream de GPS e preserva uma única subscription ativa.
+- `OfflineMapService` mantém a mesma regra de expiração de tiles sem operador de não-nulo redundante.
 
 ## Evolução 1.0.99 — download offline direto e GPX
 

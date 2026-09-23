@@ -15,7 +15,7 @@ extension _MonitorScreenOfflineMapSupport on _MonitorScreenState {
   void _syncMiniOfflineProvider() {
     final active = _offlineMaps.activePackage;
     if (_miniOfflinePackageId == active?.id) {
-      setState(() {});
+      _refresh();
       return;
     }
     _miniOfflineTileProvider?.dispose();
@@ -36,6 +36,6 @@ extension _MonitorScreenOfflineMapSupport on _MonitorScreenState {
         _miniOfflineTileProvider = null;
       }
     }
-    setState(() {});
+    _refresh();
   }
 }

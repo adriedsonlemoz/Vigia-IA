@@ -1,4 +1,15 @@
-# Validação — Vigia IA 1.0.99+99
+# Validação — Vigia IA 1.0.100+100
+
+## 1.0.100+100 — buildfix Android-APK-68
+
+Data: 2026-09-23. Base preservada: 1.0.99+99.
+
+- Log Android-APK-68: `flutter analyze` encontrou exatamente 4 apontamentos: 2x `invalid_use_of_protected_member`, `prefer_conditional_assignment` e `unnecessary_non_null_assertion`.
+- `monitor_screen_offline_map.dart` agora reutiliza `_refresh()` em vez de chamar `setState` diretamente pela extension.
+- `map_route_service.dart` usa `??=` para a assinatura do stream; `offline_map_service.dart` remove o `!` redundante de `earliestExpiry`.
+- As funções da 1.0.99 foram preservadas sem alteração funcional.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.100+100`.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.99+99 — download offline direto, pausa de rota e GPX
 

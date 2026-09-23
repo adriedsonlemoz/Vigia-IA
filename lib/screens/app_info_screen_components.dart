@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.99',
+          version: '1.0.100',
           current: true,
+          changes: [
+            'Corrigidos quatro apontamentos do flutter analyze encontrados no Android-APK-68.',
+            'O suporte MBTiles do mini-mapa deixou de chamar setState diretamente pela extension e reutiliza o refresh seguro do State.',
+            'O stream de localização usa atribuição condicional e a comparação de expiração do mapa offline não mantém operador nulo desnecessário.',
+            'Nenhuma funcionalidade de mapas offline, rota, GPX, câmera ou IA foi alterada nesta correção de build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.99',
           changes: [
             'Mapas offline agora podem ser baixados diretamente por região ou corredor do trajeto usando uma fonte autorizada configurada pelo usuário.',
             'O download mostra progresso, tiles e bytes, respeita limite de cache, pode ser pausado/retomado ou cancelado e mantém importação/link MBTiles.',

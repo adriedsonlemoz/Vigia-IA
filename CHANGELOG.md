@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.0.100+100 — 2026-09-23
+
+- Corrigidos os quatro apontamentos que faziam o `flutter analyze` encerrar o workflow do Android-APK-68 com código 1.
+- `monitor_screen_offline_map.dart` não chama mais `setState` diretamente pela extension; o módulo reutiliza `_refresh()` do `State` do Monitor.
+- `MapRouteService` passa a inicializar `_positionSubscription` com `??=`, eliminando `prefer_conditional_assignment`.
+- `OfflineMapService` remove o `!` redundante em `earliestExpiry`, eliminando `unnecessary_non_null_assertion`.
+- Mapas offline, pausa/retomada da rota, exportação GPX, câmeras e IA foram preservados sem mudança funcional.
+- Versionamento e verificadores sincronizados em `1.0.100+100`, com proteção contra regressão dos três padrões de lint encontrados no log.
+
 ## 1.0.99+99 — 2026-09-23
 
 - Adicionado download direto de mapas offline por **região** ou **corredor do trajeto** usando fonte configurada explicitamente pelo usuário, sem prefetch de `tile.openstreetmap.org`.
