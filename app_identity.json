@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.93 compacta o Monitor vertical: detecções detalhadas passam para um painel inferior expansível e o mini-mapa ganha rótulos e controles menores para liberar espaço à telemetria da bike.",
-  "version": "1.0.93",
-  "build": 93
+  "notes": "A 1.0.94 refina o Monitor vertical: mapa mais alto, atalhos compactos sempre visíveis, altitude real no mapa, telemetria ESP32 mais densa e teste temporário de segunda câmera frontal em janela PiP.",
+  "version": "1.0.94",
+  "build": 94
 }

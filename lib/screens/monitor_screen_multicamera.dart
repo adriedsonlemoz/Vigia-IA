@@ -36,6 +36,14 @@ extension _MonitorMulticamera on _MonitorScreenState {
 
   bool _sameSource(VideoSourceConfig first, VideoSourceConfig second) {
     if (first.type != second.type) return false;
+    if (first.type == VideoSourceType.localCamera) {
+      final firstIsFrontTest = first.isFrontCameraTest;
+      final secondIsFrontTest = second.isFrontCameraTest;
+      if (firstIsFrontTest || secondIsFrontTest) {
+        return firstIsFrontTest && secondIsFrontTest;
+      }
+      return true;
+    }
     if (first.cameraId != null && second.cameraId != null) {
       return first.cameraId == second.cameraId;
     }
@@ -47,6 +55,13 @@ extension _MonitorMulticamera on _MonitorScreenState {
       VideoSourceType.esp32 => first.remoteBaseUrl == second.remoteBaseUrl,
     };
   }
+
+  VideoSourceConfig _frontCameraTestSource() => VideoSourceConfig(
+    type: VideoSourceType.localCamera,
+    displayName: 'Frontal (teste)',
+    cameraId: frontCameraTestId,
+    analysisInterval: _controller.sourceConfig.analysisInterval,
+  );
 
   Future<void> _replaceSecondarySource(VideoSourceConfig? source) async {
     final previous = _secondaryController;
@@ -99,6 +114,22 @@ extension _MonitorMulticamera on _MonitorScreenState {
               subtitle: Text('A câmera principal ocupa toda a área de vídeo.'),
             ),
           ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, frontCameraTestId),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.face_retouching_natural_outlined),
+              title: const Text('Teste: câmera frontal'),
+              subtitle: const Text(
+                'Abre a frontal em uma janela pequena; a IA continua somente na principal.',
+              ),
+              trailing:
+                  _secondaryController?.sourceConfig.cameraId ==
+                      frontCameraTestId
+                  ? const Icon(Icons.check_circle_rounded)
+                  : null,
+            ),
+          ),
           ...candidates.map(
             (camera) => SimpleDialogOption(
               onPressed: () => Navigator.pop(dialogContext, camera.id),
@@ -140,6 +171,21 @@ extension _MonitorMulticamera on _MonitorScreenState {
       await _replaceSecondarySource(null);
       return;
     }
+    if (selectedId == frontCameraTestId) {
+      final granted = await NativePlatformService.instance
+          .requestCameraPermission();
+      if (!mounted) return;
+      if (!granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permita a câmera para testar a frontal.'),
+          ),
+        );
+        return;
+      }
+      await _replaceSecondarySource(_frontCameraTestSource());
+      return;
+    }
     final selectedIndex = candidates.indexWhere(
       (item) => item.id == selectedId,
     );
@@ -165,10 +211,129 @@ extension _MonitorMulticamera on _MonitorScreenState {
     BuildContext context, {
     bool portraitEmbedded = false,
   }) {
-    if (_secondaryController == null) {
+    final secondary = _secondaryController;
+    if (secondary == null) {
       return _buildCameraStage(context, portraitEmbedded: portraitEmbedded);
     }
+    final portrait =
+        MediaQuery.orientationOf(context) == Orientation.portrait;
+    if (portraitEmbedded && portrait) {
+      return _buildPortraitPictureInPictureStage(context, secondary);
+    }
     return _buildDualCameraStage(context, portraitEmbedded: portraitEmbedded);
+  }
+
+  Widget _buildPortraitPictureInPictureStage(
+    BuildContext context,
+    SecondaryCameraController secondary,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final pipWidth = (constraints.maxWidth * 0.30)
+            .clamp(92.0, 122.0)
+            .toDouble();
+        final pipHeight = (constraints.maxHeight * 0.38)
+            .clamp(72.0, 104.0)
+            .toDouble();
+        final streaming =
+            secondary.status.state == VideoSourceState.streaming;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildCameraStage(context, portraitEmbedded: true),
+            Positioned(
+              right: 8,
+              bottom: 8,
+              width: pipWidth,
+              height: pipHeight,
+              child: Material(
+                color: Colors.black,
+                elevation: 8,
+                borderRadius: BorderRadius.circular(14),
+                clipBehavior: Clip.antiAlias,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: scheme.primary.withValues(alpha: 0.72),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      secondary.buildPreview(),
+                      if (secondary.initializing)
+                        const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      if (secondary.error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(7),
+                          child: Center(
+                            child: Text(
+                              'Frontal indisponível\nem simultâneo',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        left: 4,
+                        right: 4,
+                        bottom: 4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.68),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: streaming
+                                        ? const Color(0xFF69D59C)
+                                        : const Color(0xFFFFB4AB),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    secondary.displayName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildDualCameraStage(

@@ -935,52 +935,65 @@ class _DashboardMetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 170, maxWidth: 220),
+      constraints: const BoxConstraints(minWidth: 154, maxWidth: 180),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.24),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: scheme.primary.withValues(alpha: 0.16)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: scheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, color: scheme.primary),
+                child: Icon(icon, color: scheme.primary, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.end,
-                      spacing: 6,
+                    const SizedBox(height: 1),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          value,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
+                        Flexible(
+                          child: Text(
+                            value,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
-                        Text(
-                          unit,
-                          style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(width: 4),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(
+                            unit,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(fontSize: 10),
+                          ),
                         ),
                       ],
                     ),
@@ -1001,29 +1014,65 @@ class _DashboardActionButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.accent = false,
+    this.compact = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
   final bool accent;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final style = FilledButton.styleFrom(
+      backgroundColor: accent
+          ? scheme.primary.withValues(alpha: 0.22)
+          : Colors.black.withValues(alpha: 0.24),
+      foregroundColor: accent ? scheme.primary : null,
+      padding: compact
+          ? const EdgeInsets.symmetric(horizontal: 4, vertical: 3)
+          : null,
+      minimumSize: compact ? const Size(0, 42) : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(compact ? 14 : 18),
+        side: BorderSide(color: scheme.primary.withValues(alpha: 0.14)),
+      ),
+      visualDensity: compact ? VisualDensity.compact : null,
+    );
+    if (compact) {
+      return SizedBox(
+        height: 44,
+        child: FilledButton(
+          style: style,
+          onPressed: onPressed,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 17),
+              const SizedBox(height: 1),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return SizedBox(
       height: 54,
       child: FilledButton.tonalIcon(
-        style: FilledButton.styleFrom(
-          backgroundColor: accent
-              ? scheme.primary.withValues(alpha: 0.22)
-              : Colors.black.withValues(alpha: 0.24),
-          foregroundColor: accent ? scheme.primary : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: scheme.primary.withValues(alpha: 0.16)),
-          ),
-        ),
+        style: style,
         onPressed: onPressed,
         icon: Icon(icon),
         label: Text(

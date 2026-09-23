@@ -1,15 +1,15 @@
-# Validação — Vigia IA 1.0.93+93
+# Validação — Vigia IA 1.0.94+94
 
-Data: 2026-09-23. Base preservada: 1.0.92+92.
+Data: 2026-09-23. Base preservada: 1.0.93+93.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| Monitor vertical 1.0.93 | Resumo compacto de detecções; painel inferior arrastável; mini-mapa com textos/controles compactos; telemetria com menor altura |
+| Monitor vertical 1.0.94 | Mini-mapa mais alto; quatro atalhos fixos em uma linha; altitude real compacta; cards ESP32 mais densos |
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
 | `flutter analyze` / `flutter test` / build Android | Não executados localmente: Flutter, Dart e Android SDK não estão instalados neste ambiente; confirmar no workflow |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.93+93 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.94+94 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -32,6 +32,7 @@ Data: 2026-09-23. Base preservada: 1.0.92+92.
 | Fluxo Monitor | Tela receptora, QR, endereço/chave manual, Central multicâmera e fonte Celular remoto protegidos pelo verificador |
 | Câmeras adaptativas | Política testável para uma câmera integral, duas empilhadas no retrato e duas lado a lado na paisagem |
 | Segunda câmera | Preview e status independentes, sem duplicar o pipeline de IA da câmera principal |
+| Segunda câmera frontal de teste | Fonte preview-only em baixa resolução, PiP no retrato e IA preservada somente na principal; compatibilidade simultânea depende do aparelho |
 | Sensores Bike | Hall, temperatura, pneus, bateria e distância normalizados, exibidos e enviados pelo status remoto |
 | Permissões | Pedido automático nativo removido; novo marcador exige guia antes da escolha de modo |
 | Retorno do transmissor | Botão superior e retorno do Android voltam à seleção, com confirmação de parada |
@@ -47,6 +48,17 @@ Data: 2026-09-23. Base preservada: 1.0.92+92.
 | Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
 | Telemetria ESP32/Bike | Faixa superior reorganizada em uma única linha horizontal rolável, sem grade quebrada no retrato |
 | Diagnóstico | Estados Serviço/Câmera/Frames/IA/LAN/clientes/Permissões/2º plano ficam em faixa horizontal compacta; ações de 30 s, 60 s e Exportar permanecem juntas |
+
+## Roteiro da 1.0.94
+
+- abrir o Monitor em retrato e confirmar que o mini-mapa ficou mais alto e que o resumo **Detectados** desceu sem cortar a parte inferior;
+- confirmar que **Abrir mapa**, **Áudio**, **Painel** e **Ajustes** aparecem simultaneamente, sem rolagem horizontal, e que os quatro botões ficaram mais baixos/compactos;
+- com GPS disponível, conferir que o canto inferior esquerdo do mapa mostra somente a altitude em metros, menor que antes, sem o texto **Bike**; validar que a distância continua na faixa superior;
+- com ESP32/Bike ativo, verificar que velocidade, temperatura, pneus e distância usam cards menores, sem texto sobreposto ou cortado;
+- abrir **Mais opções > Uma ou duas câmeras > Teste: câmera frontal** e confirmar que a câmera principal continua ocupando toda a área enquanto a frontal aparece em PiP pequeno no canto inferior direito;
+- confirmar que a IA, caixas de detecção e alertas continuam ligados somente à câmera principal e que mapa/sensores/atalhos continuam presentes com a frontal ativa;
+- em aparelho que não aceite câmera frontal + traseira simultâneas, confirmar que a falha fica restrita ao PiP e que a câmera principal continua funcional; depois desativar a segunda câmera e testar novamente;
+- repetir com uma segunda fonte real, quando disponível, para confirmar que o mesmo espaço PiP é reutilizado no retrato.
 
 ## Roteiro da 1.0.93
 

@@ -6,6 +6,7 @@ import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
+import '../sources/front_camera_preview_source.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
 import '../sources/rtsp_camera_source.dart';
@@ -48,6 +49,8 @@ class SecondaryCameraController extends ChangeNotifier {
     notifyListeners();
 
     final source = switch (sourceConfig.type) {
+      VideoSourceType.localCamera when sourceConfig.isFrontCameraTest =>
+        FrontCameraPreviewSource(),
       VideoSourceType.localCamera => LocalCameraSource(
           analysisInterval: sourceConfig.analysisInterval,
           emitFrames: false,
@@ -83,10 +86,19 @@ class SecondaryCameraController extends ChangeNotifier {
     try {
       await source.start();
     } catch (error) {
+      await _statusSubscription?.cancel();
+      _statusSubscription = null;
+      if (source is RemotePhoneCameraSource) {
+        source.remoteStatusNotifier.removeListener(_onRemoteStatusChanged);
+      }
+      _source = null;
+      await source.dispose();
       _error = error.toString();
       _status = VideoSourceStatus(
         VideoSourceState.error,
-        message: 'Não foi possível abrir a segunda câmera.',
+        message: sourceConfig.isFrontCameraTest
+            ? 'A câmera frontal não pôde abrir junto da principal.'
+            : 'Não foi possível abrir a segunda câmera.',
       );
     } finally {
       _initializing = false;

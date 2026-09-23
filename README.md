@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.93+93`
+> **Versão atual:** `1.0.94+94`
 
 ## Estado atual
 
-A `1.0.93+93` compacta o Monitor vertical: as detecções detalhadas passam para um painel inferior expansível e o mini-mapa ocupa menos espaço, preservando mais área para câmera e telemetria.
+A `1.0.94+94` faz o ajuste fino do Monitor vertical: mapa mais alto, quatro atalhos sempre visíveis, telemetria ESP32 mais compacta e um teste temporário de segunda câmera frontal em janela PiP.
+
+### Evolução 1.0.94 — Ajuste fino e teste de duas câmeras
+
+- o mini-mapa vertical ficou mais alto, empurrando o resumo **Detectados** para baixo sem remover o acesso rápido às ações;
+- **Abrir mapa**, **Áudio**, **Painel** e **Ajustes** ficam fixos na mesma linha, com botões mais baixos, bordas menores e espaçamento reduzido;
+- a sobreposição inferior esquerda do mapa deixa de repetir distância/**Bike** e passa a usar a altitude real do GPS em formato compacto; a distância continua disponível na telemetria superior;
+- os cards ESP32/Bike de velocidade, temperatura, pneus e distância ficaram menores para exibir mais dados na faixa horizontal;
+- o seletor de segunda câmera ganhou **Teste: câmera frontal**, abrindo uma prévia local de baixa resolução em uma janela PiP sobre a câmera principal;
+- a câmera principal continua sendo a única fonte da IA e dos alertas; a frontal é apenas visualização de teste;
+- em aparelhos que não suportem câmera frontal e traseira simultâneas, a falha da frontal fica isolada e não deve derrubar a câmera principal.
 
 ### Evolução 1.0.93 — Monitor vertical mais compacto
 

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.93+93$' pubspec.yaml || fail 'Versao esperada 1.0.93+93 nao encontrada.'
+grep -q '^version: 1\.0\.94+94$' pubspec.yaml || fail 'Versao esperada 1.0.94+94 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.93';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.93.'
-grep -q 'static const int build = 93;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 93.'
-grep -q "version: '1.0.93'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.93.'
+grep -q "static const String version = '1.0.94';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.94.'
+grep -q 'static const int build = 94;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 94.'
+grep -q "version: '1.0.94'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.94.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.93+93$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.93+93.'
+grep -q '^version: 1.0.94+94$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.94+94.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.93"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.93.'
-grep -q '"build": 93' app_identity.json \
-  || fail 'app_identity.json nao esta no build 93.'
+grep -q '"version": "1.0.94"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.94.'
+grep -q '"build": 94' app_identity.json \
+  || fail 'app_identity.json nao esta no build 94.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.93+93' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.93+93.'
+grep -q 'Vigia IA 1.0.94+94' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.94+94.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1822,6 +1822,45 @@ if grep -q 'Ver rota completa\|Mapa do trajeto\|Sua posição em tempo real\|Mos
 fi
 grep -q "label: const Text('Rota')" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Rota compacta ausente no mini-mapa.'
 grep -q "label: 'Abrir mapa'" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Abrir mapa ausente na faixa de atalhos.'
-grep -q 'height: 84' lib/screens/monitor_screen_portrait.dart   || fail 'Faixa de telemetria vertical nao foi compactada para 84 px.'
-grep -q 'constraints.maxHeight \* 0.18' lib/screens/monitor_screen_portrait.dart   || fail 'Mini-mapa vertical nao usa a altura compacta da 1.0.93.'
+grep -q 'height: 70' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Faixa de telemetria vertical nao foi refinada para 70 px.'
+grep -q 'constraints.maxHeight \* 0.225' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Mini-mapa vertical nao usa a altura ampliada da 1.0.94.'
+
+# Ajuste fino do Monitor e teste frontal - 1.0.94
+grep -q '^## 1.0.94+94' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.94.'
+grep -q 'Evolução 1.0.94' README.md || fail 'README nao documenta 1.0.94.'
+grep -q "version: '1.0.94'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.94.'
+[[ -f RELEASE-1.0.94.md ]] || fail 'Notas da entrega 1.0.94 ausentes.'
+grep -q "label: 'Ajustes'" lib/screens/monitor_screen_portrait.dart \
+  || fail 'Atalho Ajustes nao esta visivel na linha fixa do Monitor vertical.'
+grep -q "label: 'Painel'" lib/screens/monitor_screen_portrait.dart \
+  || fail 'Atalho Painel nao esta visivel na linha fixa do Monitor vertical.'
+grep -q 'compact: true' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Atalhos inferiores nao usam o modo compacto.'
+grep -q 'altitudeMeters' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Mini-mapa vertical nao mostra altitude real do GPS.'
+if grep -q 'bikeSnapshotText' lib/screens/monitor_screen_portrait.dart; then
+  fail 'Rotulo Bike legado reapareceu no overlay inferior do mapa.'
+fi
+grep -q 'minWidth: 154' lib/screens/monitor_screen_components.dart \
+  || fail 'Cards ESP32/Bike nao usam largura compacta da 1.0.94.'
+[[ -f lib/sources/front_camera_preview_source.dart ]] \
+  || fail 'Fonte temporaria da camera frontal nao encontrada.'
+grep -q 'ResolutionPreset.low' lib/sources/front_camera_preview_source.dart \
+  || fail 'Camera frontal de teste nao usa resolucao leve.'
+grep -q 'frontCameraTestId' lib/models/video_source_config.dart \
+  || fail 'Identificador da frontal de teste nao esta centralizado.'
+grep -q 'isFrontCameraTest' test/video_source_config_test.dart \
+  || fail 'Teste do identificador da frontal temporaria nao encontrado.'
+grep -q '_buildPortraitPictureInPictureStage' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Composicao PiP da segunda camera no retrato nao encontrada.'
+grep -q 'Teste: câmera frontal' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Seletor nao oferece o teste temporario da camera frontal.'
+grep -q '_buildCameraStage(context, portraitEmbedded: true)' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'PiP nao preserva a camera principal como base integral do Monitor.'
+grep -q "sourceConfig.isFrontCameraTest" lib/controllers/secondary_camera_controller.dart \
+  || fail 'SecondaryCameraController nao reconhece a frontal temporaria.'
+
 

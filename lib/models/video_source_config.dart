@@ -8,6 +8,8 @@ import 'storage_policy.dart';
 
 enum VideoSourceType { localCamera, rtsp, remotePhone, esp32 }
 
+const String frontCameraTestId = '__front_test__';
+
 enum ClipFormatPreference { mp4WithGifFallback, gifOnly }
 
 class VideoSourceConfig {
@@ -28,6 +30,9 @@ class VideoSourceConfig {
   final String? displayName;
   final String? cameraId;
   final Duration analysisInterval;
+
+  bool get isFrontCameraTest =>
+      type == VideoSourceType.localCamera && cameraId == frontCameraTestId;
 
   VideoSourceConfig copyWith({
     VideoSourceType? type,

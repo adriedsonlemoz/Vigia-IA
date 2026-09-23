@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.0.94+94 — 2026-09-23
+
+- Ajuste fino do Monitor vertical com mini-mapa mais alto e resumo **Detectados** deslocado para baixo.
+- Os quatro atalhos **Abrir mapa**, **Áudio**, **Painel** e **Ajustes** deixam de usar rolagem horizontal e passam a ficar sempre visíveis em uma única linha compacta.
+- Botões inferiores recebem altura, bordas, margens, ícones e tipografia menores para reduzir consumo vertical.
+- A informação inferior esquerda do mapa deixa de exibir a distância acompanhada de **Bike** e passa a mostrar a altitude real do GPS, em destaque menor; a distância permanece no card superior.
+- Cards de velocidade, temperatura, pneus e distância da telemetria ESP32/Bike foram compactados em largura, padding, ícone e tipografia.
+- Teste temporário de segunda câmera frontal adicionado ao seletor de câmeras; no retrato ela aparece em janela PiP pequena sobre a principal, sem substituir a câmera principal nem entrar no pipeline de IA.
+- A composição PiP é reutilizada para qualquer segunda fonte no Monitor vertical, preparando o mesmo espaço para uma segunda câmera real.
+- Falha de abertura da segunda câmera deixa o controlador pronto para nova tentativa e a frontal concorrente falha de forma isolada quando o aparelho não suporta duas câmeras simultâneas.
+- Mini-mapa continua visível mesmo com segunda câmera ativa, permitindo avaliar simultaneamente câmera, mapa, sensores e ações.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.94+94`.
+
 ## 1.0.93+93 — 2026-09-23
 
 - Monitor vertical reorganizado para reduzir conteúdo fixo e aproveitar melhor a altura disponível.

@@ -1,6 +1,17 @@
-# Arquitetura — Vigia IA 1.0.93+93
+# Arquitetura — Vigia IA 1.0.94+94
 
 ## 1. Princípios
+
+## Evolução 1.0.94 — Monitor vertical refinado e PiP frontal
+
+- `monitor_screen_portrait.dart` aumenta a altura útil do mini-mapa e mantém os quatro atalhos inferiores em um `Row` de quatro células, removendo a necessidade de rolagem lateral para **Ajustes**.
+- A distância percorrida permanece na telemetria Bike; o overlay inferior esquerdo do mapa passa a consumir `MapRoutePoint.altitudeMeters`, evitando rotular distância como altitude e removendo o texto sem função **Bike**.
+- `_DashboardMetricCard` usa dimensões e paddings menores para densificar a telemetria ESP32/Bike sem remover métricas.
+- O Monitor vertical mantém mapa e ações mesmo com uma segunda fonte ativa; a segunda câmera passa a ser apresentada em Picture-in-Picture sobre a principal no modo retrato embutido.
+- `FrontCameraPreviewSource` abre temporariamente a câmera frontal em `ResolutionPreset.low`, sem áudio e sem frames de IA. A principal continua sendo a única fonte analisada.
+- `VideoSourceConfig.isFrontCameraTest` identifica a fonte temporária sem alterar os tipos públicos de fonte já persistidos.
+- `SecondaryCameraController` libera a fonte após falha de inicialização, permitindo nova tentativa e isolando erros de câmera concorrente da câmera principal.
+- Em aparelhos sem suporte a duas câmeras locais simultâneas, o PiP informa indisponibilidade; a compatibilidade real depende do hardware/CameraX e deve ser validada em dispositivo.
 
 ## Evolução 1.0.93 — composição vertical compacta
 

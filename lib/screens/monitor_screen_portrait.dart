@@ -15,16 +15,14 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         final calculatedCameraHeight = previewRatio != null && previewRatio > 0
             ? width / previewRatio
             : constraints.maxHeight * 0.32;
-        final cameraHeight = secondary != null
-            ? (constraints.maxHeight * 0.30).clamp(220.0, 320.0).toDouble()
-            : horizontalFeed
+        final cameraHeight = horizontalFeed
             ? calculatedCameraHeight.clamp(210.0, 320.0).toDouble()
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
-        final mapHeight = secondary == null
-            ? (constraints.maxHeight * 0.18).clamp(150.0, 200.0).toDouble()
-            : 0.0;
+        final mapHeight = (constraints.maxHeight * 0.225)
+            .clamp(178.0, 232.0)
+            .toDouble();
 
         return ColoredBox(
           color: scheme.surface,
@@ -77,23 +75,17 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                       ),
                     ),
                   ),
-                  if (secondary == null) ...[
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: _buildPortraitMapCard(
-                        context,
-                        height: mapHeight,
-                      ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: _buildPortraitMapCard(
+                      context,
+                      height: mapHeight,
                     ),
-                    const SizedBox(height: 10),
-                    _buildPortraitActionRow(context),
-                    const SizedBox(height: 10),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                    _buildPortraitActionRow(context),
-                    const SizedBox(height: 8),
-                  ],
+                  ),
+                  const SizedBox(height: 7),
+                  _buildPortraitActionRow(context),
+                  const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
                     child: _buildPortraitDetectionSummary(context),
@@ -148,9 +140,9 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
       ),
     ];
     return SizedBox(
-      height: 84,
+      height: 70,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
         scrollDirection: Axis.horizontal,
         itemCount: cards.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
@@ -169,6 +161,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
     final mapCenter = mapCurrent == null
         ? const LatLng(-14.2350, -51.9253)
         : LatLng(mapCurrent.latitude, mapCurrent.longitude);
+    final altitudeMeters = mapCurrent?.altitudeMeters;
     final mapPolyline = _miniMapRoute
         .map((point) => LatLng(point.latitude, point.longitude))
         .toList(growable: false);
@@ -178,14 +171,14 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
     return SizedBox(
       height: height,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.24),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(13),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: scheme.surfaceContainerLowest,
@@ -300,23 +293,23 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                             ),
                           ),
                           child: const Padding(
-                            padding: EdgeInsets.fromLTRB(9, 5, 9, 5),
+                            padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.map_outlined, size: 15),
+                                Icon(Icons.map_outlined, size: 14),
                                 SizedBox(width: 6),
                                 Text(
                                   'Mapa',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                                 SizedBox(width: 6),
                                 Text(
                                   '• Ao vivo',
-                                  style: TextStyle(fontSize: 11),
+                                  style: TextStyle(fontSize: 10),
                                 ),
                               ],
                             ),
@@ -328,15 +321,15 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         top: 8,
                         child: FilledButton.tonalIcon(
                           style: FilledButton.styleFrom(
-                            minimumSize: const Size(0, 36),
+                            minimumSize: const Size(0, 32),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 7,
+                              horizontal: 9,
+                              vertical: 5,
                             ),
                             visualDensity: VisualDensity.compact,
                           ),
                           onPressed: () => unawaited(_openFullMap()),
-                          icon: const Icon(Icons.route_rounded, size: 16),
+                          icon: const Icon(Icons.route_rounded, size: 15),
                           label: const Text('Rota'),
                         ),
                       ),
@@ -346,8 +339,8 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         child: Row(
                           children: [
                             SizedBox(
-                              width: 34,
-                              height: 34,
+                              width: 32,
+                              height: 32,
                               child: IconButton.filledTonal(
                                 tooltip: 'Minha posição',
                                 padding: EdgeInsets.zero,
@@ -367,8 +360,8 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                             ),
                             const SizedBox(width: 4),
                             SizedBox(
-                              width: 34,
-                              height: 34,
+                              width: 32,
+                              height: 32,
                               child: IconButton.filledTonal(
                                 tooltip: 'Aumentar zoom',
                                 padding: EdgeInsets.zero,
@@ -384,8 +377,8 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                             ),
                             const SizedBox(width: 4),
                             SizedBox(
-                              width: 34,
-                              height: 34,
+                              width: 32,
+                              height: 32,
                               child: IconButton.filledTonal(
                                 tooltip: 'Diminuir zoom',
                                 padding: EdgeInsets.zero,
@@ -402,37 +395,30 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                           ],
                         ),
                       ),
-                      Positioned(
-                        left: 8,
-                        bottom: 8,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.68),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _miniMapDistanceKm < 1
-                                      ? '${(_miniMapDistanceKm * 1000).toStringAsFixed(0)} m'
-                                      : '${_miniMapDistanceKm.toStringAsFixed(1)} km',
+                      if (altitudeMeters != null && altitudeMeters.isFinite)
+                        Positioned(
+                            left: 8,
+                            bottom: 8,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.66),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  '${altitudeMeters.round()} m',
                                   style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                Text(
-                                  bikeSnapshotText(),
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
                     ],
                   ),
           ),
@@ -441,59 +427,55 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
     );
   }
 
-  String bikeSnapshotText() {
-    final bikeSnapshot = _effectiveBikeSnapshot;
-    return bikeSnapshot != null ? 'Bike' : 'Distância';
-  }
-
   Widget _buildPortraitActionRow(BuildContext context) {
-    return SizedBox(
-      height: 60,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        scrollDirection: Axis.horizontal,
-        children: [
-          SizedBox(
-            width: 138,
-            child: _DashboardActionButton(
-              icon: Icons.map_outlined,
-              label: 'Abrir mapa',
-              accent: true,
-              onPressed: () => unawaited(_openFullMap()),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: SizedBox(
+        height: 46,
+        child: Row(
+          children: [
+            Expanded(
+              child: _DashboardActionButton(
+                icon: Icons.map_outlined,
+                label: 'Abrir mapa',
+                accent: true,
+                compact: true,
+                onPressed: () => unawaited(_openFullMap()),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 132,
-            child: _DashboardActionButton(
-              icon: _controller.voiceEnabled
-                  ? Icons.volume_up_rounded
-                  : Icons.volume_off_rounded,
-              label: 'Áudio',
-              onPressed: () =>
-                  _controller.setVoiceEnabled(!_controller.voiceEnabled),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _DashboardActionButton(
+                icon: _controller.voiceEnabled
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_off_rounded,
+                label: 'Áudio',
+                compact: true,
+                onPressed: () =>
+                    _controller.setVoiceEnabled(!_controller.voiceEnabled),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 132,
-            child: _DashboardActionButton(
-              icon: Icons.tune_rounded,
-              label: 'Painel',
-              onPressed: () => unawaited(_showPortraitQuickPanel()),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _DashboardActionButton(
+                icon: Icons.tune_rounded,
+                label: 'Painel',
+                compact: true,
+                onPressed: () => unawaited(_showPortraitQuickPanel()),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 132,
-            child: _DashboardActionButton(
-              icon: Icons.settings_outlined,
-              label: 'Ajustes',
-              onPressed: () =>
-                  unawaited(_openStandardScreen(const SettingsScreen())),
+            const SizedBox(width: 5),
+            Expanded(
+              child: _DashboardActionButton(
+                icon: Icons.settings_outlined,
+                label: 'Ajustes',
+                compact: true,
+                onPressed: () =>
+                    unawaited(_openStandardScreen(const SettingsScreen())),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

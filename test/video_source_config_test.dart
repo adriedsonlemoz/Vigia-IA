@@ -63,4 +63,18 @@ void main() {
     expect(restored.cameraId, 'esp32-bike');
   });
 
+  test('teste temporario da frontal usa identificador dedicado', () {
+    const source = VideoSourceConfig(
+      type: VideoSourceType.localCamera,
+      cameraId: frontCameraTestId,
+      displayName: 'Frontal (teste)',
+    );
+
+    expect(source.isFrontCameraTest, isTrue);
+    final restored = VideoSourceConfig.fromJson(
+      source.toJson().cast<String, dynamic>(),
+    );
+    expect(restored.isFrontCameraTest, isTrue);
+  });
+
 }

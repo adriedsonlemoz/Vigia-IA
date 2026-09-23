@@ -65,8 +65,19 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.93',
+          version: '1.0.94',
           current: true,
+          changes: [
+            'O mapa vertical ficou mais alto e o card Detectados foi deslocado para baixo sem esconder os quatro atalhos.',
+            'Abrir mapa, Áudio, Painel e Ajustes agora ficam sempre na mesma linha com margens e altura menores.',
+            'O mapa passa a mostrar altitude real do GPS em destaque menor, sem o rótulo Bike; a distância continua na telemetria superior.',
+            'Cards de velocidade, temperatura e pneus ficaram mais compactos para caber mais telemetria do ESP32.',
+            'Foi adicionado um teste temporário de segunda câmera frontal em janela PiP; a IA continua somente na câmera principal.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.93',
           changes: [
             'O bloco grande Detectados agora saiu da tela fixa e virou um resumo compacto tocável.',
             'Os detalhes das detecções agora sobem em um painel arrastável, liberando espaço vertical.',
@@ -841,8 +852,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.93',
+          version: '1.0.94',
           current: true,
+          changes: [
+            'O mapa vertical ficou mais alto e o card Detectados foi deslocado para baixo sem esconder os quatro atalhos.',
+            'Abrir mapa, Áudio, Painel e Ajustes agora ficam sempre na mesma linha com margens e altura menores.',
+            'O mapa passa a mostrar altitude real do GPS em destaque menor, sem o rótulo Bike; a distância continua na telemetria superior.',
+            'Cards de velocidade, temperatura e pneus ficaram mais compactos para caber mais telemetria do ESP32.',
+            'Foi adicionado um teste temporário de segunda câmera frontal em janela PiP; a IA continua somente na câmera principal.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.93',
           changes: [
             'O bloco grande Detectados agora saiu da tela fixa e virou um resumo compacto tocável.',
             'Os detalhes das detecções agora sobem em um painel arrastável, liberando espaço vertical.',
