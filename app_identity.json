@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.96 adiciona mapas offline por pacotes MBTiles com modos Automático/Online/Offline e câmera principal flutuante, arrastável sobre o mapa completo.",
-  "version": "1.0.96",
-  "build": 96
+  "notes": "A 1.0.97 corrige a sincronização do teste de AppMetadata e reforça o verificador para impedir divergência de versão entre pubspec, metadados e testes.",
+  "version": "1.0.97",
+  "build": 97
 }

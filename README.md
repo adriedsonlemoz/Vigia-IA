@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.96+96`
+> **Versão atual:** `1.0.97+97`
 
 ## Estado atual
 
-A `1.0.96+96` adiciona mapas offline por pacotes MBTiles e leva a câmera principal para a tela completa do mapa em uma janela flutuante arrastável.
+A `1.0.97+97` corrige a sincronização do teste de metadados que bloqueava o workflow após a evolução de mapas offline da `1.0.96+96`.
+
+### Evolução 1.0.97 — Correção do workflow e sincronização de versão
+
+- Corrige `test/app_metadata_test.dart`, que ainda esperava `1.0.95+95` apesar de o aplicativo já estar em `1.0.96+96`.
+- `tool/check_version_sync.py` passa a validar também o teste de AppMetadata, impedindo que a mesma divergência volte a chegar ao workflow.
+- Mantém integralmente mapas offline, câmera flutuante, IA e demais funções da 1.0.96.
 
 ### Evolução 1.0.96 — Mapas offline e câmera flutuante
 

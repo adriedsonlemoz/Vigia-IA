@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.96+96
+# Arquitetura — Vigia IA 1.0.97+97
 
 ## 1. Princípios
+
+## Evolução 1.0.97 — sincronização de versão protegida pelo verificador
+
+- A correção não altera a arquitetura funcional da aplicação; mantém a base da 1.0.96.
+- `test/app_metadata_test.dart` foi sincronizado com a versão corrente.
+- `tool/check_version_sync.py` agora inclui o teste de metadados na checagem obrigatória, fechando a lacuna que permitiu ao verificador local passar com o teste desatualizado.
 
 ## Evolução 1.0.96 — mapas offline e câmera no mapa completo
 

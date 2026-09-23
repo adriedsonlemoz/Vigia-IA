@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.97+97 — 2026-09-23
+
+- Corrigido `test/app_metadata_test.dart`, que ainda validava `1.0.95+95` e fazia o workflow falhar depois que AppMetadata já estava em `1.0.96+96`.
+- `tool/check_version_sync.py` agora valida também as expectativas de versão/build do teste de AppMetadata para impedir nova regressão.
+- Funcionalidades da 1.0.96 preservadas sem alterações de comportamento.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.97+97`.
+
 ## 1.0.96+96 — 2026-09-23
 
 - Adicionado suporte a mapas offline raster por pacotes `.mbtiles` usando `flutter_map_mbtiles`.

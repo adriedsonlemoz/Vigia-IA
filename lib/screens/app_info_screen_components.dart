@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.96',
+          version: '1.0.97',
           current: true,
+          changes: [
+            'Corrigido o teste de AppMetadata que ainda esperava a versão 1.0.95 e interrompia o workflow da 1.0.96.',
+            'O verificador de sincronização agora confere também as expectativas de versão e build do teste de metadados.',
+            'Nenhuma funcionalidade de mapa, câmera ou IA foi alterada nesta correção de build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.96',
           changes: [
             'O mapa completo ganhou suporte a pacotes MBTiles baixados e armazenados no aparelho.',
             'Mapas offline oferece modos Automático, Online e Offline, com seleção, progresso e exclusão de pacotes.',
@@ -875,8 +884,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.96',
+          version: '1.0.97',
           current: true,
+          changes: [
+            'Corrigido o teste de AppMetadata que ainda esperava a versão 1.0.95 e interrompia o workflow da 1.0.96.',
+            'O verificador de sincronização agora confere também as expectativas de versão e build do teste de metadados.',
+            'Nenhuma funcionalidade de mapa, câmera ou IA foi alterada nesta correção de build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.96',
           changes: [
             'O mapa completo ganhou suporte a pacotes MBTiles baixados e armazenados no aparelho.',
             'Mapas offline oferece modos Automático, Online e Offline, com seleção, progresso e exclusão de pacotes.',

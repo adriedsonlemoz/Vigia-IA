@@ -1,4 +1,16 @@
-# Validação — Vigia IA 1.0.96+96
+# Validação — Vigia IA 1.0.97+97
+
+## 1.0.97+97 — buildfix de sincronização do AppMetadata
+
+Data: 2026-09-23. Base preservada: 1.0.96+96.
+
+- Log `Android-APK-65`: `flutter analyze` passou sem issues; `flutter test` falhou somente em `test/app_metadata_test.dart` porque esperava `1.0.95`/build `95` enquanto AppMetadata estava em `1.0.96`/build `96`.
+- Teste corrigido e incrementado junto com a entrega para `1.0.97+97`.
+- `tool/check_version_sync.py` ampliado para validar o próprio teste de metadados.
+- Funcionalidades de mapa offline e câmera flutuante preservadas.
+- `python3 tool/check_version_sync.py`: aprovado em `1.0.97+97`.
+- `tool/verify_project.sh`: aprovado.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK precisam ser confirmados no workflow.
 
 ## 1.0.96+96 — mapas offline e PiP do mapa completo
 

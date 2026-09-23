@@ -26,6 +26,16 @@ identity = json.loads((root / "app_identity.json").read_text(encoding="utf-8"))
 if identity.get("version") != version or identity.get("build") != build:
     fail("app_identity.json diverge do pubspec")
 
+metadata_test = (root / "test/app_metadata_test.dart").read_text(encoding="utf-8")
+if f"expect(AppMetadata.version, '{version}');" not in metadata_test:
+    fail("test/app_metadata_test.dart espera uma versao diferente do pubspec")
+if f"expect(AppMetadata.build, {build});" not in metadata_test:
+    fail("test/app_metadata_test.dart espera um build diferente do pubspec")
+
+release_notes = root / f"RELEASE-{version}.md"
+if not release_notes.exists():
+    fail(f"notas de release ausentes: {release_notes.name}")
+
 readme = (root / "README.md").read_text(encoding="utf-8")
 if f"**Versão atual:** `{full}`" not in readme:
     fail("README nao marca a versao atual")
