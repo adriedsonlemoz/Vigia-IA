@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.93+93 — 2026-09-23
+
+- Monitor vertical reorganizado para reduzir conteúdo fixo e aproveitar melhor a altura disponível.
+- O bloco grande **Detectados agora** foi substituído por um resumo compacto tocável com quantidade e detecção de maior confiança.
+- Detalhes das detecções passam a abrir em `DraggableScrollableSheet`, permitindo subir, ampliar e rolar o painel sob demanda.
+- Mini-mapa compactado: **Mapa do trajeto** vira **Mapa**, **Sua posição em tempo real** vira **Ao vivo**, **Ver rota completa** vira **Rota** e a legenda de distância foi encurtada.
+- Controles de localização e zoom foram reduzidos e alinhados horizontalmente para evitar sobreposição em mapas mais baixos.
+- Faixa de métricas da bike reduzida de 96 para 84 px e altura do mini-mapa ajustada para preservar espaço para temperatura, pneus e imagem da câmera.
+- A política de orientação da 1.0.92 foi preservada: aplicativo em retrato e Transmissão acompanhando a posição física do celular.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.93+93`.
+
 ## 1.0.92+92 — 2026-09-23
 
 - Política de orientação centralizada em `AppOrientationService`.

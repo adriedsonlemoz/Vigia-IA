@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.92',
+          version: '1.0.93',
           current: true,
+          changes: [
+            'O bloco grande Detectados agora saiu da tela fixa e virou um resumo compacto tocável.',
+            'Os detalhes das detecções agora sobem em um painel arrastável, liberando espaço vertical.',
+            'O mini-mapa ganhou rótulos curtos, controles menores e organização mais limpa.',
+            'A faixa de telemetria da bike ficou mais compacta para priorizar temperatura, pneus e câmera.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.92',
           changes: [
             'O aplicativo fica travado em retrato fora do modo Transmissão.',
             'O modo Transmissão acompanha livremente a posição física do celular, sem forçar paisagem.',
@@ -831,8 +841,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.92',
+          version: '1.0.93',
           current: true,
+          changes: [
+            'O bloco grande Detectados agora saiu da tela fixa e virou um resumo compacto tocável.',
+            'Os detalhes das detecções agora sobem em um painel arrastável, liberando espaço vertical.',
+            'O mini-mapa ganhou rótulos curtos, controles menores e organização mais limpa.',
+            'A faixa de telemetria da bike ficou mais compacta para priorizar temperatura, pneus e câmera.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.92',
           changes: [
             'O aplicativo fica travado em retrato fora do modo Transmissão.',
             'O modo Transmissão acompanha livremente a posição física do celular, sem forçar paisagem.',

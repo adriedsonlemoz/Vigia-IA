@@ -1226,12 +1226,14 @@ class _MonitorScreenState extends State<MonitorScreen>
     BuildContext context, {
     bool compact = false,
     bool showHeader = true,
+    ScrollController? scrollController,
   }) {
     final tracked = _controller.trackingEnabled;
     final count = tracked
         ? _controller.trackedDetections.length
         : _controller.detections.length;
     return ListView(
+      controller: scrollController,
       padding: EdgeInsets.fromLTRB(
         compact ? 12 : 14,
         12,

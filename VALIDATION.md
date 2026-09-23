@@ -1,14 +1,15 @@
-# Validação — Vigia IA 1.0.92+92
+# Validação — Vigia IA 1.0.93+93
 
-Data: 2026-09-23. Base preservada: 1.0.91+91.
+Data: 2026-09-23. Base preservada: 1.0.92+92.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
+| Monitor vertical 1.0.93 | Resumo compacto de detecções; painel inferior arrastável; mini-mapa com textos/controles compactos; telemetria com menor altura |
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
 | `flutter analyze` / `flutter test` / build Android | Não executados localmente: Flutter, Dart e Android SDK não estão instalados neste ambiente; confirmar no workflow |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.92+92 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.93+93 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -42,10 +43,19 @@ Data: 2026-09-23. Base preservada: 1.0.91+91.
 | Fontes | Local, RTSP, Celular remoto e ESP32 disponíveis na Central; ESP32 também pode ser segunda câmera |
 | APK | Nome versionado, cache de Gradle/modelos, upload sem recompressão e relatório de tamanho |
 | Android-APK-49 | `BuildContext` protegido por `mounted` antes da escolha do destino de exportação |
-| Monitor vertical | Câmera e detecções em regiões fixas; painel expansível removido |
+| Monitor vertical | Câmera e mapa priorizados; detecções detalhadas em painel inferior arrastável sob demanda |
 | Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
 | Telemetria ESP32/Bike | Faixa superior reorganizada em uma única linha horizontal rolável, sem grade quebrada no retrato |
 | Diagnóstico | Estados Serviço/Câmera/Frames/IA/LAN/clientes/Permissões/2º plano ficam em faixa horizontal compacta; ações de 30 s, 60 s e Exportar permanecem juntas |
+
+## Roteiro da 1.0.93
+
+- abrir o Monitor em retrato e confirmar que o bloco grande **Detectados agora** não ocupa mais a parte inferior da tela;
+- provocar uma ou mais detecções e confirmar que o resumo compacto mostra quantidade e o objeto de maior confiança sem cortar o texto;
+- tocar no resumo **Detectados** e confirmar que o painel sobe, pode ser arrastado entre aproximadamente 34% e 90% da tela e permite rolar a lista;
+- confirmar que o mini-mapa mostra **Mapa**, **Ao vivo**, **Rota** e a distância com controles compactos de localização/zoom sem sobreposição;
+- com sensores Bike ativos, conferir temperatura, pressão dianteira/traseira, velocidade e distância na faixa superior reduzida;
+- testar telas estreitas e fonte grande para verificar que os novos rótulos curtos não cortam nem se sobrepõem.
 
 ## Roteiro da 1.0.81
 
@@ -89,15 +99,15 @@ Data: 2026-09-23. Base preservada: 1.0.91+91.
 - em instalação limpa/atualizada, confirmar Acesso inicial antes do pedido de permissão e antes da seleção de modo;
 - remover câmera ou rede local nos ajustes e reabrir o app para conferir a orientação pontual.
 
-## Layout de paisagem e transmissão
+## Orientação e transmissão
 
 Validações manuais recomendadas no aparelho:
 
-- abrir Monitor em retrato e confirmar que o fluxo anterior permanece legível;
-- girar para paisagem e confirmar que a imagem preenche a tela sem AppBar fixa;
-- confirmar que pressão, velocidade, status dos aparelhos e ações ficam juntas no topo;
-- entrar em tela cheia e confirmar botões para sair da tela cheia e sair do monitoramento;
-- abrir Modo Câmera parado e confirmar o estado visual integrado;
+- abrir o Monitor e confirmar que permanece em retrato mesmo ao girar o aparelho;
+- confirmar que temperatura, pressão dos pneus, velocidade e status continuam acessíveis no topo quando a telemetria Bike estiver ativa;
+- entrar em tela cheia e confirmar que o Monitor continua vertical, com botões para sair da tela inteira e sair do monitoramento;
+- abrir o Modo Transmissão e confirmar que ele acompanha a posição física do celular;
+- colocar o transmissor deitado e confirmar que o frame chega ao receptor com a orientação correta;
 - iniciar transmissão e confirmar botão Parar e saída clara no topo.
 
 ## Seleção inicial de modo

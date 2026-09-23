@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.92 trava as telas normais em retrato e deixa somente o modo Transmissão acompanhar a orientação física do celular, preservando a rotação correta dos frames pela câmera.",
-  "version": "1.0.92",
-  "build": 92
+  "notes": "A 1.0.93 compacta o Monitor vertical: detecções detalhadas passam para um painel inferior expansível e o mini-mapa ganha rótulos e controles menores para liberar espaço à telemetria da bike.",
+  "version": "1.0.93",
+  "build": 93
 }

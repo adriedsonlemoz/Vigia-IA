@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.92+92
+# Arquitetura — Vigia IA 1.0.93+93
 
 ## 1. Princípios
+
+## Evolução 1.0.93 — composição vertical compacta
+
+- `monitor_screen_portrait.dart` deixa de manter a lista completa de detecções como bloco fixo; a tela principal renderiza apenas `_buildPortraitDetectionSummary`.
+- `_showPortraitDetections` usa `DraggableScrollableSheet` e compartilha o `ScrollController` com `_buildDetectionPanel`, mantendo a lista completa sob demanda.
+- `_buildDetectionPanel` aceita `ScrollController?` opcional sem alterar os demais usos no Monitor.
+- O mini-mapa vertical reduz altura, textos e controles, com localização/zoom alinhados em uma única linha.
+- A telemetria da bike permanece no topo, mas com faixa mais baixa para reduzir rolagem e preservar a câmera.
 
 ## Evolução 1.0.92 — política de orientação
 

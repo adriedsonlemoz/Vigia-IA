@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.92+92$' pubspec.yaml || fail 'Versao esperada 1.0.92+92 nao encontrada.'
+grep -q '^version: 1\.0\.93+93$' pubspec.yaml || fail 'Versao esperada 1.0.93+93 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -275,8 +275,8 @@ grep -q 'adriedson@outlook.com' lib/core/app_metadata.dart \
   || fail 'Chave PIX esperada nao encontrada nos metadados do app.'
 grep -q 'COPIAR CHAVE PIX' lib/screens/app_info_screen*.dart \
   || fail 'Botao para copiar PIX nao encontrado.'
-grep -q '_buildDetectionPanel(context)' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Area fixa de deteccoes nao encontrada no Monitor vertical.'
+grep -q '_buildPortraitDetectionSummary(context)' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Resumo compacto de deteccoes nao encontrado no Monitor vertical.'
 if grep -q 'Arraste para desenhar a área' lib/screens/monitor_screen.dart; then
   fail 'Instrucao duplicada de desenho de area reapareceu no MonitorScreen.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.92';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.92.'
-grep -q 'static const int build = 92;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 92.'
-grep -q "version: '1.0.92'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.92.'
+grep -q "static const String version = '1.0.93';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.93.'
+grep -q 'static const int build = 93;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 93.'
+grep -q "version: '1.0.93'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.93.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.92+92$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.92+92.'
+grep -q '^version: 1.0.93+93$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.93+93.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.92"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.92.'
-grep -q '"build": 92' app_identity.json \
-  || fail 'app_identity.json nao esta no build 92.'
+grep -q '"version": "1.0.93"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.93.'
+grep -q '"build": 93' app_identity.json \
+  || fail 'app_identity.json nao esta no build 93.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.92+92' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.92+92.'
+grep -q 'Vigia IA 1.0.93+93' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.93+93.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1783,8 +1783,8 @@ grep -q 'portraitEmbedded: true' lib/screens/monitor_screen_portrait.dart \
   || fail 'Camera nao esta incorporada ao cartao vertical.'
 grep -q '_buildPortraitMapCard' lib/screens/monitor_screen_portrait.dart \
   || fail 'Tela vertical ainda nao integra o mini-mapa.'
-grep -q 'height: detectionHeight' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Painel Detectados agora nao foi redimensionado para coexistir com o mapa.'
+grep -q '_buildPortraitDetectionSummary' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Resumo compacto de deteccoes nao foi preservado no Monitor vertical.'
 if grep -q '_detectionsExpanded' lib/screens/monitor_screen*.dart; then
   fail 'Painel expansivel de deteccoes reapareceu no Monitor.'
 fi
@@ -1798,9 +1798,30 @@ fi
 echo 'Verificacao preventiva concluida com sucesso.'
 
 # Tela vertical / mapa - 1.0.90
-grep -q 'Mostrar mapa' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Tela vertical nao exibe a acao Mostrar mapa.'
-grep -q 'Mapa do trajeto' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Tela vertical nao integra o mapa do trajeto.'
+grep -q 'Abrir mapa' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao exibe a acao compacta Abrir mapa.'
+grep -q "'Mapa'" lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao integra o mini-mapa compacto.'
 grep -q '_showPortraitQuickPanel' lib/screens/monitor_screen_portrait.dart \
   || fail 'Tela vertical nao moveu os atalhos avancados para o Painel.'
+
+# Monitor vertical compacto - 1.0.93
+grep -q '^## 1.0.93+93' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.93.'
+grep -q 'Evolução 1.0.93' README.md || fail 'README nao documenta 1.0.93.'
+grep -q "version: '1.0.93'" lib/screens/app_info_screen_components.dart   || fail 'Tela de Mudancas nao documenta 1.0.93.'
+[[ -f RELEASE-1.0.93.md ]] || fail 'Notas da entrega 1.0.93 ausentes.'
+grep -q '_buildPortraitDetectionSummary(context)' lib/screens/monitor_screen_portrait.dart   || fail 'Tela principal vertical nao usa o resumo compacto de deteccoes.'
+grep -q 'DraggableScrollableSheet' lib/screens/monitor_screen_portrait.dart   || fail 'Deteccoes detalhadas nao abrem em painel inferior arrastavel.'
+grep -q 'scrollController: scrollController' lib/screens/monitor_screen_portrait.dart   || fail 'Painel arrastavel nao compartilha o controlador de rolagem.'
+grep -q 'ScrollController? scrollController' lib/screens/monitor_screen.dart   || fail 'Painel de deteccoes nao aceita controlador de rolagem opcional.'
+if grep -q 'height: detectionHeight' lib/screens/monitor_screen_portrait.dart; then
+  fail 'Bloco grande fixo de Detectados agora reapareceu na tela vertical.'
+fi
+if grep -q 'Ver rota completa\|Mapa do trajeto\|Sua posição em tempo real\|Mostrar mapa' lib/screens/monitor_screen_portrait.dart; then
+  fail 'Rotulos longos do mini-mapa reapareceram na tela vertical.'
+fi
+grep -q "label: const Text('Rota')" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Rota compacta ausente no mini-mapa.'
+grep -q "label: 'Abrir mapa'" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Abrir mapa ausente na faixa de atalhos.'
+grep -q 'height: 84' lib/screens/monitor_screen_portrait.dart   || fail 'Faixa de telemetria vertical nao foi compactada para 84 px.'
+grep -q 'constraints.maxHeight \* 0.18' lib/screens/monitor_screen_portrait.dart   || fail 'Mini-mapa vertical nao usa a altura compacta da 1.0.93.'
+
