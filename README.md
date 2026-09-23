@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.90+90`
+> **Versão atual:** `1.0.91+91`
 
 ## Estado atual
 
-A `1.0.90+90` redesenha a tela vertical do Ao vivo para aproveitar melhor a câmera, integrar o mapa do trajeto e organizar os atalhos sem sacrificar a área de detecções.
+A `1.0.91+91` corrige o lint `unnecessary_underscores` encontrado pelo workflow no separador horizontal da tela vertical do Ao vivo, preservando o visual e o comportamento da 1.0.90.
+
+### Evolução 1.0.91 — Correção do analyzer
+
+- corrigido `separatorBuilder: (_, __)` para `separatorBuilder: (_, _)` em `monitor_screen_portrait.dart`;
+- eliminado o aviso `unnecessary_underscores` que fazia `flutter analyze` retornar código 1 no Android-APK-59;
+- nenhuma mudança funcional de orientação, mapa, câmera, IA ou transmissão foi aplicada nesta entrega.
 
 ### Evolução 1.0.90 — Tela vertical com mapa
 

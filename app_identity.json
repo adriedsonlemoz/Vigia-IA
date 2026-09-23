@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.90 redesenha a tela vertical do monitor, amplia a câmera, integra o mapa do trajeto e move os atalhos avançados para um painel próprio sem apertar a área de detecções.",
-  "version": "1.0.90",
-  "build": 90
+  "notes": "A 1.0.91 corrige o lint unnecessary_underscores no separador horizontal do Monitor vertical, destravando o flutter analyze sem alterar o comportamento funcional da tela.",
+  "version": "1.0.91",
+  "build": 91
 }

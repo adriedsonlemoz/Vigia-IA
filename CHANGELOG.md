@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.91+91 — 2026-09-23
+
+- Corrigido o lint `unnecessary_underscores` em `monitor_screen_portrait.dart`, substituindo o segundo placeholder nomeado por `_`.
+- `flutter analyze` deixa de falhar no ponto reportado pelo Android-APK-59.
+- Adicionada verificação preventiva específica para impedir a reintrodução de `separatorBuilder: (_, __)` na tela vertical do Monitor.
+- Interface, mapa, IA, transmissão e regras de orientação permanecem inalterados em relação à 1.0.90.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.91+91`.
+
 ## 1.0.90+90 — 2026-09-22
 
 - Tela vertical do Ao vivo redesenhada para ampliar a câmera e adaptar melhor o enquadramento quando a fonte estiver em horizontal.

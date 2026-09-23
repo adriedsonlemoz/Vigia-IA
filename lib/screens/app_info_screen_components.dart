@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.90',
+          version: '1.0.91',
           current: true,
+          changes: [
+            'Corrigido o lint unnecessary_underscores no separador horizontal da tela vertical do Ao vivo.',
+            'O flutter analyze deixa de falhar nesse ponto sem mudança visual ou funcional no Monitor.',
+            'A tela vertical com câmera maior, mapa e painel da 1.0.90 foi preservada integralmente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.90',
           changes: [
             'Tela vertical do Ao vivo redesenhada com câmera maior, mapa do trajeto e ações mais organizadas.',
             'Mini-mapa foi integrado ao modo retrato com rota, distância e botão para abrir a tela completa.',
@@ -812,8 +821,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.90',
+          version: '1.0.91',
           current: true,
+          changes: [
+            'Corrigido o lint unnecessary_underscores no separador horizontal da tela vertical do Ao vivo.',
+            'O flutter analyze deixa de falhar nesse ponto sem mudança visual ou funcional no Monitor.',
+            'A tela vertical com câmera maior, mapa e painel da 1.0.90 foi preservada integralmente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.90',
           changes: [
             'Tela vertical do Ao vivo redesenhada com câmera maior, mapa do trajeto e ações mais organizadas.',
             'Mini-mapa foi integrado ao modo retrato com rota, distância e botão para abrir a tela completa.',

@@ -167,7 +167,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
         scrollDirection: Axis.horizontal,
         itemCount: cards.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, index) => cards[index],
       ),
     );

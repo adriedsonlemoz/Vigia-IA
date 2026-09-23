@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.90+90
+# Arquitetura — Vigia IA 1.0.91+91
 
 ## 1. Princípios
+
+## Evolução 1.0.91 — buildfix do Monitor vertical
+
+- `monitor_screen_portrait.dart` mantém a mesma composição da 1.0.90 e corrige apenas a assinatura do `separatorBuilder` para o padrão aceito pelo analisador Dart atual.
+- A correção é deliberadamente isolada: nenhuma política de orientação, transmissão, mapa, câmera ou pipeline de IA foi modificada.
+- `tool/verify_project.sh` passa a bloquear a reintrodução do placeholder duplo que causou o Android-APK-59.
 
 ## Evolução 1.0.90 — monitor vertical com mapa
 

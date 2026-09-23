@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.90+90$' pubspec.yaml || fail 'Versao esperada 1.0.90+90 nao encontrada.'
+grep -q '^version: 1\.0\.91+91$' pubspec.yaml || fail 'Versao esperada 1.0.91+91 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -23,6 +23,9 @@ if grep -q 'separatorBuilder: (_, __)' lib/screens/events_screen.dart lib/screen
 fi
 if grep -q 'errorBuilder: (_, __, ___)' lib/screens/events_screen.dart lib/screens/events_screen_components.dart lib/screens/events_screen_actions.dart; then
   fail 'Placeholders multiplos desnecessarios reapareceram em EventsScreen.'
+fi
+if grep -q 'separatorBuilder: (_, __)' lib/screens/monitor_screen_portrait.dart; then
+  fail 'Placeholder duplo desnecessario reapareceu no Monitor vertical.'
 fi
 if grep -q "import 'dart:typed_data';" lib/services/event_history_service.dart; then
   fail 'Import dart:typed_data redundante reapareceu no historico de eventos.'
@@ -317,12 +320,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.90';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.90.'
-grep -q 'static const int build = 90;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 90.'
-grep -q "version: '1.0.90'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.90.'
+grep -q "static const String version = '1.0.91';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.91.'
+grep -q 'static const int build = 91;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 91.'
+grep -q "version: '1.0.91'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.91.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -488,18 +491,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.90+90$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.90+90.'
+grep -q '^version: 1.0.91+91$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.91+91.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.90"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.90.'
-grep -q '"build": 90' app_identity.json \
-  || fail 'app_identity.json nao esta no build 90.'
+grep -q '"version": "1.0.91"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.91.'
+grep -q '"build": 91' app_identity.json \
+  || fail 'app_identity.json nao esta no build 91.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -816,7 +819,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.90+90' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.90+90.'
+grep -q 'Vigia IA 1.0.91+91' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.91+91.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1709,11 +1712,11 @@ grep -q 'compression-level: 0' .github/workflows/android-apk.yml \
   || fail 'Workflow voltou a recomprimir o APK durante o upload.'
 
 # Dashboard paisagem / buildfix - 1.0.89
-grep -q '^## 1.0.90+90' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.90.'
-grep -q 'Evolução 1.0.90' README.md || fail 'README nao documenta 1.0.90.'
-grep -q "version: '1.0.90'" lib/screens/app_info_screen_components.dart \
-  || fail 'Tela de Mudancas nao documenta 1.0.90.'
-[[ -f RELEASE-1.0.90.md ]] || fail 'Notas da entrega 1.0.90 ausentes.'
+grep -q '^## 1.0.91+91' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.91.'
+grep -q 'Evolução 1.0.91' README.md || fail 'README nao documenta 1.0.91.'
+grep -q "version: '1.0.91'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.91.'
+[[ -f RELEASE-1.0.91.md ]] || fail 'Notas da entrega 1.0.91 ausentes.'
 if grep -q '^[[:space:]]*setState(' lib/screens/monitor_screen_landscape_dashboard.dart; then
   fail 'Dashboard paisagem voltou a chamar setState diretamente pela extensao.'
 fi

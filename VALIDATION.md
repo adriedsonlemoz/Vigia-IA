@@ -1,13 +1,13 @@
-# Validação — Vigia IA 1.0.90+90
+# Validação — Vigia IA 1.0.91+91
 
-Data: 2026-09-22. Base preservada: 1.0.89+89.
+Data: 2026-09-23. Base preservada: 1.0.90+90.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de dashboard ao vivo com mapa desta entrega |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.90+90 |
+| `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.91+91 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -17,6 +17,7 @@ Data: 2026-09-22. Base preservada: 1.0.89+89.
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
 | Painel ao vivo em paisagem | Cabeçalho, mini-mapa, cards de telemetria e barra de ações do novo dashboard implementados no `MonitorScreen` para câmera única |
 | Buildfix Android-APK-57 | Extensão do dashboard sem chamadas diretas a `setState`, eliminando `invalid_use_of_protected_member` do `flutter analyze` |
+| Buildfix Android-APK-59 | Placeholder duplo do `separatorBuilder` corrigido em `monitor_screen_portrait.dart`, eliminando `unnecessary_underscores` do `flutter analyze` |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
 | Seleção de modo | Normal, Monitor, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
 | Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |
@@ -134,7 +135,7 @@ Os testes de telemetria e coordenação de voz passam a confirmar que:
 
 ## Pendente no workflow e no dispositivo
 
-O formatador do Dart 3.13.3 validou e formatou os arquivos alterados. Um Flutter SDK temporário resolveu o próprio cache, mas sofreu falha nativa ao reconstruir a ferramenta antes de executar o comando do projeto; o analisador Dart isolado não consegue resolver `package:flutter` sem essa etapa. Por isso, `flutter analyze`, `flutter test` e a compilação do APK assinado continuam obrigatórios no workflow incluído.
+Neste ambiente local, os comandos `flutter` e `dart` não estão instalados. `bash tool/verify_project.sh` e `tool/check_version_sync.py` passaram, mas `flutter analyze`, `flutter test` e a compilação do APK assinado ainda precisam ser confirmados pelo workflow. O Android-APK-59 mostra que a tentativa anterior chegou ao `flutter analyze` e falhou somente no lint `unnecessary_underscores` agora corrigido.
 
 O teste final em aparelho deve confirmar áudio integrado, override importado/gravado, volume, Bluetooth/alto-falante e fallback TTS. Se houver falha, o diagnóstico agora informa código `what/extra`, etapa, origem, foco, arquivo, tamanho, rota e tempos da tentativa. O teste em dois celulares continua necessário para latência visual, baterias, reconexão, rotação e tela inteira.
 
