@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.102+102 — 2026-09-23
+
+- A configuração da fonte Stadia Maps ganhou ajuda embutida **Como conseguir a chave?** com passo a passo para criar/entrar na conta, abrir **Manage Properties**, acessar **Authentication Configuration**, gerar a API key e colá-la no Vigia IA.
+- Adicionados links oficiais diretos para `https://client.stadiamaps.com/dashboard/` e para a documentação de API keys da Stadia Maps.
+- `NativePlatformService` e `MainActivity` ganharam abertura segura de URLs HTTP/HTTPS no navegador; se não for possível abrir, o Vigia IA copia o link para a área de transferência.
+- A chave continua sendo protegida pelo Android Keystore; nenhuma credencial é incluída no código-fonte ou nos metadados do app.
+- Versionamento e documentação sincronizados em `1.0.102+102`.
+
 ## 1.0.101+101 — 2026-09-23
 
 - O planejador de mapas offline deixa de aceitar silenciosamente combinações acima do espaço seguro disponível: raio/margem e zoom se ajustam de forma coordenada antes do download.

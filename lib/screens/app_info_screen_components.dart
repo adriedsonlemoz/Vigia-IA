@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.101',
+          version: '1.0.102',
           current: true,
+          changes: [
+            'Configurar fonte ganhou ajuda Como conseguir a chave? com passo a passo para obter a API key da Stadia Maps.',
+            'A ajuda abre diretamente o painel oficial da Stadia Maps e a documentação de API keys.',
+            'Se o navegador não puder ser aberto, o link oficial é copiado; a credencial continua protegida pelo Android Keystore.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.101',
           changes: [
             'O planejamento de mapas offline agora limita raio, margem e zoom ao espaço seguro restante, sem permitir configurações impossíveis acima do cache disponível.',
             'Ajustar ao limite disponível preenche automaticamente a maior combinação válida e a tela explica a reserva de segurança dentro do teto de 100 MB.',
@@ -924,8 +933,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.101',
+          version: '1.0.102',
           current: true,
+          changes: [
+            'Mapas offline explica como obter a API key da Stadia Maps e oferece link direto para o painel oficial.',
+            'Também há acesso às instruções oficiais e fallback que copia o link quando o navegador não abre.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.101',
           changes: [
             'Planejamento offline limita raio, margem e zoom ao espaço seguro restante e oferece ajuste automático ao limite.',
             'Selecionar região ganhou quadro visual arrastável e redimensionável sobre o mapa.',

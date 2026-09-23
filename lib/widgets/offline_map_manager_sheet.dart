@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -51,6 +52,11 @@ class _OfflineMapManagerSheet extends StatefulWidget {
 }
 
 class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
+  static const String _stadiaDashboardUrl =
+      'https://client.stadiamaps.com/dashboard/';
+  static const String _stadiaApiKeyDocsUrl =
+      'https://docs.stadiamaps.com/authentication/#api-keys';
+
   final OfflineMapService _service = OfflineMapService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
   int? _freeStorageBytes;
@@ -78,6 +84,98 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
     setState(() => _freeStorageBytes = telemetry.freeStorageBytes);
   }
 
+  Future<void> _openOfficialLink(String url) async {
+    final opened = await _native.openExternalUrl(url);
+    if (opened || !mounted) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Não foi possível abrir o navegador. O link oficial foi copiado.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showStadiaKeyHelp() async {
+    await showDialog<void>(
+      context: context,
+      builder: (helpContext) => AlertDialog(
+        title: const Text('Como conseguir a API key'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'A chave é fornecida pela Stadia Maps e autoriza o Vigia IA a baixar os tiles permitidos para o mapa offline.',
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Passo a passo',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '1. Abra o painel oficial da Stadia Maps.\n'
+                '2. Entre na sua conta ou crie uma conta.\n'
+                '3. Abra “Manage Properties” e selecione ou crie uma propriedade para o app.\n'
+                '4. Em “Authentication Configuration”, gere a API key.\n'
+                '5. Copie a chave, volte ao Vigia IA e cole no campo de configuração.',
+              ),
+              const SizedBox(height: 14),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(helpContext)
+                      .colorScheme
+                      .surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text(
+                    'Não compartilhe sua chave. O Vigia IA protege a credencial no Android Keystore. Planos, limites e regras de cache são definidos pela Stadia Maps e podem mudar.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Painel oficial:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              const SelectableText(
+                _stadiaDashboardUrl,
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(helpContext),
+            child: const Text('Fechar'),
+          ),
+          TextButton(
+            onPressed: () => unawaited(
+              _openOfficialLink(_stadiaApiKeyDocsUrl),
+            ),
+            child: const Text('Instruções oficiais'),
+          ),
+          FilledButton.icon(
+            onPressed: () => unawaited(
+              _openOfficialLink(_stadiaDashboardUrl),
+            ),
+            icon: const Icon(Icons.open_in_new_rounded),
+            label: const Text('Abrir painel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _configureStadiaKey() async {
     final controller = TextEditingController();
     final result = await showDialog<String?>(
@@ -90,7 +188,13 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'O download direto usa tiles raster da Stadia Maps. Informe sua API key; ela será protegida pelo Android Keystore.',
+                'O download direto usa tiles raster da Stadia Maps. Você precisa de uma API key da sua própria conta; o Vigia IA protege a chave no Android Keystore.',
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => unawaited(_showStadiaKeyHelp()),
+                icon: const Icon(Icons.help_outline_rounded),
+                label: const Text('Como conseguir a chave?'),
               ),
               const SizedBox(height: 12),
               TextField(

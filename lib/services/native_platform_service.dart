@@ -130,6 +130,23 @@ class NativePlatformService {
     } catch (_) {}
   }
 
+  Future<bool> openExternalUrl(String url) async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http')) {
+      return false;
+    }
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>(
+            'openExternalUrl',
+            <String, Object?>{'url': uri.toString()},
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> onboardingCompleted() async {
     if (!Platform.isAndroid) return false;
     try {

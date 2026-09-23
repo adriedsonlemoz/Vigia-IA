@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.101+101`
+> **Versão atual:** `1.0.102+102`
 
 ## Estado atual
 
-A `1.0.101+101` refina o mapa completo e torna o planejamento offline coerente com o limite de cache, sem permitir combinações de área/zoom que não possam ser baixadas.
+A `1.0.102+102` melhora a configuração da fonte de mapas offline, explicando como obter a API key da Stadia Maps e abrindo diretamente o painel e a documentação oficiais.
+
+### Evolução 1.0.102 — Ajuda para configurar a API de mapas
+
+- o diálogo **Configurar fonte** ganhou o atalho **Como conseguir a chave?** com passo a passo dentro do próprio Vigia IA;
+- a ajuda explica onde entrar no painel da Stadia Maps, como acessar **Manage Properties** e **Authentication Configuration**, gerar a API key e voltar ao app para colá-la;
+- botão **Abrir painel** abre diretamente `https://client.stadiamaps.com/dashboard/`;
+- botão **Instruções oficiais** abre a seção oficial de API keys da documentação da Stadia Maps;
+- caso o Android não consiga abrir o navegador, o link é copiado automaticamente para a área de transferência;
+- a credencial continua protegida pelo Android Keystore e não é gravada em texto puro pelo Vigia IA.
 
 
 ### Evolução 1.0.101 — Limite offline inteligente e mapa de navegação

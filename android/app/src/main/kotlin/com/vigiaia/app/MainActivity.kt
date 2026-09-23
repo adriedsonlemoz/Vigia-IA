@@ -233,6 +233,20 @@ class MainActivity : FlutterActivity() {
                 openAppSettings()
                 result.success(true)
             }
+            "openExternalUrl" -> {
+                val value = call.argument<String>("url")?.trim().orEmpty()
+                try {
+                    val uri = Uri.parse(value)
+                    if (uri.scheme != "https" && uri.scheme != "http") {
+                        result.success(false)
+                    } else {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        result.success(true)
+                    }
+                } catch (error: Throwable) {
+                    result.error("open_external_url", error.message, null)
+                }
+            }
             "onboardingCompleted" -> result.success(onboardingCompleted())
             "markOnboardingCompleted" -> result.success(markOnboardingCompleted())
             "saveBytesToDownloads" -> {

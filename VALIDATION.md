@@ -1,4 +1,17 @@
-# Validação — Vigia IA 1.0.101+101
+# Validação — Vigia IA 1.0.102+102
+
+## 1.0.102+102 — ajuda para API de mapas offline
+
+Data: 2026-09-23. Base preservada: 1.0.101+101.
+
+- Abrir **Mapas offline > Configurar fonte** e confirmar o botão **Como conseguir a chave?**.
+- Na ajuda, conferir os passos **Manage Properties** e **Authentication Configuration**, além do aviso de proteção pelo Android Keystore.
+- Tocar **Abrir painel** e confirmar abertura de `https://client.stadiamaps.com/dashboard/` no navegador.
+- Tocar **Instruções oficiais** e confirmar abertura da documentação de API keys.
+- Em aparelho sem handler de navegador, confirmar fallback que copia o link para a área de transferência.
+- Salvar/remover uma chave e confirmar que o fluxo anterior de mapas offline continua funcional.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.102+102`.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.101+101 — limite offline inteligente e mapa de navegação
 

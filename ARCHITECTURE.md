@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.101+101
+# Arquitetura — Vigia IA 1.0.102+102
 
 ## 1. Princípios
+
+## Evolução 1.0.102 — onboarding da API de mapas offline
+
+- `OfflineMapManagerSheet` centraliza os links oficiais da Stadia Maps e oferece ajuda contextual antes de salvar a API key.
+- A ajuda descreve o fluxo de obtenção da chave no client dashboard e mantém o campo de credencial separado do conteúdo explicativo para reduzir erro de configuração.
+- `NativePlatformService.openExternalUrl()` aceita apenas `http`/`https` e delega a abertura ao Android.
+- `MainActivity` trata `openExternalUrl` com `Intent.ACTION_VIEW`; o template em `tool/android/MainActivity.kt` permanece byte a byte sincronizado.
+- Se não houver navegador disponível ou a abertura falhar, a camada Flutter copia o endereço oficial para o clipboard e informa o usuário.
 
 ## Evolução 1.0.101 — limite offline inteligente e navegação
 
