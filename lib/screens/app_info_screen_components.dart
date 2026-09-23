@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.85',
+          version: '1.0.86',
           current: true,
+          changes: [
+            'Modo Bike ganha Mapa do monitoramento com OpenStreetMap e GPS local.',
+            'Mapa mostra posição, precisão, velocidade, distância, tempo e última atualização.',
+            'Rotas podem ser iniciadas e encerradas, preservando linha do trajeto e marcadores de início/fim durante a sessão.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.85',
           changes: [
             'Faixa de telemetria ESP32/Bike reorganizada em uma única linha horizontal rolável.',
             'Velocidade, temperatura, pneus, sensores/simulação e distância ficam mais compactos e liberam altura para a câmera.',
@@ -767,8 +776,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.85',
+          version: '1.0.86',
           current: true,
+          changes: [
+            'Modo Bike ganha Mapa do monitoramento com OpenStreetMap e GPS local.',
+            'Mapa mostra posição, precisão, velocidade, distância, tempo e última atualização.',
+            'Rotas podem ser iniciadas e encerradas, preservando linha do trajeto e marcadores de início/fim durante a sessão.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.85',
           changes: [
             'Faixa de telemetria ESP32/Bike reorganizada em uma única linha horizontal rolável.',
             'Velocidade, temperatura, pneus, sensores/simulação e distância ficam mais compactos e liberam altura para a câmera.',

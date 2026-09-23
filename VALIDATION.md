@@ -1,4 +1,4 @@
-# Validação — Vigia IA 1.0.85+85
+# Validação — Vigia IA 1.0.86+86
 
 Data: 2026-09-22. Base preservada: 1.0.84+84.
 
@@ -7,7 +7,7 @@ Data: 2026-09-22. Base preservada: 1.0.84+84.
 | Verificação | Resultado |
 |---|---|
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de telemetria/diagnóstico desta entrega |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.85+85 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.86+86 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -134,3 +134,11 @@ Os testes de telemetria e coordenação de voz passam a confirmar que:
 O formatador do Dart 3.13.3 validou e formatou os arquivos alterados. Um Flutter SDK temporário resolveu o próprio cache, mas sofreu falha nativa ao reconstruir a ferramenta antes de executar o comando do projeto; o analisador Dart isolado não consegue resolver `package:flutter` sem essa etapa. Por isso, `flutter analyze`, `flutter test` e a compilação do APK assinado continuam obrigatórios no workflow incluído.
 
 O teste final em aparelho deve confirmar áudio integrado, override importado/gravado, volume, Bluetooth/alto-falante e fallback TTS. Se houver falha, o diagnóstico agora informa código `what/extra`, etapa, origem, foco, arquivo, tamanho, rota e tempos da tentativa. O teste em dois celulares continua necessário para latência visual, baterias, reconexão, rotação e tela inteira.
+
+## Mapa/GPS 1.0.86
+
+- verificação estática: permissões `ACCESS_COARSE_LOCATION` e `ACCESS_FINE_LOCATION` presentes;
+- dependências cartográficas declaradas no `pubspec.yaml`;
+- acesso ao mapa integrado ao Modo Bike sem alterar os quatro destinos da navegação principal;
+- tratamento de GPS desligado e permissões negada/bloqueada implementado;
+- `flutter analyze`, `flutter test` e build Android ainda precisam ser confirmados no workflow porque o ambiente local desta entrega não possui Flutter/Android SDK completo.

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.85 compacta a faixa de telemetria ESP32/Bike e reorganiza o Diagnóstico para manter estados e ações na mesma linha sempre que possível.",
-  "version": "1.0.85",
-  "build": 85
+  "notes": "A 1.0.86 inicia o mapa do Modo Bike com GPS local, posição atual, precisão, velocidade, distância, cronômetro e registro visual do trajeto.",
+  "version": "1.0.86",
+  "build": 86
 }

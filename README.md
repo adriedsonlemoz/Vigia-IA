@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.85+85`
+> **Versão atual:** `1.0.86+86`
 
 ## Estado atual
 
-A `1.0.85+85` reorganiza a telemetria do ESP32/Bike e compacta a tela de Diagnóstico, preservando as melhorias visuais e funcionais já entregues.
+A `1.0.86+86` inicia a implantação de mapas no Modo Bike, com GPS local, posição atual e registro do trajeto, sem exigir chave de API para o funcionamento básico.
+
+### Evolução 1.0.86 — Mapa e GPS no Modo Bike
+
+- nova tela `Mapa do monitoramento` acessível diretamente pelo Modo Bike;
+- mapa online baseado em OpenStreetMap via `flutter_map`, sem chave de API;
+- localização pelo GPS do Android com `geolocator`, solicitada apenas quando o mapa é aberto;
+- exibição de posição atual, precisão, velocidade, horário da última atualização e centralização;
+- início e encerramento de rota com linha do trajeto, marcadores de início/fim, distância e cronômetro;
+- tratamento dedicado para GPS desligado, permissão negada e permissão bloqueada permanentemente;
+- esta etapa mantém o trajeto apenas durante a sessão; histórico geográfico, eventos da IA e mapa offline ficam para as próximas etapas.
 
 ### Evolução 1.0.85 — Telemetria e diagnóstico mais compactos
 

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.86+86 — 2026-09-22
+
+- Iniciada a implantação de mapas no Modo Bike com nova tela `Mapa do monitoramento`.
+- Adicionados `flutter_map`, `geolocator` e `latlong2`; a etapa inicial usa OpenStreetMap e GPS do aparelho sem exigir chave de API.
+- Mapa mostra posição atual, precisão do GPS, velocidade, última atualização e permite recentralizar após navegação manual.
+- Rotas podem ser iniciadas/encerradas com linha do trajeto, marcadores de início/fim, distância acumulada e cronômetro da sessão.
+- Adicionadas permissões Android de localização aproximada e precisa; não foi adicionada localização em segundo plano nesta etapa.
+- Fluxos específicos orientam o usuário quando o GPS está desligado, a permissão foi negada ou bloqueada permanentemente.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.86+86`.
+
 ## 1.0.85+85 — 2026-09-22
 
 - Faixa de telemetria do ESP32/Bike no Monitor passa a priorizar uma única linha horizontal rolável, mantendo o máximo de dados na mesma linha e liberando altura para a câmera.

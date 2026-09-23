@@ -1,3 +1,26 @@
+
+class _BikeMapEntryCard extends StatelessWidget {
+  const _BikeMapEntryCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: const Icon(Icons.map_outlined),
+          title: const Text(
+            'Mapa do monitoramento',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          subtitle: const Text(
+            'Veja sua posição, precisão do GPS e registre o trajeto da pedalada.',
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: onTap,
+        ),
+      );
+}
+
 part of 'bike_mode_screen.dart';
 
 class _BikeHero extends StatelessWidget {

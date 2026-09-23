@@ -9,6 +9,7 @@ import '../services/native_platform_service.dart';
 import '../utils/storage_size_formatter.dart';
 import 'home_screen.dart';
 import 'launch_mode_screen.dart';
+import 'map_monitoring_screen.dart';
 import 'settings_screen.dart';
 
 part 'bike_mode_screen_components.dart';
@@ -83,6 +84,12 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
       MaterialPageRoute<void>(
         builder: (_) => const HomeScreen(startMonitorOnLoad: true),
       ),
+    );
+  }
+
+  void _openMap() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const MapMonitoringScreen()),
     );
   }
 
@@ -400,6 +407,8 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                     ),
                     const SizedBox(height: 8),
                     hero,
+                    const SizedBox(height: 12),
+                    _BikeMapEntryCard(onTap: _openMap),
                     const SizedBox(height: 12),
                     powerCard,
                     const SizedBox(height: 12),

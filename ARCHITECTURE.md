@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.85+85
+# Arquitetura — Vigia IA 1.0.86+86
 
 ## 1. Princípios
+
+## Evolução 1.0.86 — mapa e rastreamento GPS
+
+- `MapMonitoringScreen` concentra a UI cartográfica do Modo Bike e permanece desacoplada do pipeline de câmera/IA.
+- `LocationTrackingService` encapsula permissões, disponibilidade do GPS, leitura atual e stream de posições via `geolocator`.
+- `MapRoutePoint` é o modelo mínimo da posição capturada, incluindo precisão, velocidade, altitude e direção quando disponíveis.
+- `flutter_map` renderiza tiles do OpenStreetMap, posição atual, linha da rota e marcadores de início/fim.
+- A rota é mantida somente em memória nesta etapa; persistência, eventos da IA e pacotes offline são evoluções posteriores.
+- Não há `ACCESS_BACKGROUND_LOCATION`; o rastreamento desta primeira etapa existe enquanto a tela de mapa está ativa.
 
 ## Evolução 1.0.85 — telemetria compacta e diagnóstico em linha
 
