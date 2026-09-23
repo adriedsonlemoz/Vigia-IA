@@ -188,6 +188,25 @@ class NativePlatformService {
     }
   }
 
+  Future<({String path, String name, int sizeBytes})?> pickOfflineMapPackage() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'pickOfflineMapPackage',
+      );
+      if (raw == null) return null;
+      final path = raw['path'] as String?;
+      if (path == null || path.isEmpty) return null;
+      return (
+        path: path,
+        name: raw['name'] as String? ?? 'mapa_offline.mbtiles',
+        sizeBytes: (raw['sizeBytes'] as num?)?.toInt() ?? 0,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
 
   Future<LocalNetworkPermissionStatus> localNetworkPermissionStatus() async {
     if (!Platform.isAndroid) {

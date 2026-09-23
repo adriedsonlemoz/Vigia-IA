@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.98+98 — 2026-09-23
+
+- Adicionado `MapRouteService` como sessão única e persistente de localização/trajeto para o mini-mapa do Monitor e o mapa completo.
+- O Monitor ganhou política de mapa **Automático / Sempre mostrar / Ocultar**; no automático, o mapa some no uso doméstico e reaparece com Bike conectada, rota ativa ou movimento recente pelo GPS.
+- O trajeto, início/fim, distância, estado de rastreamento e preferência de visibilidade são gravados em `map_route_state.json` e restaurados após reinício do app.
+- O mapa completo passa a refletir imediatamente a mesma rota do Monitor e mantém o PiP da câmera principal arrastável.
+- O indicador de fonte do mapa foi simplificado para **Online**, **Offline** ou **Mapa local** conforme o modo/pacote ativo.
+- O gerenciador de mapas offline agora importa `.mbtiles` pelo seletor de arquivos do Android, além de baixar por link direto.
+- Adicionados planejadores de **Região atual**, **Selecionar região** e **Trajeto**, com estimativa de tiles, tamanho aproximado e espaço livre; a obtenção do pacote continua exigindo fonte autorizada/importação e não usa download em massa do servidor público do OpenStreetMap.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.98+98`.
+
 ## 1.0.97+97 — 2026-09-23
 
 - Corrigido `test/app_metadata_test.dart`, que ainda validava `1.0.95+95` e fazia o workflow falhar depois que AppMetadata já estava em `1.0.96+96`.

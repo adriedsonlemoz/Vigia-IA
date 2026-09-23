@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.97+97$' pubspec.yaml || fail 'Versao esperada 1.0.97+97 nao encontrada.'
+grep -q '^version: 1\.0\.98+98$' pubspec.yaml || fail 'Versao esperada 1.0.98+98 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.97';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.97.'
-grep -q 'static const int build = 97;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 97.'
-grep -q "version: '1.0.97'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.97.'
+grep -q "static const String version = '1.0.98';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.98.'
+grep -q 'static const int build = 98;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 98.'
+grep -q "version: '1.0.98'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.98.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.97+97$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.97+97.'
+grep -q '^version: 1.0.98+98$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.98+98.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.97"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.97.'
-grep -q '"build": 97' app_identity.json \
-  || fail 'app_identity.json nao esta no build 97.'
+grep -q '"version": "1.0.98"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.98.'
+grep -q '"build": 98' app_identity.json \
+  || fail 'app_identity.json nao esta no build 98.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.97+97' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.97+97.'
+grep -q 'Vigia IA 1.0.98+98' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.98+98.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1975,9 +1975,50 @@ grep -q 'Evolução 1.0.97' README.md || fail 'README nao documenta 1.0.97.'
 grep -q "version: '1.0.97'" lib/screens/app_info_screen_components.dart \
   || fail 'Tela de Mudancas nao documenta 1.0.97.'
 [[ -f RELEASE-1.0.97.md ]] || fail 'Notas da entrega 1.0.97 ausentes.'
-grep -q "expect(AppMetadata.version, '1.0.97');" test/app_metadata_test.dart \
-  || fail 'Teste de AppMetadata nao esta sincronizado com 1.0.97.'
-grep -q 'expect(AppMetadata.build, 97);' test/app_metadata_test.dart \
-  || fail 'Teste de AppMetadata nao esta sincronizado com build 97.'
 grep -q 'metadata_test = (root / "test/app_metadata_test.dart")' tool/check_version_sync.py \
   || fail 'Verificador de versao nao protege o teste de AppMetadata.'
+
+# Mapa adaptativo, rota persistente e offline ampliado - 1.0.98
+grep -q '^## 1.0.98+98' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.98.'
+grep -q 'Evolução 1.0.98' README.md || fail 'README nao documenta 1.0.98.'
+grep -q "version: '1.0.98'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.98.'
+[[ -f RELEASE-1.0.98.md ]] || fail 'Notas da entrega 1.0.98 ausentes.'
+grep -q "expect(AppMetadata.version, '1.0.98');" test/app_metadata_test.dart \
+  || fail 'Teste de AppMetadata nao esta sincronizado com 1.0.98.'
+grep -q 'expect(AppMetadata.build, 98);' test/app_metadata_test.dart \
+  || fail 'Teste de AppMetadata nao esta sincronizado com build 98.'
+[[ -f lib/services/map_route_service.dart ]] \
+  || fail 'MapRouteService compartilhado nao encontrado.'
+grep -q 'enum MonitorMapVisibilityMode { automatic, always, hidden }' lib/services/map_route_service.dart \
+  || fail 'Politicas Automático/Sempre/Ocultar do mapa nao foram encontradas.'
+grep -q "map_route_state.json" lib/services/map_route_service.dart \
+  || fail 'Persistencia da sessao de trajeto nao foi encontrada.'
+grep -q 'shouldShowInMonitor' lib/services/map_route_service.dart lib/screens/monitor_screen_portrait.dart \
+  || fail 'Decisao automatica de visibilidade do mapa nao esta ligada ao Monitor.'
+grep -q 'SegmentedButton<MonitorMapVisibilityMode>' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Controle Automático/Sempre/Ocultar nao esta exposto no Monitor.'
+grep -q 'final MapRouteService _routeState = MapRouteService.instance;' lib/screens/map_monitoring_screen.dart \
+  || fail 'Mapa completo nao usa a sessao compartilhada de trajeto.'
+grep -q 'final MapRouteService _mapRoute = MapRouteService.instance;' lib/screens/monitor_screen.dart \
+  || fail 'Monitor nao usa a sessao compartilhada de trajeto.'
+[[ -f test/map_route_point_test.dart ]] \
+  || fail 'Teste de serializacao/politica do novo trajeto nao encontrado.'
+grep -q 'pickOfflineMapPackage' lib/services/native_platform_service.dart android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt tool/android/MainActivity.kt \
+  || fail 'Importacao nativa de MBTiles nao esta ligada de ponta a ponta.'
+grep -q 'importPackage' lib/services/offline_map_service.dart lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Importacao de MBTiles local nao esta ligada ao gerenciador.'
+grep -q "label: 'Região atual'" lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Planejamento de regiao atual nao encontrado.'
+grep -q "label: 'Selecionar região'" lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Planejamento de area visivel nao encontrado.'
+grep -q "label: 'Trajeto'" lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Planejamento de corredor do trajeto nao encontrado.'
+grep -q 'freeStorageBytes' lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Estimativa de espaco livre nao encontrada no gerenciador offline.'
+if grep -q 'tile.openstreetmap.org' lib/services/offline_map_service.dart; then
+  fail 'Servico offline nao pode fazer download em massa do servidor publico do OpenStreetMap.'
+fi
+cmp -s android/app/src/main/kotlin/com/vigiaia/app/MainActivity.kt tool/android/MainActivity.kt \
+  || fail 'MainActivity Android e template tool/android divergiram.'
+

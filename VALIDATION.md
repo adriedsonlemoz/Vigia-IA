@@ -1,4 +1,19 @@
-# Validação — Vigia IA 1.0.97+97
+# Validação — Vigia IA 1.0.98+98
+
+## 1.0.98+98 — mapa adaptativo, rota persistente e offline ampliado
+
+Data: 2026-09-23. Base preservada: 1.0.97+97.
+
+- Verificar no Monitor **Automático / Sempre mostrar / Ocultar**: em casa sem Bike/rota/movimento o mapa deve sumir; com Bike conectada ou rota ativa deve aparecer.
+- Iniciar a rota no mapa completo, voltar ao Monitor e confirmar que distância, linha, início/fim e cronômetro representam a mesma sessão compartilhada.
+- Reiniciar o app durante uma rota e confirmar restauração do trajeto/estado persistido em `map_route_state.json`.
+- Abrir **Mapas offline**, importar um `.mbtiles` válido pelo seletor Android e confirmar validação/ativação; testar também download por link direto autorizado.
+- Testar **Região atual**, **Selecionar região** e **Trajeto** e conferir estimativa de tamanho e espaço livre antes da importação/download.
+- Confirmar rótulos compactos **Online / Offline / Mapa local** no mapa completo e câmera PiP ainda arrastável por toda a área útil.
+- Confirmar que `tile.openstreetmap.org` não é usado pelo serviço de download offline.
+- `python3 tool/check_version_sync.py`: aprovado em `1.0.98+98`; `tool/verify_project.sh`: aprovado com as novas proteções de mapa/rota/offline.
+- Scripts `tool/*.sh`: sintaxe Bash validada; `app_identity.json`: JSON válido; `MainActivity.kt` e `tool/android/MainActivity.kt`: bytes idênticos.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK precisam ser confirmados no workflow.
 
 ## 1.0.97+97 — buildfix de sincronização do AppMetadata
 

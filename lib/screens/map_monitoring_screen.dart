@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
 import '../services/location_tracking_service.dart';
+import '../services/map_route_service.dart';
 import '../services/offline_map_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 
@@ -31,7 +32,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   final MapController _mapController = MapController();
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
-  final List<MapRoutePoint> _route = <MapRoutePoint>[];
+  final MapRouteService _routeState = MapRouteService.instance;
 
   MbTilesTileProvider? _offlineTileProvider;
   String? _offlineTilePackageId;
@@ -40,17 +41,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   int _offlineMaxNativeZoom = 19;
   Offset? _cameraOffset;
 
-  StreamSubscription<MapRoutePoint>? _positionSubscription;
-  MapRoutePoint? _current;
-  MapRoutePoint? _start;
-  MapRoutePoint? _end;
-  LocationTrackingAvailability? _availability;
-  DateTime? _routeStartedAt;
-  Duration _elapsed = Duration.zero;
-  Timer? _elapsedTimer;
-  double _distanceMeters = 0;
-  bool _loading = true;
-  bool _tracking = false;
   bool _followPosition = true;
   bool _mapReady = false;
 
@@ -58,15 +48,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   void initState() {
     super.initState();
     _offlineMaps.addListener(_onOfflineMapsChanged);
+    _routeState.addListener(_onRouteStateChanged);
     unawaited(_initializeOfflineMaps());
     unawaited(_initialize());
   }
 
   @override
   void dispose() {
-    _positionSubscription?.cancel();
-    _elapsedTimer?.cancel();
     _offlineMaps.removeListener(_onOfflineMapsChanged);
+    _routeState.removeListener(_onRouteStateChanged);
     _mapController.dispose();
     super.dispose();
   }
@@ -110,52 +100,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   }
 
   Future<void> _initialize() async {
-    final availability = await _location.ensureAvailable();
+    await _routeState.initialize(requestPermission: true);
     if (!mounted) return;
-    setState(() {
-      _availability = availability;
-      _loading = false;
-    });
-    if (availability != LocationTrackingAvailability.ready) return;
-
-    try {
-      final current = await _location.currentPosition();
-      if (!mounted) return;
-      _acceptPosition(current);
-    } catch (_) {
-      // The continuous stream below can still recover if a single GPS read fails.
-    }
-
-    await _positionSubscription?.cancel();
-    _positionSubscription = _location.positionStream().listen(
-      _acceptPosition,
-      onError: (_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível atualizar o GPS agora.')),
-        );
-      },
-    );
+    setState(() {});
   }
 
-  void _acceptPosition(MapRoutePoint point) {
+  void _onRouteStateChanged() {
     if (!mounted) return;
-    setState(() {
-      _current = point;
-      if (_tracking) {
-        if (_route.isNotEmpty) {
-          final step = LocationTrackingService.distanceMeters(_route.last, point);
-          if (step >= 2 && step <= 250) {
-            _distanceMeters += step;
-          }
-        }
-        if (_route.isEmpty ||
-            LocationTrackingService.distanceMeters(_route.last, point) >= 2) {
-          _route.add(point);
-        }
-      }
-    });
-    if (_followPosition) _centerOn(point, zoom: 16);
+    setState(() {});
+    final current = _routeState.current;
+    if (_followPosition && current != null) _centerOn(current, zoom: 16);
   }
 
   void _centerOn(MapRoutePoint point, {double zoom = 16}) {
@@ -163,40 +117,43 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     _mapController.move(LatLng(point.latitude, point.longitude), zoom);
   }
 
+  Future<void> _openOfflineMaps() async {
+    LatLngBounds? visibleBounds;
+    if (_mapReady) {
+      try {
+        visibleBounds = _mapController.camera.visibleBounds;
+      } catch (_) {}
+    }
+    final current = _routeState.current;
+    await showOfflineMapManager(
+      context,
+      planning: OfflineMapPlanningContext(
+        currentPosition: current == null
+            ? null
+            : LatLng(current.latitude, current.longitude),
+        visibleBounds: visibleBounds,
+        route: _routeState.route
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList(growable: false),
+      ),
+    );
+  }
+
   void _startRoute() {
-    final current = _current;
-    if (current == null) return;
-    _elapsedTimer?.cancel();
-    setState(() {
-      _tracking = true;
-      _followPosition = true;
-      _route
-        ..clear()
-        ..add(current);
-      _start = current;
-      _end = null;
-      _distanceMeters = 0;
-      _routeStartedAt = DateTime.now();
-      _elapsed = Duration.zero;
-    });
-    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || _routeStartedAt == null) return;
-      setState(() => _elapsed = DateTime.now().difference(_routeStartedAt!));
-    });
-    _centerOn(current);
+    setState(() => _followPosition = true);
+    unawaited(_routeState.startRoute());
+    final current = _routeState.current;
+    if (current != null) _centerOn(current);
   }
 
   void _finishRoute() {
-    _elapsedTimer?.cancel();
-    setState(() {
-      _tracking = false;
-      _end = _current;
-    });
+    unawaited(_routeState.finishRoute());
   }
 
   String _formatDistance() {
-    if (_distanceMeters < 1000) return '${_distanceMeters.toStringAsFixed(0)} m';
-    return '${(_distanceMeters / 1000).toStringAsFixed(2)} km';
+    final distanceMeters = _routeState.distanceMeters;
+    if (distanceMeters < 1000) return '${distanceMeters.toStringAsFixed(0)} m';
+    return '${(distanceMeters / 1000).toStringAsFixed(2)} km';
   }
 
   String _formatDuration(Duration value) {
@@ -208,19 +165,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    if (!_routeState.initialized ||
+        (_routeState.loading && _routeState.availability == null)) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_availability != LocationTrackingAvailability.ready) {
+    if (_routeState.availability != LocationTrackingAvailability.ready) {
       return _buildUnavailable(context);
     }
 
     final scheme = Theme.of(context).colorScheme;
-    final current = _current;
+    final current = _routeState.current;
     final center = current == null
         ? const LatLng(-14.2350, -51.9253)
         : LatLng(current.latitude, current.longitude);
-    final routePoints = _route
+    final routePoints = _routeState.route
         .map((point) => LatLng(point.latitude, point.longitude))
         .toList(growable: false);
 
@@ -243,7 +201,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
         actions: [
           IconButton(
             tooltip: 'Mapas offline',
-            onPressed: () => unawaited(showOfflineMapManager(context)),
+            onPressed: () => unawaited(_openOfflineMaps()),
             icon: Icon(
               offlineProvider == null
                   ? Icons.download_for_offline_outlined
@@ -275,7 +233,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   maxZoom: 19,
                   onMapReady: () {
                     _mapReady = true;
-                    final point = _current;
+                    final point = _routeState.current;
                     if (point != null) _centerOn(point);
                   },
                   onPositionChanged: (_, hasGesture) {
@@ -316,16 +274,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                     ),
                   MarkerLayer(
                     markers: [
-                      if (_start != null)
+                      if (_routeState.start != null)
                         _pinMarker(
-                          _start!,
+                          _routeState.start!,
                           Icons.flag_rounded,
                           Colors.green,
                           'Início',
                         ),
-                      if (_end != null)
+                      if (_routeState.end != null)
                         _pinMarker(
-                          _end!,
+                          _routeState.end!,
                           Icons.sports_score_rounded,
                           scheme.error,
                           'Fim',
@@ -385,7 +343,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   mode: mode,
                   activePackage: _offlineMaps.activePackage,
                   error: _offlineTileError,
-                  onTap: () => unawaited(showOfflineMapManager(context)),
+                  onTap: () => unawaited(_openOfflineMaps()),
                 ),
               ),
               Positioned(
@@ -396,15 +354,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: _MapRidePanel(
-                  tracking: _tracking,
+                  tracking: _routeState.tracking,
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   distance: _formatDistance(),
-                  elapsed: _formatDuration(_elapsed),
+                  elapsed: _formatDuration(_routeState.elapsed),
                   lastUpdate: current?.recordedAt,
                   accuracy: current?.accuracyMeters,
                   onToggleTracking: current == null
                       ? null
-                      : _tracking
+                      : _routeState.tracking
                           ? _finishRoute
                           : _startRoute,
                   onCenter: current == null
@@ -537,7 +495,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   }
 
   Widget _buildUnavailable(BuildContext context) {
-    final availability = _availability;
+    final availability = _routeState.availability;
     final forever = availability == LocationTrackingAvailability.permissionDeniedForever;
     final disabled = availability == LocationTrackingAvailability.servicesDisabled;
     final title = disabled
@@ -549,10 +507,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
         ? 'Ative a localização do Android para mostrar sua posição e registrar o trajeto.'
         : forever
             ? 'Abra as configurações do Vigia IA e permita localização durante o uso.'
-            : 'O mapa usa o GPS apenas durante esta tela e durante uma rota iniciada por você.';
+            : 'O GPS alimenta a mesma sessão de trajeto do Monitor e do mapa completo; uma rota ativa continua registrada ao trocar de tela.';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa do monitoramento')),
+      appBar: AppBar(
+        title: const Text('Mapa do monitoramento'),
+        actions: [
+          IconButton(
+            tooltip: 'Mapas offline',
+            onPressed: () => unawaited(_openOfflineMaps()),
+            icon: const Icon(Icons.download_for_offline_outlined),
+          ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -613,7 +580,7 @@ class _MapSourceChip extends StatelessWidget {
     final label = error != null
         ? 'Offline com erro'
         : switch (mode) {
-            OfflineMapMode.automatic => hasOffline ? 'Auto + offline' : 'Online',
+            OfflineMapMode.automatic => hasOffline ? 'Mapa local' : 'Online',
             OfflineMapMode.online => 'Online',
             OfflineMapMode.offline => hasOffline ? 'Offline' : 'Offline indisponível',
           };

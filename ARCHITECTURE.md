@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.97+97
+# Arquitetura — Vigia IA 1.0.98+98
 
 ## 1. Princípios
+
+## Evolução 1.0.98 — mapa adaptativo e sessão única de trajeto
+
+- `MapRouteService` centraliza posição atual, stream do GPS, início/fim, distância, cronômetro e pontos do trajeto; Monitor e `MapMonitoringScreen` deixam de manter listas de rota independentes.
+- O estado é persistido em `map_route_state.json` no diretório de suporte do app, incluindo a política do mini-mapa, rota ativa/concluída e telemetria necessária para restauração após reinício.
+- `MonitorMapVisibilityMode` define **automatic**, **always** e **hidden**. No automático, Bike conectada, rota em andamento ou movimento recente >= 4 km/h com precisão GPS aceitável tornam o mini-mapa visível; fora dessas condições o layout vertical ganha espaço para a câmera.
+- `OfflineMapService` continua responsável por MBTiles e agora também aceita importação de arquivo local validado; `NativePlatformService`/`MainActivity` expõem o seletor Android para `.mbtiles`.
+- `OfflineMapManagerSheet` recebe contexto do mapa atual para planejar região em torno da posição, viewport visível ou corredor do trajeto, estimando tiles, armazenamento e espaço livre sem fazer prefetch do servidor público do OpenStreetMap.
+- O mapa completo continua usando MBTiles como camada local, camada online opcional e PiP da câmera principal arrastável; o indicador resume a fonte como Online, Offline ou Mapa local.
 
 ## Evolução 1.0.97 — sincronização de versão protegida pelo verificador
 

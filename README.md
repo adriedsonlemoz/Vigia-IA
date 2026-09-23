@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.97+97`
+> **Versão atual:** `1.0.98+98`
 
 ## Estado atual
 
-A `1.0.97+97` corrige a sincronização do teste de metadados que bloqueava o workflow após a evolução de mapas offline da `1.0.96+96`.
+A `1.0.98+98` torna o mapa do Monitor adaptativo ao contexto, unifica e persiste o trajeto entre mini-mapa e mapa completo e amplia o gerenciamento de mapas offline.
+
+
+### Evolução 1.0.98 — Mapa adaptativo, rota persistente e offline ampliado
+
+- o mini-mapa do Monitor ganhou **Automático**, **Sempre mostrar** e **Ocultar**; no automático, monitoramento doméstico sem Bike/rota/movimento libera o espaço para a câmera;
+- uma rota ativa mantém o mapa visível até ser encerrada, e Bike conectada ou deslocamento recente pelo GPS também faz o mapa aparecer automaticamente;
+- `MapRouteService` passa a ser a sessão única de GPS/trajeto para o Monitor e o mapa completo, eliminando duas rotas independentes;
+- trajeto, início/fim, distância, modo de exibição e estado de rastreamento são persistidos em `map_route_state.json` e restaurados após reabrir o app;
+- a tela completa mostra de forma compacta **Online**, **Offline** ou **Mapa local** e mantém o PiP da câmera principal arrastável;
+- **Mapas offline** passa a importar `.mbtiles` do armazenamento do Android além de aceitar link direto;
+- o gerenciador ganhou planejamento de **Região atual**, **Selecionar região** e **Trajeto**, com estimativa de tiles/tamanho e espaço livre antes de escolher/importar um pacote autorizado;
+- o app continua sem fazer download em massa de `tile.openstreetmap.org`; download direto por área depende de uma fonte/servidor que autorize esse uso.
 
 ### Evolução 1.0.97 — Correção do workflow e sincronização de versão
 

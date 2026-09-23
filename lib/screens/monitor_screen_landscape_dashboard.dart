@@ -2,72 +2,20 @@ part of 'monitor_screen.dart';
 
 extension _MonitorLandscapeDashboard on _MonitorScreenState {
   Future<void> _initializeMiniMap({required bool requestPermission}) async {
-    if (_miniMapLoading) return;
-    if (_miniMapAvailability == LocationTrackingAvailability.ready &&
-        _miniMapSubscription != null) {
-      return;
-    }
-    if (mounted) {
-      _updateMulticameraState(() => _miniMapLoading = true);
-    } else {
-      _miniMapLoading = true;
-    }
-    final availability = await _locationTracking.ensureAvailable(
-      requestPermission: requestPermission,
-    );
-    if (!mounted) return;
-    _updateMulticameraState(() {
-      _miniMapAvailability = availability;
-      _miniMapLoading = false;
-    });
-    if (availability != LocationTrackingAvailability.ready) return;
-
-    try {
-      final current = await _locationTracking.currentPosition();
-      if (mounted) _acceptMiniMapPosition(current);
-    } catch (_) {
-      // O stream contínuo ainda pode se recuperar mesmo se a leitura inicial falhar.
-    }
-
-    await _miniMapSubscription?.cancel();
-    _miniMapSubscription = _locationTracking.positionStream().listen(
-      _acceptMiniMapPosition,
-      onError: (_) {},
-    );
+    await _mapRoute.initialize(requestPermission: requestPermission);
+    if (mounted) _updateMulticameraState(() {});
   }
 
-  void _acceptMiniMapPosition(MapRoutePoint point) {
-    if (!mounted) return;
-    _updateMulticameraState(() {
-      _miniMapCurrent = point;
-      if (_miniMapRoute.isEmpty ||
-          LocationTrackingService.distanceMeters(_miniMapRoute.last, point) >=
-              5) {
-        _miniMapRoute.add(point);
-        if (_miniMapRoute.length > 240) {
-          _miniMapRoute.removeRange(0, _miniMapRoute.length - 240);
-        }
-      }
-    });
-    if (_miniMapReady) {
-      _miniMapController.move(LatLng(point.latitude, point.longitude), 15.8);
-    }
-  }
+  bool get _shouldShowMonitorMap => _mapRoute.shouldShowInMonitor(
+        bikeConnected: _effectiveBikeSnapshot?.connected == true,
+      );
 
   double get _miniMapDistanceKm {
     final bikeSnapshot = _effectiveBikeSnapshot;
     if (bikeSnapshot != null && bikeSnapshot.tripDistanceKm > 0) {
       return bikeSnapshot.tripDistanceKm;
     }
-    if (_miniMapRoute.length < 2) return 0;
-    var meters = 0.0;
-    for (var index = 1; index < _miniMapRoute.length; index++) {
-      meters += LocationTrackingService.distanceMeters(
-        _miniMapRoute[index - 1],
-        _miniMapRoute[index],
-      );
-    }
-    return meters / 1000;
+    return _mapRoute.distanceMeters / 1000;
   }
 
   Future<void> _showLandscapeDetections() async {

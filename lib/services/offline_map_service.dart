@@ -175,6 +175,59 @@ class OfflineMapService extends ChangeNotifier {
     }
   }
 
+  Future<OfflineMapPackage> importPackage({
+    required String sourcePath,
+    String? displayName,
+  }) async {
+    await initialize();
+    if (_busy) throw StateError('Já existe um mapa sendo processado.');
+    final source = File(sourcePath);
+    if (!await source.exists()) {
+      throw FileSystemException('Arquivo MBTiles não encontrado.');
+    }
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    final rawName = displayName?.trim() ?? '';
+    final withoutExtension = rawName.toLowerCase().endsWith('.mbtiles')
+        ? rawName.substring(0, rawName.length - '.mbtiles'.length)
+        : rawName;
+    final name = _normalizedDisplayName(
+      withoutExtension,
+      fallback: 'Mapa offline',
+    );
+    final target = File(
+      '${_directory!.path}${Platform.pathSeparator}${_safeFileName(name)}_$id.mbtiles',
+    );
+    final temporary = File('${target.path}.part');
+    _setOperation('Importando $name', progress: null);
+    try {
+      await source.copy(temporary.path);
+      await _validateMbTiles(temporary);
+      if (await target.exists()) await target.delete();
+      await temporary.rename(target.path);
+      final item = OfflineMapPackage(
+        id: id,
+        name: name,
+        path: target.path,
+        sizeBytes: await target.length(),
+        addedAt: DateTime.now(),
+        sourceHost: 'arquivo local',
+      );
+      _packages.insert(0, item);
+      _activeId = item.id;
+      _mode = OfflineMapMode.automatic;
+      await _persist();
+      return item;
+    } finally {
+      if (await temporary.exists()) await temporary.delete();
+      try {
+        if (source.path.contains('offline_map_import_') && await source.exists()) {
+          await source.delete();
+        }
+      } catch (_) {}
+      _clearOperation();
+    }
+  }
+
   Future<void> setActive(String id) async {
     await initialize();
     if (!_packages.any((item) => item.id == id)) return;

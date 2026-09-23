@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.97',
+          version: '1.0.98',
           current: true,
+          changes: [
+            'O mapa do Monitor ganhou modos Automático, Sempre mostrar e Ocultar; no automático ele some em monitoramento doméstico e reaparece com Bike, rota ativa ou deslocamento por GPS.',
+            'Mini-mapa e mapa completo agora compartilham uma única sessão de trajeto persistente, restaurada ao reabrir o app.',
+            'Mapas offline agora permitem importar MBTiles do aparelho e planejar Região atual, Selecionar região ou Trajeto com estimativa de tamanho e espaço livre.',
+            'O mapa completo identifica a fonte como Online, Offline ou Mapa local e mantém a câmera principal flutuante e arrastável.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.97',
           changes: [
             'Corrigido o teste de AppMetadata que ainda esperava a versão 1.0.95 e interrompia o workflow da 1.0.96.',
             'O verificador de sincronização agora confere também as expectativas de versão e build do teste de metadados.',
@@ -884,8 +894,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.97',
+          version: '1.0.98',
           current: true,
+          changes: [
+            'O mapa do Monitor ganhou modos Automático, Sempre mostrar e Ocultar; no automático ele some em monitoramento doméstico e reaparece com Bike, rota ativa ou deslocamento por GPS.',
+            'Mini-mapa e mapa completo agora compartilham uma única sessão de trajeto persistente, restaurada ao reabrir o app.',
+            'Mapas offline agora permitem importar MBTiles do aparelho e planejar Região atual, Selecionar região ou Trajeto com estimativa de tamanho e espaço livre.',
+            'O mapa completo identifica a fonte como Online, Offline ou Mapa local e mantém a câmera principal flutuante e arrastável.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.97',
           changes: [
             'Corrigido o teste de AppMetadata que ainda esperava a versão 1.0.95 e interrompia o workflow da 1.0.96.',
             'O verificador de sincronização agora confere também as expectativas de versão e build do teste de metadados.',

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.97 corrige a sincronização do teste de AppMetadata e reforça o verificador para impedir divergência de versão entre pubspec, metadados e testes.",
-  "version": "1.0.97",
-  "build": 97
+  "notes": "A 1.0.98 torna o mapa do Monitor adaptativo, unifica e persiste a rota entre mini-mapa e mapa completo e amplia o fluxo de mapas offline com importação MBTiles e planejamento de regiões/trajeto.",
+  "version": "1.0.98",
+  "build": 98
 }

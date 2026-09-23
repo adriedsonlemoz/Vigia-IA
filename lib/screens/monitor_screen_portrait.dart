@@ -11,18 +11,24 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         final bikeSnapshot = _effectiveBikeSnapshot;
         final previewRatio = _controller.previewAspectRatio;
         final horizontalFeed = (previewRatio ?? 0) > 1.05;
+        final showMap = _shouldShowMonitorMap;
         final width = constraints.maxWidth - 20;
         final calculatedCameraHeight = previewRatio != null && previewRatio > 0
             ? width / previewRatio
             : constraints.maxHeight * 0.32;
-        final cameraHeight = horizontalFeed
+        final mapHeight = (constraints.maxHeight * 0.255)
+            .clamp(205.0, 270.0)
+            .toDouble();
+        final baseCameraHeight = horizontalFeed
             ? calculatedCameraHeight.clamp(210.0, 320.0).toDouble()
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
-        final mapHeight = (constraints.maxHeight * 0.255)
-            .clamp(205.0, 270.0)
-            .toDouble();
+        final cameraHeight = showMap
+            ? baseCameraHeight
+            : (baseCameraHeight + mapHeight * 0.62)
+                .clamp(baseCameraHeight, constraints.maxHeight * 0.64)
+                .toDouble();
 
         return ColoredBox(
           color: scheme.surface,
@@ -81,15 +87,18 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: _buildPortraitMapCard(
-                      context,
-                      height: mapHeight,
+                  if (showMap) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: _buildPortraitMapCard(
+                        context,
+                        height: mapHeight,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 7),
+                    const SizedBox(height: 7),
+                  ] else
+                    const SizedBox(height: 7),
                   _buildPortraitActionRow(context),
                   const SizedBox(height: 8),
                   Padding(
@@ -585,6 +594,55 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
     );
   }
 
+  Widget _buildMonitorMapPreference(BuildContext context) {
+    final mode = _mapRoute.monitorVisibility;
+    String label(MonitorMapVisibilityMode value) => switch (value) {
+          MonitorMapVisibilityMode.automatic => 'Automático',
+          MonitorMapVisibilityMode.always => 'Sempre',
+          MonitorMapVisibilityMode.hidden => 'Ocultar',
+        };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'Mapa no Monitor',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 7),
+        SegmentedButton<MonitorMapVisibilityMode>(
+          segments: MonitorMapVisibilityMode.values
+              .map(
+                (value) => ButtonSegment<MonitorMapVisibilityMode>(
+                  value: value,
+                  label: Text(label(value)),
+                ),
+              )
+              .toList(growable: false),
+          selected: <MonitorMapVisibilityMode>{mode},
+          showSelectedIcon: false,
+          onSelectionChanged: (selection) {
+            if (selection.isEmpty) return;
+            _miniMapReady = false;
+            unawaited(_mapRoute.setMonitorVisibility(selection.first));
+          },
+        ),
+        if (mode == MonitorMapVisibilityMode.automatic) ...[
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              'No automático, aparece com Bike, rota ativa ou deslocamento detectado pelo GPS.',
+              style: TextStyle(fontSize: 11),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _showPortraitQuickPanel() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -606,7 +664,21 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
               ),
               const SizedBox(height: 12),
               _buildControlDock(sheetContext, compact: true),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              ListenableBuilder(
+                listenable: _mapRoute,
+                builder: (context, child) => _buildMonitorMapPreference(context),
+              ),
+              const SizedBox(height: 4),
+              ListTile(
+                leading: const Icon(Icons.map_outlined),
+                title: const Text('Abrir mapa completo'),
+                subtitle: const Text('GPS, rota e mapas offline'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_openFullMap());
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.monitor_heart_outlined),
                 title: const Text('Status da sessão'),

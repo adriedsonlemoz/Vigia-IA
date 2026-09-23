@@ -22,6 +22,7 @@ import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/location_tracking_service.dart';
+import '../services/map_route_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
@@ -66,15 +67,15 @@ class _MonitorScreenState extends State<MonitorScreen>
   SecondaryCameraController? _secondaryController;
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
-  final LocationTrackingService _locationTracking =
-      LocationTrackingService.instance;
+  final MapRouteService _mapRoute = MapRouteService.instance;
   final MapController _miniMapController = MapController();
-  final List<MapRoutePoint> _miniMapRoute = <MapRoutePoint>[];
-  StreamSubscription<MapRoutePoint>? _miniMapSubscription;
-  MapRoutePoint? _miniMapCurrent;
-  LocationTrackingAvailability? _miniMapAvailability;
-  bool _miniMapLoading = false;
   bool _miniMapReady = false;
+
+  List<MapRoutePoint> get _miniMapRoute => _mapRoute.route;
+  MapRoutePoint? get _miniMapCurrent => _mapRoute.current;
+  LocationTrackingAvailability? get _miniMapAvailability =>
+      _mapRoute.availability;
+  bool get _miniMapLoading => _mapRoute.loading;
   String? _editingZoneId;
   bool _hudExpanded = false;
   bool _fillPreview = false;
@@ -103,6 +104,7 @@ class _MonitorScreenState extends State<MonitorScreen>
       unawaited(_secondaryController!.start());
     }
     _bikeSensors.addListener(_refresh);
+    _mapRoute.addListener(_onMapRouteChanged);
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
     unawaited(_initializeMiniMap(requestPermission: false));
@@ -115,6 +117,22 @@ class _MonitorScreenState extends State<MonitorScreen>
   void _refresh() {
     if (!mounted) return;
     setState(() {});
+  }
+
+  void _onMapRouteChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final point = _mapRoute.current;
+    if (_miniMapReady && _shouldShowMonitorMap && point != null) {
+      try {
+        _miniMapController.move(
+          LatLng(point.latitude, point.longitude),
+          15.8,
+        );
+      } catch (_) {
+        _miniMapReady = false;
+      }
+    }
   }
 
   @override
@@ -147,7 +165,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     _secondaryController?.removeListener(_refresh);
     _secondaryController?.dispose();
     _bikeSensors.removeListener(_refresh);
-    _miniMapSubscription?.cancel();
+    _mapRoute.removeListener(_onMapRouteChanged);
     _miniMapController.dispose();
     _controller.dispose();
     unawaited(SystemUiService.edgeToEdge());

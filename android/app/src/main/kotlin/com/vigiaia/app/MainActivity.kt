@@ -31,6 +31,7 @@ import android.os.VibratorManager
 import android.os.Vibrator
 import android.os.VibrationEffect
 import android.provider.Settings
+import android.provider.OpenableColumns
 import android.provider.MediaStore
 import android.net.Uri
 import android.net.ConnectivityManager
@@ -69,6 +70,7 @@ class MainActivity : FlutterActivity() {
     private var pendingAudioImportResult: MethodChannel.Result? = null
     private var pendingAudioImportSlot: String? = null
     private var pendingDocumentSaveResult: MethodChannel.Result? = null
+    private var pendingOfflineMapImportResult: MethodChannel.Result? = null
     private var pendingDocumentBytes: ByteArray? = null
     private var pendingDocumentMimeType: String? = null
     private var pendingRecordingPermissionResult: MethodChannel.Result? = null
@@ -86,6 +88,7 @@ class MainActivity : FlutterActivity() {
     private val audioImportRequestCode = 4415
     private val recordAudioPermissionRequestCode = 4416
     private val documentSaveRequestCode = 4417
+    private val offlineMapImportRequestCode = 4418
 
     override fun onCreate(savedInstanceState: Bundle?) {
         resumeMonitorRequested = intent?.getBooleanExtra("resume_monitor", false) == true
@@ -248,6 +251,7 @@ class MainActivity : FlutterActivity() {
                 val bytes = call.argument<ByteArray>("bytes") ?: byteArrayOf()
                 beginDocumentSave(fileName, mimeType, bytes, result)
             }
+            "pickOfflineMapPackage" -> beginOfflineMapImport(result)
             "requestNotificationPermission" -> requestNotificationPermission(result)
             "notificationsAllowed" -> result.success(notificationsAllowed())
             "localNetworkPermissionStatus" -> result.success(localNetworkPermissionStatus())
@@ -489,6 +493,27 @@ class MainActivity : FlutterActivity() {
             pending.success(copyAudioOverride(slot, data.data!!))
             return
         }
+        if (requestCode == offlineMapImportRequestCode) {
+            val pending = pendingOfflineMapImportResult
+            pendingOfflineMapImportResult = null
+            if (pending == null) return
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                pending.success(null)
+                return
+            }
+            Thread {
+                val payload = copyOfflineMapToCache(uri)
+                runOnUiThread {
+                    if (payload == null) {
+                        pending.error("offline_map_import", "Não foi possível importar o pacote MBTiles.", null)
+                    } else {
+                        pending.success(payload)
+                    }
+                }
+            }.start()
+            return
+        }
         if (requestCode == documentSaveRequestCode) {
             val pending = pendingDocumentSaveResult
             val bytes = pendingDocumentBytes
@@ -640,6 +665,57 @@ class MainActivity : FlutterActivity() {
             }
         }
         return ok
+    }
+
+    private fun beginOfflineMapImport(result: MethodChannel.Result) {
+        if (pendingOfflineMapImportResult != null) {
+            result.success(null)
+            return
+        }
+        pendingOfflineMapImportResult = result
+        try {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                    "application/octet-stream",
+                    "application/vnd.sqlite3",
+                    "application/x-sqlite3",
+                    "*/*",
+                ))
+            }, offlineMapImportRequestCode)
+        } catch (_: Throwable) {
+            pendingOfflineMapImportResult = null
+            result.success(null)
+        }
+    }
+
+    private fun copyOfflineMapToCache(uri: Uri): Map<String, Any>? {
+        return try {
+            var displayName: String? = null
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) displayName = cursor.getString(index)
+                }
+            }
+            val normalizedName = displayName?.takeIf { it.isNotBlank() } ?: "mapa_offline.mbtiles"
+            val target = File(cacheDir, "offline_map_import_${System.currentTimeMillis()}.mbtiles")
+            contentResolver.openInputStream(uri)?.use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            } ?: return null
+            if (!target.exists() || target.length() <= 0L) {
+                target.delete()
+                return null
+            }
+            mapOf(
+                "path" to target.absolutePath,
+                "name" to normalizedName,
+                "sizeBytes" to target.length(),
+            )
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     private fun beginAudioImport(slot: String, result: MethodChannel.Result) {
