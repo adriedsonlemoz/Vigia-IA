@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.89+89 — 2026-09-22
+
+- Corrigidos os quatro `invalid_use_of_protected_member` reportados pelo `flutter analyze` no dashboard paisagem.
+- `monitor_screen_landscape_dashboard.dart` não chama mais `setState` diretamente a partir da extensão; as mudanças de estado passam pelo método da própria `State`.
+- Novo dashboard Ao vivo, mini-mapa, GPS, telemetria da bike e ações rápidas da 1.0.88 foram preservados.
+- Adicionada verificação preventiva para impedir regressão de `setState` direto no arquivo extraído do dashboard.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.89+89`.
+
 ## 1.0.88+88 — 2026-09-22
 
 - Tela Ao vivo em paisagem redesenhada para o novo dashboard com cabeçalho, câmera em destaque, mapa do trajeto e barra de ações inferior.

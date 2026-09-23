@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.88',
+          version: '1.0.89',
           current: true,
+          changes: [
+            'Corrigidos quatro avisos invalid_use_of_protected_member do dashboard Ao vivo.',
+            'A extensão do dashboard não chama mais setState diretamente; a atualização passa pela State do Monitor.',
+            'Visual da 1.0.88 com câmera, mapa, telemetria e ações rápidas foi preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.88',
           changes: [
             'Tela Ao vivo em paisagem redesenhada com câmera, mapa do trajeto, telemetria da bike e ações rápidas.',
             'Detecções da câmera única passam a abrir em painel dedicado sob demanda, liberando mais espaço para o vídeo.',
@@ -794,8 +803,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.88',
+          version: '1.0.89',
           current: true,
+          changes: [
+            'Corrigidos quatro avisos invalid_use_of_protected_member do dashboard Ao vivo.',
+            'A extensão do dashboard não chama mais setState diretamente; a atualização passa pela State do Monitor.',
+            'Visual da 1.0.88 com câmera, mapa, telemetria e ações rápidas foi preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.88',
           changes: [
             'Tela Ao vivo em paisagem redesenhada com câmera, mapa do trajeto, telemetria da bike e ações rápidas.',
             'Detecções da câmera única passam a abrir em painel dedicado sob demanda, liberando mais espaço para o vídeo.',

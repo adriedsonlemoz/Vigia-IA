@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.88 implementa o novo dashboard ao vivo em paisagem, integrando câmera, mapa do trajeto e telemetria na mesma tela.",
-  "version": "1.0.88",
-  "build": 88
+  "notes": "A 1.0.89 corrige o flutter analyze do dashboard ao vivo, removendo uso direto de setState na extensão do monitor sem alterar o design implementado.",
+  "version": "1.0.89",
+  "build": 89
 }

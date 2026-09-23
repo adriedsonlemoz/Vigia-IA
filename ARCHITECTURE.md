@@ -1,6 +1,12 @@
-# Arquitetura — Vigia IA 1.0.88+88
+# Arquitetura — Vigia IA 1.0.89+89
 
 ## 1. Princípios
+
+## Evolução 1.0.89 — correção de estado do dashboard
+
+- O arquivo extraído `monitor_screen_landscape_dashboard.dart` continua como extensão para manter `monitor_screen.dart` abaixo do limite preventivo.
+- A extensão não acessa mais diretamente o membro protegido `State.setState`; atualizações visuais passam por `_updateMulticameraState`, método pertencente à própria `_MonitorScreenState`.
+- Essa separação mantém a refatoração estrutural e elimina os quatro avisos que faziam o `flutter analyze` retornar código 1.
 
 ## Evolução 1.0.88 — dashboard ao vivo em paisagem
 

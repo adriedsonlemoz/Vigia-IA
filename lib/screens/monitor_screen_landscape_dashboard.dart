@@ -8,7 +8,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
       return;
     }
     if (mounted) {
-      setState(() => _miniMapLoading = true);
+      _updateMulticameraState(() => _miniMapLoading = true);
     } else {
       _miniMapLoading = true;
     }
@@ -16,7 +16,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
       requestPermission: requestPermission,
     );
     if (!mounted) return;
-    setState(() {
+    _updateMulticameraState(() {
       _miniMapAvailability = availability;
       _miniMapLoading = false;
     });
@@ -38,7 +38,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
 
   void _acceptMiniMapPosition(MapRoutePoint point) {
     if (!mounted) return;
-    setState(() {
+    _updateMulticameraState(() {
       _miniMapCurrent = point;
       if (_miniMapRoute.isEmpty ||
           LocationTrackingService.distanceMeters(_miniMapRoute.last, point) >=
@@ -324,7 +324,9 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                               : Icons.fit_screen_rounded,
                           label: _fillPreview ? 'Preencher' : 'Ajustar',
                           active: _fillPreview,
-                          onTap: () => setState(() => _fillPreview = !_fillPreview),
+                          onTap: () => _updateMulticameraState(
+                            () => _fillPreview = !_fillPreview,
+                          ),
                         ),
                         if (bikeSnapshot?.simulated == true)
                           const _HudPill(
