@@ -20,8 +20,8 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
-        final mapHeight = (constraints.maxHeight * 0.225)
-            .clamp(178.0, 232.0)
+        final mapHeight = (constraints.maxHeight * 0.255)
+            .clamp(205.0, 270.0)
             .toDouble();
 
         return ColoredBox(
@@ -69,9 +69,15 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: _buildAdaptiveCameraStage(
-                        context,
-                        portraitEmbedded: true,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onDoubleTap: _fullscreenChanging
+                            ? null
+                            : () => unawaited(_toggleFullscreen()),
+                        child: _buildAdaptiveCameraStage(
+                          context,
+                          portraitEmbedded: true,
+                        ),
                       ),
                     ),
                   ),
@@ -140,9 +146,9 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
       ),
     ];
     return SizedBox(
-      height: 70,
+      height: 64,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
+        padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
         scrollDirection: Axis.horizontal,
         itemCount: cards.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
@@ -203,6 +209,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                           initialZoom: mapCurrent == null ? 12 : 15.8,
                           minZoom: 3,
                           maxZoom: 19,
+                          onTap: (_, _) => unawaited(_openFullMap()),
                           onMapReady: () {
                             _updateMulticameraState(() => _miniMapReady = true);
                             final point = _miniMapCurrent;
@@ -284,34 +291,36 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                       Positioned(
                         left: 8,
                         top: 8,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.68),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.68),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
                             ),
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.map_outlined, size: 14),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Mapa',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
+                            child: const Padding(
+                              padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.map_outlined, size: 14),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Mapa',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  '• Ao vivo',
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
+                                  SizedBox(width: 6),
+                                  Text(
+                                    '• Ao vivo',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -399,21 +408,23 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         Positioned(
                             left: 8,
                             bottom: 8,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.66),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                            child: IgnorePointer(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.66),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Text(
-                                  '${altitudeMeters.round()} m',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  child: Text(
+                                    '${altitudeMeters.round()} m',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -436,11 +447,11 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
           children: [
             Expanded(
               child: _DashboardActionButton(
-                icon: Icons.map_outlined,
-                label: 'Abrir mapa',
+                icon: Icons.videocam_outlined,
+                label: 'Câmera',
                 accent: true,
                 compact: true,
-                onPressed: () => unawaited(_openFullMap()),
+                onPressed: () => unawaited(_showCameraHub()),
               ),
             ),
             const SizedBox(width: 5),

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.94+94$' pubspec.yaml || fail 'Versao esperada 1.0.94+94 nao encontrada.'
+grep -q '^version: 1\.0\.95+95$' pubspec.yaml || fail 'Versao esperada 1.0.95+95 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.94';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.94.'
-grep -q 'static const int build = 94;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 94.'
-grep -q "version: '1.0.94'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.94.'
+grep -q "static const String version = '1.0.95';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.95.'
+grep -q 'static const int build = 95;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 95.'
+grep -q "version: '1.0.95'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.95.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.94+94$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.94+94.'
+grep -q '^version: 1.0.95+95$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.95+95.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.94"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.94.'
-grep -q '"build": 94' app_identity.json \
-  || fail 'app_identity.json nao esta no build 94.'
+grep -q '"version": "1.0.95"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.95.'
+grep -q '"build": 95' app_identity.json \
+  || fail 'app_identity.json nao esta no build 95.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.94+94' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.94+94.'
+grep -q 'Vigia IA 1.0.95+95' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.95+95.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1176,8 +1176,8 @@ grep -q '_framesAnalyzed' lib/controllers/monitor_controller.dart \
   || fail 'Contador de frames analisados nao encontrado.'
 grep -q '_lastInferenceMs' lib/controllers/monitor_controller.dart \
   || fail 'Tempo de inferencia nao esta sendo medido.'
-grep -q 'Status da sessão' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart \
-  || fail 'Acesso ao Status da sessao nao foi adicionado ao Monitor.'
+grep -q 'Status da sessão' lib/screens/monitor_screen*.dart \
+  || fail 'Acesso ao Status da sessao nao foi preservado no Monitor.'
 grep -q 'x-vigia-frame-captured-at' lib/services/remote_camera_server_service.dart \
   || fail 'Servidor remoto nao envia timestamp real do frame.'
 grep -q 'x-vigia-frame-captured-at' lib/sources/remote_phone_camera_source.dart \
@@ -1798,8 +1798,8 @@ fi
 echo 'Verificacao preventiva concluida com sucesso.'
 
 # Tela vertical / mapa - 1.0.90
-grep -q 'Abrir mapa' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Tela vertical nao exibe a acao compacta Abrir mapa.'
+grep -q "label: 'Câmera'" lib/screens/monitor_screen_portrait.dart \
+  || fail 'Tela vertical nao exibe a acao compacta Camera.'
 grep -q "'Mapa'" lib/screens/monitor_screen_portrait.dart \
   || fail 'Tela vertical nao integra o mini-mapa compacto.'
 grep -q '_showPortraitQuickPanel' lib/screens/monitor_screen_portrait.dart \
@@ -1821,11 +1821,11 @@ if grep -q 'Ver rota completa\|Mapa do trajeto\|Sua posição em tempo real\|Mos
   fail 'Rotulos longos do mini-mapa reapareceram na tela vertical.'
 fi
 grep -q "label: const Text('Rota')" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Rota compacta ausente no mini-mapa.'
-grep -q "label: 'Abrir mapa'" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Abrir mapa ausente na faixa de atalhos.'
-grep -q 'height: 70' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Faixa de telemetria vertical nao foi refinada para 70 px.'
-grep -q 'constraints.maxHeight \* 0.225' lib/screens/monitor_screen_portrait.dart \
-  || fail 'Mini-mapa vertical nao usa a altura ampliada da 1.0.94.'
+grep -q "label: 'Câmera'" lib/screens/monitor_screen_portrait.dart   || fail 'Acao Camera ausente na faixa de atalhos.'
+grep -q 'height: 64' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Faixa de telemetria vertical nao usa a altura compacta atual.'
+grep -q 'constraints.maxHeight \* 0.255' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Mini-mapa vertical nao usa a altura ampliada atual.'
 
 # Ajuste fino do Monitor e teste frontal - 1.0.94
 grep -q '^## 1.0.94+94' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.94.'
@@ -1844,8 +1844,8 @@ grep -q 'altitudeMeters' lib/screens/monitor_screen_portrait.dart \
 if grep -q 'bikeSnapshotText' lib/screens/monitor_screen_portrait.dart; then
   fail 'Rotulo Bike legado reapareceu no overlay inferior do mapa.'
 fi
-grep -q 'minWidth: 154' lib/screens/monitor_screen_components.dart \
-  || fail 'Cards ESP32/Bike nao usam largura compacta da 1.0.94.'
+grep -q 'minWidth: 116' lib/screens/monitor_screen_components.dart \
+  || fail 'Cards ESP32/Bike nao usam a largura compacta atual.'
 [[ -f lib/sources/front_camera_preview_source.dart ]] \
   || fail 'Fonte temporaria da camera frontal nao encontrada.'
 grep -q 'ResolutionPreset.low' lib/sources/front_camera_preview_source.dart \
@@ -1862,5 +1862,56 @@ grep -q '_buildCameraStage(context, portraitEmbedded: true)' lib/screens/monitor
   || fail 'PiP nao preserva a camera principal como base integral do Monitor.'
 grep -q "sourceConfig.isFrontCameraTest" lib/controllers/secondary_camera_controller.dart \
   || fail 'SecondaryCameraController nao reconhece a frontal temporaria.'
+
+
+# Refinamento do Monitor e hub de cameras - 1.0.95
+grep -q '^## 1.0.95+95' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.95.'
+grep -q 'Evolução 1.0.95' README.md || fail 'README nao documenta 1.0.95.'
+grep -q "version: '1.0.95'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.95.'
+[[ -f RELEASE-1.0.95.md ]] || fail 'Notas da entrega 1.0.95 ausentes.'
+grep -q "label: 'Câmera'" lib/screens/monitor_screen_portrait.dart \
+  || fail 'Botao Camera nao substituiu Abrir mapa.'
+if grep -q "label: 'Abrir mapa'" lib/screens/monitor_screen_portrait.dart; then
+  fail 'Botao Abrir mapa legado reapareceu na barra inferior.'
+fi
+grep -q 'onTap: (_, _) => unawaited(_openFullMap())' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Toda a area do mini-mapa nao abre o mapa completo.'
+grep -q 'constraints.maxHeight \* 0.255' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Mapa vertical nao usa a altura ampliada da 1.0.95.'
+grep -q 'height: 64' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Telemetria vertical nao usa a faixa compactada da 1.0.95.'
+grep -q 'minWidth: 116' lib/screens/monitor_screen_components.dart \
+  || fail 'Cards de telemetria nao usam a largura reduzida da 1.0.95.'
+grep -q 'maxWidth: 158' lib/screens/monitor_screen_components.dart \
+  || fail 'Cards de telemetria perderam o limite compacto de largura.'
+grep -q 'foregroundColor: accent ? scheme.primary : scheme.onSurface' lib/screens/monitor_screen_components.dart \
+  || fail 'Atalhos inferiores nao usam contraste de estado ativo.'
+grep -q 'available >= 330' lib/screens/monitor_screen.dart \
+  || fail 'Painel compacto nao tenta manter os seis atalhos lado a lado.'
+grep -q 'SegmentedButton<bool>' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Hub de cameras nao preserva escolha entre uma e duas cameras.'
+grep -q '_showCameraHub()' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Hub unificado de cameras nao foi encontrado.'
+grep -q "title: const Text('Câmera frontal')" lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Hub de cameras nao oferece a frontal.'
+grep -q 'CameraEndpointType.esp32' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Hub de cameras nao considera fontes ESP32.'
+grep -q '_portraitPipOffset' lib/screens/monitor_screen.dart \
+  || fail 'Posicao do PiP arrastavel nao esta persistida no estado do Monitor.'
+grep -q 'onPanUpdate:' lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Segunda camera PiP nao pode ser arrastada.'
+grep -q 'onDoubleTap:' lib/screens/monitor_screen_portrait.dart \
+  || fail 'Duplo toque na imagem nao aciona tela inteira.'
+grep -q "VideoSourceType.localCamera => 'Local'" lib/screens/monitor_screen_multicamera.dart \
+  || fail 'Rotulo compacto Local nao foi aplicado na area de camera.'
+if grep -q "PopupMenuItem(value: 'cameras'" lib/screens/monitor_screen_fullscreen.dart; then
+  fail 'Selecao de cameras reapareceu no menu de tres pontos.'
+fi
+if grep -q "PopupMenuItem(value: 'status'" lib/screens/monitor_screen_fullscreen.dart; then
+  fail 'Status da sessao reapareceu no menu de tres pontos.'
+fi
+grep -q 'canvas.drawRect(rect, border);' lib/widgets/detection_overlay.dart \
+  || fail 'Overlay visual de caixas da IA foi alterado sem aprovacao nesta entrega.'
 
 

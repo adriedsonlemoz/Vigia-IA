@@ -207,6 +207,224 @@ extension _MonitorMulticamera on _MonitorScreenState {
     await _replaceSecondarySource(_sourceForEndpoint(camera));
   }
 
+  IconData _cameraEndpointIcon(CameraEndpointType type) => switch (type) {
+    CameraEndpointType.local => Icons.camera_alt_outlined,
+    CameraEndpointType.rtsp => Icons.router_outlined,
+    CameraEndpointType.remotePhone => Icons.phone_android_rounded,
+    CameraEndpointType.esp32 => Icons.memory_rounded,
+  };
+
+  Future<bool> _ensureLocalCameraPermission() async {
+    final granted = await NativePlatformService.instance.requestCameraPermission();
+    if (!mounted) return false;
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permita a câmera para usar esta fonte.')),
+      );
+    }
+    return granted;
+  }
+
+  Future<void> _selectPrimaryCamera(CameraEndpoint camera) async {
+    final next = _sourceForEndpoint(camera);
+    if (next.type == VideoSourceType.localCamera &&
+        !await _ensureLocalCameraPermission()) {
+      return;
+    }
+    final secondary = _secondaryController?.sourceConfig;
+    if (secondary != null && _sameSource(next, secondary)) {
+      await _replaceSecondarySource(null);
+    }
+    await _controller.switchSource(next);
+  }
+
+  Future<void> _selectSecondaryCamera(VideoSourceConfig source) async {
+    if (_sameSource(_controller.sourceConfig, source)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Essa fonte já está sendo usada como câmera principal.'),
+        ),
+      );
+      return;
+    }
+    if (source.type == VideoSourceType.localCamera &&
+        !await _ensureLocalCameraPermission()) {
+      return;
+    }
+    await _replaceSecondarySource(source);
+  }
+
+  Future<void> _showCameraHub() async {
+    await _cameraRegistry.initialize();
+    if (!mounted) return;
+    final cameras = <CameraEndpoint>[
+      const CameraEndpoint(
+        id: '__local__',
+        name: 'Câmera local',
+        type: CameraEndpointType.local,
+      ),
+      ..._cameraRegistry.items.where(
+        (camera) =>
+            camera.enabled &&
+            (camera.type != CameraEndpointType.esp32 ||
+                camera.esp32CameraEnabled),
+      ),
+    ];
+    var useTwoCameras = _secondaryController != null;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final secondaryCandidates = cameras
+              .where(
+                (camera) => !_sameSource(
+                  _controller.sourceConfig,
+                  _sourceForEndpoint(camera),
+                ),
+              )
+              .toList(growable: false);
+          return SafeArea(
+            child: FractionallySizedBox(
+              heightFactor: 0.78,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+                children: [
+                  const Text(
+                    'Câmeras',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Escolha a fonte principal e, se quiser, uma segunda câmera em janela pequena.',
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: false,
+                        icon: Icon(Icons.filter_1_rounded),
+                        label: Text('1 câmera'),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        icon: Icon(Icons.filter_2_rounded),
+                        label: Text('2 câmeras'),
+                      ),
+                    ],
+                    selected: <bool>{useTwoCameras},
+                    onSelectionChanged: (selection) {
+                      final enabled = selection.first;
+                      setSheetState(() => useTwoCameras = enabled);
+                      if (!enabled) unawaited(_replaceSecondarySource(null));
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Câmera principal',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  ...cameras.map((camera) {
+                    final source = _sourceForEndpoint(camera);
+                    final selected = _sameSource(_controller.sourceConfig, source);
+                    return ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Icon(_cameraEndpointIcon(camera.type)),
+                      title: Text(camera.name),
+                      subtitle: Text(switch (camera.type) {
+                        CameraEndpointType.local => 'Câmera deste aparelho',
+                        CameraEndpointType.rtsp => 'Câmera de rede RTSP',
+                        CameraEndpointType.remotePhone => 'Outro celular',
+                        CameraEndpointType.esp32 => 'Câmera do módulo ESP32',
+                      }),
+                      trailing: selected
+                          ? const Icon(Icons.check_circle_rounded)
+                          : null,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_selectPrimaryCamera(camera));
+                      },
+                    );
+                  }),
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    leading: const Icon(Icons.face_retouching_natural_outlined),
+                    title: const Text('Câmera frontal'),
+                    subtitle: const Text('Usa a frontal como segunda câmera de teste.'),
+                    trailing:
+                        _secondaryController?.sourceConfig.cameraId ==
+                            frontCameraTestId
+                        ? const Icon(Icons.check_circle_rounded)
+                        : null,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      unawaited(
+                        _selectSecondaryCamera(_frontCameraTestSource()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    leading: const Icon(Icons.add_link_rounded),
+                    title: const Text('Configurar outra fonte'),
+                    subtitle: const Text('RTSP, outro celular ou ESP32 manual.'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      unawaited(_showSourceSwitcher());
+                    },
+                  ),
+                  if (useTwoCameras) ...[
+                    const Divider(height: 24),
+                    const Text(
+                      'Segunda câmera',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    ...secondaryCandidates.map((camera) {
+                      final source = _sourceForEndpoint(camera);
+                      final selected = _secondaryController != null &&
+                          _sameSource(
+                            _secondaryController!.sourceConfig,
+                            source,
+                          );
+                      return ListTile(
+                        dense: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 4),
+                        leading: Icon(_cameraEndpointIcon(camera.type)),
+                        title: Text(camera.name),
+                        subtitle: Text(switch (camera.type) {
+                          CameraEndpointType.local => 'Câmera local secundária',
+                          CameraEndpointType.rtsp => 'Segunda câmera RTSP',
+                          CameraEndpointType.remotePhone => 'Segundo celular',
+                          CameraEndpointType.esp32 => 'Segunda câmera ESP32',
+                        }),
+                        trailing: selected
+                            ? const Icon(Icons.check_circle_rounded)
+                            : null,
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          unawaited(_selectSecondaryCamera(source));
+                        },
+                      );
+                    }),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildAdaptiveCameraStage(
     BuildContext context, {
     bool portraitEmbedded = false,
@@ -238,94 +456,122 @@ extension _MonitorMulticamera on _MonitorScreenState {
             .toDouble();
         final streaming =
             secondary.status.state == VideoSourceState.streaming;
+        final maxLeft = (constraints.maxWidth - pipWidth - 6)
+            .clamp(6.0, constraints.maxWidth)
+            .toDouble();
+        final maxTop = (constraints.maxHeight - pipHeight - 6)
+            .clamp(6.0, constraints.maxHeight)
+            .toDouble();
+        final fallbackPosition = Offset(maxLeft, maxTop);
+        final requestedPosition = _portraitPipOffset ?? fallbackPosition;
+        final pipPosition = Offset(
+          requestedPosition.dx.clamp(6.0, maxLeft).toDouble(),
+          requestedPosition.dy.clamp(6.0, maxTop).toDouble(),
+        );
         return Stack(
           fit: StackFit.expand,
           children: [
             _buildCameraStage(context, portraitEmbedded: true),
             Positioned(
-              right: 8,
-              bottom: 8,
+              left: pipPosition.dx,
+              top: pipPosition.dy,
               width: pipWidth,
               height: pipHeight,
-              child: Material(
-                color: Colors.black,
-                elevation: 8,
-                borderRadius: BorderRadius.circular(14),
-                clipBehavior: Clip.antiAlias,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: scheme.primary.withValues(alpha: 0.72),
-                      width: 1.5,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanUpdate: (details) {
+                  final current = _portraitPipOffset ?? fallbackPosition;
+                  _updateMulticameraState(() {
+                    _portraitPipOffset = Offset(
+                      (current.dx + details.delta.dx)
+                          .clamp(6.0, maxLeft)
+                          .toDouble(),
+                      (current.dy + details.delta.dy)
+                          .clamp(6.0, maxTop)
+                          .toDouble(),
+                    );
+                  });
+                },
+                child: Material(
+                  color: Colors.black,
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(14),
+                  clipBehavior: Clip.antiAlias,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: 0.72),
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      secondary.buildPreview(),
-                      if (secondary.initializing)
-                        const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      if (secondary.error != null)
-                        Padding(
-                          padding: const EdgeInsets.all(7),
-                          child: Center(
-                            child: Text(
-                              'Frontal indisponível\nem simultâneo',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        secondary.buildPreview(),
+                        if (secondary.initializing)
+                          const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        if (secondary.error != null)
+                          Padding(
+                            padding: const EdgeInsets.all(7),
+                            child: Center(
+                              child: Text(
+                                'Frontal indisponível\nem simultâneo',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          left: 4,
+                          right: 4,
+                          bottom: 4,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.68),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 3,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: streaming
+                                          ? const Color(0xFF69D59C)
+                                          : const Color(0xFFFFB4AB),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      secondary.displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                      Positioned(
-                        left: 4,
-                        right: 4,
-                        bottom: 4,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.68),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: streaming
-                                        ? const Color(0xFF69D59C)
-                                        : const Color(0xFFFFB4AB),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    secondary.displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -524,8 +770,16 @@ extension _MonitorMulticamera on _MonitorScreenState {
             left: 8,
             bottom: 8,
             child: _CameraPaneLabel(
-              title: _controller.sourceConfig.displayName ?? 'Câmera principal',
-              detail: 'Principal · IA e alertas',
+              title: switch (_controller.sourceConfig.type) {
+                VideoSourceType.localCamera => 'Local',
+                VideoSourceType.rtsp =>
+                  _controller.sourceConfig.displayName ?? 'RTSP',
+                VideoSourceType.remotePhone =>
+                  _controller.sourceConfig.displayName ?? 'Remota',
+                VideoSourceType.esp32 =>
+                  _controller.sourceConfig.displayName ?? 'ESP32',
+              },
+              detail: 'Principal',
               active:
                   _controller.sourceStatus.state == VideoSourceState.streaming,
             ),
@@ -808,15 +1062,16 @@ extension _MonitorMulticamera on _MonitorScreenState {
               left: 10,
               bottom: 10,
               child: _CameraPaneLabel(
-                title:
-                    _controller.sourceConfig.displayName ??
-                    switch (_controller.sourceConfig.type) {
-                      VideoSourceType.localCamera => 'Câmera local',
-                      VideoSourceType.rtsp => 'Câmera RTSP',
-                      VideoSourceType.remotePhone => 'Celular remoto',
-                      VideoSourceType.esp32 => 'Câmera ESP32',
-                    },
-                detail: 'Principal · IA e alertas',
+                title: switch (_controller.sourceConfig.type) {
+                  VideoSourceType.localCamera => 'Local',
+                  VideoSourceType.rtsp =>
+                    _controller.sourceConfig.displayName ?? 'RTSP',
+                  VideoSourceType.remotePhone =>
+                    _controller.sourceConfig.displayName ?? 'Remota',
+                  VideoSourceType.esp32 =>
+                    _controller.sourceConfig.displayName ?? 'ESP32',
+                },
+                detail: null,
                 active: status.state == VideoSourceState.streaming,
               ),
             ),

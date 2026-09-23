@@ -1,15 +1,15 @@
-# Validação — Vigia IA 1.0.94+94
+# Validação — Vigia IA 1.0.95+95
 
-Data: 2026-09-23. Base preservada: 1.0.93+93.
+Data: 2026-09-23. Base preservada: 1.0.94+94.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| Monitor vertical 1.0.94 | Mini-mapa mais alto; quatro atalhos fixos em uma linha; altitude real compacta; cards ESP32 mais densos |
+| Monitor vertical 1.0.95 | Telemetria mais estreita; mapa maior/clicável; hub Câmera; seis atalhos responsivos; PiP arrastável |
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
 | `flutter analyze` / `flutter test` / build Android | Não executados localmente: Flutter, Dart e Android SDK não estão instalados neste ambiente; confirmar no workflow |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.94+94 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.95+95 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -48,6 +48,19 @@ Data: 2026-09-23. Base preservada: 1.0.93+93.
 | Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
 | Telemetria ESP32/Bike | Faixa superior reorganizada em uma única linha horizontal rolável, sem grade quebrada no retrato |
 | Diagnóstico | Estados Serviço/Câmera/Frames/IA/LAN/clientes/Permissões/2º plano ficam em faixa horizontal compacta; ações de 30 s, 60 s e Exportar permanecem juntas |
+
+## Roteiro da 1.0.95
+
+- abrir o Monitor em retrato com ESP32/Bike ativo e confirmar que os cards de velocidade, temperatura, pneus e distância ficaram mais estreitos, sem cortar textos;
+- confirmar que **Câmera**, **Áudio**, **Painel** e **Ajustes** aparecem juntos e que Áudio/Painel/Ajustes não parecem desabilitados;
+- tocar em qualquer área livre do mini-mapa e confirmar abertura da tela completa; testar separadamente **Rota**, localização e zoom;
+- tocar em **Câmera** e conferir câmera local, câmera frontal, ESP32 e demais fontes cadastradas, além da seleção entre uma e duas câmeras;
+- confirmar que **Uma ou duas câmeras** e **Status da sessão** não aparecem mais no menu de três pontos e que o ícone de áudio não aparece mais no topo do Monitor;
+- abrir **Painel** e conferir os seis atalhos na mesma linha em largura normal, sem sobreposição; em tela estreita, confirmar quebra responsiva;
+- dar duplo toque na imagem principal e confirmar entrada em tela inteira;
+- confirmar que o selo da câmera local mostra apenas **Local** em formato reduzido;
+- ativar a câmera frontal de teste e arrastar o PiP para os quatro cantos da área de vídeo, verificando que ele não sai da câmera nem cobre mapa/botões inferiores;
+- confirmar que as caixas verdes de detecção continuam apenas como overlay visual e que IA/alertas não mudaram nesta entrega.
 
 ## Roteiro da 1.0.94
 

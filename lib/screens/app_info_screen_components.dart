@@ -65,8 +65,20 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.94',
+          version: '1.0.95',
           current: true,
+          changes: [
+            'Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos para caber mais telemetria na mesma linha.',
+            'O mapa vertical ficou ainda mais alto e qualquer toque na área útil abre a tela completa; o botão Abrir mapa foi substituído por Câmera.',
+            'O botão Câmera centraliza fonte principal, modo com uma ou duas câmeras, frontal de teste, ESP32 e demais câmeras cadastradas.',
+            'Áudio, Painel e Ajustes receberam contraste correto para não parecerem desabilitados, e os seis atalhos do painel passam a caber em uma linha quando houver largura.',
+            'O botão de áudio superior e as entradas duplicadas de câmeras/Status da sessão foram removidos do menu superior.',
+            'Duplo toque na área de vídeo entra em tela inteira; a identificação da principal foi reduzida para Local e o PiP da segunda câmera agora pode ser arrastado dentro da área de vídeo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.94',
           changes: [
             'O mapa vertical ficou mais alto e o card Detectados foi deslocado para baixo sem esconder os quatro atalhos.',
             'Abrir mapa, Áudio, Painel e Ajustes agora ficam sempre na mesma linha com margens e altura menores.',
@@ -852,8 +864,20 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.94',
+          version: '1.0.95',
           current: true,
+          changes: [
+            'Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos para caber mais telemetria na mesma linha.',
+            'O mapa vertical ficou ainda mais alto e qualquer toque na área útil abre a tela completa; o botão Abrir mapa foi substituído por Câmera.',
+            'O botão Câmera centraliza fonte principal, modo com uma ou duas câmeras, frontal de teste, ESP32 e demais câmeras cadastradas.',
+            'Áudio, Painel e Ajustes receberam contraste correto para não parecerem desabilitados, e os seis atalhos do painel passam a caber em uma linha quando houver largura.',
+            'O botão de áudio superior e as entradas duplicadas de câmeras/Status da sessão foram removidos do menu superior.',
+            'Duplo toque na área de vídeo entra em tela inteira; a identificação da principal foi reduzida para Local e o PiP da segunda câmera agora pode ser arrastado dentro da área de vídeo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.94',
           changes: [
             'O mapa vertical ficou mais alto e o card Detectados foi deslocado para baixo sem esconder os quatro atalhos.',
             'Abrir mapa, Áudio, Painel e Ajustes agora ficam sempre na mesma linha com margens e altura menores.',

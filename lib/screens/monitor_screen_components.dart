@@ -3,64 +3,70 @@ part of 'monitor_screen.dart';
 class _CameraPaneLabel extends StatelessWidget {
   const _CameraPaneLabel({
     required this.title,
-    required this.detail,
     required this.active,
+    this.detail,
   });
 
   final String title;
-  final String detail;
+  final String? detail;
   final bool active;
 
   @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(maxWidth: 230),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.76),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: active ? const Color(0xFF69D59C) : const Color(0xFFFFB4AB),
-            shape: BoxShape.circle,
+  Widget build(BuildContext context) {
+    final secondary = detail?.trim();
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: active ? const Color(0xFF69D59C) : const Color(0xFFFFB4AB),
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(width: 7),
-        Flexible(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
+          const SizedBox(width: 6),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-              Text(
-                detail,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.white.withValues(alpha: 0.72),
-                ),
-              ),
-            ],
+                if (secondary != null && secondary.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    secondary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      color: Colors.white.withValues(alpha: 0.70),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _CompactMonitorTopHud extends StatelessWidget {
@@ -275,7 +281,7 @@ class _DeviceStatusStrip extends StatelessWidget {
         : sourceStatus.state == VideoSourceState.streaming;
     final transmitterLabel = switch (sourceType) {
       VideoSourceType.remotePhone => 'Transmissor',
-      VideoSourceType.localCamera => 'Câmera local',
+      VideoSourceType.localCamera => 'Local',
       VideoSourceType.rtsp => 'Câmera RTSP',
       VideoSourceType.esp32 => 'ESP32',
     };
@@ -473,43 +479,53 @@ class _MonitorActionButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.dense = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Material(
-        color: scheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            width: 64,
-            height: 50,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: scheme.primary, size: 19),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+    final content = Material(
+      color: scheme.primary.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(dense ? 11 : 14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: dense ? 46 : 50,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: scheme.primary, size: dense ? 17 : 19),
+              SizedBox(height: dense ? 2 : 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: dense ? 9.5 : 11,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+    if (dense) return content;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: SizedBox(width: 64, child: content),
     );
   }
 }
@@ -935,56 +951,57 @@ class _DashboardMetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 154, maxWidth: 180),
+      constraints: const BoxConstraints(minWidth: 116, maxWidth: 158),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.24),
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: scheme.primary.withValues(alpha: 0.16)),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: scheme.primary.withValues(alpha: 0.15)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+          padding: const EdgeInsets.fromLTRB(8, 6, 9, 6),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   color: scheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: scheme.primary, size: 20),
+                child: Icon(icon, color: scheme.primary, size: 18),
               ),
-              const SizedBox(width: 8),
-              Expanded(
+              const SizedBox(width: 7),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 105),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 11,
+                        fontSize: 10.5,
                       ),
                     ),
                     const SizedBox(height: 1),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Flexible(
-                          child: Text(
-                            value,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
-                            ),
+                        Text(
+                          value,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 2),
                           child: Text(
@@ -992,7 +1009,7 @@ class _DashboardMetricCard extends StatelessWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
-                                ?.copyWith(fontSize: 10),
+                                ?.copyWith(fontSize: 9.5),
                           ),
                         ),
                       ],
@@ -1028,16 +1045,20 @@ class _DashboardActionButton extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final style = FilledButton.styleFrom(
       backgroundColor: accent
-          ? scheme.primary.withValues(alpha: 0.22)
-          : Colors.black.withValues(alpha: 0.24),
-      foregroundColor: accent ? scheme.primary : null,
+          ? scheme.primary.withValues(alpha: 0.24)
+          : scheme.surfaceContainerHigh.withValues(alpha: 0.92),
+      foregroundColor: accent ? scheme.primary : scheme.onSurface,
       padding: compact
           ? const EdgeInsets.symmetric(horizontal: 4, vertical: 3)
           : null,
       minimumSize: compact ? const Size(0, 42) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(compact ? 14 : 18),
-        side: BorderSide(color: scheme.primary.withValues(alpha: 0.14)),
+        side: BorderSide(
+          color: accent
+              ? scheme.primary.withValues(alpha: 0.28)
+              : scheme.outline.withValues(alpha: 0.24),
+        ),
       ),
       visualDensity: compact ? VisualDensity.compact : null,
     );

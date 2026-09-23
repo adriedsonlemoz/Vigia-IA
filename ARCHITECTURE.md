@@ -1,6 +1,18 @@
-# Arquitetura — Vigia IA 1.0.94+94
+# Arquitetura — Vigia IA 1.0.95+95
 
 ## 1. Princípios
+
+## Evolução 1.0.95 — densidade, navegação e hub de câmeras
+
+- `_DashboardMetricCard` passa a usar largura intrínseca limitada e dimensões menores, reduzindo vazios horizontais nos dados ESP32/Bike.
+- `monitor_screen_portrait.dart` aumenta o mini-mapa para `25,5%` da altura útil, remove a ação fixa **Abrir mapa**, adiciona **Câmera** e abre `MapMonitoringScreen` ao tocar diretamente no mapa.
+- `_DashboardActionButton` define cores explícitas para ações não destacadas, evitando que **Áudio**, **Painel** e **Ajustes** pareçam desabilitados no tema escuro.
+- `_buildControlDock(compact: true)` distribui os seis atalhos em uma única linha a partir de largura suficiente e degrada para grade em telas menores.
+- `_showCameraHub` centraliza seleção da câmera principal, modo uma/duas câmeras, frontal de teste, ESP32 e endpoints cadastrados; o menu de três pontos deixa de duplicar câmeras e Status da sessão.
+- `_portraitPipOffset` mantém a posição do PiP e `onPanUpdate` limita o arraste à área do vídeo, impedindo que a segunda câmera cubra mapa ou ações inferiores.
+- O monitor vertical envolve a área de vídeo com duplo toque para `_toggleFullscreen`, preservando o botão superior como alternativa.
+- `_CameraPaneLabel` aceita detalhe opcional e usa dimensões menores; a fonte local embutida é identificada apenas como **Local**.
+- O `DetectionOverlay` permanece inalterado funcionalmente: caixas verdes são decorativas e podem ser desacopladas da detecção em etapa futura.
 
 ## Evolução 1.0.94 — Monitor vertical refinado e PiP frontal
 

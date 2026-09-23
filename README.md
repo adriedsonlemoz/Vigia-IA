@@ -2,11 +2,24 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.94+94`
+> **Versão atual:** `1.0.95+95`
 
 ## Estado atual
 
-A `1.0.94+94` faz o ajuste fino do Monitor vertical: mapa mais alto, quatro atalhos sempre visíveis, telemetria ESP32 mais compacta e um teste temporário de segunda câmera frontal em janela PiP.
+A `1.0.95+95` refina a tela Ao vivo: telemetria mais estreita, mapa maior e clicável, menu de câmeras unificado, atalhos com contraste correto, painel de seis ações em uma linha e PiP arrastável.
+
+### Evolução 1.0.95 — Monitor mais denso e câmeras unificadas
+
+- os cards de velocidade, temperatura, pneus e distância reduzem largura mínima, padding e ícones para mostrar mais telemetria na mesma linha;
+- o mini-mapa cresce novamente e tocar na área do mapa abre a tela completa; **Abrir mapa** sai da barra fixa e dá lugar a **Câmera**;
+- **Câmera** abre um hub único com fonte principal, escolha de uma ou duas câmeras, câmera local, frontal de teste, ESP32 e demais fontes cadastradas;
+- o item **Uma ou duas câmeras** e **Status da sessão** deixam o menu de três pontos, e o botão de áudio do topo é removido por duplicar o atalho inferior;
+- **Áudio**, **Painel** e **Ajustes** passam a usar contraste explícito de estado ativo, evitando aparência de botões desabilitados;
+- os seis atalhos do painel do Monitor usam distribuição responsiva e ficam na mesma linha quando houver largura suficiente;
+- duplo toque sobre a área das câmeras ativa a mesma tela inteira do botão superior;
+- o selo sobre a câmera principal fica reduzido a **Local** quando a fonte é a câmera deste aparelho;
+- o PiP da segunda câmera pode ser arrastado livremente dentro da área de vídeo, permanecendo longe de mapa e controles externos;
+- as caixas verdes da IA foram analisadas: elas são apenas overlay visual e não interferem na detecção; nesta versão foram preservadas para manter referência de validação.
 
 ### Evolução 1.0.94 — Ajuste fino e teste de duas câmeras
 

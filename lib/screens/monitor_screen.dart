@@ -84,6 +84,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _fillBeforeFullscreen = false;
   Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false;
+  Offset? _portraitPipOffset;
 
   @override
   void initState() {
@@ -1013,7 +1014,6 @@ class _MonitorScreenState extends State<MonitorScreen>
                         : () => unawaited(_toggleFullscreen()),
                     icon: const Icon(Icons.fullscreen_rounded),
                   ),
-                  _voiceButton(),
                   _monitorMenu(),
                 ],
               ),
@@ -1156,44 +1156,75 @@ class _MonitorScreenState extends State<MonitorScreen>
       _MonitorActionButton(
         icon: Icons.grid_view_rounded,
         label: 'Áreas',
+        dense: compact,
         onTap: () => unawaited(_showZones()),
       ),
       _MonitorActionButton(
         icon: Icons.filter_alt_outlined,
         label: 'Objetos',
+        dense: compact,
         onTap: () => unawaited(_showObjectFilter()),
       ),
       _MonitorActionButton(
         icon: Icons.rule_outlined,
         label: 'Regras',
+        dense: compact,
         onTap: () => unawaited(_showSmartAlertRules()),
       ),
       _MonitorActionButton(
         icon: Icons.cameraswitch_outlined,
         label: 'Fonte',
+        dense: compact,
         onTap: () => unawaited(_showSourceSwitcher()),
       ),
       _MonitorActionButton(
         icon: Icons.video_collection_outlined,
         label: '2ª câmera',
+        dense: compact,
         onTap: () => unawaited(_showSecondaryCameraSelector()),
       ),
       _MonitorActionButton(
         icon: Icons.auto_awesome_motion_outlined,
         label: 'Recursos',
+        dense: compact,
         onTap: () => unawaited(_showFeatureToggles()),
       ),
     ];
 
     if (compact) {
-      return Padding(
-        padding: const EdgeInsets.all(8),
-        child: Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          alignment: WrapAlignment.center,
-          children: buttons,
-        ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final available = constraints.maxWidth;
+          if (available >= 330) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Row(
+                children: [
+                  for (var index = 0; index < buttons.length; index++) ...[
+                    if (index > 0) const SizedBox(width: 4),
+                    Expanded(child: buttons[index]),
+                  ],
+                ],
+              ),
+            );
+          }
+          final columns = available >= 220 ? 3 : 2;
+          final spacing = 5.0;
+          final cellWidth =
+              (available - 12 - spacing * (columns - 1)) / columns;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Wrap(
+              spacing: spacing,
+              runSpacing: 5,
+              alignment: WrapAlignment.center,
+              children: [
+                for (final button in buttons)
+                  SizedBox(width: cellWidth, child: button),
+              ],
+            ),
+          );
+        },
       );
     }
     return Container(

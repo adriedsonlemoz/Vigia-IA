@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.0.95+95 — 2026-09-23
+
+- Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos e densos, reduzindo espaço vazio à direita e permitindo mais telemetria na mesma linha.
+- O mini-mapa vertical ficou mais alto; tocar na área útil do mapa abre a tela completa, mantendo os controles de rota/localização/zoom.
+- **Abrir mapa** foi removido da barra inferior e substituído por **Câmera**.
+- Novo hub **Câmeras** reúne fonte principal, modo de uma ou duas câmeras, câmera local, frontal de teste, ESP32 e demais fontes cadastradas, com acesso à configuração avançada para RTSP/outro celular.
+- **Uma ou duas câmeras** e **Status da sessão** foram removidos do menu de três pontos para eliminar duplicações; o botão de áudio do topo também foi removido porque a ação já existe na barra inferior.
+- **Áudio**, **Painel** e **Ajustes** passam a usar foreground/background explícitos para não aparentarem estado desabilitado.
+- Os seis atalhos do painel do Monitor usam layout responsivo e cabem em uma única linha quando a largura permitir.
+- Duplo toque sobre a área de vídeo aciona a mesma tela inteira do botão superior.
+- O selo da câmera principal foi compactado e usa **Local** no lugar de “Câmera local / Principal / IA e alertas” no Monitor vertical.
+- A segunda câmera em PiP agora pode ser arrastada dentro da área da câmera principal, com posição limitada ao vídeo para não cobrir mapa e controles externos.
+- As caixas verdes de detecção foram avaliadas e preservadas nesta entrega; são apenas overlay visual e podem ser removidas/transformadas em opção futura sem afetar a IA.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação, testes e verificadores sincronizados em `1.0.95+95`.
+
 ## 1.0.94+94 — 2026-09-23
 
 - Ajuste fino do Monitor vertical com mini-mapa mais alto e resumo **Detectados** deslocado para baixo.
