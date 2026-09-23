@@ -16,13 +16,15 @@ class LocationTrackingService {
 
   static final LocationTrackingService instance = LocationTrackingService._();
 
-  Future<LocationTrackingAvailability> ensureAvailable() async {
+  Future<LocationTrackingAvailability> ensureAvailable({
+    bool requestPermission = true,
+  }) async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       return LocationTrackingAvailability.servicesDisabled;
     }
 
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied && requestPermission) {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.deniedForever) {

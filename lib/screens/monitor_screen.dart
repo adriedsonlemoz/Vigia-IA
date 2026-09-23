@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../core/adaptive_camera_layout.dart';
 import '../controllers/monitor_controller.dart';
@@ -14,9 +16,11 @@ import '../models/bike_sensor_snapshot.dart';
 import '../models/camera_endpoint.dart';
 import '../models/monitoring_zone.dart';
 import '../models/device_telemetry.dart';
+import '../models/map_route_point.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
+import '../services/location_tracking_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
@@ -29,6 +33,7 @@ import '../widgets/session_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
 import 'launch_mode_screen.dart';
+import 'map_monitoring_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 import 'settings_screen.dart';
 
@@ -36,6 +41,7 @@ part 'monitor_screen_components.dart';
 part 'monitor_screen_fullscreen.dart';
 part 'monitor_screen_multicamera.dart';
 part 'monitor_screen_portrait.dart';
+part 'monitor_screen_landscape_dashboard.dart';
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
@@ -59,6 +65,15 @@ class _MonitorScreenState extends State<MonitorScreen>
   SecondaryCameraController? _secondaryController;
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
+  final LocationTrackingService _locationTracking =
+      LocationTrackingService.instance;
+  final MapController _miniMapController = MapController();
+  final List<MapRoutePoint> _miniMapRoute = <MapRoutePoint>[];
+  StreamSubscription<MapRoutePoint>? _miniMapSubscription;
+  MapRoutePoint? _miniMapCurrent;
+  LocationTrackingAvailability? _miniMapAvailability;
+  bool _miniMapLoading = false;
+  bool _miniMapReady = false;
   String? _editingZoneId;
   bool _hudExpanded = false;
   bool _fillPreview = false;
@@ -89,6 +104,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     _bikeSensors.addListener(_refresh);
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
+    unawaited(_initializeMiniMap(requestPermission: false));
   }
 
   void _updateFullscreenState(VoidCallback update) => setState(update);
@@ -130,6 +146,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     _secondaryController?.removeListener(_refresh);
     _secondaryController?.dispose();
     _bikeSensors.removeListener(_refresh);
+    _miniMapSubscription?.cancel();
+    _miniMapController.dispose();
     _controller.dispose();
     unawaited(SystemUiService.edgeToEdge());
     super.dispose();
@@ -924,6 +942,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
+
   Future<void> _openStandardScreen(Widget screen) async {
     if (_fullscreen) await _toggleFullscreen();
     await SystemUiService.edgeToEdge();
@@ -1022,6 +1041,10 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
   Widget _buildLandscape(BuildContext context, {required bool permanentPanel}) {
+    if (_secondaryController == null) {
+      return _buildLandscapeDashboard(context);
+    }
+
     final width = MediaQuery.sizeOf(context).width;
     final panelWidth = (width * 0.31).clamp(300.0, 420.0).toDouble();
     final panel = DecoratedBox(
@@ -1098,6 +1121,7 @@ class _MonitorScreenState extends State<MonitorScreen>
       ],
     );
   }
+
 
   Widget _buildPreviewLayer(BuildContext context) {
     final preview = _controller.buildPreview();

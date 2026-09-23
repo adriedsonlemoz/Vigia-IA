@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.87+87
+# Arquitetura — Vigia IA 1.0.88+88
 
 ## 1. Princípios
+
+## Evolução 1.0.88 — dashboard ao vivo em paisagem
+
+- `MonitorScreen` ganha um dashboard dedicado para câmera única em paisagem, com cabeçalho, área principal de vídeo, mini-mapa e ações rápidas sem esconder a câmera atrás do painel lateral.
+- `LocationTrackingService.ensureAvailable` passa a aceitar leitura passiva (`requestPermission: false`), permitindo sondar disponibilidade do mapa sem pedir localização de forma agressiva.
+- O mini-mapa reaproveita `flutter_map`, `MapRoutePoint` e `LocationTrackingService` para acompanhar posição e rota diretamente dentro do monitor.
+- Detecções continuam usando o mesmo pipeline (`MonitorController`, overlays e zonas), mas agora são abertas em painel dedicado sob demanda no layout novo.
 
 ## Evolução 1.0.86 — mapa e rastreamento GPS
 

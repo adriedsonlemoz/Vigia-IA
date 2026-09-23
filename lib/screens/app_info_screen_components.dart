@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.87',
+          version: '1.0.88',
           current: true,
+          changes: [
+            'Tela Ao vivo em paisagem redesenhada com câmera, mapa do trajeto, telemetria da bike e ações rápidas.',
+            'Detecções da câmera única passam a abrir em painel dedicado sob demanda, liberando mais espaço para o vídeo.',
+            'Mini-mapa usa o GPS local quando disponível e orienta o usuário quando a localização ainda não foi liberada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.87',
           changes: [
             'Corrigida a ordem da diretiva part of no componente do Modo Bike.',
             'Eliminado o erro directive_after_declaration que bloqueava o flutter analyze no workflow.',
@@ -785,8 +794,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.87',
+          version: '1.0.88',
           current: true,
+          changes: [
+            'Tela Ao vivo em paisagem redesenhada com câmera, mapa do trajeto, telemetria da bike e ações rápidas.',
+            'Detecções da câmera única passam a abrir em painel dedicado sob demanda, liberando mais espaço para o vídeo.',
+            'Mini-mapa usa o GPS local quando disponível e orienta o usuário quando a localização ainda não foi liberada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.87',
           changes: [
             'Corrigida a ordem da diretiva part of no componente do Modo Bike.',
             'Eliminado o erro directive_after_declaration que bloqueava o flutter analyze no workflow.',

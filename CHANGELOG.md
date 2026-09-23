@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.88+88 — 2026-09-22
+
+- Tela Ao vivo em paisagem redesenhada para o novo dashboard com cabeçalho, câmera em destaque, mapa do trajeto e barra de ações inferior.
+- Mini-mapa integrado ao monitor usa o GPS local quando disponível, mostra rota/posição atuais e oferece ativação guiada quando a localização ainda não foi liberada.
+- Telemetria da bike (velocidade, temperatura, pneus e distância) passa a ficar fixa logo abaixo do conteúdo principal, junto da faixa de status da sessão.
+- Detecções deixam de ocupar a lateral da câmera única e passam a abrir em painel dedicado sob demanda, preservando as opções antigas no modo de duas câmeras.
+- Versionamento, AppMetadata, app_identity.json, Sobre/Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.88+88`.
+
 ## 1.0.87+87 — 2026-09-22
 
 - Corrigida a ordem da diretiva `part of` em `bike_mode_screen_components.dart`.

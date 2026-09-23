@@ -1,19 +1,20 @@
-# Validação — Vigia IA 1.0.87+87
+# Validação — Vigia IA 1.0.88+88
 
-Data: 2026-09-22. Base preservada: 1.0.84+84.
+Data: 2026-09-22. Base preservada: 1.0.88+88.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de telemetria/diagnóstico desta entrega |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.87+87 |
+| `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e os ajustes de dashboard ao vivo com mapa desta entrega |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.88+88 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
 | Codec dos áudios | `ffprobe` validou os 78 arquivos como AAC-LC, mono, 24 kHz e com duração positiva |
 | Transporte remoto | Sequência, timestamp UTC, cache desativado, resposta 204 e descarte de duplicatas protegidos pelo verificador |
 | Interface | Faixa permanente de receptor/transmissor protegida pelo verificador e ligada ao Status da sessão |
+| Painel ao vivo em paisagem | Cabeçalho, mini-mapa, cards de telemetria e barra de ações do novo dashboard implementados no `MonitorScreen` para câmera única |
 | Buildfix Android-APK-40 | Operador nulo desnecessário e import redundante removidos |
 | Seleção de modo | Normal, Monitor, Bike e Transmissão persistidos por `AppLaunchModeService` e protegidos por teste |
 | Paisagem/monitor | AppBar fixa removida em paisagem, HUD superior compacto e saída explícita protegidos pelo verificador |

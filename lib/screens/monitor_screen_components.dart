@@ -917,6 +917,249 @@ class _LanValueRow extends StatelessWidget {
   );
 }
 
+
+class _DashboardMetricCard extends StatelessWidget {
+  const _DashboardMetricCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 170, maxWidth: 220),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.24),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: scheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 3),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      spacing: 6,
+                      children: [
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          unit,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardActionButton extends StatelessWidget {
+  const _DashboardActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.accent = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 54,
+      child: FilledButton.tonalIcon(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent
+              ? scheme.primary.withValues(alpha: 0.22)
+              : Colors.black.withValues(alpha: 0.24),
+          foregroundColor: accent ? scheme.primary : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: scheme.primary.withValues(alpha: 0.16)),
+          ),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardCameraBadge extends StatelessWidget {
+  const _DashboardCameraBadge({
+    required this.icon,
+    required this.label,
+    required this.active,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accent = active ? scheme.primary : Colors.white70;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: 0.24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: accent),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapLegendItem extends StatelessWidget {
+  const _MapLegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      );
+}
+
+class _MapUnavailableState extends StatelessWidget {
+  const _MapUnavailableState({
+    required this.availability,
+    required this.onEnable,
+    required this.onOpenFullMap,
+  });
+
+  final LocationTrackingAvailability? availability;
+  final VoidCallback onEnable;
+  final VoidCallback onOpenFullMap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = switch (availability) {
+      LocationTrackingAvailability.servicesDisabled =>
+        'Ative o GPS do Android para mostrar o mapa ao vivo.',
+      LocationTrackingAvailability.permissionDenied =>
+        'Permita a localização para exibir sua posição e a rota.',
+      LocationTrackingAvailability.permissionDeniedForever =>
+        'A localização foi bloqueada neste app. Abra o mapa completo para acessar os ajustes.',
+      LocationTrackingAvailability.ready =>
+        'Carregando mapa ao vivo…',
+      null => 'Ative o mapa ao vivo para mostrar posição e trajeto nesta tela.',
+    };
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.location_off_outlined, size: 40),
+            const SizedBox(height: 12),
+            const Text(
+              'Mapa indisponível agora',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            Text(text, textAlign: TextAlign.center),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: onEnable,
+                  icon: const Icon(Icons.my_location_rounded),
+                  label: const Text('Ativar mapa'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onOpenFullMap,
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Abrir tela completa'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StatusDot extends StatelessWidget {
   const _StatusDot({required this.active});
 
