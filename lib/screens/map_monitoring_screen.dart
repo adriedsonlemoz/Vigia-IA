@@ -2,13 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/map_route_point.dart';
+import '../models/offline_map_package.dart';
 import '../services/location_tracking_service.dart';
+import '../services/offline_map_service.dart';
+import '../widgets/offline_map_manager_sheet.dart';
 
 class MapMonitoringScreen extends StatefulWidget {
-  const MapMonitoringScreen({super.key});
+  const MapMonitoringScreen({
+    super.key,
+    this.cameraPreviewBuilder,
+    this.cameraAspectRatio,
+    this.cameraLabel = 'Principal',
+  });
+
+  final WidgetBuilder? cameraPreviewBuilder;
+  final double? cameraAspectRatio;
+  final String cameraLabel;
 
   @override
   State<MapMonitoringScreen> createState() => _MapMonitoringScreenState();
@@ -17,7 +30,15 @@ class MapMonitoringScreen extends StatefulWidget {
 class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   final MapController _mapController = MapController();
   final LocationTrackingService _location = LocationTrackingService.instance;
+  final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final List<MapRoutePoint> _route = <MapRoutePoint>[];
+
+  MbTilesTileProvider? _offlineTileProvider;
+  String? _offlineTilePackageId;
+  String? _offlineTileError;
+  int _offlineMinNativeZoom = 0;
+  int _offlineMaxNativeZoom = 19;
+  Offset? _cameraOffset;
 
   StreamSubscription<MapRoutePoint>? _positionSubscription;
   MapRoutePoint? _current;
@@ -36,6 +57,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   @override
   void initState() {
     super.initState();
+    _offlineMaps.addListener(_onOfflineMapsChanged);
+    unawaited(_initializeOfflineMaps());
     unawaited(_initialize());
   }
 
@@ -43,8 +66,47 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   void dispose() {
     _positionSubscription?.cancel();
     _elapsedTimer?.cancel();
+    _offlineMaps.removeListener(_onOfflineMapsChanged);
     _mapController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeOfflineMaps() async {
+    await _offlineMaps.initialize();
+    if (!mounted) return;
+    _syncOfflineTileProvider();
+  }
+
+  void _onOfflineMapsChanged() {
+    if (!mounted) return;
+    _syncOfflineTileProvider();
+  }
+
+  void _syncOfflineTileProvider() {
+    final active = _offlineMaps.activePackage;
+    if (_offlineTilePackageId == active?.id) {
+      setState(() {});
+      return;
+    }
+    _offlineTileProvider = null;
+    _offlineTilePackageId = active?.id;
+    _offlineTileError = null;
+    _offlineMinNativeZoom = 0;
+    _offlineMaxNativeZoom = 19;
+    if (active != null) {
+      try {
+        final provider = MbTilesTileProvider.fromPath(path: active.path);
+        final metadata = provider.mbtiles.getMetadata();
+        final minZoom = (metadata.minZoom ?? 0).floor().clamp(0, 22);
+        final maxZoom = (metadata.maxZoom ?? 19).ceil().clamp(minZoom, 22);
+        _offlineMinNativeZoom = minZoom.toInt();
+        _offlineMaxNativeZoom = maxZoom.toInt();
+        _offlineTileProvider = provider;
+      } catch (error) {
+        _offlineTileError = '$error';
+      }
+    }
+    setState(() {});
   }
 
   Future<void> _initialize() async {
@@ -162,16 +224,32 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
         .map((point) => LatLng(point.latitude, point.longitude))
         .toList(growable: false);
 
+    final offlineProvider = _offlineTileProvider;
+    final mode = _offlineMaps.mode;
+    final useOnline = mode != OfflineMapMode.offline;
+
     return Scaffold(
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Mapa do monitoramento', style: TextStyle(fontWeight: FontWeight.w900)),
-            Text('GPS e trajeto local', style: TextStyle(fontSize: 12)),
+            Text(
+              'Mapa do monitoramento',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            Text('GPS, trajeto e mapa offline', style: TextStyle(fontSize: 12)),
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Mapas offline',
+            onPressed: () => unawaited(showOfflineMapManager(context)),
+            icon: Icon(
+              offlineProvider == null
+                  ? Icons.download_for_offline_outlined
+                  : Icons.offline_pin_rounded,
+            ),
+          ),
           IconButton(
             tooltip: 'Centralizar',
             onPressed: current == null
@@ -184,116 +262,259 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: current == null ? 13 : 16,
-              minZoom: 3,
-              maxZoom: 19,
-              onMapReady: () {
-                _mapReady = true;
-                final point = _current;
-                if (point != null) _centerOn(point);
-              },
-              onPositionChanged: (_, hasGesture) {
-                if (hasGesture && _followPosition && mounted) {
-                  setState(() => _followPosition = false);
-                }
-              },
-            ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.vigiaia.app',
-                maxNativeZoom: 19,
-              ),
-              if (routePoints.length >= 2)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: routePoints,
-                      strokeWidth: 5,
-                      color: scheme.primary,
-                    ),
-                  ],
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: center,
+                  initialZoom: current == null ? 13 : 16,
+                  minZoom: 3,
+                  maxZoom: 19,
+                  onMapReady: () {
+                    _mapReady = true;
+                    final point = _current;
+                    if (point != null) _centerOn(point);
+                  },
+                  onPositionChanged: (_, hasGesture) {
+                    if (hasGesture && _followPosition && mounted) {
+                      setState(() => _followPosition = false);
+                    }
+                  },
                 ),
-              MarkerLayer(
-                markers: [
-                  if (_start != null)
-                    _pinMarker(_start!, Icons.flag_rounded, Colors.green, 'Início'),
-                  if (_end != null)
-                    _pinMarker(_end!, Icons.sports_score_rounded, scheme.error, 'Fim'),
-                  if (current != null)
-                    Marker(
-                      point: LatLng(current.latitude, current.longitude),
-                      width: 52,
-                      height: 52,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: scheme.primary.withValues(alpha: 0.20),
+                children: [
+                  if (offlineProvider != null)
+                    TileLayer(
+                      key: ValueKey<String>(
+                        'offline-${_offlineTilePackageId ?? 'active'}',
+                      ),
+                      tileProvider: offlineProvider,
+                      tileDisplay: TileDisplay.instantaneous(
+                        opacity: mode == OfflineMapMode.online ? 0 : 1,
+                      ),
+                      minNativeZoom: _offlineMinNativeZoom,
+                      maxNativeZoom: _offlineMaxNativeZoom,
+                    ),
+                  if (useOnline)
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.vigiaia.app',
+                      maxNativeZoom: 19,
+                    ),
+                  if (routePoints.length >= 2)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: routePoints,
+                          strokeWidth: 5,
+                          color: scheme.primary,
                         ),
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: scheme.primary,
-                            border: Border.all(color: Colors.white, width: 3),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      if (_start != null)
+                        _pinMarker(
+                          _start!,
+                          Icons.flag_rounded,
+                          Colors.green,
+                          'Início',
+                        ),
+                      if (_end != null)
+                        _pinMarker(
+                          _end!,
+                          Icons.sports_score_rounded,
+                          scheme.error,
+                          'Fim',
+                        ),
+                      if (current != null)
+                        Marker(
+                          point: LatLng(current.latitude, current.longitude),
+                          width: 52,
+                          height: 52,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: scheme.primary.withValues(alpha: 0.20),
+                            ),
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: scheme.primary,
+                                border: Border.all(color: Colors.white, width: 3),
+                              ),
+                            ),
                           ),
+                        ),
+                    ],
+                  ),
+                  Positioned(
+                    right: 8,
+                    bottom: 174,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          mode == OfflineMapMode.offline
+                              ? 'Mapa offline · confira a licença do pacote'
+                              : '© OpenStreetMap contributors',
+                          style: const TextStyle(fontSize: 10),
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
               Positioned(
-                right: 8,
-                bottom: 174,
+                top: 12,
+                left: 12,
+                child: _MapSourceChip(
+                  mode: mode,
+                  activePackage: _offlineMaps.activePackage,
+                  error: _offlineTileError,
+                  onTap: () => unawaited(showOfflineMapManager(context)),
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _GpsChip(point: current),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _MapRidePanel(
+                  tracking: _tracking,
+                  speedKmh: current?.speedKilometersPerHour ?? 0,
+                  distance: _formatDistance(),
+                  elapsed: _formatDuration(_elapsed),
+                  lastUpdate: current?.recordedAt,
+                  accuracy: current?.accuracyMeters,
+                  onToggleTracking: current == null
+                      ? null
+                      : _tracking
+                          ? _finishRoute
+                          : _startRoute,
+                  onCenter: current == null
+                      ? null
+                      : () {
+                          setState(() => _followPosition = true);
+                          _centerOn(current);
+                        },
+                ),
+              ),
+              if (widget.cameraPreviewBuilder != null)
+                _buildCameraPip(context, constraints),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCameraPip(
+    BuildContext context,
+    BoxConstraints constraints,
+  ) {
+    final previewBuilder = widget.cameraPreviewBuilder!;
+    final scheme = Theme.of(context).colorScheme;
+    final width = (constraints.maxWidth * 0.31).clamp(132.0, 196.0).toDouble();
+    final aspectRatio = (widget.cameraAspectRatio ?? (16 / 9)).clamp(0.65, 2.2);
+    final height = (width / aspectRatio).clamp(88.0, 152.0).toDouble();
+    final fallback = Offset(
+      constraints.maxWidth - width - 12,
+      58,
+    );
+    final raw = _cameraOffset ?? fallback;
+    final maxX = (constraints.maxWidth - width - 8).clamp(8.0, double.infinity);
+    final maxY = (constraints.maxHeight - height - 8).clamp(8.0, double.infinity);
+    final position = Offset(
+      raw.dx.clamp(8.0, maxX).toDouble(),
+      raw.dy.clamp(8.0, maxY).toDouble(),
+    );
+
+    return Positioned(
+      left: position.dx,
+      top: position.dy,
+      width: width,
+      height: height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: (details) {
+          setState(() {
+            final next = position + details.delta;
+            _cameraOffset = Offset(
+              next.dx.clamp(8.0, maxX).toDouble(),
+              next.dy.clamp(8.0, maxY).toDouble(),
+            );
+          });
+        },
+        child: Material(
+          elevation: 10,
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              previewBuilder(context),
+              Positioned(
+                left: 6,
+                right: 6,
+                bottom: 6,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: scheme.surface.withValues(alpha: 0.88),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black.withValues(alpha: 0.62),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: scheme.primary.withValues(alpha: 0.35),
+                    ),
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                    child: Text('© OpenStreetMap contributors', style: TextStyle(fontSize: 10)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.drag_indicator_rounded,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            widget.cameraLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _GpsChip(point: current),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _MapRidePanel(
-              tracking: _tracking,
-              speedKmh: current?.speedKilometersPerHour ?? 0,
-              distance: _formatDistance(),
-              elapsed: _formatDuration(_elapsed),
-              lastUpdate: current?.recordedAt,
-              accuracy: current?.accuracyMeters,
-              onToggleTracking: current == null
-                  ? null
-                  : _tracking
-                      ? _finishRoute
-                      : _startRoute,
-              onCenter: current == null
-                  ? null
-                  : () {
-                      setState(() => _followPosition = true);
-                      _centerOn(current);
-                    },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -365,6 +586,60 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                 ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapSourceChip extends StatelessWidget {
+  const _MapSourceChip({
+    required this.mode,
+    required this.activePackage,
+    required this.error,
+    required this.onTap,
+  });
+
+  final OfflineMapMode mode;
+  final OfflineMapPackage? activePackage;
+  final String? error;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasOffline = activePackage != null && error == null;
+    final label = error != null
+        ? 'Offline com erro'
+        : switch (mode) {
+            OfflineMapMode.automatic => hasOffline ? 'Auto + offline' : 'Online',
+            OfflineMapMode.online => 'Online',
+            OfflineMapMode.offline => hasOffline ? 'Offline' : 'Offline indisponível',
+          };
+    final icon = switch (mode) {
+      OfflineMapMode.automatic => Icons.swap_calls_rounded,
+      OfflineMapMode.online => Icons.cloud_outlined,
+      OfflineMapMode.offline => Icons.offline_pin_outlined,
+    };
+    return Material(
+      color: scheme.surface.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 17, color: error == null ? scheme.primary : scheme.error),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+              ),
+            ],
           ),
         ),
       ),

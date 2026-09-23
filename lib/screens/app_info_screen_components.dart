@@ -65,8 +65,19 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.95',
+          version: '1.0.96',
           current: true,
+          changes: [
+            'O mapa completo ganhou suporte a pacotes MBTiles baixados e armazenados no aparelho.',
+            'Mapas offline oferece modos Automático, Online e Offline, com seleção, progresso e exclusão de pacotes.',
+            'No modo Automático, o mapa local funciona como base/fallback enquanto a camada online atualiza os tiles quando houver rede.',
+            'Ao abrir o mapa pelo Monitor, a câmera principal aparece em PiP flutuante e pode ser arrastada por toda a área útil da tela.',
+            'O servidor público do OpenStreetMap continua restrito ao uso online normal; o app não faz download em massa dele.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.95',
           changes: [
             'Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos para caber mais telemetria na mesma linha.',
             'O mapa vertical ficou ainda mais alto e qualquer toque na área útil abre a tela completa; o botão Abrir mapa foi substituído por Câmera.',
@@ -864,8 +875,19 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.95',
+          version: '1.0.96',
           current: true,
+          changes: [
+            'O mapa completo ganhou suporte a pacotes MBTiles baixados e armazenados no aparelho.',
+            'Mapas offline oferece modos Automático, Online e Offline, com seleção, progresso e exclusão de pacotes.',
+            'No modo Automático, o mapa local funciona como base/fallback enquanto a camada online atualiza os tiles quando houver rede.',
+            'Ao abrir o mapa pelo Monitor, a câmera principal aparece em PiP flutuante e pode ser arrastada por toda a área útil da tela.',
+            'O servidor público do OpenStreetMap continua restrito ao uso online normal; o app não faz download em massa dele.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.95',
           changes: [
             'Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos para caber mais telemetria na mesma linha.',
             'O mapa vertical ficou ainda mais alto e qualquer toque na área útil abre a tela completa; o botão Abrir mapa foi substituído por Câmera.',

@@ -125,7 +125,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                 title: const Text('Abrir mapa completo'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  unawaited(_openStandardScreen(const MapMonitoringScreen()));
+                  unawaited(_openStandardScreen(_mapMonitoringScreen()));
                 },
               ),
               ListTile(
@@ -168,7 +168,7 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
   }
 
   Future<void> _openFullMap() async {
-    await _openStandardScreen(const MapMonitoringScreen());
+    await _openStandardScreen(_mapMonitoringScreen());
   }
 
 

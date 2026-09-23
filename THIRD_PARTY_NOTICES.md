@@ -8,3 +8,5 @@ A inferencia local usa o pacote `flutter_litert` fixado em `3.8.0`, com Interpre
 
 
 O pareamento por QR usa `qr_flutter` para renderização local e `mobile_scanner` para leitura. No Android, o projeto mantém a configuração padrão com o leitor ML Kit embarcado no aplicativo para que a leitura de QR não dependa de download em tempo de uso. Consulte as licenças resolvidas pelo `pub` antes da distribuição.
+
+O suporte a mapas offline raster usa `flutter_map_mbtiles` 1.0.4 (licença MIT), que integra arquivos MBTiles locais ao `flutter_map` e depende de `mbtiles`/SQLite. Os arquivos `.mbtiles` baixados pelo usuário continuam sujeitos à licença e aos termos da fonte que os distribui; o Vigia IA não realiza download em massa do servidor público `tile.openstreetmap.org`.

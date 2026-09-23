@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.95+95`
+> **Versão atual:** `1.0.96+96`
 
 ## Estado atual
 
-A `1.0.95+95` refina a tela Ao vivo: telemetria mais estreita, mapa maior e clicável, menu de câmeras unificado, atalhos com contraste correto, painel de seis ações em uma linha e PiP arrastável.
+A `1.0.96+96` adiciona mapas offline por pacotes MBTiles e leva a câmera principal para a tela completa do mapa em uma janela flutuante arrastável.
+
+### Evolução 1.0.96 — Mapas offline e câmera flutuante
+
+- o mapa completo ganhou **Mapas offline**, com download de pacotes raster `.mbtiles` por link direto e armazenamento interno do aparelho;
+- o gerenciador lista tamanho/origem, permite ativar e excluir pacotes e mostra progresso do download; arquivos são validados como MBTiles raster PNG/JPG/WebP antes da ativação;
+- os modos **Automático**, **Online** e **Offline** permitem escolher como o mapa será carregado; no automático, o pacote local funciona como base/fallback e a internet atualiza tiles quando disponível, respeitando o zoom nativo do MBTiles;
+- o servidor público `tile.openstreetmap.org` continua sendo usado apenas para visualização online normal, nunca para download em massa;
+- ao abrir o mapa completo a partir do Monitor, a câmera principal aparece em uma janela PiP compacta;
+- a janela da câmera pode ser arrastada por toda a área útil da tela para não cobrir o trajeto;
+- abrir o mapa a partir do modo Bike continua funcionando sem PiP de câmera.
 
 ### Evolução 1.0.95 — Monitor mais denso e câmeras unificadas
 

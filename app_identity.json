@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.95 refina o Monitor vertical: telemetria mais estreita, mapa clicável e maior, menu Câmera unificado, atalhos visuais corrigidos, PiP arrastável e menus superiores sem duplicações.",
-  "version": "1.0.95",
-  "build": 95
+  "notes": "A 1.0.96 adiciona mapas offline por pacotes MBTiles com modos Automático/Online/Offline e câmera principal flutuante, arrastável sobre o mapa completo.",
+  "version": "1.0.96",
+  "build": 96
 }

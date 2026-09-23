@@ -944,6 +944,24 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
 
 
+
+  Widget _mapMonitoringScreen() {
+    final configured = _controller.sourceConfig.displayName?.trim();
+    final label = configured != null && configured.isNotEmpty
+        ? configured
+        : switch (_controller.sourceConfig.type) {
+            VideoSourceType.localCamera => 'Local',
+            VideoSourceType.remotePhone => 'Celular remoto',
+            VideoSourceType.esp32 => 'ESP32',
+            VideoSourceType.rtsp => 'RTSP',
+          };
+    return MapMonitoringScreen(
+      cameraPreviewBuilder: (_) => _controller.buildPreview(),
+      cameraAspectRatio: _controller.previewAspectRatio,
+      cameraLabel: label,
+    );
+  }
+
   Future<void> _openStandardScreen(Widget screen) async {
     if (_fullscreen) await _toggleFullscreen();
     await SystemUiService.edgeToEdge();

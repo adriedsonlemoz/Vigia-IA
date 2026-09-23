@@ -1,15 +1,23 @@
-# Validação — Vigia IA 1.0.95+95
+# Validação — Vigia IA 1.0.96+96
 
-Data: 2026-09-23. Base preservada: 1.0.94+94.
+## 1.0.96+96 — mapas offline e PiP do mapa completo
+
+- `tool/verify_project.sh` deve confirmar a dependência `flutter_map_mbtiles`, o serviço de pacotes offline, os três modos de mapa e a câmera principal arrastável.
+- Validar no aparelho: baixar um `.mbtiles` válido por link direto, alternar Automático/Online/Offline, reiniciar o app e confirmar persistência do pacote ativo.
+- Validar no Monitor: abrir o mapa completo, mover o PiP da câmera pelos quatro cantos e confirmar que o trajeto/mapa continuam interativos.
+- Confirmar pelo workflow `flutter analyze`, `flutter test` e o build Android, pois o ambiente de edição pode não conter Flutter/Android SDK.
+
+
+Data: 2026-09-23. Base preservada: 1.0.95+95.
 
 ## Executado nesta entrega
 
 | Verificação | Resultado |
 |---|---|
-| Monitor vertical 1.0.95 | Telemetria mais estreita; mapa maior/clicável; hub Câmera; seis atalhos responsivos; PiP arrastável |
+| Mapas offline 1.0.96 | MBTiles por link direto; modos Automático/Online/Offline; persistência, progresso e exclusão |
 | `bash tool/verify_project.sh` | Passou, incluindo sincronização de versão, contratos antigos e a proteção contra regressão do lint do Android-APK-59 |
 | `flutter analyze` / `flutter test` / build Android | Não executados localmente: Flutter, Dart e Android SDK não estão instalados neste ambiente; confirmar no workflow |
-| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.95+95 |
+| Sincronização de versão | `pubspec.yaml`, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura e release notes em 1.0.96+96 |
 | Fontes Android espelhadas | `MainActivity.kt`, `AlertAudioPlayer.kt` e `AudioResourceCatalog.kt` são idênticos entre `tool/android` e o projeto Android gerado |
 | JSON e scripts shell | Estruturas válidas e scripts sem erro de sintaxe do Bash |
 | Áudios padrão | 78 arquivos M4A preservados em `custom_audio` e `res/raw`; verificador confirma igualdade dos bytes |
@@ -48,6 +56,17 @@ Data: 2026-09-23. Base preservada: 1.0.94+94.
 | Bateria | Telemetria local aparece uma vez; bateria adicional somente para fonte remota |
 | Telemetria ESP32/Bike | Faixa superior reorganizada em uma única linha horizontal rolável, sem grade quebrada no retrato |
 | Diagnóstico | Estados Serviço/Câmera/Frames/IA/LAN/clientes/Permissões/2º plano ficam em faixa horizontal compacta; ações de 30 s, 60 s e Exportar permanecem juntas |
+
+## Roteiro da 1.0.96
+
+- abrir o mapa completo pelo Monitor e confirmar que a câmera principal aparece em PiP flutuante; arrastar pelos quatro cantos e também sobre regiões centrais do mapa;
+- confirmar que mover a câmera não impede pan/zoom do mapa fora da janela PiP e que o trajeto permanece visível;
+- abrir **Mapas offline**, colar um link direto para um `.mbtiles` raster válido, acompanhar o progresso e confirmar ativação automática ao concluir;
+- testar **Automático**, **Online** e **Offline**; no modo Offline, desligar dados/Wi-Fi e confirmar que a região contida no MBTiles continua visível;
+- reiniciar o app e confirmar persistência do pacote ativo e do modo selecionado;
+- excluir o pacote ativo e confirmar que o serviço volta a um estado seguro sem deixar o mapa travado;
+- abrir o mapa pelo modo Bike e confirmar que ele continua funcionando sem PiP de câmera;
+- confirmar que nenhum download em massa usa `tile.openstreetmap.org`; a camada pública continua somente para visualização online normal.
 
 ## Roteiro da 1.0.95
 

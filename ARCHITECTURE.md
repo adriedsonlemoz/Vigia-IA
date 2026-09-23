@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.95+95
+# Arquitetura — Vigia IA 1.0.96+96
 
 ## 1. Princípios
+
+## Evolução 1.0.96 — mapas offline e câmera no mapa completo
+
+- `OfflineMapService` gerencia pacotes raster `.mbtiles` no armazenamento interno, com manifesto persistente, download HTTP/HTTPS, validação SQLite, seleção, exclusão e progresso.
+- `flutter_map_mbtiles` integra o pacote local ao `FlutterMap` existente sem trocar o renderer do mapa.
+- O mapa completo oferece modos **Automático**, **Online** e **Offline**. No automático, o MBTiles ativo fica como camada base e os tiles online são desenhados por cima quando disponíveis.
+- O download em massa do servidor público `tile.openstreetmap.org` não é usado; o gerenciador recebe um link direto para um pacote MBTiles de uma fonte/servidor que permita uso offline.
+- `MapMonitoringScreen` recebe opcionalmente a prévia da câmera principal do `MonitorController`; quando aberto pelo Monitor, mostra essa fonte em PiP flutuante e arrastável por toda a área útil do mapa.
+- O mapa continua acessível pelo modo Bike sem exigir uma câmera; nesse fluxo o PiP simplesmente não é criado.
 
 ## Evolução 1.0.95 — densidade, navegação e hub de câmeras
 

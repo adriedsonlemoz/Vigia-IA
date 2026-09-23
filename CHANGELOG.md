@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.96+96 — 2026-09-23
+
+- Adicionado suporte a mapas offline raster por pacotes `.mbtiles` usando `flutter_map_mbtiles`.
+- Novo `OfflineMapService` persiste pacotes no armazenamento interno, valida SQLite/MBTiles e o formato raster PNG/JPG/WebP, acompanha progresso, ativa e exclui mapas locais.
+- Gerenciador **Mapas offline** permite baixar um pacote por link HTTP/HTTPS direto e alternar entre **Automático**, **Online** e **Offline**.
+- No modo Automático, o MBTiles ativo funciona como camada local de base/fallback e a camada online continua atualizando o mapa quando houver rede; o zoom nativo declarado pelo pacote é respeitado para permitir overzoom correto.
+- O app não realiza download em massa do servidor público do OpenStreetMap; pacotes offline devem vir de uma fonte/servidor autorizado para esse uso.
+- Ao abrir o mapa completo pelo Monitor, a câmera principal passa a aparecer em PiP flutuante.
+- O PiP da câmera principal pode ser arrastado livremente por toda a área útil do mapa para não encobrir o trajeto.
+- O mapa aberto pelo modo Bike continua disponível sem exigir câmera.
+- Versionamento, AppMetadata, app_identity.json, Mudanças, README, CHANGELOG, arquitetura, validação e verificadores sincronizados em `1.0.96+96`.
+
 ## 1.0.95+95 — 2026-09-23
 
 - Cards de velocidade, temperatura, pneus e distância ficaram mais estreitos e densos, reduzindo espaço vazio à direita e permitindo mais telemetria na mesma linha.
