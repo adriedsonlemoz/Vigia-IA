@@ -494,6 +494,10 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
   }
 
   void _navigateMain(int index) {
+    if (index == 4) {
+      _openSettings();
+      return;
+    }
     if (index == 3) return;
     final Widget target = switch (index) {
       0 => const HomeScreen(),

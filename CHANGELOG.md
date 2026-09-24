@@ -1,3 +1,13 @@
+## 1.0.113+113 — 2026-09-24
+
+- Iniciado o redesign amplo do Vigia IA com fundação visual compartilhada em `VigiaTheme` e componentes reutilizáveis para cards, seções, status e acessos rápidos.
+- Home reorganizada para destacar **Monitor ao vivo**, **Modo transmissão** e **Modo Bike** antes das opções técnicas.
+- Criados acessos rápidos para **Câmeras**, **Mapa**, **Histórico**, **Diagnóstico** e **Ajustes**.
+- Fonte e configurações existentes do monitor foram preservadas dentro de **Preparar monitoramento**, reduzindo a poluição visual sem remover funções.
+- Navegação principal ampliada para cinco destinos com **Ajustes** e rótulo **Ao vivo**, mantendo `NavigationRail` adaptativo em paisagem/tablet.
+- Testes de navegação atualizados e adicionado teste dos novos componentes visuais compartilhados.
+- Identidade, documentação, AppMetadata, verificadores e versionamento sincronizados em `1.0.113+113`.
+
 ## 1.0.112+112 — 2026-09-24
 
 - Redesenhado o botão Mapa: abre diretamente o painel **Próximos pontos**, separado das configurações.

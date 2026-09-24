@@ -5,8 +5,9 @@ import '../core/adaptive_layout.dart';
 const _mainDestinations = <({IconData icon, IconData selectedIcon, String label})>[
   (icon: Icons.home_outlined, selectedIcon: Icons.home_rounded, label: 'Início'),
   (icon: Icons.history_outlined, selectedIcon: Icons.history_rounded, label: 'Histórico'),
-  (icon: Icons.videocam_outlined, selectedIcon: Icons.videocam_rounded, label: 'Monitor'),
+  (icon: Icons.videocam_outlined, selectedIcon: Icons.videocam_rounded, label: 'Ao vivo'),
   (icon: Icons.video_library_outlined, selectedIcon: Icons.video_library_rounded, label: 'Câmeras'),
+  (icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: 'Ajustes'),
 ];
 
 class MainNavigationBar extends StatelessWidget {
@@ -68,7 +69,7 @@ class MainNavigationRail extends StatelessWidget {
   }
 }
 
-/// Shared shell for the four primary destinations.
+/// Shared shell for the five primary destinations.
 ///
 /// Portrait phones keep the bottom NavigationBar. Landscape phones and tablets
 /// move navigation to a compact left rail so the limited vertical space is not

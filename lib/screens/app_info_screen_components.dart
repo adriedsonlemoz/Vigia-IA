@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.112',
+          version: '1.0.113',
           current: true,
+          changes: [
+            'Iniciado o redesign amplo com um design system compartilhado para tema, cards, botões, chips, painéis e navegação.',
+            'A Home agora destaca Monitor ao vivo, Modo transmissão e Modo Bike, com acessos rápidos para Câmeras, Mapa, Histórico, Diagnóstico e Ajustes.',
+            'Configurações técnicas do monitor foram preservadas e recolhidas em Preparar monitoramento para reduzir poluição visual sem remover funções.',
+            'A navegação principal passa a incluir Ajustes como quinto destino e adota a mesma linguagem visual em retrato e paisagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.112',
           changes: [
             'Mapa abre diretamente Próximos pontos, com filtros rápidos, distância, categoria e origem Online/Offline.',
             'Configurações do mapa e percurso ficam separadas na engrenagem, incluindo raio, categorias, alertas, dados e mapas offline.',
@@ -1025,8 +1035,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.112',
+          version: '1.0.113',
           current: true,
+          changes: [
+            'Iniciado o redesign amplo com um design system compartilhado para tema, cards, botões, chips, painéis e navegação.',
+            'A Home agora destaca Monitor ao vivo, Modo transmissão e Modo Bike, com acessos rápidos para Câmeras, Mapa, Histórico, Diagnóstico e Ajustes.',
+            'Configurações técnicas do monitor foram preservadas e recolhidas em Preparar monitoramento para reduzir poluição visual sem remover funções.',
+            'A navegação principal passa a incluir Ajustes como quinto destino e adota a mesma linguagem visual em retrato e paisagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.112',
           changes: [
             'Mapa abre diretamente Próximos pontos, com filtros rápidos, distância, categoria e origem Online/Offline.',
             'Configurações do mapa e percurso ficam separadas na engrenagem, incluindo raio, categorias, alertas, dados e mapas offline.',

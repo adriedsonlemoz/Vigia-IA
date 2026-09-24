@@ -2,12 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.112+112`
+> **Versão atual:** `1.0.113+113`
 
 ## Estado atual
 
-A `1.0.112+112` separa o uso rápido em **Próximos pontos** das configurações do mapa e permite usar o mapa expandido no lugar da câmera no monitor.
+A `1.0.113+113` inicia o redesign amplo do Vigia IA com uma fundação visual compartilhada, nova Home orientada aos três modos principais e navegação mais clara, preservando as funções existentes.
 
+
+### Evolução 1.0.113 — fundação do novo design e Home
+
+- Criado `lib/core/vigia_design.dart` como base compartilhada de cores, superfícies, raios, botões, chips, diálogos e navegação, mantendo o tema escuro como padrão visual principal.
+- Criado `lib/widgets/vigia_ui.dart` com componentes reutilizáveis de seção, superfície, status, cards de modo e acessos rápidos para as próximas etapas do redesign.
+- A Home passou a destacar **Monitor ao vivo**, **Modo transmissão** e **Modo Bike**, cada um com descrição curta e acesso direto.
+- Adicionados acessos rápidos para **Câmeras**, **Mapa**, **Histórico**, **Diagnóstico** e **Ajustes**.
+- Fonte, objetos, regras, agenda e automações continuam disponíveis, mas ficam recolhidos em **Preparar monitoramento**, evitando poluição visual sem remover funcionalidades.
+- A navegação principal agora tem cinco destinos: **Início**, **Histórico**, **Ao vivo**, **Câmeras** e **Ajustes**; em paisagem/tablet continua migrando para `NavigationRail`.
+- Nenhum asset foi criado a partir do mockup; a imagem fornecida foi usada apenas como direção visual.
 
 ### Evolução 1.0.112 — Próximos pontos e mapa expandido
 

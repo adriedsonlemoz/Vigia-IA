@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.112+112' pubspec.yaml || fail 'Versao esperada 1.0.112+112 nao encontrada.'
+grep -Fxq 'version: 1.0.113+113' pubspec.yaml || fail 'Versao esperada 1.0.113+113 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -147,7 +147,7 @@ grep -q 'EventHistoryService.instance' lib/controllers/monitor_controller.dart \
   || fail 'Historico nao esta ligado ao MonitorController.'
 grep -q 'DetectionOverlay' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart \
   || fail 'Caixas de deteccao nao estao ligadas ao preview.'
-grep -q 'EventsScreen' lib/screens/home_screen.dart \
+grep -q 'EventsScreen' lib/screens/home_screen*.dart \
   || fail 'Historico de eventos nao esta acessivel pela Home.'
 grep -q 'maxEvents = 200' lib/services/event_history_service.dart \
   || fail 'Limite preventivo do historico nao foi encontrado.'
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.112';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.112.'
-grep -q 'static const int build = 112;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 111.'
-grep -q "version: '1.0.112'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.112.'
+grep -q "static const String version = '1.0.113';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.113.'
+grep -q 'static const int build = 113;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 113.'
+grep -q "version: '1.0.113'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.113.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.112+112' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.112+112.'
+grep -Fq 'version: 1.0.113+113' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.113+113.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.112"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.112.'
-grep -q '"build": 112' app_identity.json \
-  || fail 'app_identity.json nao esta no build 111.'
+grep -q '"version": "1.0.113"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.113.'
+grep -q '"build": 113' app_identity.json \
+  || fail 'app_identity.json nao esta no build 113.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -637,7 +637,7 @@ grep -q "title: 'Automóveis'" lib/widgets/object_filter_dialog.dart \
   || fail 'Card Automoveis nao encontrado na selecao.'
 grep -q "title: 'Animais'" lib/widgets/object_filter_dialog.dart \
   || fail 'Card Animais nao encontrado na selecao.'
-for destination in 'Início' 'Histórico' 'Monitor' 'Câmeras'; do
+for destination in 'Início' 'Histórico' 'Ao vivo' 'Câmeras' 'Ajustes'; do
   grep -q "label: '$destination'" lib/widgets/main_navigation_bar.dart \
     || fail "Destino principal ausente: $destination"
 done
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.112+112' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.112+112.'
+grep -Fq 'Vigia IA 1.0.113+113' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.113+113.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -955,7 +955,7 @@ if grep -q "label: 'Bike'" lib/widgets/main_navigation_bar.dart; then
   fail 'Destino Bike reapareceu no menu principal.'
 fi
 test -f test/main_navigation_bar_test.dart || fail 'Teste do menu principal ausente.'
-grep -q "findsNWidgets(4)" test/main_navigation_bar_test.dart || fail 'Teste nao valida os quatro destinos principais.'
+grep -q "findsNWidgets(5)" test/main_navigation_bar_test.dart || fail 'Teste nao valida os cinco destinos principais.'
 grep -q "find.text('Bike'), findsNothing" test/main_navigation_bar_test.dart \
   || fail 'Teste nao protege a retirada de Bike do menu inferior.'
 grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart \
@@ -1686,8 +1686,8 @@ grep -q '_MultiCameraScreenState._automaticRefreshInterval' lib/screens/multi_ca
 if grep -q "label: 'Bike'" lib/widgets/main_navigation_bar.dart; then
   fail 'Bike reapareceu no menu principal.'
 fi
-grep -q "findsNWidgets(4)" test/main_navigation_bar_test.dart \
-  || fail 'Teste do menu nao exige quatro destinos.'
+grep -q "findsNWidgets(5)" test/main_navigation_bar_test.dart \
+  || fail 'Teste do menu nao exige cinco destinos.'
 grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart \
   || fail 'Configuracoes nao oferece acesso ao Modo Bike.'
 if grep -q '4 => const BikeModeScreen()' lib/screens/home_screen.dart lib/screens/events_screen.dart lib/screens/multi_camera_screen.dart; then
@@ -2290,3 +2290,17 @@ grep -q "_MonitorPrimaryContentMode.map" lib/screens/monitor_screen_portrait.dar
 grep -q "label: Text('Mapa')" lib/screens/monitor_screen_multicamera.dart || fail 'Menu Camera nao oferece Mapa.'
 grep -q "alertDistanceMeters" lib/models/route_explorer_models.dart || fail 'Distancia configuravel de alerta ausente.'
 grep -q "clearOfflineResults" lib/services/route_explorer_service.dart || fail 'Exclusao de pontos offline ausente.'
+
+
+# Fundacao do redesign amplo - 1.0.113
+grep -Fq '## 1.0.113+113' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.113.'
+grep -q 'Evolução 1.0.113' README.md || fail 'README nao documenta 1.0.113.'
+grep -q "version: '1.0.113'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.113.'
+[[ -f RELEASE-1.0.113.md ]] || fail 'Notas da entrega 1.0.113 ausentes.'
+[[ -f lib/core/vigia_design.dart ]] || fail 'Design system compartilhado ausente.'
+[[ -f lib/widgets/vigia_ui.dart ]] || fail 'Componentes visuais compartilhados ausentes.'
+grep -q "title: 'Monitor ao vivo'" lib/screens/home_screen*.dart || fail 'Home nao destaca Monitor ao vivo.'
+grep -q "title: 'Modo transmissão'" lib/screens/home_screen*.dart || fail 'Home nao destaca Modo transmissao.'
+grep -q "title: 'Modo Bike'" lib/screens/home_screen*.dart || fail 'Home nao destaca Modo Bike.'
+grep -q "label: 'Diagnóstico'" lib/screens/home_screen*.dart || fail 'Home nao oferece acesso rapido ao Diagnostico.'
+grep -q "label: 'Ajustes'" lib/widgets/main_navigation_bar.dart || fail 'Navegacao principal nao inclui Ajustes.'

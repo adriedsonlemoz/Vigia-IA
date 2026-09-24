@@ -13,12 +13,18 @@ import '../services/camera_registry_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
+import '../core/vigia_design.dart';
 import '../widgets/main_navigation_bar.dart';
+import '../widgets/vigia_ui.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
+import 'bike_mode_screen.dart';
+import 'camera_mode_screen.dart';
+import 'error_center_screen.dart';
 import 'events_screen.dart';
 import 'esp32_settings_screen.dart';
 import 'launch_mode_screen.dart';
+import 'map_monitoring_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
@@ -26,6 +32,7 @@ import 'phone_pairing_scanner_screen.dart';
 
 part 'home_screen_components.dart';
 part 'home_screen_source_panel.dart';
+part 'home_screen_redesign.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.startMonitorOnLoad = false});
@@ -465,284 +472,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) await _loadSettings();
   }
 
-  void _navigateMain(int index) {
-    if (index == 0) return;
-    if (index == 2) {
-      unawaited(_start());
-      return;
-    }
-    final Widget target = switch (index) {
-      1 => const EventsScreen(),
-      3 => const MultiCameraScreen(),
-      _ => const HomeScreen(),
-    };
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => target),
-    );
-  }
-
-  Future<void> _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-    );
-    if (mounted) await _loadSettings();
-  }
-
-  void _changeMode() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(
-        builder: (_) => const LaunchModeScreen(manualReview: false),
-      ),
-      (_) => false,
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    final activeZones = _monitoringZones.where((zone) => zone.enabled).length;
-
-    final overview = <Widget>[
-      Align(
-        alignment: Alignment.centerRight,
-        child: OutlinedButton.icon(
-          onPressed: _changeMode,
-          icon: const Icon(Icons.swap_horiz_rounded),
-          label: const Text('Alterar modo'),
-        ),
-      ),
-      const SizedBox(height: 8),
-      _buildHero(context, activeZones),
-      const SizedBox(height: 16),
-      _buildSourcePanel(context),
-      const SizedBox(height: 16),
-      _PrivacyCard(sourceType: _sourceType),
-    ];
-    final controls = <Widget>[
-      _SectionTitle(
-        eyebrow: 'MONITORAMENTO',
-        title: 'O que a IA deve observar',
-        subtitle: 'Os ajustes mais usados ficam aqui; parâmetros técnicos ficam em Configurações → Avançado.',
-      ),
-      const SizedBox(height: 10),
-      _ActionCard(
-        icon: Icons.filter_alt_outlined,
-        title: 'Objetos monitorados',
-        subtitle: objectFilterSummary(_alertLabels),
-        badge: '${objectFilterGroupCount(_alertLabels)}/3',
-        onTap: _configureObjectFilter,
-      ),
-      _ActionCard(
-        icon: Icons.rule_outlined,
-        title: 'Regras inteligentes',
-        subtitle: smartAlertRulesSummary(_smartAlertRules),
-        onTap: _configureSmartAlertRules,
-      ),
-      _ActionCard(
-        icon: Icons.grid_view_rounded,
-        title: 'Áreas de vigilância',
-        subtitle: activeZones == 0
-            ? 'Tela inteira. Áreas limitam onde a IA observa; elas não fazem contagem.'
-            : '$activeZones ativa(s) de ${_monitoringZones.length}. Áreas limitam a região observada e não contam passagens.',
-        badge: activeZones == 0 ? 'Tela toda' : '$activeZones',
-      ),
-      _ActionCard(
-        icon: Icons.schedule_rounded,
-        title: 'Agenda automática',
-        subtitle: monitorScheduleSummary(_schedule),
-        badge: _schedule.enabled ? 'Ativa' : 'Manual',
-        onTap: _configureSchedule,
-      ),
-      const SizedBox(height: 18),
-      const _SectionTitle(
-        eyebrow: 'AUTOMAÇÃO',
-        title: 'Recursos do monitor',
-        subtitle: 'Ligue só o que fizer sentido para o seu cenário.',
-      ),
-      const SizedBox(height: 10),
-      _FeatureGrid(
-        motionOnly: _motionOnly,
-        clipRecordingEnabled: _clipRecordingEnabled,
-        trackingEnabled: _trackingEnabled,
-        announceEntryExit: _trackingEnabled && _announceEntryExit,
-        backgroundMonitoringEnabled: _backgroundMonitoringEnabled,
-        voiceEnabled: _voiceEnabled,
-        onMotionChanged: (value) {
-          setState(() => _motionOnly = value);
-          _schedulePersist();
-        },
-        onClipChanged: (value) {
-          setState(() => _clipRecordingEnabled = value);
-          _schedulePersist();
-        },
-        onTrackingChanged: (value) {
-          setState(() => _trackingEnabled = value);
-          _schedulePersist();
-        },
-        onEntryExitChanged: _trackingEnabled
-            ? (value) {
-                setState(() => _announceEntryExit = value);
-                _schedulePersist();
-              }
-            : null,
-        onBackgroundChanged: (value) {
-          setState(() => _backgroundMonitoringEnabled = value);
-          _schedulePersist();
-        },
-        onVoiceChanged: (value) {
-          setState(() => _voiceEnabled = value);
-          _schedulePersist();
-        },
-      ),
-    ];
-
-    overview.addAll([
-      const SizedBox(height: 14),
-      FilledButton.icon(
-        onPressed: _start,
-        icon: const Icon(Icons.play_arrow_rounded),
-        label: const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          child: Text(
-            'INICIAR MONITORAMENTO',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-        ),
-      ),
-    ]);
-
-    return AdaptiveMainScaffold(
-      currentIndex: 0,
-      onDestinationSelected: _navigateMain,
-      appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Vigia IA', style: TextStyle(fontWeight: FontWeight.w800)),
-            Text(
-              'Vigilância local e privada',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Ajustes e informações',
-            onPressed: () => unawaited(_openSettings()),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 700;
-            final content = wide
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        flex: 9,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 10, 28),
-                          children: overview,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 11,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(10, 12, 20, 28),
-                          children: controls,
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-                    children: [...overview, const SizedBox(height: 22), ...controls],
-                  );
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1180),
-                child: content,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHero(BuildContext context, int activeZones) {
-    final scheme = Theme.of(context).colorScheme;
-    final sourceText = switch (_sourceType) {
-      VideoSourceType.localCamera => 'Dispositivo',
-      VideoSourceType.rtsp => 'RTSP',
-      VideoSourceType.remotePhone => 'Celular remoto',
-      VideoSourceType.esp32 => 'ESP32',
-    };
-    final scheduleText = _schedule.enabled
-        ? '${formatMinuteOfDay(_schedule.startMinute)}–${formatMinuteOfDay(_schedule.endMinute)}'
-        : 'Manual';
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            scheme.primary.withValues(alpha: 0.18),
-            scheme.secondary.withValues(alpha: 0.07),
-            scheme.surface,
-          ],
-        ),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.20)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.shield_outlined, color: scheme.primary, size: 21),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Pronto para monitorar',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                ),
-              ),
-              const _LiveDot(label: 'LOCAL'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              _MetricChip(icon: Icons.videocam_outlined, label: sourceText),
-              _MetricChip(
-                icon: Icons.grid_view_rounded,
-                label: activeZones == 0 ? 'Tela inteira' : '$activeZones áreas',
-              ),
-              _MetricChip(icon: Icons.schedule_rounded, label: scheduleText),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
+  Widget build(BuildContext context) => _buildRedesignedHome(context);
 }

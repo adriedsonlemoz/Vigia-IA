@@ -85,6 +85,10 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   void _navigateMain(int index) {
+    if (index == 4) {
+      _openSettings();
+      return;
+    }
     if (index == 1) return;
     final Widget target = switch (index) {
       0 => const HomeScreen(),

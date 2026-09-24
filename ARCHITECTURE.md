@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.112+112
+# Arquitetura — Vigia IA 1.0.113+113
 
 ## 1. Princípios
+
+## Evolução 1.0.113 — design system e Home orientada a modos
+
+- `core/vigia_design.dart` centraliza tokens visuais e `ThemeData`; telas novas não devem criar paletas ou raios paralelos quando os tokens existentes atenderem ao caso.
+- `widgets/vigia_ui.dart` concentra blocos reutilizáveis (`VigiaSurfaceCard`, `VigiaModeCard`, `VigiaQuickAction`, `VigiaSectionHeading` e `VigiaStatusPill`).
+- `HomeScreen` continua sendo dona do perfil de monitoramento existente, porém a configuração técnica deixa de dominar a primeira dobra: modos e acessos rápidos ficam visíveis primeiro, enquanto o painel **Preparar monitoramento** preserva a lógica anterior.
+- A primeira etapa não duplica serviços de IA, mapa, câmera, áudio ou transmissão. Os atalhos navegam para as telas e serviços existentes.
+- `MainNavigationBar`/`MainNavigationRail` permanecem adaptativos e passam a expor Ajustes como quinto destino.
+- As próximas telas devem migrar gradualmente para a mesma fundação, evitando uma troca total de uma só vez.
 
 ## Evolução 1.0.112 — Próximos pontos separado das configurações
 

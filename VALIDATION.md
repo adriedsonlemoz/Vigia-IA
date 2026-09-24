@@ -1,5 +1,15 @@
-# Validação — Vigia IA 1.0.112+112
+# Validação — Vigia IA 1.0.113+113
 
+
+## 1.0.113+113 — fundação visual, Home e navegação
+
+- Confirmar que a Home mostra os três cards principais: **Monitor ao vivo**, **Modo transmissão** e **Modo Bike**.
+- Confirmar os cinco acessos rápidos: **Câmeras**, **Mapa**, **Histórico**, **Diagnóstico** e **Ajustes**.
+- Confirmar que **Preparar monitoramento** mantém fonte, filtros de objetos, regras, áreas, agenda e automações existentes.
+- Confirmar que a navegação principal contém cinco destinos e troca para `NavigationRail` em paisagem/tablet.
+- Confirmar que `VigiaTheme`, `VigiaModeCard` e `VigiaQuickAction` são reutilizáveis e não dependem de assets do mockup.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK final precisam ser confirmados pelo workflow.
 
 ## 1.0.112+112 — Próximos pontos e mapa expandido
 

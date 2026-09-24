@@ -1,0 +1,301 @@
+import 'package:flutter/material.dart';
+
+import '../core/vigia_design.dart';
+
+class VigiaSectionHeading extends StatelessWidget {
+  const VigiaSectionHeading({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 10),
+          trailing!,
+        ],
+      ],
+    );
+  }
+}
+
+class VigiaSurfaceCard extends StatelessWidget {
+  const VigiaSurfaceCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(VigiaSpacing.md),
+    this.onTap,
+    this.borderColor,
+    this.backgroundColor,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+  final Color? borderColor;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final decoration = BoxDecoration(
+      color: backgroundColor ?? scheme.surface,
+      borderRadius: BorderRadius.circular(VigiaRadii.medium),
+      border: Border.all(
+        color: borderColor ?? scheme.outline.withValues(alpha: 0.16),
+      ),
+    );
+    if (onTap == null) {
+      return Container(padding: padding, decoration: decoration, child: child);
+    }
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: decoration,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(VigiaRadii.medium),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+class VigiaStatusPill extends StatelessWidget {
+  const VigiaStatusPill({
+    super.key,
+    required this.label,
+    this.icon,
+    this.color,
+  });
+
+  final String label;
+  final IconData? icon;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color ?? Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: effectiveColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(VigiaRadii.pill),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: effectiveColor),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: effectiveColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class VigiaModeCard extends StatelessWidget {
+  const VigiaModeCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+    this.tags = const <String>[],
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(VigiaRadii.large),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accent.withValues(alpha: 0.24),
+              accent.withValues(alpha: 0.08),
+              scheme.surface,
+            ],
+          ),
+          border: Border.all(color: accent.withValues(alpha: 0.38)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(VigiaRadii.large),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(icon, color: accent, size: 25),
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: 0.72),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_forward_rounded, size: 19),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        height: 1.35,
+                      ),
+                ),
+                if (tags.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final tag in tags)
+                        VigiaStatusPill(label: tag, color: accent),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class VigiaQuickAction extends StatelessWidget {
+  const VigiaQuickAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(VigiaRadii.medium),
+          border: Border.all(color: scheme.outline.withValues(alpha: 0.16)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(VigiaRadii.medium),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: scheme.primary, size: 21),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
