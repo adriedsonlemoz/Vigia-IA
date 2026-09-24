@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.0.106+106 — 2026-09-23
+
+- Workflow Android otimizado a partir do Android-APK-74, cujo job levou cerca de 10m16s e concentrou ~7m30s na etapa de build.
+- Removida a dupla compilação `flutter build apk --release` + `--split-per-abi`; uma única chamada `gradle :app:assembleRelease` gera APK universal e APKs `armeabi-v7a`, `arm64-v8a` e `x86_64`.
+- A seleção de múltiplos APKs fica restrita ao CI por `VIGIAIA_CI_MULTI_APK=1`, preservando o comportamento normal dos builds locais.
+- A coleta dos APKs usa `build/app/outputs/apk/release/output-metadata.json`, evitando depender de nomes internos frágeis.
+- Ativados `org.gradle.caching=true` e `org.gradle.parallel=true`; `gradle/actions/setup-gradle` atualizado de v4 para v6 com limpeza final de cache desativada para priorizar velocidade.
+- O workflow deixa de apagar/recriar `android/` quando o projeto versionado está íntegro; `bootstrap_android.sh` permanece como recuperação e reproduz as otimizações.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.106+106`.
+- `tool/package_source.sh` passa a incluir a versão completa (`1.0.106+106`) no nome padrão do ZIP-fonte.
+
 ## 1.0.105+105 — 2026-09-23
 
 - Corrigido o Android-APK-73, que parava em `flutter analyze` antes da compilação do APK.

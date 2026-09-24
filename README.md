@@ -2,9 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.105+105`
+> **Versão atual:** `1.0.106+106`
 
 ## Estado atual
+
+A `1.0.106+106` otimiza o workflow Android com base no Android-APK-74: o APK universal e os três APKs por ABI passam a sair de uma única compilação Gradle, com cache/paralelismo e sem recriar o projeto Android em toda execução.
+
+### Otimização 1.0.106 — Android-APK-74
+
+- removida a segunda compilação release; `:app:assembleRelease` produz universal, `armeabi-v7a`, `arm64-v8a` e `x86_64` de uma só vez;
+- `org.gradle.caching=true` e `org.gradle.parallel=true` ativados;
+- `gradle/actions/setup-gradle@v6` substitui v4, instala Gradle 9.1.0 e evita depender de `gradlew` ausente no ZIP;
+- o diretório `android/` versionado é reutilizado e o bootstrap fica apenas como recuperação;
+- nomes finais são derivados do `output-metadata.json`, com falha explícita se qualquer um dos quatro APKs não for produzido;
+- baseline de comparação: Android-APK-74 levou cerca de 10m16s, sendo aproximadamente 7m30s na etapa de build.
+
+#### Estado anterior preservado — 1.0.105
 
 A `1.0.105+105` corrige o bloqueio do `flutter analyze` encontrado no Android-APK-73 sem alterar o comportamento funcional do mapa ou das câmeras.
 
@@ -1068,18 +1081,18 @@ app_identity.json
 
 ```bash
 flutter pub get
-./tool/verify_project.sh
+bash ./tool/verify_project.sh
 flutter analyze
 flutter test
 flutter build apk --release
 ```
 
-O workflow `.github/workflows/android-apk.yml` executa a mesma sequência, publica os APKs como arquivos diretos na GitHub Release e guarda apenas os relatórios técnicos como artifact separado. Para instalação em celulares atuais, o arquivo recomendado é o `arm64-v8a`; o `universal` mantém todas as arquiteturas.
+O workflow `.github/workflows/android-apk.yml` mantém as mesmas validações, mas no release usa `setup-gradle@v6` + Gradle 9.1.0 para gerar universal e três ABIs em uma única `assembleRelease`; depois publica os APKs diretamente na GitHub Release e guarda apenas os relatórios técnicos como artifact separado. Para instalação em celulares atuais, o arquivo recomendado é o `arm64-v8a`; o `universal` mantém todas as arquiteturas.
 
 O projeto-fonte pode ser empacotado com:
 
 ```bash
-./tool/package_source.sh
+bash ./tool/package_source.sh
 ```
 
 O empacotador preserva `.github/workflows/android-apk.yml`, `.gitignore`, scripts e demais arquivos necessários ao CI.

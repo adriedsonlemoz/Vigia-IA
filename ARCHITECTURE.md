@@ -1,6 +1,15 @@
-# Arquitetura — Vigia IA 1.0.105+105
+# Arquitetura — Vigia IA 1.0.106+106
 
 ## 1. Princípios
+
+## Otimização 1.0.106 — pipeline Android de uma passagem
+
+O workflow de release deixa de chamar o Flutter duas vezes para gerar APK universal e splits. No CI, `VIGIAIA_CI_MULTI_APK=1` habilita `splits.abi` no módulo Android somente durante a compilação release, com universal + `armeabi-v7a` + `arm64-v8a` + `x86_64`. Uma única execução `gradle :app:assembleRelease` alimenta todos os artefatos.
+
+A etapa de empacotamento lê `output-metadata.json` do Android Gradle Plugin para identificar a saída universal e o filtro ABI de cada APK. Isso desacopla o workflow de nomes internos e faz o job falhar caso uma arquitetura esperada não seja produzida.
+
+`org.gradle.caching=true` e `org.gradle.parallel=true` permitem reaproveitar tarefas elegíveis e executar módulos independentes em paralelo. `setup-gradle@v6` instala Gradle 9.1.0 (igual ao wrapper declarado) e administra o Gradle User Home; a limpeza final foi desativada neste workflow para priorizar tempo de execução. O diretório `android/` versionado é preservado entre as etapas do job e `bootstrap_android.sh` só é chamado se a estrutura Android estiver incompleta.
+
 
 ## Correção 1.0.105 — buildfix do Android-APK-73
 
@@ -907,7 +916,7 @@ A pasta `tool/android/` contém as versões canônicas de:
 
 `tool/AndroidManifest.xml` é a fonte canônica do Manifest.
 
-`tool/bootstrap_android.sh` recria a plataforma com o template do Flutter e reaplica esses arquivos. Isso evita perder integrações nativas quando `android/` é regenerado no CI.
+`tool/bootstrap_android.sh` recria a plataforma com o template do Flutter e reaplica esses arquivos somente como recuperação quando a estrutura Android versionada estiver incompleta. No caminho normal do CI, `android/` é reutilizado para não invalidar trabalho e caches desnecessariamente.
 
 ## 16. Verificação e CI
 
@@ -915,14 +924,13 @@ A pasta `tool/android/` contém as versões canônicas de:
 
 O workflow `.github/workflows/android-apk.yml` executa:
 
-1. bootstrap do Android;
-2. obtenção do modelo quando necessário;
-3. `flutter pub get`;
-4. `tool/verify_project.sh`;
-5. `flutter analyze`;
-6. `flutter test`;
-7. `flutter build apk --release`;
-8. upload do APK.
+1. setup de Java, Flutter e Gradle 9.1.0 com cache;
+2. reutilização do projeto Android versionado, chamando o bootstrap apenas se a estrutura estiver incompleta;
+3. obtenção do modelo quando necessário e `flutter pub get`;
+4. `tool/verify_project.sh`, `flutter analyze` e `flutter test --coverage`;
+5. uma única `gradle :app:assembleRelease --build-cache --parallel` com `VIGIAIA_CI_MULTI_APK=1`;
+6. leitura de `output-metadata.json`, validação/nomeação do universal e das três ABIs;
+7. verificação de assinatura e publicação dos APKs na GitHub Release.
 
 Testes não devem ser alterados apenas para esconder falhas.
 

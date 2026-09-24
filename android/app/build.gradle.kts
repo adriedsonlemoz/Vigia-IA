@@ -26,6 +26,20 @@ android {
         versionName = flutter.versionName
     }
 
+    // No CI otimizado, uma unica tarefa Gradle gera o APK universal e os tres APKs por ABI.
+    // Builds locais continuam com o comportamento padrao do Flutter.
+    val multiApkCi = providers.environmentVariable("VIGIAIA_CI_MULTI_APK").orNull == "1"
+    if (multiApkCi) {
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("armeabi-v7a", "arm64-v8a", "x86_64")
+                isUniversalApk = true
+            }
+        }
+    }
+
     signingConfigs {
         create("release") {
             val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")

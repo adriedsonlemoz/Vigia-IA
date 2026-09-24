@@ -43,7 +43,10 @@ jobs:
           channel: stable
           cache: true
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.1.0'
+          cache-cleanup: never
 
       - name: Ler versão do aplicativo
         id: meta
@@ -52,7 +55,9 @@ jobs:
           set -euo pipefail
           VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml)"
           VERSION_NAME="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION##*+}"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
           echo "full_version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Cache dos modelos de IA
@@ -61,8 +66,16 @@ jobs:
           path: assets/models/*.tflite
           key: vigiaia-models-v1
 
-      - name: Recriar Android com template atual
-        run: bash ./tool/bootstrap_android.sh
+      - name: Preparar projeto Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f android/app/build.gradle.kts && -f android/settings.gradle.kts && -f android/gradle/wrapper/gradle-wrapper.properties ]]; then
+            echo "Projeto Android versionado encontrado; bootstrap completo dispensado."
+          else
+            echo "Projeto Android incompleto; executando bootstrap de recuperacao."
+            bash ./tool/bootstrap_android.sh
+          fi
 
       - name: Baixar modelo TensorFlow Lite
         run: bash ./tool/fetch_model.sh
@@ -87,20 +100,33 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: ignore
 
-      - name: Build APKs release
+      - name: Build APKs release em uma unica compilacao
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          APP_VERSION_NAME: ${{ steps.meta.outputs.version }}
+          APP_BUILD_NUMBER: ${{ steps.meta.outputs.build_number }}
+          VIGIAIA_CI_MULTI_APK: '1'
         run: |
           set -euo pipefail
           test -n "$ANDROID_KEYSTORE_PATH" || { echo "ANDROID_KEYSTORE_PATH ausente" >&2; exit 1; }
           test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Secret ANDROID_KEYSTORE_PASSWORD ausente" >&2; exit 1; }
           test -n "$ANDROID_KEY_ALIAS" || { echo "Secret ANDROID_KEY_ALIAS ausente" >&2; exit 1; }
           test -n "$ANDROID_KEY_PASSWORD" || { echo "Secret ANDROID_KEY_PASSWORD ausente" >&2; exit 1; }
-          # APK universal para instalação manual e APKs menores para cada ABI.
-          flutter build apk --release
-          flutter build apk --release --split-per-abi
+          test -n "${ANDROID_HOME:-}" || { echo "ANDROID_HOME ausente" >&2; exit 1; }
+          test -n "${FLUTTER_ROOT:-}" || { echo "FLUTTER_ROOT ausente" >&2; exit 1; }
+
+          cat > android/local.properties <<EOF
+          sdk.dir=$ANDROID_HOME
+          flutter.sdk=$FLUTTER_ROOT
+          flutter.buildMode=release
+          flutter.versionName=$APP_VERSION_NAME
+          flutter.versionCode=$APP_BUILD_NUMBER
+          EOF
+
+          echo "Gerando universal + armeabi-v7a + arm64-v8a + x86_64 em uma unica chamada assembleRelease..."
+          (cd android && gradle :app:assembleRelease --build-cache --parallel)
 
       - name: Nomear APKs e analisar tamanho
         shell: bash
@@ -114,17 +140,40 @@ jobs:
           ROOT_DIR="$PWD"
           RELEASE_DIR="build/release"
           mkdir -p "$RELEASE_DIR"
-          declare -A APKS=(
-            [app-release.apk]="VigiaIA-v${APP_VERSION}-universal.apk"
-            [app-arm64-v8a-release.apk]="VigiaIA-v${APP_VERSION}-arm64-v8a.apk"
-            [app-armeabi-v7a-release.apk]="VigiaIA-v${APP_VERSION}-armeabi-v7a.apk"
-            [app-x86_64-release.apk]="VigiaIA-v${APP_VERSION}-x86_64.apk"
-          )
-          for source_name in "${!APKS[@]}"; do
-            source_apk="build/app/outputs/flutter-apk/$source_name"
-            test -s "$source_apk" || { echo "APK release nao encontrada: $source_name" >&2; exit 1; }
-            cp "$source_apk" "$RELEASE_DIR/${APKS[$source_name]}"
-          done
+          python3 - "$APP_VERSION" "$RELEASE_DIR" <<'PY'
+          import json
+          from pathlib import Path
+          import shutil
+          import sys
+
+          version = sys.argv[1]
+          release_dir = Path(sys.argv[2])
+          apk_dir = Path('build/app/outputs/apk/release')
+          metadata = apk_dir / 'output-metadata.json'
+          if not metadata.is_file():
+              raise SystemExit(f'Metadata de APKs nao encontrada: {metadata}')
+
+          data = json.loads(metadata.read_text(encoding='utf-8'))
+          found = set()
+          expected = {'universal', 'armeabi-v7a', 'arm64-v8a', 'x86_64'}
+          for element in data.get('elements', []):
+              filters = {item.get('filterType'): item.get('value') for item in element.get('filters', [])}
+              abi = filters.get('ABI')
+              kind = abi or 'universal'
+              if kind not in expected:
+                  continue
+              source = apk_dir / element['outputFile']
+              if not source.is_file() or source.stat().st_size == 0:
+                  raise SystemExit(f'APK ausente/vazia para {kind}: {source}')
+              target = release_dir / f'VigiaIA-v{version}-{kind}.apk'
+              shutil.copy2(source, target)
+              found.add(kind)
+              print(f'{kind}: {source} -> {target}')
+
+          missing = sorted(expected - found)
+          if missing:
+              raise SystemExit('APKs esperadas nao geradas em uma unica compilacao: ' + ', '.join(missing))
+          PY
           python3 - "$RELEASE_DIR" "$RELEASE_DIR/apk-size-report.txt" <<'PY'
           from collections import defaultdict
           from pathlib import Path
@@ -156,7 +205,7 @@ jobs:
           report.write_text('\n'.join(lines) + '\n')
           PY
           flutter pub deps --style=compact > "$RELEASE_DIR/flutter-dependencies.txt"
-          (cd android && ./gradlew :app:dependencies --configuration releaseRuntimeClasspath) > "$ROOT_DIR/$RELEASE_DIR/gradle-release-dependencies.txt"
+          (cd android && gradle :app:dependencies --configuration releaseRuntimeClasspath) > "$ROOT_DIR/$RELEASE_DIR/gradle-release-dependencies.txt"
           cat "$RELEASE_DIR/apk-size-report.txt"
 
       - name: Verificar assinatura dos APKs

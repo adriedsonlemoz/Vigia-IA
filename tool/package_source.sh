@@ -3,8 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml)"
-SAFE_VERSION="${VERSION/+/-}"
-OUT="${1:-$ROOT/../VigiaIA-v${SAFE_VERSION%%-*}-source.zip}"
+OUT="${1:-$ROOT/../VigiaIA-v${VERSION}-source.zip}"
 python3 - "$ROOT" "$OUT" <<'PY'
 from pathlib import Path
 import sys, zipfile

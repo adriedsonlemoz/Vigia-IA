@@ -94,6 +94,29 @@ signing_block = r'''    signingConfigs {
     }
 
 '''
+multi_apk_block = r'''    // No CI otimizado, uma unica tarefa Gradle gera o APK universal e os tres APKs por ABI.
+    // Builds locais continuam com o comportamento padrao do Flutter.
+    val multiApkCi = providers.environmentVariable("VIGIAIA_CI_MULTI_APK").orNull == "1"
+    if (multiApkCi) {
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("armeabi-v7a", "arm64-v8a", "x86_64")
+                isUniversalApk = true
+            }
+        }
+    }
+
+'''
+if 'VIGIAIA_CI_MULTI_APK' not in text:
+    marker = '    signingConfigs {\n'
+    if marker not in text:
+        marker = '    buildTypes {\n'
+    if marker not in text:
+        raise SystemExit('Bloco Android nao encontrado para configurar APKs multiplos')
+    text = text.replace(marker, multi_apk_block + marker, 1)
+
 if 'signingConfigs {\n        create("release")' not in text:
     marker = '    buildTypes {\n'
     if marker not in text:
@@ -107,4 +130,9 @@ if 'signingConfigs.getByName("debug")' in text:
 path.write_text(text)
 PY
 
-echo "Android recriado pelo template atual do Flutter com minSdk 29, servico de monitoramento e assinatura release permanente."
+cat >> android/gradle.properties <<'EOF'
+org.gradle.caching=true
+org.gradle.parallel=true
+EOF
+
+echo "Android recriado pelo template atual do Flutter com minSdk 29, servico de monitoramento, build otimizado e assinatura release permanente."

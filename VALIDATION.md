@@ -1,4 +1,14 @@
-# Validação — Vigia IA 1.0.105+105
+# Validação — Vigia IA 1.0.106+106
+
+## 1.0.106+106 — otimização do Android-APK-74
+
+- Baseline do log: job total aproximado de 10m16s; etapa `Build APKs release` aproximada de 7m30s, com duas chamadas `assembleRelease` (375,8s + 67,1s).
+- Workflow alterado para uma única chamada `gradle :app:assembleRelease --build-cache --parallel`.
+- `VIGIAIA_CI_MULTI_APK=1` habilita universal + três ABIs somente no CI; builds locais permanecem no comportamento padrão.
+- Empacotamento valida quatro saídas pelo `output-metadata.json`: universal, armeabi-v7a, arm64-v8a e x86_64.
+- `org.gradle.caching=true`, `org.gradle.parallel=true` e `setup-gradle@v6` configurados.
+- Bootstrap Android passa a ser condicional e reproduz as propriedades de otimização quando necessário.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o tempo real do novo build precisam ser confirmados no próximo workflow.
 
 ## 1.0.105+105 — Android-APK-73
 

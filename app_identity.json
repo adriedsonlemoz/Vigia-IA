@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.105 corrige o bloqueio do flutter analyze no Android-APK-73 removendo imports desnecessários do mapa e da fonte de câmera local.",
-  "version": "1.0.105",
-  "build": 105
+  "notes": "A 1.0.106 otimiza o workflow Android: uma única compilação Gradle gera APK universal e APKs por ABI, com cache/paralelismo e reutilização do projeto Android.",
+  "version": "1.0.106",
+  "build": 106
 }

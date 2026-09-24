@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.105',
+          version: '1.0.106',
           current: true,
+          changes: [
+            'Workflow Android otimizado para gerar APK universal e APKs por ABI em uma única compilação Gradle.',
+            'Cache e paralelismo do Gradle foram ativados; o projeto Android versionado deixa de ser recriado em todo build.',
+            'setup-gradle foi atualizado para v6 e a coleta dos APKs agora usa o output-metadata do Android.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.105',
           changes: [
             'Corrigido o Android-APK-73 removendo dois imports que faziam o flutter analyze encerrar o workflow.',
             'Mapa e câmeras preservam o comportamento da 1.0.104; a mudança é uma correção estática de build.',
@@ -962,8 +971,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.105',
+          version: '1.0.106',
           current: true,
+          changes: [
+            'Build Android passa a gerar universal + três ABIs em uma única chamada Gradle, removendo a segunda compilação release.',
+            'Gradle usa cache/paralelismo e o workflow reutiliza o diretório Android existente para melhorar builds seguintes.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.105',
           changes: [
             'Corrigido o Android-APK-73: removidos dois imports que bloqueavam o flutter analyze antes da compilação.',
             'Funcionalidades de mapa, Stadia e multicâmera da 1.0.104 foram preservadas.',
