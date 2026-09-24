@@ -2,12 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.116+116`
+> **Versão atual:** `1.0.117+117`
 
 ## Estado atual
 
-A `1.0.116+116` corrige os overflows detectados pelo Android-APK-84 nos cards compactos da Home e nos acessos rápidos, mantendo o redesign, o ESP32 dedicado e todas as funções existentes.
+A `1.0.117+117` reorganiza a Home e os papéis do aparelho, transforma Bike em perfil de economia, move o emulador para ESP32 e melhora a Transmissão com ajustes em tempo real e bateria local.
 
+
+### Evolução 1.0.117 — Home compacta, Bike como perfil e Transmissão ajustável
+
+- A Home usa quatro cards curtos em 2x2: **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**.
+- Os cinco acessos rápidos ficam na mesma linha no celular para reduzir rolagem.
+- **Bike e economia** passa a ser configuração em Ajustes, e instalações antigas com Bike como modo inicial são migradas com segurança para Ao vivo sem apagar o perfil Bike salvo.
+- O emulador de sensores saiu da tela Bike e foi para **ESP32 > engrenagem > Emulador de sensores**.
+- A tela Transmissão ganhou engrenagem para editar Bike/economia sem trocar de modo e mostra a bateria do aparelho transmissor.
+- A transmissão passou a usar uma frequência própria de frames: padrão 10 FPS; Bike Normal 10 FPS; Economia 6 FPS; Economia extrema 3 FPS. O receptor continua responsável pela IA.
+- Para preservar legibilidade, os perfis usam até 960 px/78, 800 px/72 e 640 px/64 de qualidade JPEG, respectivamente.
 
 ### Correção 1.0.116 — Android-APK-84 e compactação segura
 

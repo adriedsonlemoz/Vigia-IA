@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/camera_endpoint.dart';
+import '../models/bike_mode_config.dart';
 import '../services/camera_registry_service.dart';
+import '../services/bike_mode_service.dart';
 
 class Esp32SettingsScreen extends StatefulWidget {
   const Esp32SettingsScreen({super.key});
@@ -33,6 +35,43 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     await _refreshAll();
+  }
+
+
+  Future<void> _openTools() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.science_outlined),
+                title: const Text(
+                  'Emulador de sensores',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: const Text(
+                  'Teste Hall, pneus, bateria e alertas sem um ESP32 físico.',
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Navigator.pop(sheetContext, 'emulator'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    if (selected == 'emulator') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const _Esp32SensorEmulatorScreen(),
+        ),
+      );
+    }
   }
 
   Future<void> _refreshAll() async {
@@ -366,6 +405,11 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
         ),
         actions: [
           IconButton(
+            onPressed: _openTools,
+            tooltip: 'Ferramentas do ESP32',
+            icon: const Icon(Icons.settings_outlined),
+          ),
+          IconButton(
             onPressed: _loading ? null : () => unawaited(_refreshAll()),
             tooltip: 'Testar conexões',
             icon: const Icon(Icons.refresh_rounded),
@@ -564,4 +608,154 @@ class _EmptyEsp32 extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+class _Esp32SensorEmulatorScreen extends StatefulWidget {
+  const _Esp32SensorEmulatorScreen();
+
+  @override
+  State<_Esp32SensorEmulatorScreen> createState() =>
+      _Esp32SensorEmulatorScreenState();
+}
+
+class _Esp32SensorEmulatorScreenState
+    extends State<_Esp32SensorEmulatorScreen> {
+  final BikeModeService _bikeMode = BikeModeService.instance;
+  BikeModeConfig _config = const BikeModeConfig();
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final config = await _bikeMode.initialize();
+    if (!mounted) return;
+    setState(() {
+      _config = config;
+      _loading = false;
+    });
+  }
+
+  Future<void> _update(BikeModeConfig config) async {
+    setState(() {
+      _config = config;
+      _saving = true;
+    });
+    await _bikeMode.save(config);
+    if (mounted) setState(() => _saving = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Emulador ESP32', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text('Teste sem hardware físico', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        actions: [
+          if (_saving)
+            const Padding(
+              padding: EdgeInsets.only(right: 18),
+              child: Center(
+                child: SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: _config.sensorSimulationEnabled,
+                          onChanged: (value) => _update(
+                            _config.copyWith(sensorSimulationEnabled: value),
+                          ),
+                          secondary: const Icon(Icons.science_outlined),
+                          title: const Text(
+                            'Simular sensores ESP32',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: const Text(
+                            'Gera telemetria falsa identificada como SIMULAÇÃO. Não exige conexão com módulo real.',
+                          ),
+                        ),
+                        if (_config.sensorSimulationEnabled) ...[
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<BikeSimulationScenario>(
+                            initialValue: _config.simulationScenario,
+                            decoration: const InputDecoration(
+                              labelText: 'Cenário de teste',
+                            ),
+                            items: BikeSimulationScenario.values
+                                .map(
+                                  (scenario) => DropdownMenuItem(
+                                    value: scenario,
+                                    child: Text(scenario.label),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (scenario) {
+                              if (scenario == null) return;
+                              unawaited(
+                                _update(
+                                  _config.copyWith(
+                                    simulationScenario: scenario,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _config.simulationScenario.description,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Depois de ativar o emulador, abra Ao vivo. O HUD usa o mesmo contrato de telemetria preparado para o ESP32 real.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }

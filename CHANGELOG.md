@@ -1,3 +1,14 @@
+## 1.0.117+117 — 2026-09-24
+
+- Home reorganizada em quatro cards compactos: **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**; textos, tags e espaços vazios foram reduzidos.
+- Os cinco **Acessos rápidos** agora ocupam uma única linha no celular, com dimensões validadas para telas estreitas.
+- Bike deixa de ser um papel inicial e passa a **Ajustes > Bike e economia**; preferências existentes são preservadas e um modo Bike legado é migrado para Ao vivo.
+- O emulador de sensores foi removido de Bike e movido para a engrenagem da tela ESP32, reutilizando `BikeModeService`/`BikeSensorService`.
+- Transmissão ganhou engrenagem para abrir Bike/economia sem trocar de modo, além de bateria do aparelho atual no cabeçalho e no painel.
+- `RemoteCameraServerService` agora separa intervalo de transmissão do intervalo de análise da IA: 10 FPS padrão, 10/6/3 FPS nos perfis Bike.
+- Qualidade econômica foi mantida conservadora para não degradar demais a imagem: até 960 px/78, 800 px/72 e 640 px/64.
+- Versionamento, AppMetadata, identidade, Mudanças, documentação, testes e verificadores sincronizados em `1.0.117+117`.
+
 ## 1.0.116+116 — 2026-09-24
 
 - Corrigido o Android-APK-84: `flutter analyze` estava limpo, mas `flutter test` falhava em dois testes de layout por `RenderFlex overflow` de 32 px e 2 px.

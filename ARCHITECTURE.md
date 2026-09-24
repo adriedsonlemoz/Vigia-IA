@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.116+116
+# Arquitetura — Vigia IA 1.0.117+117
+
+## Evolução 1.0.117 — papéis do aparelho e perfil Bike
+
+- A Home passa a expor papéis operacionais, não configurações: `Ao vivo`, `Transmissão`, `Remoto` e `ESP32`.
+- `AppLaunchMode.bike` é mantido apenas para compatibilidade de leitura; instalações antigas são migradas para `normal` sem apagar `BikeModeService`.
+- `BikeModeScreen` torna-se a tela de configuração **Bike e economia**, acessível em Ajustes e pela engrenagem da Transmissão.
+- O simulador continua usando `BikeModeService`/`BikeSensorService`, mas sua UI fica em `Esp32SettingsScreen > Ferramentas > Emulador de sensores`.
+- `RemoteCameraServerService` usa `BikeModeConfig.transmissionFrameInterval`, separando captura/transmissão do intervalo de análise da IA. Assim o transmissor controla FPS/JPEG e o receptor controla inferência.
+- A bateria mostrada em Transmissão é lida localmente pelo `NativePlatformService`; o `/status` continua fornecendo a mesma telemetria ao receptor.
+
 
 
 ## Correção 1.0.116 — densidade adaptativa dos componentes da Home

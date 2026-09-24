@@ -70,8 +70,9 @@ void main() {
       const Duration(milliseconds: 900),
     );
     expect(config.streamFpsCap, 6);
-    expect(config.powerProfile.targetJpegWidth, 720);
-    expect(config.powerProfile.targetJpegQuality, 68);
+    expect(config.transmissionFrameInterval, const Duration(milliseconds: 167));
+    expect(config.powerProfile.targetJpegWidth, 800);
+    expect(config.powerProfile.targetJpegQuality, 72);
     expect(config.rearScreenBrightness, 0.035);
   });
 
@@ -82,6 +83,7 @@ void main() {
       const Duration(milliseconds: 250),
     );
     expect(config.streamFpsCap, isNull);
+    expect(config.transmissionFrameInterval, const Duration(milliseconds: 100));
     expect(config.rearScreenBrightness, isNull);
   });
 

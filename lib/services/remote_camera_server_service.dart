@@ -62,6 +62,15 @@ class RemoteCameraServerService extends ChangeNotifier {
   int get port => _port;
   bool get bikeModeEnabled => _bikeConfig.enabled;
   String get bikePowerProfileLabel => _bikeConfig.powerProfile.label;
+  int get targetStreamFps => _bikeConfig.enabled
+      ? _bikeConfig.powerProfile.targetStreamFps
+      : 10;
+  int get targetStreamWidth => _bikeConfig.enabled
+      ? _bikeConfig.powerProfile.targetJpegWidth
+      : 960;
+  int get targetStreamQuality => _bikeConfig.enabled
+      ? _bikeConfig.powerProfile.targetJpegQuality
+      : 78;
   bool get receiverConnected => _receiverConnected;
 
   Widget buildPreview() => _source?.buildPreview() ?? const SizedBox.expand();
@@ -78,16 +87,14 @@ class RemoteCameraServerService extends ChangeNotifier {
       final foregroundStarted = await BackgroundMonitorService.acquire(
         owner: BackgroundMonitorService.cameraModeOwner,
         usesCamera: true,
-        statusText: 'Modo Câmera ativo • preparando transmissão local.',
+        statusText: 'Transmissão ativa • preparando rede local.',
       );
       if (!foregroundStarted) {
         throw StateError('O Android não permitiu iniciar o serviço de câmera em primeiro plano.');
       }
       _accessKey = _generateKey();
       final source = LocalCameraSource(
-        analysisInterval: _bikeConfig.effectiveAnalysisInterval(
-          const Duration(milliseconds: 400),
-        ),
+        analysisInterval: _bikeConfig.transmissionFrameInterval,
       );
       _source = source;
       _subscription = source.frames.listen(_onFrame);
@@ -118,12 +125,8 @@ class RemoteCameraServerService extends ChangeNotifier {
     try {
       final previous = _bikeConfig;
       final next = _bikeMode.config;
-      final previousInterval = previous.effectiveAnalysisInterval(
-        const Duration(milliseconds: 400),
-      );
-      final nextInterval = next.effectiveAnalysisInterval(
-        const Duration(milliseconds: 400),
-      );
+      final previousInterval = previous.transmissionFrameInterval;
+      final nextInterval = next.transmissionFrameInterval;
       _bikeConfig = next;
       if (running) {
         await _native.setBikeScreenBrightness(next.rearScreenBrightness);
@@ -172,7 +175,7 @@ class RemoteCameraServerService extends ChangeNotifier {
       _bikeLowBatteryAlerted = true;
       unawaited(
         _native.showAlertNotification(
-          title: 'Modo Bike • bateria baixa',
+          title: 'Perfil Bike • bateria baixa',
           message: 'Celular traseiro em $battery%. Verifique a alimentação.',
           outputs: const AlertOutputs(
             voice: false,
@@ -195,9 +198,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     } catch (_) {}
     if (_server == null) return;
     final source = LocalCameraSource(
-      analysisInterval: _bikeConfig.effectiveAnalysisInterval(
-        const Duration(milliseconds: 400),
-      ),
+      analysisInterval: _bikeConfig.transmissionFrameInterval,
     );
     _source = source;
     _subscription = source.frames.listen(_onFrame);
@@ -223,7 +224,7 @@ class RemoteCameraServerService extends ChangeNotifier {
       _lastNotificationUpdateAt = frame.capturedAt;
       unawaited(
         BackgroundMonitorService.updateStatus(
-          'Modo Câmera ativo • transmissão local recebendo imagens.',
+          'Transmissão ativa • enviando imagens pela rede local.',
         ),
       );
     }
@@ -240,7 +241,7 @@ class RemoteCameraServerService extends ChangeNotifier {
           'height': frame.height,
           'bytes': Uint8List.fromList(frame.rgbBytes),
           'maxWidth': maxWidth,
-          'quality': _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegQuality : 78,
+          'quality': targetStreamQuality,
         },
       );
       _latestJpegCapturedAt = frame.capturedAt;

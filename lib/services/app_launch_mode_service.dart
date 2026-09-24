@@ -41,7 +41,17 @@ class AppLaunchModeService extends ChangeNotifier {
       try {
         final decoded = jsonDecode(await file.readAsString());
         if (decoded is Map) {
-          _mode = AppLaunchMode.parse(decoded['mode'] as String?);
+          final parsed = AppLaunchMode.parse(decoded['mode'] as String?);
+          // Bike deixou de ser um papel inicial do aparelho na 1.0.117.
+          // Mantemos o enum apenas para migrar instalações antigas sem perder
+          // as preferências salvas em bike_mode.json.
+          _mode = parsed == AppLaunchMode.bike ? AppLaunchMode.normal : parsed;
+          if (parsed == AppLaunchMode.bike) {
+            await file.writeAsString(
+              jsonEncode(<String, Object?>{'version': 2, 'mode': _mode!.name}),
+              flush: true,
+            );
+          }
         }
       } catch (error, stackTrace) {
         await _logs.recordException(
@@ -64,7 +74,7 @@ class AppLaunchModeService extends ChangeNotifier {
     final temporary = File('${file.path}.tmp');
     await temporary.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 1,
+        'version': 2,
         'mode': mode.name,
       }),
       flush: true,

@@ -18,7 +18,6 @@ import '../widgets/main_navigation_bar.dart';
 import '../widgets/vigia_ui.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
-import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
 import 'events_screen.dart';
@@ -27,6 +26,7 @@ import 'launch_mode_screen.dart';
 import 'map_monitoring_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
+import 'monitor_connect_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 

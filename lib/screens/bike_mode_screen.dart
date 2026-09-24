@@ -7,10 +7,6 @@ import '../models/device_telemetry.dart';
 import '../services/bike_mode_service.dart';
 import '../services/native_platform_service.dart';
 import '../utils/storage_size_formatter.dart';
-import 'home_screen.dart';
-import 'launch_mode_screen.dart';
-import 'map_monitoring_screen.dart';
-import 'settings_screen.dart';
 
 part 'bike_mode_screen_components.dart';
 
@@ -79,35 +75,6 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
     unawaited(_refreshTelemetry());
   }
 
-  void _openMonitor() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const HomeScreen(startMonitorOnLoad: true),
-      ),
-    );
-  }
-
-  void _openMap() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const MapMonitoringScreen()),
-    );
-  }
-
-  void _openSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-    );
-  }
-
-  void _changeMode() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(
-        builder: (_) => const LaunchModeScreen(manualReview: false),
-      ),
-      (_) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final hero = _BikeHero(
@@ -118,7 +85,7 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
     final powerCard = _SectionCard(
       title: 'Perfil de energia',
       subtitle:
-          'O perfil limita de verdade a captura/análise e a transmissão durante o uso na bike.',
+          'Define consumo, frequência de análise e qualidade da transmissão quando o perfil Bike estiver ativo.',
       child: Column(
         children: BikePowerProfile.values.map((profile) {
           final selected = _config.powerProfile == profile;
@@ -162,7 +129,7 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                           Text(profile.description),
                           const SizedBox(height: 6),
                           Text(
-                            'IA: mínimo ${profile.targetAnalysisIntervalMs} ms entre análises · LAN: limite de ${profile.targetStreamFps} FPS',
+                            'IA: mínimo ${profile.targetAnalysisIntervalMs} ms · transmissão: ${profile.targetStreamFps} FPS · até ${profile.targetJpegWidth}px',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -297,58 +264,6 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
       ),
     );
 
-    final simulationCard = _SectionCard(
-      title: 'Teste do HUD sem ESP32',
-      subtitle:
-          'Gera dados falsos apenas para testar o painel transparente sobre o vídeo.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _config.sensorSimulationEnabled,
-            onChanged: (value) =>
-                _update(_config.copyWith(sensorSimulationEnabled: value)),
-            secondary: const Icon(Icons.science_outlined),
-            title: const Text('Simular sensores da bike'),
-            subtitle: const Text(
-              'Mostra velocidade, pneus, bateria e alertas no Monitor com a marca SIMULAÇÃO.',
-            ),
-          ),
-          if (_config.sensorSimulationEnabled) ...[
-            const SizedBox(height: 8),
-            DropdownButtonFormField<BikeSimulationScenario>(
-              initialValue: _config.simulationScenario,
-              decoration: const InputDecoration(labelText: 'Cenário de teste'),
-              items: BikeSimulationScenario.values
-                  .map(
-                    (scenario) => DropdownMenuItem(
-                      value: scenario,
-                      child: Text(scenario.label),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (scenario) {
-                if (scenario == null) return;
-                _update(_config.copyWith(simulationScenario: scenario));
-              },
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _config.simulationScenario.description,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: _openMonitor,
-              icon: const Icon(Icons.play_circle_outline_rounded),
-              label: const Text('Abrir Monitor e testar HUD'),
-            ),
-          ],
-        ],
-      ),
-    );
-
     final telemetryCard = _TelemetryCard(
       telemetry: _telemetry,
       profile: _config.powerProfile,
@@ -360,19 +275,14 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Modo Bike', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text('Bike e economia', style: TextStyle(fontWeight: FontWeight.w800)),
             Text(
-              'Câmera traseira com foco em autonomia',
+              'Perfil de energia e telemetria',
               style: TextStyle(fontSize: 12),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Configurações',
-            onPressed: _openSettings,
-            icon: const Icon(Icons.settings_outlined),
-          ),
           IconButton(
             tooltip: 'Atualizar condições',
             onPressed: _readingTelemetry ? null : _refreshTelemetry,
@@ -397,18 +307,7 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth >= 760;
                   final left = <Widget>[
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton.icon(
-                        onPressed: _changeMode,
-                        icon: const Icon(Icons.swap_horiz_rounded),
-                        label: const Text('Alterar modo'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     hero,
-                    const SizedBox(height: 12),
-                    _BikeMapEntryCard(onTap: _openMap),
                     const SizedBox(height: 12),
                     powerCard,
                     const SizedBox(height: 12),
@@ -418,10 +317,6 @@ class _BikeModeScreenState extends State<BikeModeScreen> {
                   ];
                   final right = <Widget>[
                     rearPhoneCard,
-                    const SizedBox(height: 12),
-                    simulationCard,
-                    const SizedBox(height: 12),
-                    const _RemotePanelReadyCard(),
                   ];
                   if (!wide) {
                     return Center(

@@ -1,28 +1,6 @@
 part of 'bike_mode_screen.dart';
 
 
-class _BikeMapEntryCard extends StatelessWidget {
-  const _BikeMapEntryCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.map_outlined),
-          title: const Text(
-            'Mapa do monitoramento',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-          subtitle: const Text(
-            'Veja sua posição, precisão do GPS e registre o trajeto da pedalada.',
-          ),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: onTap,
-        ),
-      );
-}
-
 class _BikeHero extends StatelessWidget {
   const _BikeHero({required this.enabled, required this.onChanged});
 
@@ -57,12 +35,12 @@ class _BikeHero extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Usar este aparelho na bike',
+                  'Ativar perfil Bike',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Ative no celular que ficará na traseira. O perfil passa a controlar consumo, tela e telemetria durante a operação.',
+                  'Quando ativo, o perfil ajusta consumo, tela, telemetria e transmissão sem mudar o papel atual do aparelho.',
                 ),
               ],
             ),
@@ -112,7 +90,7 @@ class _TelemetryCard extends StatelessWidget {
       title: 'Condições deste celular',
       subtitle: enabled
           ? 'Perfil ${profile.label} ativo. Estes dados já estão prontos para o painel do celular da frente.'
-          : 'Telemetria local disponível para conferência; ative o Modo Bike para enviá-la durante a transmissão.',
+          : 'Telemetria local disponível; ative o perfil Bike para aplicar a política econômica durante a transmissão.',
       child: data == null
           ? const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
@@ -142,7 +120,7 @@ class _TelemetryCard extends StatelessWidget {
                       ? 'Indisponível'
                       : '${data.screenBrightnessPercent}%',
                   subtitle: data.screenDimmedByBike
-                      ? 'Brilho reduzido pelo Modo Bike'
+                      ? 'Brilho reduzido pelo perfil Bike'
                       : data.automaticBrightness == true
                           ? 'Brilho automático do Android'
                           : data.screenInteractive == false
@@ -245,40 +223,6 @@ class _SectionCard extends StatelessWidget {
               Text(subtitle),
               const SizedBox(height: 14),
               child,
-            ],
-          ),
-        ),
-      );
-}
-
-class _RemotePanelReadyCard extends StatelessWidget {
-  const _RemotePanelReadyCard();
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.route_outlined),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Painel remoto disponível',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Ao usar Outro celular como fonte, toque no ícone de bicicleta no monitor para acompanhar estas condições e os avisos do aparelho traseiro.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

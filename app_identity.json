@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.116 corrige os overflows dos cards compactos e dos acessos rápidos detectados pelo Android-APK-84, preservando o redesign e as funções existentes.",
-  "version": "1.0.116",
-  "build": 116
+  "notes": "A 1.0.117 compacta a Home, separa Bike como perfil de configuração, move o emulador para ESP32 e integra ajustes/bateria ao modo Transmissão.",
+  "version": "1.0.117",
+  "build": 117
 }

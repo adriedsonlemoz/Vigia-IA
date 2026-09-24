@@ -1,4 +1,18 @@
-# Validação — Vigia IA 1.0.116+116
+# Validação — Vigia IA 1.0.117+117
+
+## 1.0.117+117 — Home, Bike/ESP32 e Transmissão
+
+- Confirmar Home 2x2 com **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**, sem card Bike e sem overflow.
+- Confirmar os cinco acessos rápidos na mesma linha em 320/360 px e rótulo Diagnóstico legível.
+- Confirmar **Ajustes > Bike e economia** e ausência de Bike na seleção de modo inicial.
+- Confirmar migração segura de `AppLaunchMode.bike` legado para `normal`, preservando `bike_mode.json`.
+- Confirmar engrenagem do ESP32 abrindo **Emulador de sensores** e cenários existentes.
+- Confirmar engrenagem na Transmissão abrindo Bike/economia sem encerrar a transmissão.
+- Confirmar bateria local visível na Transmissão e atualização periódica.
+- Confirmar frequência de transmissão padrão de 10 FPS e perfis Bike 10/6/3 FPS, independente do intervalo de análise da IA.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 
 
 ## 1.0.116+116 — correção Android-APK-84

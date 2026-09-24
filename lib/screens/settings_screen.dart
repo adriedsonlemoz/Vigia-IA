@@ -107,7 +107,7 @@ class SettingsScreen extends StatelessWidget {
           _SettingsTile(
             icon: Icons.dashboard_customize_outlined,
             title: 'Alterar modo agora',
-            subtitle: 'Abra a seleção de Normal, Monitor, Bike ou Transmissão sem apagar dados.',
+            subtitle: 'Escolha Ao vivo, Remoto ou Transmissão sem apagar dados.',
             onTap: () => _push(
               context,
               const LaunchModeScreen(manualReview: true),
@@ -115,8 +115,8 @@ class SettingsScreen extends StatelessWidget {
           ),
           _SettingsTile(
             icon: Icons.directions_bike_outlined,
-            title: 'Modo Bike',
-            subtitle: 'Configure energia, sensores e simulação da bike.',
+            title: 'Bike e economia',
+            subtitle: 'Energia, qualidade da transmissão, telemetria e alertas para uso na bike.',
             onTap: () => _push(context, const BikeModeScreen()),
           ),
           _SettingsTile(

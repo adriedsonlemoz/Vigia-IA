@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.116+116' pubspec.yaml || fail 'Versao esperada 1.0.116+116 nao encontrada.'
+grep -Fxq 'version: 1.0.117+117' pubspec.yaml || fail 'Versao esperada 1.0.117+117 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.116';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.116.'
-grep -q 'static const int build = 116;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 116.'
-grep -q "version: '1.0.116'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.116.'
+grep -q "static const String version = '1.0.117';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.117.'
+grep -q 'static const int build = 117;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 117.'
+grep -q "version: '1.0.117'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.117.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.116+116' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.116+116.'
+grep -Fq 'version: 1.0.117+117' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.117+117.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.116"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.116.'
-grep -q '"build": 116' app_identity.json \
-  || fail 'app_identity.json nao esta no build 116.'
+grep -q '"version": "1.0.117"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.117.'
+grep -q '"build": 117' app_identity.json \
+  || fail 'app_identity.json nao esta no build 117.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.116+116' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.116+116.'
+grep -Fq 'Vigia IA 1.0.117+117' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.117+117.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -958,10 +958,10 @@ test -f test/main_navigation_bar_test.dart || fail 'Teste do menu principal ause
 grep -q "findsNWidgets(5)" test/main_navigation_bar_test.dart || fail 'Teste nao valida os cinco destinos principais.'
 grep -q "find.text('Bike'), findsNothing" test/main_navigation_bar_test.dart \
   || fail 'Teste nao protege a retirada de Bike do menu inferior.'
-grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart \
-  || fail 'Modo Bike nao esta acessivel em Configuracoes.'
-grep -q 'AppLaunchMode.bike' lib/screens/launch_mode_screen.dart \
-  || fail 'Modo Bike nao esta acessivel pela selecao inicial.'
+grep -q "title: 'Bike e economia'" lib/screens/settings_screen.dart \
+  || fail 'Bike e economia nao esta acessivel em Configuracoes.'
+grep -q 'AppLaunchMode.bike' lib/services/app_launch_mode_service.dart \
+  || fail 'Compatibilidade do modo Bike legado ausente.'
 grep -q 'BikePowerProfile.extremeEconomy' lib/models/bike_mode_config.dart || fail 'Perfis do Modo Bike incompletos.'
 test -f test/bike_mode_config_test.dart || fail 'Teste do Modo Bike ausente.'
 
@@ -979,7 +979,7 @@ grep -q 'batteryCharging' tool/android/MainActivity.kt || fail 'Telemetria de ca
 grep -q 'setEncodingPolicy' lib/services/monitor_lan_stream_service.dart || fail 'Transmissao LAN nao aplica politica de compressao do Modo Bike.'
 grep -q 'updateDeviceTelemetry' lib/services/monitor_lan_stream_service.dart || fail 'Telemetria nao foi conectada ao status LAN.'
 grep -q '_bikeConfig.effectiveAnalysisInterval' lib/controllers/monitor_controller.dart || fail 'MonitorController nao aplica intervalo do Modo Bike.'
-grep -q '_bikeConfig.effectiveAnalysisInterval' lib/services/remote_camera_server_service.dart || fail 'Modo Camera nao aplica intervalo do Modo Bike.'
+grep -q '_bikeConfig.transmissionFrameInterval' lib/services/remote_camera_server_service.dart || fail 'Transmissao nao aplica intervalo do perfil Bike.'
 grep -q "'device': telemetry.toJson()" lib/services/remote_camera_server_service.dart || fail 'Modo Camera nao expoe telemetria no status.'
 test -f test/device_telemetry_test.dart || fail 'Teste de telemetria do dispositivo ausente.'
 
@@ -1271,7 +1271,7 @@ grep -q 'Evolução 1.0.54' ARCHITECTURE.md || fail 'ARCHITECTURE nao documenta 
 [[ -f lib/widgets/bike_ride_hud.dart ]] || fail 'HUD transparente da bike nao encontrado.'
 [[ -f test/bike_sensor_snapshot_test.dart ]] || fail 'Testes dos sensores simulados nao encontrados.'
 grep -q 'sensorSimulationEnabled' lib/models/bike_mode_config.dart   || fail 'Configuracao do simulador nao e persistida no Modo Bike.'
-grep -q 'Teste do HUD sem ESP32' lib/screens/bike_mode_screen.dart   || fail 'Tela Bike nao oferece teste do HUD sem ESP32.'
+grep -q "'Emulador de sensores'" lib/screens/esp32_settings_screen.dart   || fail 'ESP32 nao oferece emulador de sensores.'
 grep -q 'BikeRideHud(snapshot:' lib/screens/monitor_screen.dart lib/screens/monitor_screen_fullscreen.dart lib/screens/monitor_screen_multicamera.dart   || fail 'Monitor nao exibe o HUD da bike sobre o video.'
 grep -q "'SIMULAÇÃO" lib/widgets/bike_ride_hud.dart   || fail 'HUD simulado nao identifica claramente dados sinteticos.'
 if grep -q 'if (primaryIssue != null) primaryIssue' lib/widgets/session_status_panel.dart lib/widgets/session_status_panel_components.dart; then
@@ -1584,8 +1584,8 @@ grep -q 'MonitorConnectScreen' lib/app/app.dart lib/screens/launch_mode_screen.d
   || fail 'Modo Monitor nao esta ligado ao fluxo inicial.'
 grep -q "VideoSourceType.remotePhone" lib/screens/monitor_connect_screen.dart \
   || fail 'Modo Monitor nao abre fonte Celular remoto.'
-grep -q 'Modo Monitor' lib/screens/settings_screen.dart lib/screens/launch_mode_screen.dart \
-  || fail 'Textos do modo Monitor nao estao expostos.'
+grep -q "title: 'Remoto'" lib/screens/launch_mode_screen.dart \
+  || fail 'Texto Remoto nao esta exposto na selecao de modo.'
 
 # Buildfix e telemetria de audio - 1.0.75
 grep -q '^## 1.0.75+75' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.75.'
@@ -1688,8 +1688,8 @@ if grep -q "label: 'Bike'" lib/widgets/main_navigation_bar.dart; then
 fi
 grep -q "findsNWidgets(5)" test/main_navigation_bar_test.dart \
   || fail 'Teste do menu nao exige cinco destinos.'
-grep -q "title: 'Modo Bike'" lib/screens/settings_screen.dart \
-  || fail 'Configuracoes nao oferece acesso ao Modo Bike.'
+grep -q "title: 'Bike e economia'" lib/screens/settings_screen.dart \
+  || fail 'Configuracoes nao oferece acesso a Bike e economia.'
 if grep -q '4 => const BikeModeScreen()' lib/screens/home_screen.dart lib/screens/events_screen.dart lib/screens/multi_camera_screen.dart; then
   fail 'Indice Bike reapareceu nos manipuladores da navegacao principal.'
 fi
@@ -2292,6 +2292,28 @@ grep -q "alertDistanceMeters" lib/models/route_explorer_models.dart || fail 'Dis
 grep -q "clearOfflineResults" lib/services/route_explorer_service.dart || fail 'Exclusao de pontos offline ausente.'
 
 
+# Reorganizacao Home/Bike/ESP32/Transmissao - 1.0.117
+grep -Fq '## 1.0.117+117' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.117.'
+grep -q 'Evolução 1.0.117' README.md || fail 'README nao documenta 1.0.117.'
+grep -q "version: '1.0.117'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.117.'
+[[ -f RELEASE-1.0.117.md ]] || fail 'Notas da entrega 1.0.117 ausentes.'
+grep -q "title: 'Ao vivo'" lib/screens/home_screen_redesign.dart || fail 'Home nao oferece Ao vivo.'
+grep -q "title: 'Transmissão'" lib/screens/home_screen_redesign.dart || fail 'Home nao oferece Transmissao.'
+grep -q "title: 'Remoto'" lib/screens/home_screen_redesign.dart || fail 'Home nao oferece Remoto.'
+grep -q "title: 'ESP32'" lib/screens/home_screen_redesign.dart || fail 'Home nao oferece ESP32.'
+if grep -q "title: 'Modo Bike'" lib/screens/home_screen_redesign.dart; then fail 'Bike ainda aparece como card operacional na Home.'; fi
+grep -q 'crossAxisCount: 5' lib/screens/home_screen_redesign.dart || fail 'Acessos rapidos nao estao em cinco colunas.'
+grep -q "title: 'Bike e economia'" lib/screens/settings_screen.dart || fail 'Bike e economia nao esta em Ajustes.'
+if grep -q "title: 'Modo Bike'" lib/screens/launch_mode_screen.dart; then fail 'Bike ainda aparece como modo inicial.'; fi
+grep -q 'parsed == AppLaunchMode.bike ? AppLaunchMode.normal' lib/services/app_launch_mode_service.dart || fail 'Migracao do modo Bike legado ausente.'
+grep -q "tooltip: 'Ferramentas do ESP32'" lib/screens/esp32_settings_screen.dart || fail 'Engrenagem do ESP32 ausente.'
+grep -q "'Emulador de sensores'" lib/screens/esp32_settings_screen.dart || fail 'Emulador ESP32 nao foi movido para ferramentas.'
+grep -q "tooltip: 'Bike e economia'" lib/screens/camera_mode_screen.dart || fail 'Engrenagem de economia ausente na Transmissao.'
+grep -q 'Bateria deste aparelho' lib/screens/camera_mode_screen.dart || fail 'Bateria local nao aparece na Transmissao.'
+grep -q 'transmissionFrameInterval' lib/models/bike_mode_config.dart || fail 'Intervalo de transmissao separado da IA ausente.'
+grep -q 'analysisInterval: _bikeConfig.transmissionFrameInterval' lib/services/remote_camera_server_service.dart || fail 'Servidor remoto nao usa politica de FPS da transmissao.'
+grep -q 'targetJpegWidth, 800' test/bike_mode_config_test.dart || fail 'Teste do JPEG economico nao acompanha 1.0.117.'
+
 # Correcao Android-APK-84 - 1.0.116
 grep -Fq '## 1.0.116+116' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.116.'
 grep -q 'Correção 1.0.116' README.md || fail 'README nao documenta 1.0.116.'
@@ -2300,8 +2322,8 @@ grep -q "version: '1.0.116'" lib/screens/app_info_screen_components.dart || fail
 grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill nao oferece variante densa.'
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
-grep -q 'padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 8)' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao recebeu compactacao segura do Android-APK-84.'
-grep -q 'VigiaIA/1.0.116' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
+grep -q 'VigiaIA/1.0.117' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 
@@ -2348,8 +2370,8 @@ grep -q "version: '1.0.113'" lib/screens/app_info_screen_components.dart || fail
 [[ -f RELEASE-1.0.113.md ]] || fail 'Notas da entrega 1.0.113 ausentes.'
 [[ -f lib/core/vigia_design.dart ]] || fail 'Design system compartilhado ausente.'
 [[ -f lib/widgets/vigia_ui.dart ]] || fail 'Componentes visuais compartilhados ausentes.'
-grep -q "title: 'Monitor ao vivo'" lib/screens/home_screen*.dart || fail 'Home nao destaca Monitor ao vivo.'
-grep -q "title: 'Modo transmissão'" lib/screens/home_screen*.dart || fail 'Home nao destaca Modo transmissao.'
-grep -q "title: 'Modo Bike'" lib/screens/home_screen*.dart || fail 'Home nao destaca Modo Bike.'
+grep -q "title: 'Ao vivo'" lib/screens/home_screen*.dart || fail 'Home nao destaca Ao vivo.'
+grep -q "title: 'Transmissão'" lib/screens/home_screen*.dart || fail 'Home nao destaca Transmissao.'
+grep -q "title: 'Remoto'" lib/screens/home_screen*.dart || fail 'Home nao destaca Remoto.'
 grep -q "label: 'Diagnóstico'" lib/screens/home_screen*.dart || fail 'Home nao oferece acesso rapido ao Diagnostico.'
 grep -q "label: 'Ajustes'" lib/widgets/main_navigation_bar.dart || fail 'Navegacao principal nao inclui Ajustes.'

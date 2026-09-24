@@ -153,20 +153,19 @@ extension _HomeRedesign on _HomeScreenState {
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
               children: [
                 const VigiaSectionHeading(
-                  title: 'O que você quer fazer?',
-                  subtitle:
-                      'Os modos principais ficam em destaque. Recursos técnicos continuam disponíveis sem ocupar a tela inicial.',
+                  title: 'Modos',
+                  subtitle: 'Escolha como este aparelho vai trabalhar.',
                 ),
                 const SizedBox(height: 12),
                 _buildModeCards(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 const VigiaSectionHeading(
                   title: 'Acessos rápidos',
                   subtitle: 'Entre direto nas áreas mais usadas do aplicativo.',
                 ),
                 const SizedBox(height: 10),
                 _buildQuickActions(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 VigiaSectionHeading(
                   title: 'Monitoramento atual',
                   subtitle:
@@ -254,47 +253,38 @@ extension _HomeRedesign on _HomeScreenState {
           VigiaModeCard(
             compact: true,
             icon: Icons.videocam_rounded,
-            title: 'Monitor ao vivo',
-            subtitle: 'Câmera, transmissão e IA em tempo real.',
+            title: 'Ao vivo',
+            subtitle: 'Câmera + IA',
             accent: VigiaColors.cyan,
-            tags: const ['IA', 'Alertas'],
             onTap: () => unawaited(_start()),
           ),
           VigiaModeCard(
             compact: true,
             icon: Icons.cast_connected_rounded,
-            title: 'Modo transmissão',
-            subtitle: 'Envie a imagem deste aparelho pela rede local.',
+            title: 'Transmissão',
+            subtitle: 'Enviar imagem',
             accent: VigiaColors.blue,
-            tags: const ['LAN', 'Enviar'],
             onTap: () => _openScreen(const CameraModeScreen()),
           ),
           VigiaModeCard(
             compact: true,
-            icon: Icons.directions_bike_rounded,
-            title: 'Modo Bike',
-            subtitle: 'Câmera, telemetria e sensores para a bike.',
+            icon: Icons.phonelink_ring_rounded,
+            title: 'Remoto',
+            subtitle: 'Receber imagem',
             accent: VigiaColors.green,
-            tags: const ['Sensores', 'Bike'],
-            onTap: () => _openScreen(const BikeModeScreen()),
+            onTap: () => _openScreen(const MonitorConnectScreen()),
           ),
           VigiaModeCard(
             compact: true,
             icon: Icons.memory_rounded,
             title: 'ESP32',
-            subtitle: 'Conecte o módulo e configure sensores e câmera.',
+            subtitle: 'Módulos e sensores',
             accent: VigiaColors.blue,
-            tags: const ['Módulo', 'Sensores'],
             onTap: () => _openScreen(const Esp32SettingsScreen()),
           ),
         ];
         final columns = constraints.maxWidth >= 780 ? 4 : 2;
         final spacing = constraints.maxWidth < 420 ? 8.0 : 10.0;
-        final ratio = columns == 4
-            ? 1.12
-            : constraints.maxWidth < 420
-                ? 0.95
-                : 1.30;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -303,7 +293,7 @@ extension _HomeRedesign on _HomeScreenState {
             crossAxisCount: columns,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
-            childAspectRatio: ratio,
+            mainAxisExtent: columns == 4 ? 108 : 112,
           ),
           itemBuilder: (context, index) => cards[index],
         );
@@ -341,16 +331,16 @@ extension _HomeRedesign on _HomeScreenState {
             onTap: () => unawaited(_openSettings()),
           ),
         ];
-        final columns = constraints.maxWidth < 520 ? 3 : 5;
+        final spacing = constraints.maxWidth < 380 ? 5.0 : 7.0;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: actions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: columns == 3 ? 1.08 : 0.92,
+            crossAxisCount: 5,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            mainAxisExtent: constraints.maxWidth < 380 ? 82 : 86,
           ),
           itemBuilder: (context, index) {
             final action = actions[index];

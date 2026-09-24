@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.116',
+          version: '1.0.117',
           current: true,
+          changes: [
+            'Home reorganizada em quatro cards compactos: Ao vivo, Transmissão, Remoto e ESP32; os cinco acessos rápidos ficam na mesma linha no celular.',
+            'Bike deixa de ser um modo inicial e passa a ser um perfil em Ajustes > Bike e economia, sem apagar as preferências existentes.',
+            'O emulador de sensores foi movido para a engrenagem da tela ESP32 e continua reutilizando o mesmo contrato de telemetria.',
+            'Transmissão ganhou engrenagem para alterar Bike/economia sem trocar de modo, bateria do aparelho atual e política de frames separada da frequência da IA.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.116',
           changes: [
             'Corrigido o Android-APK-84: os dois testes de layout compacto agora cabem sem RenderFlex overflow.',
             'Cards compactos da Home ganharam espaçamentos, ícones e tags mais densos sem remover título, descrição ou indicadores.',
@@ -1063,8 +1073,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.116',
+          version: '1.0.117',
           current: true,
+          changes: [
+            'Home reorganizada em quatro cards compactos: Ao vivo, Transmissão, Remoto e ESP32; os cinco acessos rápidos ficam na mesma linha no celular.',
+            'Bike deixa de ser um modo inicial e passa a ser um perfil em Ajustes > Bike e economia, sem apagar as preferências existentes.',
+            'O emulador de sensores foi movido para a engrenagem da tela ESP32 e continua reutilizando o mesmo contrato de telemetria.',
+            'Transmissão ganhou engrenagem para alterar Bike/economia sem trocar de modo, bateria do aparelho atual e política de frames separada da frequência da IA.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.116',
           changes: [
             'Corrigido o Android-APK-84: os dois testes de layout compacto agora cabem sem RenderFlex overflow.',
             'Cards compactos da Home ganharam espaçamentos, ícones e tags mais densos sem remover título, descrição ou indicadores.',

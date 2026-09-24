@@ -64,14 +64,13 @@ void main() {
           body: Center(
             child: SizedBox(
               width: 160,
-              height: 158,
+              height: 112,
               child: VigiaModeCard(
                 compact: true,
                 icon: Icons.memory_rounded,
                 title: 'ESP32',
-                subtitle: 'Conecte o módulo e configure sensores e câmera.',
+                subtitle: 'Módulos e sensores',
                 accent: VigiaColors.blue,
-                tags: const ['Módulo', 'Sensores'],
                 onTap: () {},
               ),
             ),
@@ -81,7 +80,7 @@ void main() {
     );
 
     expect(find.text('ESP32'), findsOneWidget);
-    expect(find.text('Módulo'), findsOneWidget);
+    expect(find.text('Módulos e sensores'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -91,8 +90,8 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SizedBox(
-            width: 104,
-            height: 96,
+            width: 58,
+            height: 86,
             child: VigiaQuickAction(
               icon: Icons.monitor_heart_outlined,
               label: 'Diagnóstico',

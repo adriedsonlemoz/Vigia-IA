@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/app_launch_mode_service.dart';
-import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'home_screen.dart';
 import 'monitor_connect_screen.dart';
@@ -62,7 +61,9 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
             startMonitorOnLoad: widget.startMonitorOnLoad,
           ),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
-        AppLaunchMode.bike => const BikeModeScreen(),
+        AppLaunchMode.bike => HomeScreen(
+            startMonitorOnLoad: widget.startMonitorOnLoad,
+          ),
         AppLaunchMode.transmission => const CameraModeScreen(),
       };
 
@@ -112,7 +113,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
             const SizedBox(height: 14),
             _LaunchModeCard(
               icon: Icons.shield_outlined,
-              title: 'Modo normal',
+              title: 'Ao vivo',
               subtitle:
                   'Este celular vai usar a própria câmera e analisar a imagem no próprio aparelho.',
               selected: selected == AppLaunchMode.normal,
@@ -122,7 +123,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
             const SizedBox(height: 10),
             _LaunchModeCard(
               icon: Icons.cast_connected_rounded,
-              title: 'Modo Monitor',
+              title: 'Remoto',
               subtitle:
                   'Este celular vai receber imagem de outro aparelho e fazer a IA, histórico, alertas e áudios.',
               selected: selected == AppLaunchMode.monitor,
@@ -131,27 +132,17 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
             ),
             const SizedBox(height: 10),
             _LaunchModeCard(
-              icon: Icons.directions_bike_rounded,
-              title: 'Modo Bike',
-              subtitle:
-                  'Modo próprio da bike. Ao usar câmera remota, este aparelho segue a lógica do receptor: recebe e analisa.',
-              selected: selected == AppLaunchMode.bike,
-              busy: _saving && selected == AppLaunchMode.bike,
-              onTap: () => _select(AppLaunchMode.bike),
-            ),
-            const SizedBox(height: 10),
-            _LaunchModeCard(
               icon: Icons.wifi_tethering_rounded,
-              title: 'Modo transmissão',
+              title: 'Transmissão',
               subtitle:
-                  'Este celular vai enviar imagem pela rede local. No outro celular, escolha Modo Monitor para receber.',
+                  'Este celular vai enviar imagem pela rede local. No outro celular, escolha Remoto para receber.',
               selected: selected == AppLaunchMode.transmission,
               busy: _saving && selected == AppLaunchMode.transmission,
               onTap: () => _select(AppLaunchMode.transmission),
             ),
             const SizedBox(height: 16),
             Text(
-              'O futuro mini mapa/GPS ficará no aparelho receptor. '
+              'O mini mapa/GPS fica no aparelho receptor. '
               'O transmissor deve continuar leve, enviando imagem e status.',
               style: TextStyle(color: scheme.onSurfaceVariant),
             ),

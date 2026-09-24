@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../models/device_telemetry.dart';
 import '../services/app_orientation_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../services/remote_camera_server_service.dart';
 import '../services/system_ui_service.dart';
+import 'bike_mode_screen.dart';
 import 'launch_mode_screen.dart';
 
 class CameraModeScreen extends StatefulWidget {
@@ -22,6 +24,9 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
   final RemoteCameraServerService _server = RemoteCameraServerService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
   late final Future<void> _orientationSetup;
+  DeviceTelemetrySnapshot? _localTelemetry;
+  Timer? _telemetryTimer;
+  bool _readingTelemetry = false;
 
   @override
   void initState() {
@@ -33,11 +38,17 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
     unawaited(_orientationSetup);
     unawaited(SystemUiService.immersive());
     _server.addListener(_refresh);
+    unawaited(_refreshTelemetry());
+    _telemetryTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(_refreshTelemetry()),
+    );
   }
 
   @override
   void dispose() {
     _server.removeListener(_refresh);
+    _telemetryTimer?.cancel();
     unawaited(_restorePortraitOrientation());
     unawaited(SystemUiService.edgeToEdge());
     super.dispose();
@@ -45,6 +56,25 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _refreshTelemetry() async {
+    if (_readingTelemetry) return;
+    _readingTelemetry = true;
+    try {
+      final telemetry = await _native.readDeviceTelemetry();
+      if (mounted) setState(() => _localTelemetry = telemetry);
+    } finally {
+      _readingTelemetry = false;
+    }
+  }
+
+  Future<void> _openTransmissionSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const BikeModeScreen()),
+    );
+    if (!mounted) return;
+    await _refreshTelemetry();
   }
 
   Future<void> _restorePortraitOrientation() async {
@@ -240,7 +270,10 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                 child: _CameraModeTopBar(
                   running: _server.running,
                   starting: _server.starting,
+                  batteryPercent: _localTelemetry?.batteryPercent,
+                  batteryCharging: _localTelemetry?.batteryCharging == true,
                   onBack: () => unawaited(_returnToModeSelection()),
+                  onSettings: () => unawaited(_openTransmissionSettings()),
                   onToggle: _toggle,
                 ),
               ),
@@ -262,6 +295,10 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                 receiverConnected: _server.receiverConnected,
                 bikeModeEnabled: _server.bikeModeEnabled,
                 bikePowerProfileLabel: _server.bikePowerProfileLabel,
+                targetStreamFps: _server.targetStreamFps,
+                targetStreamWidth: _server.targetStreamWidth,
+                batteryPercent: _localTelemetry?.batteryPercent,
+                batteryCharging: _localTelemetry?.batteryCharging == true,
                 address: address,
                 accessKey: _server.accessKey,
                 pairingCode: pairingCode,
@@ -288,17 +325,24 @@ class _CameraModeTopBar extends StatelessWidget {
   const _CameraModeTopBar({
     required this.running,
     required this.starting,
+    required this.batteryPercent,
+    required this.batteryCharging,
     required this.onBack,
+    required this.onSettings,
     required this.onToggle,
   });
 
   final bool running;
   final bool starting;
+  final int? batteryPercent;
+  final bool batteryCharging;
   final VoidCallback onBack;
+  final VoidCallback onSettings;
   final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 430;
     final statusColor = running ? const Color(0xFF69D59C) : Colors.white70;
     return Material(
       color: Colors.black.withValues(alpha: 0.46),
@@ -308,11 +352,19 @@ class _CameraModeTopBar extends StatelessWidget {
         padding: const EdgeInsets.only(right: 8),
         child: Row(
           children: [
-            TextButton.icon(
-              onPressed: onBack,
-              icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-              label: const Text('Alterar modo'),
-            ),
+            if (compact)
+              IconButton(
+                tooltip: 'Alterar modo',
+                onPressed: onBack,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.swap_horiz_rounded, size: 20),
+              )
+            else
+              TextButton.icon(
+                onPressed: onBack,
+                icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                label: const Text('Alterar modo'),
+              ),
             Container(
               width: 9,
               height: 9,
@@ -321,18 +373,50 @@ class _CameraModeTopBar extends StatelessWidget {
             const SizedBox(width: 9),
             const Expanded(
               child: Text(
-                'Modo Câmera',
+                'Transmissão',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
-            if (running)
-              TextButton.icon(
-                onPressed: starting ? null : onToggle,
-                icon: const Icon(Icons.stop_rounded, size: 18),
-                label: const Text('Parar'),
+            if (batteryPercent != null) ...[
+              Icon(
+                batteryCharging
+                    ? Icons.battery_charging_full_rounded
+                    : Icons.battery_5_bar_rounded,
+                size: 17,
+                color: Colors.white,
               ),
+              const SizedBox(width: 4),
+              Text(
+                '$batteryPercent%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            IconButton(
+              tooltip: 'Bike e economia',
+              onPressed: onSettings,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.settings_outlined, size: 20),
+            ),
+            if (running)
+              compact
+                  ? IconButton(
+                      tooltip: 'Parar transmissão',
+                      onPressed: starting ? null : onToggle,
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.stop_rounded, size: 20),
+                    )
+                  : TextButton.icon(
+                      onPressed: starting ? null : onToggle,
+                      icon: const Icon(Icons.stop_rounded, size: 18),
+                      label: const Text('Parar'),
+                    ),
           ],
         ),
       ),
@@ -367,7 +451,7 @@ class _CameraStandbyPanel extends StatelessWidget {
             ),
             SizedBox(height: 6),
             Text(
-              'Este aparelho ficará dedicado a enviar imagem pela rede local quando o Modo Câmera for iniciado.',
+              'Este aparelho ficará dedicado a enviar imagem pela rede local quando a Transmissão for iniciada.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70),
             ),
@@ -386,6 +470,10 @@ class _CameraModeControlPanel extends StatelessWidget {
     required this.receiverConnected,
     required this.bikeModeEnabled,
     required this.bikePowerProfileLabel,
+    required this.targetStreamFps,
+    required this.targetStreamWidth,
+    required this.batteryPercent,
+    required this.batteryCharging,
     required this.address,
     required this.accessKey,
     required this.pairingCode,
@@ -402,6 +490,10 @@ class _CameraModeControlPanel extends StatelessWidget {
   final bool receiverConnected;
   final bool bikeModeEnabled;
   final String bikePowerProfileLabel;
+  final int targetStreamFps;
+  final int targetStreamWidth;
+  final int? batteryPercent;
+  final bool batteryCharging;
   final String? address;
   final String accessKey;
   final String? pairingCode;
@@ -479,6 +571,29 @@ class _CameraModeControlPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  batteryCharging
+                      ? Icons.battery_charging_full_rounded
+                      : Icons.battery_5_bar_outlined,
+                  size: 18,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    batteryPercent == null
+                        ? 'Bateria deste aparelho: indisponível'
+                        : 'Bateria deste aparelho: $batteryPercent%${batteryCharging ? ' · carregando' : ''}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             const Text(
               'Enviando imagem, bateria e telemetria disponível. A IA e os alertas ficam no receptor.',
               style: TextStyle(fontSize: 12),
@@ -492,7 +607,7 @@ class _CameraModeControlPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Modo Bike • $bikePowerProfileLabel',
+                    'Perfil Bike • $bikePowerProfileLabel · $targetStreamFps FPS · até ${targetStreamWidth}px',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -532,7 +647,7 @@ class _CameraModeControlPanel extends StatelessWidget {
           FilledButton.icon(
             onPressed: starting ? null : onToggle,
             icon: Icon(running ? Icons.stop_rounded : Icons.play_arrow_rounded),
-            label: Text(running ? 'PARAR MODO CÂMERA' : 'INICIAR MODO CÂMERA'),
+            label: Text(running ? 'PARAR TRANSMISSÃO' : 'INICIAR TRANSMISSÃO'),
           ),
         ],
       ),

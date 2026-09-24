@@ -72,14 +72,14 @@ extension BikePowerProfileUi on BikePowerProfile {
 
   int get targetJpegWidth => switch (this) {
         BikePowerProfile.normal => 960,
-        BikePowerProfile.economy => 720,
-        BikePowerProfile.extremeEconomy => 540,
+        BikePowerProfile.economy => 800,
+        BikePowerProfile.extremeEconomy => 640,
       };
 
   int get targetJpegQuality => switch (this) {
-        BikePowerProfile.normal => 76,
-        BikePowerProfile.economy => 68,
-        BikePowerProfile.extremeEconomy => 58,
+        BikePowerProfile.normal => 78,
+        BikePowerProfile.economy => 72,
+        BikePowerProfile.extremeEconomy => 64,
       };
 }
 
@@ -115,6 +115,13 @@ class BikeModeConfig {
   }
 
   int? get streamFpsCap => enabled ? powerProfile.targetStreamFps : null;
+
+  /// Intervalo usado pelo aparelho transmissor. A transmissão não executa IA,
+  /// então não deve herdar o intervalo de análise do receptor.
+  Duration get transmissionFrameInterval {
+    final fps = enabled ? powerProfile.targetStreamFps : 10;
+    return Duration(milliseconds: (1000 / fps).round());
+  }
 
   double? get rearScreenBrightness {
     if (!enabled || !dimRearScreen) return null;

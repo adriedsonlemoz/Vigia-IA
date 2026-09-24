@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../core/vigia_design.dart';
 import '../screens/access_guide_screen.dart';
-import '../screens/bike_mode_screen.dart';
 import '../screens/camera_mode_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/launch_mode_screen.dart';
@@ -79,7 +78,7 @@ class _StartupGateState extends State<_StartupGate> {
       final destination = switch (launchMode) {
         AppLaunchMode.normal => const HomeScreen(),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
-        AppLaunchMode.bike => const BikeModeScreen(),
+        AppLaunchMode.bike => const HomeScreen(),
         AppLaunchMode.transmission => const CameraModeScreen(),
         null => const LaunchModeScreen(),
       };
