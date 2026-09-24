@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/audio_slot.dart';
 import '../models/camera_endpoint.dart';
 import '../models/bike_mode_config.dart';
+import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/bike_mode_service.dart';
+import '../services/native_platform_service.dart';
 
 class Esp32SettingsScreen extends StatefulWidget {
   const Esp32SettingsScreen({super.key});
@@ -642,12 +645,34 @@ class _Esp32SensorEmulatorScreenState
   }
 
   Future<void> _update(BikeModeConfig config) async {
+    final previous = _config;
     setState(() {
       _config = config;
       _saving = true;
     });
     await _bikeMode.save(config);
+    final shouldAnnounce = config.sensorSimulationEnabled &&
+        (!previous.sensorSimulationEnabled ||
+            previous.simulationScenario != config.simulationScenario);
+    if (shouldAnnounce) {
+      unawaited(_announceScenario(config.simulationScenario));
+    }
     if (mounted) setState(() => _saving = false);
+  }
+
+  Future<void> _announceScenario(BikeSimulationScenario scenario) async {
+    final profile = await AppSettingsService.instance.initialize();
+    if (!profile.settings.alertOutputs.voice) return;
+    final slot = switch (scenario) {
+      BikeSimulationScenario.normal => 'bike_all_sensors_ok',
+      BikeSimulationScenario.frontTireLow => 'bike_front_pressure_critical',
+      BikeSimulationScenario.rearTireLow => 'bike_rear_pressure_critical',
+      BikeSimulationScenario.sensorBatteryLow => 'bike_module_battery_low',
+      BikeSimulationScenario.vehicleApproaching => AudioSlotIds.vehicleDetected,
+      BikeSimulationScenario.disconnected => 'bike_sensor_disconnected',
+    };
+    if (!profile.settings.voiceAlertPreferences.allowsSlot(slot)) return;
+    await NativePlatformService.instance.playCustomAlertAudio(slot, priority: 1);
   }
 
   @override

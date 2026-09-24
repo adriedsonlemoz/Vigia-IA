@@ -47,9 +47,9 @@ extension BikePowerProfileUi on BikePowerProfile {
         BikePowerProfile.normal =>
           'Prioriza resposta da IA e imagem mais fluida, com economia leve.',
         BikePowerProfile.economy =>
-          'Equilibra detecção, transmissão e autonomia para pedais longos.',
+          'Economiza bateria reduzindo moderadamente os frames, sem sacrificar a resolução principal.',
         BikePowerProfile.extremeEconomy =>
-          'Reduz atividade visual e frequência de atualização para preservar bateria.',
+          'Prioriza autonomia com 5 FPS e resolução moderada, evitando a perda agressiva de imagem do perfil antigo.',
       };
 
   int get targetAnalysisIntervalMs => switch (this) {
@@ -60,8 +60,8 @@ extension BikePowerProfileUi on BikePowerProfile {
 
   int get targetStreamFps => switch (this) {
         BikePowerProfile.normal => 10,
-        BikePowerProfile.economy => 6,
-        BikePowerProfile.extremeEconomy => 3,
+        BikePowerProfile.economy => 7,
+        BikePowerProfile.extremeEconomy => 5,
       };
 
   Duration get telemetryInterval => switch (this) {
@@ -72,14 +72,14 @@ extension BikePowerProfileUi on BikePowerProfile {
 
   int get targetJpegWidth => switch (this) {
         BikePowerProfile.normal => 960,
-        BikePowerProfile.economy => 800,
-        BikePowerProfile.extremeEconomy => 640,
+        BikePowerProfile.economy => 960,
+        BikePowerProfile.extremeEconomy => 800,
       };
 
   int get targetJpegQuality => switch (this) {
         BikePowerProfile.normal => 78,
-        BikePowerProfile.economy => 72,
-        BikePowerProfile.extremeEconomy => 64,
+        BikePowerProfile.economy => 76,
+        BikePowerProfile.extremeEconomy => 72,
       };
 }
 

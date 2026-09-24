@@ -69,10 +69,10 @@ void main() {
       config.effectiveAnalysisInterval(const Duration(milliseconds: 900)),
       const Duration(milliseconds: 900),
     );
-    expect(config.streamFpsCap, 6);
-    expect(config.transmissionFrameInterval, const Duration(milliseconds: 167));
-    expect(config.powerProfile.targetJpegWidth, 800);
-    expect(config.powerProfile.targetJpegQuality, 72);
+    expect(config.streamFpsCap, 7);
+    expect(config.transmissionFrameInterval, const Duration(milliseconds: 143));
+    expect(config.powerProfile.targetJpegWidth, 960);
+    expect(config.powerProfile.targetJpegQuality, 76);
     expect(config.rearScreenBrightness, 0.035);
   });
 
@@ -85,6 +85,18 @@ void main() {
     expect(config.streamFpsCap, isNull);
     expect(config.transmissionFrameInterval, const Duration(milliseconds: 100));
     expect(config.rearScreenBrightness, isNull);
+  });
+
+
+  test('economia extrema preserva imagem util para o receptor', () {
+    const config = BikeModeConfig(
+      enabled: true,
+      powerProfile: BikePowerProfile.extremeEconomy,
+    );
+    expect(config.streamFpsCap, 5);
+    expect(config.transmissionFrameInterval, const Duration(milliseconds: 200));
+    expect(config.powerProfile.targetJpegWidth, 800);
+    expect(config.powerProfile.targetJpegQuality, 72);
   });
 
 }

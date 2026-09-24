@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.117+117' pubspec.yaml || fail 'Versao esperada 1.0.117+117 nao encontrada.'
+grep -Fxq 'version: 1.0.118+118' pubspec.yaml || fail 'Versao esperada 1.0.118+118 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.117';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.117.'
-grep -q 'static const int build = 117;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 117.'
-grep -q "version: '1.0.117'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.117.'
+grep -q "static const String version = '1.0.118';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.118.'
+grep -q 'static const int build = 118;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 118.'
+grep -q "version: '1.0.118'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.118.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.117+117' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.117+117.'
+grep -Fq 'version: 1.0.118+118' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.118+118.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.117"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.117.'
-grep -q '"build": 117' app_identity.json \
-  || fail 'app_identity.json nao esta no build 117.'
+grep -q '"version": "1.0.118"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.118.'
+grep -q '"build": 118' app_identity.json \
+  || fail 'app_identity.json nao esta no build 118.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -747,8 +747,8 @@ grep -q 'const Duration(milliseconds: 400)' lib/models/video_source_config.dart 
   || fail 'Intervalo local padrao de 400 ms nao encontrado.'
 grep -q 'const Duration(seconds: 1)' lib/models/video_source_config.dart \
   || fail 'Ausencia padrao de 1 s nao encontrada.'
-grep -q "'version': 7" lib/services/app_settings_service.dart \
-  || fail 'Schema de configuracoes nao foi migrado para version 7.'
+grep -q "'version': 8" lib/services/app_settings_service.dart \
+  || fail 'Schema de configuracoes nao foi migrado para version 8.'
 grep -q 'profileVersion < 6' lib/services/app_settings_service.dart \
   || fail 'Migracao dos antigos defaults nao encontrada.'
 grep -q 'SpeechPriority.high' lib/controllers/monitor_controller*.dart \
@@ -818,8 +818,8 @@ grep -q 'idlePresenceRefresh' lib/controllers/monitor_controller.dart \
   || fail 'Atualizacao periodica de presenca sem movimento nao foi encontrada.'
 grep -q 'TemporalDetectionFilter' lib/controllers/monitor_controller.dart \
   || fail 'Confirmacao temporal nao esta ligada ao controller.'
-grep -q "'version': 7" lib/services/app_settings_service.dart \
-  || fail 'Schema 7 das regras de deteccao nao encontrado.'
+grep -q "'version': 8" lib/services/app_settings_service.dart \
+  || fail 'Schema atual das configuracoes nao esta em 8.'
 grep -q 'vehicleMinimumPresence = const Duration(milliseconds: 600)' lib/models/smart_alert_rules.dart \
   || fail 'Tempo padrao de veiculo nao foi reduzido para 600 ms.'
 grep -q 'animalMinimumPresence = const Duration(milliseconds: 800)' lib/models/smart_alert_rules.dart \
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.117+117' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.117+117.'
+grep -Fq 'Vigia IA 1.0.118+118' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.118+118.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2292,6 +2292,29 @@ grep -q "alertDistanceMeters" lib/models/route_explorer_models.dart || fail 'Dis
 grep -q "clearOfflineResults" lib/services/route_explorer_service.dart || fail 'Exclusao de pontos offline ausente.'
 
 
+# Voz configuravel + qualidade Bike - 1.0.118
+grep -Fq '## 1.0.118+118' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.118.'
+grep -q 'Evolução 1.0.118' README.md || fail 'README nao documenta 1.0.118.'
+grep -q "version: '1.0.118'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.118.'
+[[ -f RELEASE-1.0.118.md ]] || fail 'Notas da entrega 1.0.118 ausentes.'
+grep -q 'class VoiceAlertPreferences' lib/models/alert_preferences.dart || fail 'Preferencias finas de voz ausentes.'
+grep -q 'mutedSlots' lib/models/alert_preferences.dart || fail 'Controle por slot de audio ausente.'
+grep -q 'ttsFallbackEnabled = false' lib/models/alert_preferences.dart || fail 'Fallback TTS nao inicia desativado.'
+grep -q 'dynamicTtsEnabled = true' lib/models/alert_preferences.dart || fail 'Controle de TTS dinamico ausente.'
+grep -q 'suppressed_by_user' lib/services/alert_voice_service.dart || fail 'AlertVoiceService nao respeita falas silenciadas.'
+grep -q 'native_failed_tts_disabled' lib/services/alert_voice_service.dart || fail 'Fallback TTS opcional nao esta implementado.'
+grep -q 'Ativar todas' lib/screens/audio_settings_screen.dart || fail 'Tela de audio nao permite ativar todas as falas.'
+grep -q 'Silenciar' lib/screens/audio_settings_screen.dart || fail 'Tela de audio nao permite silenciar todas as falas.'
+grep -q 'onEnabledChanged' lib/screens/audio_settings_screen.dart || fail 'Switch individual por fala ausente.'
+grep -q '_announceScenario' lib/screens/esp32_settings_screen.dart || fail 'Emulador ESP32 nao dispara falas integradas.'
+if grep -q 'future: true' lib/models/audio_slot.dart; then fail 'Slots Bike ainda aparecem marcados como futuros.'; fi
+grep -q 'expect(config.streamFpsCap, 7)' test/bike_mode_config_test.dart || fail 'Perfil Economia nao foi atualizado para 7 FPS.'
+grep -q 'expect(config.powerProfile.targetJpegWidth, 960)' test/bike_mode_config_test.dart || fail 'Perfil Economia nao preserva 960 px.'
+grep -q 'expect(config.powerProfile.targetJpegQuality, 76)' test/bike_mode_config_test.dart || fail 'Perfil Economia nao preserva JPEG 76.'
+grep -q 'expect(config.streamFpsCap, 5)' test/bike_mode_config_test.dart || fail 'Economia extrema nao foi atualizada para 5 FPS.'
+grep -q 'expect(config.powerProfile.targetJpegQuality, 72)' test/bike_mode_config_test.dart || fail 'Economia extrema nao usa JPEG 72.'
+python3 tool/verify_audio_resource_catalog.py || fail 'Catalogo de audio integrado divergiu.'
+
 # Reorganizacao Home/Bike/ESP32/Transmissao - 1.0.117
 grep -Fq '## 1.0.117+117' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.117.'
 grep -q 'Evolução 1.0.117' README.md || fail 'README nao documenta 1.0.117.'
@@ -2312,7 +2335,6 @@ grep -q "tooltip: 'Bike e economia'" lib/screens/camera_mode_screen.dart || fail
 grep -q 'Bateria deste aparelho' lib/screens/camera_mode_screen.dart || fail 'Bateria local nao aparece na Transmissao.'
 grep -q 'transmissionFrameInterval' lib/models/bike_mode_config.dart || fail 'Intervalo de transmissao separado da IA ausente.'
 grep -q 'analysisInterval: _bikeConfig.transmissionFrameInterval' lib/services/remote_camera_server_service.dart || fail 'Servidor remoto nao usa politica de FPS da transmissao.'
-grep -q 'targetJpegWidth, 800' test/bike_mode_config_test.dart || fail 'Teste do JPEG economico nao acompanha 1.0.117.'
 
 # Correcao Android-APK-84 - 1.0.116
 grep -Fq '## 1.0.116+116' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.116.'
@@ -2323,7 +2345,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.117' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.118' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 

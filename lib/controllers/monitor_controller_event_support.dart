@@ -87,6 +87,7 @@ extension _MonitorControllerEventSupport on MonitorController {
       _deliverAlertImpl(
         status.simulated ? 'Teste. $message' : message,
         priority: SpeechPriority.high,
+        audioSlot: AudioSlotIds.vehicleDetected,
         capturedAt: now,
       ),
     );
@@ -384,6 +385,7 @@ extension _MonitorControllerEventSupport on MonitorController {
       return;
     }
     final futures = <Future<void>>[];
+    _speech.configure(_appSettings.profile.settings.voiceAlertPreferences);
     if (_settings.alertOutputs.voice && _speech.enabled) {
       futures.add(_speech.deliver(message, audioSlot: audioSlot,
           priority: priority, capturedAt: capturedAt));

@@ -2,12 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.117+117`
+> **Versão atual:** `1.0.118+118`
 
 ## Estado atual
 
-A `1.0.117+117` reorganiza a Home e os papéis do aparelho, transforma Bike em perfil de economia, move o emulador para ESP32 e melhora a Transmissão com ajustes em tempo real e bateria local.
+A `1.0.118+118` melhora a transmissão econômica sem destruir a imagem recebida e reorganiza a voz: áudios integrados têm prioridade, cada fala pode ser ligada/desligada e o emulador ESP32 já dispara os avisos disponíveis.
 
+
+### Evolução 1.0.118 — qualidade Bike e controle fino de voz
+
+- Perfil **Economia** passa para 7 FPS, até 960 px e JPEG 76; **Economia extrema** usa 5 FPS, até 800 px e JPEG 72.
+- A tela **Áudios e voz** permite ativar/silenciar cada aviso individualmente e ativar ou silenciar todos de uma vez.
+- O TTS de fallback fica desligado por padrão para evitar mistura com a voz gravada; TTS de mensagens sem áudio integrado continua configurável separadamente.
+- Os 64 avisos Bike/ESP32 deixam de aparecer como “Futuro”; continuam usando os recursos integrados já presentes no APK.
+- O emulador ESP32 reproduz automaticamente o aviso integrado correspondente ao cenário selecionado, respeitando as preferências de voz.
+- O alerta de aproximação usa o áudio integrado de veículo em vez de depender de TTS sempre que a voz estiver habilitada.
 
 ### Evolução 1.0.117 — Home compacta, Bike como perfil e Transmissão ajustável
 

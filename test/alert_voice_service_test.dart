@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vigiaia/models/alert_preferences.dart';
 import 'package:vigiaia/services/alert_voice_service.dart';
 import 'package:vigiaia/services/performance_telemetry_service.dart';
 import 'package:vigiaia/services/speech_service.dart';
@@ -21,6 +22,7 @@ void main() {
     final completion = Completer<bool>();
     final service = AlertVoiceService(speech: speech,
         playAudio: (_, priority, capturedAt) => completion.future, stopAudio: () async {});
+    service.configure(const VoiceAlertPreferences(ttsFallbackEnabled: true));
     final delivery = service.deliver('Pessoa detectada', audioSlot: 'person_detected');
     expect(speech.spoken, isEmpty);
     completion.complete(false);
@@ -109,6 +111,7 @@ void main() {
         'mediaMuted': false,
       },
     );
+    service.configure(const VoiceAlertPreferences(ttsFallbackEnabled: true));
 
     await service.deliver('Pessoa detectada', audioSlot: 'person_detected');
     final event = PerformanceTelemetryService.instance
@@ -119,4 +122,46 @@ void main() {
     expect(event['audioErrorPhase'], 'prepare_async');
     expect(event['audioSource'], 'override');
   });
+
+  test('fallback TTS fica desligado por padrao para nao misturar vozes', () async {
+    final speech = FakeSpeech();
+    final service = AlertVoiceService(
+      speech: speech,
+      stopAudio: () async {},
+      playAudio: (_, priority, capturedAt) async => false,
+    );
+    await service.deliver('Pessoa detectada', audioSlot: 'person_detected');
+    expect(speech.spoken, isEmpty);
+  });
+
+  test('usuario pode silenciar slot sem bloquear outros avisos', () async {
+    final slots = <String>[];
+    final service = AlertVoiceService(
+      speech: FakeSpeech(),
+      stopAudio: () async {},
+      playAudio: (slot, priority, capturedAt) async {
+        slots.add(slot);
+        return true;
+      },
+    );
+    service.configure(const VoiceAlertPreferences(
+      mutedSlots: <String>{'person_detected'},
+    ));
+    await service.deliver('Pessoa', audioSlot: 'person_detected');
+    await service.deliver('Automovel', audioSlot: 'vehicle_detected');
+    expect(slots, ['vehicle_detected']);
+  });
+
+  test('TTS dinamico pode ser desligado separadamente', () async {
+    final speech = FakeSpeech();
+    final service = AlertVoiceService(
+      speech: speech,
+      stopAudio: () async {},
+      playAudio: (_, priority, capturedAt) async => false,
+    );
+    service.configure(const VoiceAlertPreferences(dynamicTtsEnabled: false));
+    await service.deliver('Mensagem dinamica sem slot');
+    expect(speech.spoken, isEmpty);
+  });
+
 }

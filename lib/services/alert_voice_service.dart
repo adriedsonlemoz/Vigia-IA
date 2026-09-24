@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../models/alert_preferences.dart';
 import 'detection_cadence_policy.dart';
 import 'native_platform_service.dart';
 import 'performance_telemetry_service.dart';
@@ -28,10 +29,15 @@ class AlertVoiceService {
   _VoiceRequest? _active;
   _VoiceRequest? _pending;
   int _generation = 0;
+  VoiceAlertPreferences _preferences = const VoiceAlertPreferences();
 
   bool get enabled => _speech.enabled;
   bool get languageInstalled => _speech.languageInstalled;
   Future<void> initialize() => _speech.initialize();
+
+  void configure(VoiceAlertPreferences preferences) {
+    _preferences = preferences;
+  }
 
   void setEnabled(bool enabled) {
     _speech.setEnabled(enabled);
@@ -41,6 +47,14 @@ class AlertVoiceService {
   Future<void> deliver(String text, {String? audioSlot,
     SpeechPriority priority = SpeechPriority.normal, DateTime? capturedAt}) {
     if (!enabled) return Future<void>.value();
+    if (audioSlot != null && !_preferences.allowsSlot(audioSlot)) {
+      _trace(_VoiceRequest(text, audioSlot, priority, capturedAt), 'suppressed_by_user');
+      return Future<void>.value();
+    }
+    if (audioSlot == null && !_preferences.dynamicTtsEnabled) {
+      _trace(_VoiceRequest(text, audioSlot, priority, capturedAt), 'dynamic_tts_disabled');
+      return Future<void>.value();
+    }
     final request = _VoiceRequest(text, audioSlot, priority, capturedAt);
     final active = _active;
     if (active != null) {
@@ -87,12 +101,15 @@ class AlertVoiceService {
         _trace(request, 'native_handled', diagnostics: diagnostics);
       } else if (!current() || !fresh()) {
         _trace(request, 'cancelled_or_expired_before_tts');
+      } else if (request.audioSlot != null && !_preferences.ttsFallbackEnabled) {
+        final diagnostics = await _audioDiagnostics();
+        _trace(request, 'native_failed_tts_disabled', diagnostics: diagnostics);
       } else if (!languageInstalled) {
         final diagnostics = await _audioDiagnostics();
         _trace(request, 'tts_unavailable', diagnostics: diagnostics);
       } else {
         final diagnostics = await _audioDiagnostics();
-        _trace(request, 'native_failed_tts_requested', diagnostics: diagnostics);
+        _trace(request, request.audioSlot == null ? 'dynamic_tts_requested' : 'native_failed_tts_requested', diagnostics: diagnostics);
         await _speech.speakMessage(request.text, priority: request.priority);
         _trace(request, 'tts_returned');
       }

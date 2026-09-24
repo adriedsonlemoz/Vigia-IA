@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.117 compacta a Home, separa Bike como perfil de configuração, move o emulador para ESP32 e integra ajustes/bateria ao modo Transmissão.",
-  "version": "1.0.117",
-  "build": 117
+  "notes": "A 1.0.118 preserva mais qualidade nos perfis Bike, adiciona controle por fala e reduz o uso de TTS ao priorizar os áudios integrados, incluindo o emulador ESP32.",
+  "version": "1.0.118",
+  "build": 118
 }

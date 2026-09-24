@@ -1,3 +1,15 @@
+## 1.0.118+118 — 2026-09-24
+
+- Perfis Bike foram recalibrados para preservar informação visual no receptor: **Normal 10 FPS/960 px/JPEG 78**, **Economia 7 FPS/960 px/JPEG 76** e **Economia extrema 5 FPS/800 px/JPEG 72**.
+- `VoiceAlertPreferences` adiciona persistência para falas silenciadas, TTS dinâmico e fallback TTS; schema das configurações sobe para versão 8.
+- **Áudios e voz** ganhou switch por fala, ações **Ativar todas/Silenciar** e controles separados para TTS dinâmico e TTS de fallback.
+- O fallback TTS fica desativado por padrão: quando existe áudio integrado, o app não mistura automaticamente a voz do sistema se a reprodução nativa falhar.
+- Os 64 slots Bike/ESP32 deixam de ser marcados como futuros e permanecem ligados aos 78 recursos `R.raw` validados no APK.
+- O emulador ESP32 dispara áudios integrados para sensores normais, pneu dianteiro/traseiro crítico, bateria do módulo, veículo detectado e sensores desconectados, respeitando a seleção do usuário.
+- O alerta visual de aproximação passa a usar o slot integrado de veículo para reduzir dependência de TTS.
+- Testes foram ampliados para política de voz, persistência dos slots silenciados e novos limites de transmissão Bike.
+- Versionamento, AppMetadata, identidade, Mudanças, documentação e verificadores sincronizados em `1.0.118+118`.
+
 ## 1.0.117+117 — 2026-09-24
 
 - Home reorganizada em quatro cards compactos: **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**; textos, tags e espaços vazios foram reduzidos.

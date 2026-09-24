@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/alert_preferences.dart';
 import '../models/audio_slot.dart';
+import '../models/video_source_config.dart';
+import '../services/app_settings_service.dart';
 import '../services/native_platform_service.dart';
 
 class AudioSettingsScreen extends StatefulWidget {
@@ -14,9 +17,13 @@ class AudioSettingsScreen extends StatefulWidget {
 
 class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   final _native = NativePlatformService.instance;
+  final _settings = AppSettingsService.instance;
+  PersistedMonitorProfile? _profile;
+  VoiceAlertPreferences _voicePreferences = const VoiceAlertPreferences();
   Set<String> _overrides = <String>{};
   bool _loading = true;
   bool _previewing = false;
+  bool _savingVoice = false;
   String _query = '';
 
   @override
@@ -27,11 +34,54 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
 
   Future<void> _refresh() async {
     final overrides = await _native.audioOverrideSlots();
+    final profile = await _settings.initialize();
     if (!mounted) return;
     setState(() {
       _overrides = overrides;
+      _profile = profile;
+      _voicePreferences = profile.settings.voiceAlertPreferences;
       _loading = false;
     });
+  }
+
+  Future<void> _saveVoicePreferences(VoiceAlertPreferences next) async {
+    final current = _profile ?? await _settings.initialize();
+    if (!mounted) return;
+    setState(() {
+      _voicePreferences = next;
+      _savingVoice = true;
+    });
+    final updated = PersistedMonitorProfile(
+      source: current.source,
+      settings: current.settings.copyWith(voiceAlertPreferences: next),
+    );
+    await _settings.saveProfile(updated);
+    if (!mounted) return;
+    setState(() {
+      _profile = updated;
+      _savingVoice = false;
+    });
+  }
+
+  Future<void> _setSlotEnabled(String slot, bool enabled) async {
+    final muted = <String>{..._voicePreferences.mutedSlots};
+    if (enabled) {
+      muted.remove(slot);
+    } else {
+      muted.add(slot);
+    }
+    await _saveVoicePreferences(
+      _voicePreferences.copyWith(mutedSlots: Set<String>.unmodifiable(muted)),
+    );
+  }
+
+  Future<void> _setAllSlots(bool enabled) async {
+    final muted = enabled
+        ? const <String>{}
+        : AudioSlotCatalog.all.map((slot) => slot.id).toSet();
+    await _saveVoicePreferences(
+      _voicePreferences.copyWith(mutedSlots: Set<String>.unmodifiable(muted)),
+    );
   }
 
   Future<void> _preview(AudioSlotDefinition slot) async {
@@ -198,10 +248,20 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Áudios e voz', style: TextStyle(fontWeight: FontWeight.w800)),
-            Text('Ouça, troque, grave ou restaure', style: TextStyle(fontSize: 12)),
+            Text('Escolha o que pode falar e qual áudio usar', style: TextStyle(fontSize: 12)),
           ],
         ),
         actions: [
+          if (_savingVoice)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Center(
+                child: SizedBox.square(
+                  dimension: 17,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
           IconButton(
             onPressed: _overrides.isEmpty ? null : _restoreAll,
             tooltip: 'Restaurar todos',
@@ -236,12 +296,66 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
                           const SizedBox(height: 8),
                           Text(
                             _overrides.isEmpty
-                                ? 'Nenhum áudio personalizado. O aplicativo usa os arquivos padrão e mantém TTS como fallback de segurança.'
+                                ? 'O aplicativo prioriza os áudios integrados. TTS fica reservado para mensagens sem gravação ou para o fallback que você autorizar.'
                                 : '${_overrides.length} áudio(s) personalizado(s). Eles têm prioridade sobre o padrão e continuam após atualizações do app.',
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${AudioSlotCatalog.all.where((slot) => _voicePreferences.allowsSlot(slot.id)).length} de ${AudioSlotCatalog.all.length} falas ativas',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _savingVoice ? null : () => _setAllSlots(true),
+                                  icon: const Icon(Icons.volume_up_outlined, size: 18),
+                                  label: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text('Ativar todas', maxLines: 1),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _savingVoice ? null : () => _setAllSlots(false),
+                                  icon: const Icon(Icons.volume_off_outlined, size: 18),
+                                  label: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text('Silenciar', maxLines: 1),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            value: _voicePreferences.dynamicTtsEnabled,
+                            onChanged: _savingVoice
+                                ? null
+                                : (value) => _saveVoicePreferences(
+                                      _voicePreferences.copyWith(dynamicTtsEnabled: value),
+                                    ),
+                            title: const Text('TTS para mensagens sem áudio integrado'),
+                            subtitle: const Text('Mantém frases dinâmicas, como avisos que ainda não possuem gravação dedicada.'),
+                          ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            value: _voicePreferences.ttsFallbackEnabled,
+                            onChanged: _savingVoice
+                                ? null
+                                : (value) => _saveVoicePreferences(
+                                      _voicePreferences.copyWith(ttsFallbackEnabled: value),
+                                    ),
+                            title: const Text('Usar TTS se um áudio integrado falhar'),
+                            subtitle: const Text('Desativado por padrão para evitar misturar a voz gravada com a voz do sistema.'),
+                          ),
                           const Text(
-                            'Os itens marcados como “Futuro” já estão preparados para o Modo Bike/ESP32, mas só tocarão quando essas funções forem conectadas aos sensores.',
+                            'As falas Bike/ESP32 já podem ser ouvidas e usadas pelo emulador. Quando o hardware real chegar, os mesmos slots serão reaproveitados.',
                           ),
                         ],
                       ),
@@ -264,6 +378,10 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
                         (slot) => _AudioSlotCard(
                           slot: slot,
                           customized: _overrides.contains(slot.id),
+                          enabled: _voicePreferences.allowsSlot(slot.id),
+                          onEnabledChanged: _savingVoice
+                              ? null
+                              : (value) => _setSlotEnabled(slot.id, value),
                           onPlay: () => _preview(slot),
                           onImport: () => _import(slot),
                           onRecord: () => _record(slot),
@@ -301,6 +419,8 @@ class _AudioSlotCard extends StatelessWidget {
   const _AudioSlotCard({
     required this.slot,
     required this.customized,
+    required this.enabled,
+    required this.onEnabledChanged,
     required this.onPlay,
     required this.onImport,
     required this.onRecord,
@@ -309,6 +429,8 @@ class _AudioSlotCard extends StatelessWidget {
 
   final AudioSlotDefinition slot;
   final bool customized;
+  final bool enabled;
+  final ValueChanged<bool>? onEnabledChanged;
   final VoidCallback onPlay;
   final VoidCallback onImport;
   final VoidCallback onRecord;
@@ -335,27 +457,37 @@ class _AudioSlotCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (slot.future)
-                    const Chip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text('Futuro'),
-                      avatar: Icon(Icons.construction_rounded, size: 16),
-                    )
-                  else if (customized)
-                    const Chip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text('Seu áudio'),
-                      avatar: Icon(Icons.mic_rounded, size: 16),
-                    ),
-                  if (onRestore != null)
-                    IconButton(
-                      onPressed: onRestore,
-                      tooltip: 'Restaurar áudio padrão',
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.restore_rounded),
-                    ),
+                  Switch.adaptive(
+                    value: enabled,
+                    onChanged: onEnabledChanged,
+                  ),
                 ],
               ),
+              if (slot.future || customized || onRestore != null)
+                Row(
+                  children: [
+                    if (slot.future)
+                      const Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text('ESP32/Sim'),
+                        avatar: Icon(Icons.memory_rounded, size: 16),
+                      )
+                    else if (customized)
+                      const Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text('Seu áudio'),
+                        avatar: Icon(Icons.mic_rounded, size: 16),
+                      ),
+                    const Spacer(),
+                    if (onRestore != null)
+                      IconButton(
+                        onPressed: onRestore,
+                        tooltip: 'Restaurar áudio padrão',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.restore_rounded),
+                      ),
+                  ],
+                ),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -387,7 +519,7 @@ class _AudioSlotCard extends StatelessWidget {
               if (customized && slot.future)
                 const Padding(
                   padding: EdgeInsets.only(top: 6),
-                  child: Text('Personalizado · reservado para integração futura', style: TextStyle(fontSize: 12)),
+                  child: Text('Personalizado · disponível no emulador e preparado para o ESP32 real', style: TextStyle(fontSize: 12)),
                 )
               else if (customized)
                 const Padding(

@@ -1,4 +1,16 @@
-# Validação — Vigia IA 1.0.117+117
+# Validação — Vigia IA 1.0.118+118
+
+## 1.0.118+118 — voz configurável e qualidade Bike
+
+- Confirmar perfil Bike **Economia = 7 FPS / 960 px / JPEG 76** e **Economia extrema = 5 FPS / 800 px / JPEG 72**.
+- Confirmar que **Áudios e voz** permite ligar/desligar cada fala, ativar todas e silenciar todas sem alterar notificações visuais.
+- Confirmar que **TTS para mensagens sem áudio integrado** e **TTS se um áudio integrado falhar** são opções independentes.
+- Confirmar que o fallback TTS inicia desativado em instalações/perfis sem configuração anterior.
+- Confirmar que os slots Bike/ESP32 não aparecem mais como “Futuro”.
+- No **ESP32 > engrenagem > Emulador de sensores**, alternar os cenários e confirmar reprodução dos áudios integrados correspondentes, respeitando slots silenciados.
+- Confirmar que o alerta de aproximação não depende de TTS quando o áudio integrado de veículo está ativo.
+- Executar `python3 tool/verify_audio_resource_catalog.py`, `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
 
 ## 1.0.117+117 — Home, Bike/ESP32 e Transmissão
 

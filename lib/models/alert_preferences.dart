@@ -43,6 +43,52 @@ class AlertOutputs {
   }
 }
 
+
+
+class VoiceAlertPreferences {
+  const VoiceAlertPreferences({
+    this.mutedSlots = const <String>{},
+    this.ttsFallbackEnabled = false,
+    this.dynamicTtsEnabled = true,
+  });
+
+  final Set<String> mutedSlots;
+  final bool ttsFallbackEnabled;
+  final bool dynamicTtsEnabled;
+
+  bool allowsSlot(String slot) => !mutedSlots.contains(slot);
+
+  VoiceAlertPreferences copyWith({
+    Set<String>? mutedSlots,
+    bool? ttsFallbackEnabled,
+    bool? dynamicTtsEnabled,
+  }) =>
+      VoiceAlertPreferences(
+        mutedSlots: mutedSlots ?? this.mutedSlots,
+        ttsFallbackEnabled: ttsFallbackEnabled ?? this.ttsFallbackEnabled,
+        dynamicTtsEnabled: dynamicTtsEnabled ?? this.dynamicTtsEnabled,
+      );
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'mutedSlots': mutedSlots.toList()..sort(),
+        'ttsFallbackEnabled': ttsFallbackEnabled,
+        'dynamicTtsEnabled': dynamicTtsEnabled,
+      };
+
+  factory VoiceAlertPreferences.fromJson(Map<String, dynamic> json) {
+    final muted = (json['mutedSlots'] as List?)
+            ?.whereType<String>()
+            .where((item) => item.trim().isNotEmpty)
+            .toSet() ??
+        <String>{};
+    return VoiceAlertPreferences(
+      mutedSlots: Set<String>.unmodifiable(muted),
+      ttsFallbackEnabled: json['ttsFallbackEnabled'] as bool? ?? false,
+      dynamicTtsEnabled: json['dynamicTtsEnabled'] as bool? ?? true,
+    );
+  }
+}
+
 class AlertMessages {
   const AlertMessages({
     this.person = 'Pessoa detectada.',

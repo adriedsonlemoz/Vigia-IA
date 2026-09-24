@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.117+117
+# Arquitetura — Vigia IA 1.0.118+118
+
+## Evolução 1.0.118 — política de voz e transmissão econômica
+
+- `VoiceAlertPreferences` fica dentro de `MonitorSettings` e persiste `mutedSlots`, `dynamicTtsEnabled` e `ttsFallbackEnabled` no perfil local.
+- `AlertVoiceService` continua coordenando áudio integrado + TTS, mas agora filtra cada slot antes da fila e só usa TTS após falha nativa quando o usuário autorizar.
+- A seleção de voz é consultada novamente pelo monitor no momento da entrega, permitindo que alterações feitas em **Áudios e voz** sejam respeitadas sem criar um segundo catálogo.
+- O catálogo Android continua único: 78 slots Dart ↔ `AudioResourceCatalog.kt` ↔ 78 arquivos em `res/raw`; os slots Bike deixam de ser apenas futuros e já são utilizáveis no emulador.
+- `Esp32SensorEmulatorScreen` reaproveita `BikeModeService` e toca o slot integrado correspondente ao cenário simulado; nenhuma infraestrutura paralela de áudio foi criada.
+- A política Bike separa análise de IA da captura/transmissão e passa a usar 10/7/5 FPS com resolução 960/960/800 px para preservar detalhes úteis no receptor.
 
 ## Evolução 1.0.117 — papéis do aparelho e perfil Bike
 

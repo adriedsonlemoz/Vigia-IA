@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.117',
+          version: '1.0.118',
           current: true,
+          changes: [
+            'Perfis Bike passam a preservar mais informação visual: Economia usa 7 FPS/960 px/JPEG 76 e Economia extrema 5 FPS/800 px/JPEG 72.',
+            'Áudios e voz ganhou controle por fala: cada aviso pode ser ativado ou silenciado individualmente, com ações para ativar ou silenciar todos.',
+            'TTS de fallback fica desligado por padrão para evitar mistura de vozes; mensagens sem áudio integrado continuam configuráveis separadamente.',
+            'As falas Bike/ESP32 deixam de ser marcadas como futuras e o emulador dispara áudios integrados para os cenários simulados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.117',
           changes: [
             'Home reorganizada em quatro cards compactos: Ao vivo, Transmissão, Remoto e ESP32; os cinco acessos rápidos ficam na mesma linha no celular.',
             'Bike deixa de ser um modo inicial e passa a ser um perfil em Ajustes > Bike e economia, sem apagar as preferências existentes.',
@@ -1073,8 +1083,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.117',
+          version: '1.0.118',
           current: true,
+          changes: [
+            'Perfis Bike passam a preservar mais informação visual: Economia usa 7 FPS/960 px/JPEG 76 e Economia extrema 5 FPS/800 px/JPEG 72.',
+            'Áudios e voz ganhou controle por fala: cada aviso pode ser ativado ou silenciado individualmente, com ações para ativar ou silenciar todos.',
+            'TTS de fallback fica desligado por padrão para evitar mistura de vozes; mensagens sem áudio integrado continuam configuráveis separadamente.',
+            'As falas Bike/ESP32 deixam de ser marcadas como futuras e o emulador dispara áudios integrados para os cenários simulados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.117',
           changes: [
             'Home reorganizada em quatro cards compactos: Ao vivo, Transmissão, Remoto e ESP32; os cinco acessos rápidos ficam na mesma linha no celular.',
             'Bike deixa de ser um modo inicial e passa a ser um perfil em Ajustes > Bike e economia, sem apagar as preferências existentes.',

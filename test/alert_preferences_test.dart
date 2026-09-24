@@ -45,4 +45,18 @@ void main() {
       'Animal saiu de Quintal.',
     );
   });
+
+  test('preferencias de voz persistem slots silenciados e politica de TTS', () {
+    const prefs = VoiceAlertPreferences(
+      mutedSlots: <String>{'person_detected', 'bike_sensor_disconnected'},
+      ttsFallbackEnabled: true,
+      dynamicTtsEnabled: false,
+    );
+    final restored = VoiceAlertPreferences.fromJson(prefs.toJson());
+    expect(restored.allowsSlot('person_detected'), isFalse);
+    expect(restored.allowsSlot('vehicle_detected'), isTrue);
+    expect(restored.ttsFallbackEnabled, isTrue);
+    expect(restored.dynamicTtsEnabled, isFalse);
+  });
+
 }

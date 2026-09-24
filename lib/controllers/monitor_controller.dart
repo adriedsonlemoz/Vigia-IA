@@ -412,7 +412,8 @@ class MonitorController extends ChangeNotifier {
         _speech.initialize(),
         _clipRecorder.initialize(),
       ]);
-      _speech.setEnabled(_settings.alertOutputs.voice);
+      _speech..configure(_settings.voiceAlertPreferences)
+        ..setEnabled(_settings.alertOutputs.voice);
       if (_disposed) return;
       _baseReady = true;
       _health.aiReady = _detector.isReady;

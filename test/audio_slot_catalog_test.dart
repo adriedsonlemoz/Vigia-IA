@@ -30,9 +30,9 @@ void main() {
     expect(ids.containsAll(current), isTrue);
   });
 
-  test('slots Bike ficam marcados como futuros nesta etapa', () {
+  test('slots Bike ficam liberados para emulador e hardware futuro', () {
     final bike = AudioSlotCatalog.all.where((slot) => slot.id.startsWith('bike_')).toList();
     expect(bike, hasLength(64));
-    expect(bike.every((slot) => slot.future), isTrue);
+    expect(bike.every((slot) => !slot.future), isTrue);
   });
 }

@@ -174,7 +174,7 @@ class AppSettingsService {
       }
     }
     return <String, Object?>{
-      'version': 7,
+      'version': 8,
       'source': source,
       'settings': <String, Object?>{
         'confidenceThreshold': settings.confidenceThreshold,
@@ -201,6 +201,7 @@ class AppSettingsService {
         'backgroundMonitoringEnabled': settings.backgroundMonitoringEnabled,
         'voiceEnabled': settings.alertOutputs.voice,
         'alertOutputs': settings.alertOutputs.toJson(),
+        'voiceAlertPreferences': settings.voiceAlertPreferences.toJson(),
         'alertMessages': settings.alertMessages.toJson(),
         'storagePolicy': settings.storagePolicy.toJson(),
         'preset': settings.preset.name,
@@ -219,6 +220,7 @@ class AppSettingsService {
     final rulesJson = (settingsJson['smartAlertRules'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final scheduleJson = (settingsJson['schedule'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final alertOutputsJson = (settingsJson['alertOutputs'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final voiceAlertPreferencesJson = (settingsJson['voiceAlertPreferences'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final alertMessagesJson = (settingsJson['alertMessages'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     final storagePolicyJson = (settingsJson['storagePolicy'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 
@@ -308,6 +310,7 @@ class AppSettingsService {
         backgroundMonitoringEnabled: settingsJson['backgroundMonitoringEnabled'] as bool? ?? false,
         voiceEnabled: outputs.voice,
         alertOutputs: outputs,
+        voiceAlertPreferences: VoiceAlertPreferences.fromJson(voiceAlertPreferencesJson),
         alertMessages: AlertMessages.fromJson(alertMessagesJson),
         storagePolicy: StoragePolicy.fromJson(storagePolicyJson),
         preset: preset,

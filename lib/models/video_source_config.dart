@@ -107,6 +107,7 @@ class MonitorSettings {
     this.backgroundMonitoringEnabled = false,
     this.voiceEnabled = true,
     this.alertOutputs = const AlertOutputs(),
+    this.voiceAlertPreferences = const VoiceAlertPreferences(),
     this.alertMessages = const AlertMessages(),
     this.storagePolicy = const StoragePolicy(),
     this.preset = MonitoringPreset.custom,
@@ -131,6 +132,7 @@ class MonitorSettings {
   final bool backgroundMonitoringEnabled;
   final bool voiceEnabled;
   final AlertOutputs alertOutputs;
+  final VoiceAlertPreferences voiceAlertPreferences;
   final AlertMessages alertMessages;
   final StoragePolicy storagePolicy;
   final MonitoringPreset preset;
@@ -155,6 +157,7 @@ class MonitorSettings {
     bool? backgroundMonitoringEnabled,
     bool? voiceEnabled,
     AlertOutputs? alertOutputs,
+    VoiceAlertPreferences? voiceAlertPreferences,
     AlertMessages? alertMessages,
     StoragePolicy? storagePolicy,
     MonitoringPreset? preset,
@@ -179,6 +182,7 @@ class MonitorSettings {
         backgroundMonitoringEnabled: backgroundMonitoringEnabled ?? this.backgroundMonitoringEnabled,
         voiceEnabled: voiceEnabled ?? this.voiceEnabled,
         alertOutputs: alertOutputs ?? this.alertOutputs,
+        voiceAlertPreferences: voiceAlertPreferences ?? this.voiceAlertPreferences,
         alertMessages: alertMessages ?? this.alertMessages,
         storagePolicy: storagePolicy ?? this.storagePolicy,
         preset: preset ?? this.preset,
