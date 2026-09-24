@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.104',
+          version: '1.0.105',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-73 removendo dois imports que faziam o flutter analyze encerrar o workflow.',
+            'Mapa e câmeras preservam o comportamento da 1.0.104; a mudança é uma correção estática de build.',
+            'Verificadores ganharam proteção contra a reintrodução dos dois apontamentos encontrados no log.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.104',
           changes: [
             'Configuração Stadia ganhou painel completo com status da chave, Colar, Ver, Copiar, Testar, Trocar e Remover.',
             'Seleção offline ganhou modos Mapa/Área e controles de zoom − / z / + na parte inferior.',
@@ -953,8 +962,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.104',
+          version: '1.0.105',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-73: removidos dois imports que bloqueavam o flutter analyze antes da compilação.',
+            'Funcionalidades de mapa, Stadia e multicâmera da 1.0.104 foram preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.104',
           changes: [
             'Painel Stadia completo com Colar, Ver, Copiar, Testar, Trocar e Remover a API key.',
             'Seleção offline ganhou modos Mapa/Área e zoom − / z / +; mapa completo ganhou telemetria no topo e até duas câmeras flutuantes.',

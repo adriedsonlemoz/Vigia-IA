@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.105+105 — 2026-09-23
+
+- Corrigido o Android-APK-73, que parava em `flutter analyze` antes da compilação do APK.
+- Removido o import redundante `dart:typed_data` de `lib/screens/map_monitoring_screen.dart` (`unnecessary_import`).
+- Removido o import não utilizado `package:camera/camera.dart` de `lib/sources/local_camera_source.dart` (`unused_import`).
+- `tool/verify_project.sh` agora protege contra a reintrodução desses dois apontamentos específicos do analisador.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.105+105`.
+
 ## 1.0.104+104 — 2026-09-23
 
 - A configuração da API Stadia Maps passa a indicar claramente se existe chave salva e oferece **Colar / Ver / Copiar / Testar / Trocar / Remover** no mesmo painel.

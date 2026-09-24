@@ -2,9 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.104+104`
+> **Versão atual:** `1.0.105+105`
 
 ## Estado atual
+
+A `1.0.105+105` corrige o bloqueio do `flutter analyze` encontrado no Android-APK-73 sem alterar o comportamento funcional do mapa ou das câmeras.
+
+### Correção 1.0.105 — Android-APK-73
+
+- removido o import redundante `dart:typed_data` de `map_monitoring_screen.dart`;
+- removido o import não utilizado `package:camera/camera.dart` de `local_camera_source.dart`;
+- o verificador preventivo passa a bloquear a reintrodução exata desses dois imports enquanto permanecerem desnecessários;
+- versionamento, metadados, Mudanças, documentação, testes e verificadores foram sincronizados em `1.0.105+105`.
+
+#### Estado anterior preservado — 1.0.104
 
 A `1.0.104+104` melhora a configuração da Stadia Maps, os controles de seleção offline e a experiência do mapa completo com telemetria compacta e até duas câmeras flutuantes.
 

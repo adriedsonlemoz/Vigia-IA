@@ -11,7 +11,13 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.104+104$' pubspec.yaml || fail 'Versao esperada 1.0.104+104 nao encontrada.'
+grep -q '^version: 1\.0\.105+105$' pubspec.yaml || fail 'Versao esperada 1.0.105+105 nao encontrada.'
+if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
+  fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
+fi
+if grep -q "import 'package:camera/camera.dart';" lib/sources/local_camera_source.dart; then
+  fail 'Import camera nao utilizado reapareceu em LocalCameraSource (Android-APK-73).'
+fi
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +327,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.104';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.104.'
-grep -q 'static const int build = 104;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 104.'
-grep -q "version: '1.0.104'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.104.'
+grep -q "static const String version = '1.0.105';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.105.'
+grep -q 'static const int build = 105;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 105.'
+grep -q "version: '1.0.105'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.105.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +498,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.104+104$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.104+104.'
+grep -q '^version: 1.0.105+105$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.105+105.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.104"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.104.'
-grep -q '"build": 104' app_identity.json \
-  || fail 'app_identity.json nao esta no build 104.'
+grep -q '"version": "1.0.105"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.105.'
+grep -q '"build": 105' app_identity.json \
+  || fail 'app_identity.json nao esta no build 105.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +826,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.104+104' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.104+104.'
+grep -q 'Vigia IA 1.0.105+105' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.105+105.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1795,6 +1801,13 @@ if ! grep -A3 'if (!mounted) return;' lib/screens/events_screen_actions.dart | \
   fail 'BuildContext da exportacao nao esta protegido apos espera assincrona.'
 fi
 
+
+# Buildfix Android-APK-73 - 1.0.105
+grep -q '^## 1.0.105+105' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.105.'
+grep -q 'Correção 1.0.105' README.md || fail 'README nao documenta 1.0.105.'
+grep -q "version: '1.0.105'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.105.'
+[[ -f RELEASE-1.0.105.md ]] || fail 'Notas da entrega 1.0.105 ausentes.'
 
 # Painel Stadia e mapa multicamera - 1.0.104
 grep -q '^## 1.0.104+104' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.104.'

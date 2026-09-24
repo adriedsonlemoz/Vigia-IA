@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.104+104
+# Arquitetura — Vigia IA 1.0.105+105
 
 ## 1. Princípios
+
+## Correção 1.0.105 — buildfix do Android-APK-73
+
+- `MapMonitoringScreen` continua usando os tipos binários já expostos por `package:flutter/foundation.dart`, portanto o import direto de `dart:typed_data` foi removido para satisfazer `unnecessary_import`.
+- `LocalCameraSource` acessa o controlador compartilhado sem referenciar símbolos diretamente de `package:camera/camera.dart`; o import não utilizado foi removido para satisfazer `unused_import`.
+- A correção não altera o pipeline de vídeo, a adaptação de proporção dos PiPs, o mapa, a IA ou a persistência; é uma limpeza estática para liberar novamente o workflow.
+- `tool/verify_project.sh` contém guardas preventivas para esses dois padrões enquanto eles permanecerem desnecessários.
 
 ## Evolução 1.0.104 — painel de fonte e mapa com PiPs adaptativos
 

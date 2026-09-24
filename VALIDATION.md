@@ -1,4 +1,12 @@
-# Validação — Vigia IA 1.0.104+104
+# Validação — Vigia IA 1.0.105+105
+
+## 1.0.105+105 — Android-APK-73
+
+- Confirmar ausência de `dart:typed_data` em `lib/screens/map_monitoring_screen.dart`.
+- Confirmar ausência do import direto `package:camera/camera.dart` em `lib/sources/local_camera_source.dart`.
+- `python3 tool/check_version_sync.py`: **PASSOU** em `1.0.105+105`.
+- `bash tool/verify_project.sh`: **PASSOU** em `1.0.105+105`, incluindo as guardas do Android-APK-73.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.104+104 — painel Stadia + seleção offline + mapa multicâmera
 
