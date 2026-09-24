@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f android/app/build.gradle.kts && -f android/settings.gradle.kts && -f android/gradle/wrapper/gradle-wrapper.properties ]]; then
+          if [[ -f android/app/build.gradle.kts && -f android/settings.gradle.kts && -f android/gradle/wrapper/gradle-wrapper.properties && -f android/app/src/main/res/values/styles.xml && -f android/app/src/main/res/mipmap/ic_launcher.xml ]]; then
             echo "Projeto Android versionado encontrado; bootstrap completo dispensado."
           else
             echo "Projeto Android incompleto; executando bootstrap de recuperacao."

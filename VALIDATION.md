@@ -1,4 +1,14 @@
-# Validação — Vigia IA 1.0.107+107
+# Validação — Vigia IA 1.0.108+108
+
+## 1.0.108+108 — correção do Android-APK-76
+
+- Android-APK-76: `flutter analyze` e os testes chegaram a passar; a falha ocorreu depois de ~4 minutos em `:app:processReleaseResources`.
+- AAPT reportou exatamente três recursos ausentes: `mipmap/ic_launcher`, `style/LaunchTheme` e `style/NormalTheme`.
+- Os recursos foram restaurados em `android/app/src/main/res`, incluindo tema noturno, fundo de lançamento e launcher adaptativo.
+- A verificação preventiva passa a checar presença dos recursos e referências do Manifest antes da etapa longa de build.
+- O workflow também inclui esses recursos no teste de integridade usado para decidir se precisa executar o bootstrap Android.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.108+108`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK final ainda precisam ser confirmados pelo workflow.
 
 ## 1.0.107+107 — correção do Android-APK-75
 

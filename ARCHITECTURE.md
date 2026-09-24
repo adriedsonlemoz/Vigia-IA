@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.107+107
+# Arquitetura — Vigia IA 1.0.108+108
 
 ## 1. Princípios
+
+## Correção 1.0.108 — recursos Android do Android-APK-76
+
+- O Manifest depende explicitamente de `@mipmap/ic_launcher`, `@style/LaunchTheme` e `@style/NormalTheme`; esses recursos agora fazem parte do projeto Android versionado em vez de depender implicitamente do `flutter create`.
+- `values/styles.xml` e `values-night/styles.xml` definem os temas de inicialização/normal; `drawable/launch_background.xml` fornece o fundo de lançamento.
+- O launcher possui recurso base e versão adaptativa `anydpi-v26`, compatível com o `minSdk 29`.
+- A etapa **Preparar projeto Android** considera a árvore pronta apenas quando Gradle/wrapper e os recursos-base existem. Isso preserva builds rápidos sem aceitar um Android parcial.
+- `verify_project.sh` valida os recursos e as referências do Manifest antes de `flutter analyze`, evitando descobrir a regressão apenas após vários minutos de Gradle.
 
 ## Correção 1.0.107 — compatibilidade Gradle/Kotlin do Android-APK-75
 

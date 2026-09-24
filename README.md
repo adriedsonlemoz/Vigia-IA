@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.107+107`
+> **Versão atual:** `1.0.108+108`
 
 ## Estado atual
 
-A `1.0.107+107` corrige o Android-APK-75 alinhando a configuração Android ao template oficial do Flutter 3.44.9, mantendo a otimização de uma única compilação release introduzida na versão anterior.
+A `1.0.108+108` corrige o Android-APK-76 restaurando os recursos Android que o Manifest exige e que ficaram ausentes quando o workflow passou a reutilizar o diretório `android/` versionado.
+
+### Correção 1.0.108 — Android-APK-76
+
+- restaurados `@mipmap/ic_launcher`, `@style/LaunchTheme` e `@style/NormalTheme` no projeto Android versionado;
+- adicionados `launch_background`, temas claro/escuro e launcher adaptativo compatível com o `minSdk 29`;
+- o workflow só considera o projeto Android íntegro quando os recursos-base também existem, evitando pular o bootstrap com uma árvore incompleta;
+- `verify_project.sh` agora falha imediatamente se os recursos referenciados pelo Manifest forem removidos;
+- preservados a compilação única, universal + três ABIs, Build Cache e paralelismo introduzidos na 1.0.106.
 
 ### Correção 1.0.107 — Android-APK-75
 

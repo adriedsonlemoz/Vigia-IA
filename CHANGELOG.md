@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.108+108 — 2026-09-24
+
+- Corrigido o Android-APK-76, que avançava até `:app:processReleaseResources` e falhava por ausência de `mipmap/ic_launcher`, `style/LaunchTheme` e `style/NormalTheme`.
+- Restaurados os recursos Android de launcher, fundo de inicialização e temas claro/escuro diretamente no projeto versionado.
+- Adicionado launcher adaptativo para Android 8+; o app continua com `minSdk 29`.
+- A etapa **Preparar projeto Android** só reutiliza `android/` quando os recursos-base também estão presentes.
+- `tool/verify_project.sh` ganhou guardas para os três recursos e para as referências correspondentes no Manifest.
+- Mantidas as otimizações da 1.0.106/1.0.107: uma única `assembleRelease`, universal + três ABIs, Build Cache, paralelismo e `setup-gradle@v6`.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.108+108`.
+
 ## 1.0.107+107 — 2026-09-23
 
 - Corrigido o Android-APK-75, que chegou ao build após `flutter analyze` sem issues e 176 testes aprovados, mas falhou na compilação de `android/app/build.gradle.kts`.

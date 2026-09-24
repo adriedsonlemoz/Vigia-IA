@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.107',
+          version: '1.0.108',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-76 restaurando ic_launcher, LaunchTheme e NormalTheme que faltavam no projeto Android versionado.',
+            'Recursos nativos agora ficam preservados no ZIP-fonte e são verificados antes do build.',
+            'A compilação única de universal + três ABIs, o cache e o paralelismo continuam ativos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.107',
           changes: [
             'Corrigido o Android-APK-75, que falhava ao compilar o script Gradle Android antes de gerar os APKs.',
             'build.gradle.kts foi alinhado ao template oficial do Flutter 3.44.9: Kotlin explícito legado removido e compilerOptions moderno aplicado.',
@@ -980,8 +989,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.107',
+          version: '1.0.108',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-76 restaurando ic_launcher, LaunchTheme e NormalTheme que faltavam no projeto Android versionado.',
+            'Recursos nativos agora ficam preservados no ZIP-fonte e são verificados antes do build.',
+            'A compilação única de universal + três ABIs, o cache e o paralelismo continuam ativos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.107',
           changes: [
             'Android-APK-75 corrigido com o Gradle Android alinhado ao template do Flutter 3.44.9.',
             'Mantida a geração universal + três ABIs em uma única compilação, com cache e paralelismo.',

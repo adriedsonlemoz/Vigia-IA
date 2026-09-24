@@ -17,7 +17,7 @@ with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
         if parts & exclude_dirs: continue
         if rel.as_posix() in exclude_files: continue
         if p.is_file(): z.write(p, rel.as_posix())
-required={'.github/workflows/android-apk.yml','.gitignore','pubspec.yaml','app_identity.json','README.md','CHANGELOG.md','ARCHITECTURE.md','tool/verify_project.sh','tool/package_source.sh'}
+required={'.github/workflows/android-apk.yml','.gitignore','pubspec.yaml','app_identity.json','README.md','CHANGELOG.md','ARCHITECTURE.md','tool/verify_project.sh','tool/package_source.sh','android/app/src/main/res/mipmap/ic_launcher.xml','android/app/src/main/res/values/styles.xml','android/app/src/main/res/values-night/styles.xml','android/app/src/main/res/drawable/launch_background.xml'}
 with zipfile.ZipFile(out) as z:
     names=set(z.namelist())
 missing=sorted(required-names)
