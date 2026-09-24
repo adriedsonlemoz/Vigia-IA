@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.115',
+          version: '1.0.116',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-84: os dois testes de layout compacto agora cabem sem RenderFlex overflow.',
+            'Cards compactos da Home ganharam espaçamentos, ícones e tags mais densos sem remover título, descrição ou indicadores.',
+            'Acessos rápidos foram reduzidos para manter Diagnóstico legível em células estreitas da grade responsiva.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.115',
           changes: [
             'Home compactada em grade 2x2 com Monitor ao vivo, Modo transmissão, Modo Bike e acesso dedicado ao ESP32.',
             'ESP32 saiu da lista geral de Monitoramento em Ajustes e abre diretamente sua tela existente de módulo, sensores e câmera.',
@@ -1054,8 +1063,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.115',
+          version: '1.0.116',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-84: os dois testes de layout compacto agora cabem sem RenderFlex overflow.',
+            'Cards compactos da Home ganharam espaçamentos, ícones e tags mais densos sem remover título, descrição ou indicadores.',
+            'Acessos rápidos foram reduzidos para manter Diagnóstico legível em células estreitas da grade responsiva.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.115',
           changes: [
             'Home compactada em grade 2x2 com Monitor ao vivo, Modo transmissão, Modo Bike e acesso dedicado ao ESP32.',
             'ESP32 saiu da lista geral de Monitoramento em Ajustes e abre diretamente sua tela existente de módulo, sensores e câmera.',

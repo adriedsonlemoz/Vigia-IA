@@ -1,3 +1,12 @@
+## 1.0.116+116 — 2026-09-24
+
+- Corrigido o Android-APK-84: `flutter analyze` estava limpo, mas `flutter test` falhava em dois testes de layout por `RenderFlex overflow` de 32 px e 2 px.
+- `VigiaModeCard` compacto ficou mais denso em padding, ícones, espaçamentos, tipografia e tags para caber em célula estreita da grade 2x2.
+- `VigiaStatusPill` ganhou modo `dense`, usado pelos cards compactos sem alterar o comportamento padrão nas demais telas.
+- `VigiaQuickAction` foi reduzido para manter **Diagnóstico** legível em células de 104x96 sem overflow.
+- Os testes de regressão do redesign foram mantidos inalterados para validar a correção real dos componentes.
+- Versionamento, AppMetadata, identidade, Mudanças, documentação e verificadores sincronizados em `1.0.116+116`.
+
 ## 1.0.115+115 — 2026-09-24
 
 - Home compactada em grade 2x2 para **Monitor ao vivo**, **Modo transmissão**, **Modo Bike** e **ESP32**, reduzindo a altura ocupada pelos modos principais.

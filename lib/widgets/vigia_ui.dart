@@ -99,17 +99,22 @@ class VigiaStatusPill extends StatelessWidget {
     required this.label,
     this.icon,
     this.color,
+    this.dense = false,
   });
 
   final String label;
   final IconData? icon;
   final Color? color;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
     final effectiveColor = color ?? Theme.of(context).colorScheme.primary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 7 : 9,
+        vertical: dense ? 3 : 6,
+      ),
       decoration: BoxDecoration(
         color: effectiveColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(VigiaRadii.pill),
@@ -119,15 +124,16 @@ class VigiaStatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 14, color: effectiveColor),
-            const SizedBox(width: 5),
+            Icon(icon, size: dense ? 12 : 14, color: effectiveColor),
+            SizedBox(width: dense ? 4 : 5),
           ],
           Text(
             label,
             style: TextStyle(
               color: effectiveColor,
-              fontSize: 11,
+              fontSize: dense ? 10 : 11,
               fontWeight: FontWeight.w800,
+              height: dense ? 1.05 : null,
             ),
           ),
         ],
@@ -179,69 +185,73 @@ class VigiaModeCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(VigiaRadii.large),
           child: Padding(
-            padding: EdgeInsets.all(compact ? 12 : 18),
+            padding: EdgeInsets.all(compact ? 9 : 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      width: compact ? 36 : 46,
-                      height: compact ? 36 : 46,
+                      width: compact ? 32 : 46,
+                      height: compact ? 32 : 46,
                       decoration: BoxDecoration(
                         color: accent.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(compact ? 12 : 15),
+                        borderRadius: BorderRadius.circular(compact ? 10 : 15),
                       ),
                       child: Icon(
                         icon,
                         color: accent,
-                        size: compact ? 21 : 25,
+                        size: compact ? 19 : 25,
                       ),
                     ),
                     const Spacer(),
                     Container(
-                      width: compact ? 28 : 34,
-                      height: compact ? 28 : 34,
+                      width: compact ? 24 : 34,
+                      height: compact ? 24 : 34,
                       decoration: BoxDecoration(
                         color: scheme.surface.withValues(alpha: 0.72),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.arrow_forward_rounded,
-                        size: compact ? 16 : 19,
+                        size: compact ? 14 : 19,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: compact ? 10 : 18),
+                SizedBox(height: compact ? 6 : 18),
                 Text(
                   title,
                   maxLines: compact ? 1 : null,
                   overflow: compact ? TextOverflow.ellipsis : null,
                   style: TextStyle(
-                    fontSize: compact ? 15 : 19,
+                    fontSize: compact ? 14 : 19,
                     fontWeight: FontWeight.w900,
-                    height: compact ? 1.1 : null,
+                    height: compact ? 1.08 : null,
                   ),
                 ),
-                SizedBox(height: compact ? 3 : 5),
+                SizedBox(height: compact ? 2 : 5),
                 Text(
                   subtitle,
                   maxLines: compact ? 2 : null,
                   overflow: compact ? TextOverflow.ellipsis : null,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        height: compact ? 1.2 : 1.35,
-                        fontSize: compact ? 10.5 : null,
+                        height: compact ? 1.15 : 1.35,
+                        fontSize: compact ? 10 : null,
                       ),
                 ),
                 if (tags.isNotEmpty) ...[
-                  SizedBox(height: compact ? 8 : 14),
+                  SizedBox(height: compact ? 5 : 14),
                   Wrap(
                     spacing: compact ? 4 : 6,
-                    runSpacing: compact ? 4 : 6,
+                    runSpacing: compact ? 3 : 6,
                     children: [
                       for (final tag in tags)
-                        VigiaStatusPill(label: tag, color: accent),
+                        VigiaStatusPill(
+                          label: tag,
+                          color: accent,
+                          dense: compact,
+                        ),
                     ],
                   ),
                 ],
@@ -281,29 +291,29 @@ class VigiaQuickAction extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(VigiaRadii.medium),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: scheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: scheme.primary, size: 21),
+                  child: Icon(icon, color: scheme.primary, size: 19),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w800,
-                    height: 1.15,
+                    height: 1.1,
                   ),
                 ),
               ],

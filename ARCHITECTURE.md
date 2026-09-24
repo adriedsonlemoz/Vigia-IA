@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.115+115
+# Arquitetura — Vigia IA 1.0.116+116
+
+
+## Correção 1.0.116 — densidade adaptativa dos componentes da Home
+
+- `VigiaModeCard` mantém uma única implementação compartilhada; o modo `compact` reduz dimensões visuais e usa `VigiaStatusPill(dense: true)` em vez de criar um card paralelo para a Home.
+- `VigiaQuickAction` continua sendo o componente único dos acessos rápidos, agora com medidas que cabem na menor célula validada (104x96).
+- Os dois testes de regressão de `vigia_ui_test.dart` permanecem como sentinelas contra novos `RenderFlex overflow` na grade 2x2 e na grade responsiva de acessos rápidos.
+- Nenhum serviço funcional foi alterado; a correção é restrita à camada visual compartilhada e ao versionamento/documentação.
 
 ## 1. Princípios
 

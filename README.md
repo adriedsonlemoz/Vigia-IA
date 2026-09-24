@@ -2,12 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.115+115`
+> **Versão atual:** `1.0.116+116`
 
 ## Estado atual
 
-A `1.0.115+115` compacta a Home e as configurações de mapa, adiciona um acesso dedicado ao ESP32 e preserva a lógica existente de monitoramento, mapas, sensores e transmissão.
+A `1.0.116+116` corrige os overflows detectados pelo Android-APK-84 nos cards compactos da Home e nos acessos rápidos, mantendo o redesign, o ESP32 dedicado e todas as funções existentes.
 
+
+### Correção 1.0.116 — Android-APK-84 e compactação segura
+
+- `flutter analyze` passou sem problemas no workflow; a falha ocorreu em `flutter test` por dois `RenderFlex overflow` na nova interface compacta.
+- `VigiaModeCard(compact: true)` recebeu padding, ícones, espaçamentos, tipografia e pills mais densos para caber em células estreitas sem esconder título, descrição ou tags.
+- `VigiaQuickAction` foi reduzido para manter rótulos longos, como **Diagnóstico**, dentro da célula responsiva de 104x96 usada pela Home.
+- Os testes de regressão que falharam no Android-APK-84 foram preservados; a correção atua nos componentes reais em vez de afrouxar as expectativas.
+- IA, mapas, áudio, transmissão, multicâmera, ESP32, Bike e histórico não tiveram sua lógica alterada.
 
 ### Evolução 1.0.115 — Home compacta, mapa compacto e ESP32 dedicado
 

@@ -1,5 +1,14 @@
-# Validação — Vigia IA 1.0.115+115
+# Validação — Vigia IA 1.0.116+116
 
+
+## 1.0.116+116 — correção Android-APK-84
+
+- Confirmar que `flutter analyze` continua sem issues.
+- Confirmar que `modo compacto cabe em celula estreita da Home` passa sem `RenderFlex overflow`.
+- Confirmar que `acao rapida Diagnostico cabe na grade responsiva` passa sem `RenderFlex overflow`.
+- Confirmar que os cards compactos ainda exibem título, descrição e tags e que o acesso rápido ainda exibe **Diagnóstico**.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK precisam ser reconfirmados pelo workflow.
 
 ## 1.0.115+115 — Home, mapa e ESP32 compactos
 
