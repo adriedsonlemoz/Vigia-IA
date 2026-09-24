@@ -49,24 +49,88 @@ extension _MonitorFullscreen on _MonitorScreenState {
     );
   }
 
-  Widget _monitorMenu() => PopupMenuButton<String>(
-    tooltip: 'Mais opções',
-    onSelected: (value) {
-      if (_fullscreenChanging) return;
-      switch (value) {
-        case 'lan': unawaited(_showLanAccess());
-        case 'events': unawaited(_openStandardScreen(const EventsScreen()));
-        case 'settings': unawaited(_openStandardScreen(const SettingsScreen()));
-        case 'mode': unawaited(_changeMode());
-      }
-    },
-    itemBuilder: (_) => const [
-      PopupMenuItem(value: 'lan', child: Text('Rede local')),
-      PopupMenuItem(value: 'events', child: Text('Eventos')),
-      PopupMenuItem(value: 'settings', child: Text('Configurações')),
-      PopupMenuItem(value: 'mode', child: Text('Alterar modo')),
-    ],
-  );
+  Future<void> _setMonitorMapVisibilityQuick(
+    MonitorMapVisibilityMode mode,
+  ) async {
+    if (_mapRoute.monitorVisibility == mode) return;
+    _miniMapReady = false;
+    await _mapRoute.setMonitorVisibility(mode);
+    if (!mounted) return;
+    final message = switch (mode) {
+      MonitorMapVisibilityMode.always =>
+        'Mapa configurado para aparecer no monitor.',
+      MonitorMapVisibilityMode.hidden =>
+        'Mapa ocultado no monitor.',
+      MonitorMapVisibilityMode.automatic =>
+        'Mapa voltou para o modo automático.',
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget _monitorMenu() {
+    final mapMode = _mapRoute.monitorVisibility;
+    final mapVisible = _shouldShowMonitorMap;
+    return PopupMenuButton<String>(
+      tooltip: 'Mais opções',
+      onSelected: (value) {
+        if (_fullscreenChanging) return;
+        if (value == 'toggle_map') {
+          unawaited(
+            _setMonitorMapVisibilityQuick(
+              mapVisible
+                  ? MonitorMapVisibilityMode.hidden
+                  : MonitorMapVisibilityMode.always,
+            ),
+          );
+          return;
+        }
+        if (value == 'map_auto') {
+          unawaited(
+            _setMonitorMapVisibilityQuick(
+              MonitorMapVisibilityMode.automatic,
+            ),
+          );
+          return;
+        }
+        if (value == 'lan') {
+          unawaited(_showLanAccess());
+          return;
+        }
+        if (value == 'events') {
+          unawaited(_openStandardScreen(const EventsScreen()));
+          return;
+        }
+        if (value == 'settings') {
+          unawaited(_openStandardScreen(const SettingsScreen()));
+          return;
+        }
+        if (value == 'mode') {
+          unawaited(_changeMode());
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'toggle_map',
+          child: Text(mapVisible ? 'Ocultar mapa' : 'Mostrar mapa'),
+        ),
+        if (mapMode != MonitorMapVisibilityMode.automatic)
+          const PopupMenuItem(
+            value: 'map_auto',
+            child: Text('Mapa automático'),
+          ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(value: 'lan', child: Text('Rede local')),
+        const PopupMenuItem(value: 'events', child: Text('Eventos')),
+        const PopupMenuItem(
+          value: 'settings',
+          child: Text('Configurações'),
+        ),
+        const PopupMenuItem(value: 'mode', child: Text('Alterar modo')),
+      ],
+    );
+  }
 
   Widget _voiceButton() => IconButton(
     tooltip: _controller.voiceEnabled ? 'Desativar voz' : 'Ativar voz',

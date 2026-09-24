@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.108+108
+# Arquitetura — Vigia IA 1.0.109+109
 
 ## 1. Princípios
+
+## Evolução 1.0.109 — atalho global do mapa no monitor
+
+- A política de visibilidade do mini mapa já existia em `MapRouteService` (`automatic`, `always`, `hidden`), mas estava acessível apenas pelo painel do monitor.
+- `_monitorMenu()` passou a expor essa política diretamente no menu dos três pontinhos com um toggle rápido **Mostrar mapa / Ocultar mapa**.
+- Quando a visibilidade está forçada (`always` ou `hidden`), o menu também oferece **Mapa automático** para restaurar a decisão contextual baseada em bike conectada, rota ativa ou movimento recente.
+- Como a preferência continua sendo salva em `MapRouteService`, o novo atalho não cria estado paralelo e se aplica de forma consistente aos layouts retrato, paisagem, multicâmera e tela inteira.
 
 ## Correção 1.0.108 — recursos Android do Android-APK-76
 

@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.108+108`
+> **Versão atual:** `1.0.109+109`
 
 ## Estado atual
 
-A `1.0.108+108` corrige o Android-APK-76 restaurando os recursos Android que o Manifest exige e que ficaram ausentes quando o workflow passou a reutilizar o diretório `android/` versionado.
+A `1.0.109+109` adiciona um atalho global no monitor Ao vivo para mostrar ou ocultar o mapa a partir do menu dos três pontinhos, mesmo fora do modo bicicleta, e permite voltar ao comportamento automático no mesmo local.
+
+### Evolução 1.0.109 — atalho global do mapa no monitor
+
+- o menu dos três pontinhos do monitor agora mostra **Mostrar mapa** quando o mini mapa está oculto e **Ocultar mapa** quando ele está visível;
+- ao escolher **Mostrar mapa**, o app força o modo **Sempre** e exibe o mapa mesmo fora do modo Bike;
+- ao escolher **Ocultar mapa**, o app força o modo **Ocultar** e libera mais espaço para a câmera;
+- quando o mapa estiver forçado ou ocultado, o mesmo menu oferece **Mapa automático** para restaurar a lógica anterior baseada em Bike, rota ativa ou movimento recente;
+- a preferência continua persistida em `MapRouteService`, então o estado escolhido é lembrado ao reabrir o monitor.
 
 ### Correção 1.0.108 — Android-APK-76
 

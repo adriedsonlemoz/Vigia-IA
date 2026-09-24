@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.0.109+109 — 2026-09-24
+
+- Monitor Ao vivo ganhou atalho global de mapa no menu dos três pontinhos, disponível também fora do modo bicicleta.
+- O item alterna entre **Mostrar mapa** e **Ocultar mapa** conforme o estado atual da tela.
+- Ao mostrar, a preferência passa para `MonitorMapVisibilityMode.always`; ao ocultar, passa para `MonitorMapVisibilityMode.hidden`.
+- Quando o mapa estiver forçado ou oculto, o mesmo menu oferece **Mapa automático** para restaurar o comportamento inteligente anterior.
+- O ajuste continua persistido pelo `MapRouteService`, então a escolha é lembrada na próxima abertura do monitor.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.109+109`.
+
 ## 1.0.108+108 — 2026-09-24
 
 - Corrigido o Android-APK-76, que avançava até `:app:processReleaseResources` e falhava por ausência de `mipmap/ic_launcher`, `style/LaunchTheme` e `style/NormalTheme`.

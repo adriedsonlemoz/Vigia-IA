@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.108',
+          version: '1.0.109',
           current: true,
+          changes: [
+            'O menu dos três pontinhos do monitor Ao vivo agora traz um atalho Mostrar mapa / Ocultar mapa, funcionando mesmo fora do modo bicicleta.',
+            'Quando o mapa foi forçado ou ocultado, o mesmo menu oferece Mapa automático para voltar ao comportamento inteligente anterior.',
+            'A preferência continua persistida no serviço de rota, então o estado escolhido é lembrado na próxima abertura do monitor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.108',
           changes: [
             'Corrigido o Android-APK-76 restaurando ic_launcher, LaunchTheme e NormalTheme que faltavam no projeto Android versionado.',
             'Recursos nativos agora ficam preservados no ZIP-fonte e são verificados antes do build.',
@@ -989,8 +998,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.108',
+          version: '1.0.109',
           current: true,
+          changes: [
+            'O menu dos três pontinhos do monitor Ao vivo agora traz um atalho Mostrar mapa / Ocultar mapa, funcionando mesmo fora do modo bicicleta.',
+            'Quando o mapa foi forçado ou ocultado, o mesmo menu oferece Mapa automático para voltar ao comportamento inteligente anterior.',
+            'A preferência continua persistida no serviço de rota, então o estado escolhido é lembrado na próxima abertura do monitor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.108',
           changes: [
             'Corrigido o Android-APK-76 restaurando ic_launcher, LaunchTheme e NormalTheme que faltavam no projeto Android versionado.',
             'Recursos nativos agora ficam preservados no ZIP-fonte e são verificados antes do build.',

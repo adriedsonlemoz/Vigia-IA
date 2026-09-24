@@ -1,4 +1,12 @@
-# Validação — Vigia IA 1.0.108+108
+# Validação — Vigia IA 1.0.109+109
+
+## 1.0.109+109 — atalho global do mapa no monitor
+
+- Confirmar presença dos rótulos **Mostrar mapa**, **Ocultar mapa** e **Mapa automático** em `lib/screens/monitor_screen_fullscreen.dart`.
+- Confirmar que `_monitorMenu()` continua sendo reutilizado na tela retrato, paisagem, multicâmera e tela inteira.
+- Confirmar que o atalho altera `MonitorMapVisibilityMode.always`, `hidden` e `automatic` via `MapRouteService`, sem criar persistência paralela.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.109+109`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK final ainda precisam ser confirmados pelo workflow.
 
 ## 1.0.108+108 — correção do Android-APK-76
 
