@@ -978,19 +978,17 @@ class _MonitorScreenState extends State<MonitorScreen>
 
 
   Widget _mapMonitoringScreen() {
-    final configured = _controller.sourceConfig.displayName?.trim();
-    final label = configured != null && configured.isNotEmpty
-        ? configured
-        : switch (_controller.sourceConfig.type) {
-            VideoSourceType.localCamera => 'Local',
-            VideoSourceType.remotePhone => 'Celular remoto',
-            VideoSourceType.esp32 => 'ESP32',
-            VideoSourceType.rtsp => 'RTSP',
-          };
+    final secondary = _secondaryController;
     return MapMonitoringScreen(
       cameraPreviewBuilder: (_) => _controller.buildPreview(),
       cameraAspectRatio: _controller.previewAspectRatio,
-      cameraLabel: label,
+      cameraListenable: _controller,
+      cameraAspectRatioProvider: () => _controller.previewAspectRatio,
+      secondaryCameraPreviewBuilder:
+          secondary == null ? null : (_) => secondary.buildPreview(),
+      secondaryCameraListenable: secondary,
+      secondaryCameraAspectRatioProvider:
+          secondary == null ? null : () => secondary.previewAspectRatio,
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
@@ -21,12 +22,20 @@ class MapMonitoringScreen extends StatefulWidget {
     super.key,
     this.cameraPreviewBuilder,
     this.cameraAspectRatio,
-    this.cameraLabel = 'Principal',
+    this.cameraListenable,
+    this.cameraAspectRatioProvider,
+    this.secondaryCameraPreviewBuilder,
+    this.secondaryCameraListenable,
+    this.secondaryCameraAspectRatioProvider,
   });
 
   final WidgetBuilder? cameraPreviewBuilder;
   final double? cameraAspectRatio;
-  final String cameraLabel;
+  final Listenable? cameraListenable;
+  final double? Function()? cameraAspectRatioProvider;
+  final WidgetBuilder? secondaryCameraPreviewBuilder;
+  final Listenable? secondaryCameraListenable;
+  final double? Function()? secondaryCameraAspectRatioProvider;
 
   @override
   State<MapMonitoringScreen> createState() => _MapMonitoringScreenState();
@@ -44,7 +53,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   String? _offlineTileError;
   int _offlineMinNativeZoom = 0;
   int _offlineMaxNativeZoom = 19;
-  Offset? _cameraOffset;
+  Offset? _primaryCameraOffset;
+  Offset? _secondaryCameraOffset;
+  bool _camerasVisible = true;
 
   bool _followPosition = true;
   bool _mapReady = false;
@@ -210,6 +221,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     return '$hours:$minutes:$seconds';
   }
 
+  void _handleRouteMenu(String value) {
+    if (value == 'pause') {
+      _togglePauseRoute();
+    } else if (value == 'export') {
+      unawaited(_exportGpx());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_routeState.initialized ||
@@ -267,16 +286,48 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   : Icons.offline_pin_rounded,
             ),
           ),
-          IconButton(
-            tooltip: 'Centralizar',
-            onPressed: current == null
-                ? null
-                : () {
-                    setState(() => _followPosition = true);
-                    _centerOn(current);
-                  },
-            icon: const Icon(Icons.my_location_rounded),
-          ),
+          if (widget.cameraPreviewBuilder != null ||
+              widget.secondaryCameraPreviewBuilder != null)
+            IconButton(
+              tooltip: _camerasVisible ? 'Ocultar câmeras' : 'Mostrar câmeras',
+              onPressed: () => setState(() => _camerasVisible = !_camerasVisible),
+              icon: Icon(
+                _camerasVisible
+                    ? Icons.videocam_rounded
+                    : Icons.videocam_off_rounded,
+              ),
+            ),
+          if (_routeState.tracking || _routeState.route.length >= 2)
+            PopupMenuButton<String>(
+              tooltip: 'Ações da rota',
+              onSelected: _handleRouteMenu,
+              itemBuilder: (context) => [
+                if (_routeState.tracking)
+                  PopupMenuItem<String>(
+                    value: 'pause',
+                    child: ListTile(
+                      dense: true,
+                      leading: Icon(
+                        _routeState.paused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                      ),
+                      title: Text(
+                        _routeState.paused ? 'Continuar rota' : 'Pausar rota',
+                      ),
+                    ),
+                  ),
+                if (_routeState.route.length >= 2)
+                  const PopupMenuItem<String>(
+                    value: 'export',
+                    child: ListTile(
+                      dense: true,
+                      leading: Icon(Icons.file_upload_outlined),
+                      title: Text('Exportar GPX'),
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
       body: LayoutBuilder(
@@ -389,7 +440,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   ),
                   Positioned(
                     right: 8,
-                    bottom: 174,
+                    bottom: 72,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: scheme.surface.withValues(alpha: 0.88),
@@ -438,35 +489,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                 right: 12,
                 child: _GpsChip(point: current),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: _MapRidePanel(
-                  tracking: _routeState.tracking,
+              Positioned(
+                top: 52,
+                left: 8,
+                right: 8,
+                child: _MapTelemetryStrip(
                   paused: _routeState.paused,
-                  canExport: _routeState.route.length >= 2,
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   distance: _formatDistance(),
                   elapsed: _formatDuration(_routeState.elapsed),
-                  lastUpdate: current?.recordedAt,
-                  accuracy: current?.accuracyMeters,
                   altitudeMeters: current?.altitudeMeters,
                   headingDegrees: current?.headingDegrees,
                   following: _followPosition,
-                  onToggleTracking: current == null
-                      ? null
-                      : _routeState.tracking
-                          ? _finishRoute
-                          : _startRoute,
-                  onPauseResume: _routeState.tracking ? _togglePauseRoute : null,
-                  onExport: _routeState.route.length >= 2
-                      ? () => unawaited(_exportGpx())
-                      : null,
-                  onCenter: current == null
-                      ? null
-                      : () {
-                          setState(() => _followPosition = true);
-                          _centerOn(current);
-                        },
                   onToggleFollow: current == null
                       ? null
                       : () {
@@ -476,8 +510,38 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                         },
                 ),
               ),
-              if (widget.cameraPreviewBuilder != null)
-                _buildCameraPip(context, constraints),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _RouteButtonBar(
+                  tracking: _routeState.tracking,
+                  onToggleTracking: current == null
+                      ? null
+                      : _routeState.tracking
+                          ? _finishRoute
+                          : _startRoute,
+                ),
+              ),
+              if (_camerasVisible && widget.cameraPreviewBuilder != null)
+                _buildCameraPip(
+                  context,
+                  constraints,
+                  previewBuilder: widget.cameraPreviewBuilder!,
+                  listenable: widget.cameraListenable,
+                  aspectRatioProvider: widget.cameraAspectRatioProvider,
+                  fallbackAspectRatio: widget.cameraAspectRatio,
+                  secondary: false,
+                ),
+              if (_camerasVisible &&
+                  widget.secondaryCameraPreviewBuilder != null)
+                _buildCameraPip(
+                  context,
+                  constraints,
+                  previewBuilder: widget.secondaryCameraPreviewBuilder!,
+                  listenable: widget.secondaryCameraListenable,
+                  aspectRatioProvider: widget.secondaryCameraAspectRatioProvider,
+                  fallbackAspectRatio: 16 / 9,
+                  secondary: true,
+                ),
             ],
           );
         },
@@ -487,96 +551,127 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
 
   Widget _buildCameraPip(
     BuildContext context,
-    BoxConstraints constraints,
-  ) {
-    final previewBuilder = widget.cameraPreviewBuilder!;
-    final scheme = Theme.of(context).colorScheme;
-    final width = (constraints.maxWidth * 0.31).clamp(132.0, 196.0).toDouble();
-    final aspectRatio = (widget.cameraAspectRatio ?? (16 / 9)).clamp(0.65, 2.2);
-    final height = (width / aspectRatio).clamp(88.0, 152.0).toDouble();
-    final fallback = Offset(
-      constraints.maxWidth - width - 12,
-      58,
-    );
-    final raw = _cameraOffset ?? fallback;
-    final maxX = (constraints.maxWidth - width - 8).clamp(8.0, double.infinity);
-    final maxY = (constraints.maxHeight - height - 8).clamp(8.0, double.infinity);
-    final position = Offset(
-      raw.dx.clamp(8.0, maxX).toDouble(),
-      raw.dy.clamp(8.0, maxY).toDouble(),
-    );
+    BoxConstraints constraints, {
+    required WidgetBuilder previewBuilder,
+    required Listenable? listenable,
+    required double? Function()? aspectRatioProvider,
+    required double? fallbackAspectRatio,
+    required bool secondary,
+  }) {
+    Widget buildPip(BuildContext context) {
+      final scheme = Theme.of(context).colorScheme;
+      final requestedRatio = aspectRatioProvider?.call() ?? fallbackAspectRatio ?? (16 / 9);
+      final aspectRatio = requestedRatio.clamp(0.50, 2.20).toDouble();
+      late final double width;
+      late final double height;
+      if (aspectRatio >= 1) {
+        width = (constraints.maxWidth * 0.29).clamp(126.0, 190.0).toDouble();
+        height = (width / aspectRatio).clamp(78.0, 132.0).toDouble();
+      } else {
+        height = (constraints.maxHeight * 0.22).clamp(118.0, 188.0).toDouble();
+        width = (height * aspectRatio).clamp(82.0, 128.0).toDouble();
+      }
 
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
-      width: width,
-      height: height,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanUpdate: (details) {
-          setState(() {
-            final next = position + details.delta;
-            _cameraOffset = Offset(
-              next.dx.clamp(8.0, maxX).toDouble(),
-              next.dy.clamp(8.0, maxY).toDouble(),
-            );
-          });
-        },
-        child: Material(
-          elevation: 10,
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(16),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              previewBuilder(context),
-              Positioned(
-                left: 6,
-                right: 6,
-                bottom: 6,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.62),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: scheme.primary.withValues(alpha: 0.35),
+      final defaultTop = secondary ? 304.0 : 104.0;
+      final fallback = Offset(
+        constraints.maxWidth - width - 12,
+        defaultTop,
+      );
+      final raw = secondary
+          ? (_secondaryCameraOffset ?? fallback)
+          : (_primaryCameraOffset ?? fallback);
+      final maxX = (constraints.maxWidth - width - 8).clamp(8.0, double.infinity);
+      // Reserva somente a barra essencial da rota; no restante do mapa o PiP é livre.
+      final maxY = (constraints.maxHeight - height - 74).clamp(8.0, double.infinity);
+      final position = Offset(
+        raw.dx.clamp(8.0, maxX).toDouble(),
+        raw.dy.clamp(8.0, maxY).toDouble(),
+      );
+
+      return Positioned(
+        left: position.dx,
+        top: position.dy,
+        width: width,
+        height: height,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanUpdate: (details) {
+            setState(() {
+              final next = position + details.delta;
+              final updated = Offset(
+                next.dx.clamp(8.0, maxX).toDouble(),
+                next.dy.clamp(8.0, maxY).toDouble(),
+              );
+              if (secondary) {
+                _secondaryCameraOffset = updated;
+              } else {
+                _primaryCameraOffset = updated;
+              }
+            });
+          },
+          child: Material(
+            elevation: 10,
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                previewBuilder(context),
+                Positioned(
+                  left: 6,
+                  top: 6,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.58),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: 0.45),
+                      ),
                     ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 5,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.drag_indicator_rounded,
-                          size: 15,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            widget.cameraLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        size: 15,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+                if (secondary)
+                  const Positioned(
+                    right: 7,
+                    top: 7,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Color(0xAA000000),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(5),
+                        child: Text(
+                          '2',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-      ),
+      );
+    }
+
+    if (listenable == null) return buildPip(context);
+    return ListenableBuilder(
+      listenable: listenable,
+      builder: (context, _) => buildPip(context),
     );
   }
 
@@ -784,48 +879,26 @@ class _GpsChip extends StatelessWidget {
   }
 }
 
-class _MapRidePanel extends StatelessWidget {
-  const _MapRidePanel({
-    required this.tracking,
+class _MapTelemetryStrip extends StatelessWidget {
+  const _MapTelemetryStrip({
     required this.paused,
-    required this.canExport,
     required this.speedKmh,
     required this.distance,
     required this.elapsed,
-    required this.lastUpdate,
-    required this.accuracy,
     required this.altitudeMeters,
     required this.headingDegrees,
     required this.following,
-    required this.onToggleTracking,
-    required this.onPauseResume,
-    required this.onExport,
-    required this.onCenter,
     required this.onToggleFollow,
   });
 
-  final bool tracking;
   final bool paused;
-  final bool canExport;
   final double speedKmh;
   final String distance;
   final String elapsed;
-  final DateTime? lastUpdate;
-  final double? accuracy;
   final double? altitudeMeters;
   final double? headingDegrees;
   final bool following;
-  final VoidCallback? onToggleTracking;
-  final VoidCallback? onPauseResume;
-  final VoidCallback? onExport;
-  final VoidCallback? onCenter;
   final VoidCallback? onToggleFollow;
-
-  String _time(DateTime? value) {
-    if (value == null) return '--:--:--';
-    String two(int number) => number.toString().padLeft(2, '0');
-    return '${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
-  }
 
   String _direction(double? degrees) {
     if (degrees == null || degrees.isNaN) return '--';
@@ -837,124 +910,80 @@ class _MapRidePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _MapInfoPill(
+            icon: Icons.speed_rounded,
+            label: '${speedKmh.toStringAsFixed(1)} km/h',
+          ),
+          const SizedBox(width: 5),
+          _MapInfoPill(icon: Icons.route_rounded, label: distance),
+          const SizedBox(width: 5),
+          _MapInfoPill(icon: Icons.timer_outlined, label: elapsed),
+          const SizedBox(width: 5),
+          _MapInfoPill(
+            icon: Icons.height_rounded,
+            label: altitudeMeters == null
+                ? 'Alt. --'
+                : 'Alt. ${altitudeMeters!.toStringAsFixed(0)} m',
+          ),
+          const SizedBox(width: 5),
+          _MapInfoPill(
+            icon: Icons.explore_rounded,
+            label: _direction(headingDegrees),
+          ),
+          if (paused) ...[
+            const SizedBox(width: 5),
+            const _MapInfoPill(
+              icon: Icons.pause_circle_outline_rounded,
+              label: 'Rota pausada',
+            ),
+          ],
+          const SizedBox(width: 5),
+          ActionChip(
+            avatar: Icon(
+              following ? Icons.navigation_rounded : Icons.pan_tool_alt_outlined,
+              size: 16,
+            ),
+            label: Text(following ? 'Seguindo' : 'Mapa livre'),
+            visualDensity: VisualDensity.compact,
+            onPressed: onToggleFollow,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteButtonBar extends StatelessWidget {
+  const _RouteButtonBar({
+    required this.tracking,
+    required this.onToggleTracking,
+  });
+
+  final bool tracking;
+  final VoidCallback? onToggleTracking;
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-      child: Card(
-        elevation: 5,
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _Metric(
-                      label: 'Velocidade',
-                      value: '${speedKmh.toStringAsFixed(1)} km/h',
-                    ),
-                  ),
-                  Expanded(child: _Metric(label: 'Distância', value: distance)),
-                  Expanded(child: _Metric(label: 'Tempo', value: elapsed)),
-                ],
-              ),
-              const SizedBox(height: 7),
-              Wrap(
-                spacing: 6,
-                runSpacing: 5,
-                alignment: WrapAlignment.center,
-                children: [
-                  _MapInfoPill(
-                    icon: Icons.height_rounded,
-                    label: altitudeMeters == null
-                        ? 'Altitude --'
-                        : 'Altitude ${altitudeMeters!.toStringAsFixed(0)} m',
-                  ),
-                  _MapInfoPill(
-                    icon: Icons.explore_rounded,
-                    label: _direction(headingDegrees),
-                  ),
-                  _MapInfoPill(
-                    icon: Icons.gps_fixed_rounded,
-                    label: accuracy == null
-                        ? 'GPS --'
-                        : 'GPS ±${accuracy!.toStringAsFixed(0)} m',
-                  ),
-                  ActionChip(
-                    avatar: Icon(
-                      following
-                          ? Icons.navigation_rounded
-                          : Icons.pan_tool_alt_outlined,
-                      size: 16,
-                    ),
-                    label: Text(following ? 'Seguindo' : 'Mapa livre'),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: onToggleFollow,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'GPS ${_time(lastUpdate)}${paused ? ' · rota pausada' : ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton.filledTonal(
-                    tooltip: 'Centralizar no GPS',
-                    onPressed: onCenter,
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.my_location_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  if (canExport) ...[
-                    IconButton.filledTonal(
-                      tooltip: 'Exportar GPX',
-                      onPressed: onExport,
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.file_upload_outlined),
-                    ),
-                    const SizedBox(width: 5),
-                  ],
-                  if (tracking) ...[
-                    IconButton.filledTonal(
-                      tooltip: paused ? 'Continuar rota' : 'Pausar rota',
-                      onPressed: onPauseResume,
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(
-                        paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                  ],
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: onToggleTracking,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: tracking ? scheme.error : null,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: Icon(
-                        tracking ? Icons.stop_rounded : Icons.navigation_rounded,
-                      ),
-                      label: Text(tracking ? 'Encerrar rota' : 'Iniciar rota'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton.icon(
+          onPressed: onToggleTracking,
+          style: FilledButton.styleFrom(
+            backgroundColor: tracking ? scheme.error : null,
           ),
+          icon: Icon(
+            tracking ? Icons.stop_rounded : Icons.navigation_rounded,
+          ),
+          label: Text(tracking ? 'Encerrar rota' : 'Iniciar rota'),
         ),
       ),
     );
@@ -970,47 +999,24 @@ class _MapInfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: scheme.primary),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w900),
+    return Material(
+      color: scheme.surface.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: scheme.primary),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
+

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.103+103$' pubspec.yaml || fail 'Versao esperada 1.0.103+103 nao encontrada.'
+grep -q '^version: 1\.0\.104+104$' pubspec.yaml || fail 'Versao esperada 1.0.104+104 nao encontrada.'
 if grep -q "import 'dart:ui';" lib/main.dart; then
   fail 'Import dart:ui redundante reapareceu em lib/main.dart.'
 fi
@@ -321,12 +321,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.103';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.103.'
-grep -q 'static const int build = 103;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 103.'
-grep -q "version: '1.0.103'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.103.'
+grep -q "static const String version = '1.0.104';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.104.'
+grep -q 'static const int build = 104;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 104.'
+grep -q "version: '1.0.104'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.104.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -492,18 +492,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.103+103$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.103+103.'
+grep -q '^version: 1.0.104+104$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.104+104.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.103"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.103.'
-grep -q '"build": 103' app_identity.json \
-  || fail 'app_identity.json nao esta no build 103.'
+grep -q '"version": "1.0.104"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.104.'
+grep -q '"build": 104' app_identity.json \
+  || fail 'app_identity.json nao esta no build 104.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -820,7 +820,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.103+103' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.103+103.'
+grep -q 'Vigia IA 1.0.104+104' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.104+104.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1795,6 +1795,42 @@ if ! grep -A3 'if (!mounted) return;' lib/screens/events_screen_actions.dart | \
   fail 'BuildContext da exportacao nao esta protegido apos espera assincrona.'
 fi
 
+
+# Painel Stadia e mapa multicamera - 1.0.104
+grep -q '^## 1.0.104+104' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.104.'
+grep -q 'Evolução 1.0.104' README.md || fail 'README nao documenta 1.0.104.'
+grep -q "version: '1.0.104'" lib/screens/app_info_screen_components.dart \
+  || fail 'Tela de Mudancas nao documenta 1.0.104.'
+[[ -f RELEASE-1.0.104.md ]] || fail 'Notas da entrega 1.0.104 ausentes.'
+grep -q "label: const Text('Colar')" lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Painel Stadia nao oferece botao Colar.'
+grep -q "label: const Text('Copiar')" lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Painel Stadia nao oferece copia explicita da chave.'
+grep -q 'testStadiaApiKey' lib/services/offline_map_service.dart lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Teste da API key Stadia nao esta conectado ao painel.'
+grep -q 'maskedStadiaApiKey' lib/services/offline_map_service.dart lib/widgets/offline_map_manager_sheet.dart \
+  || fail 'Painel Stadia nao indica chave configurada de forma mascarada.'
+grep -q "label: const Text('Mapa')" lib/screens/offline_area_selection_screen.dart \
+  && grep -q "label: const Text('Área')" lib/screens/offline_area_selection_screen.dart \
+  || fail 'Selecao offline nao separa os modos Mapa e Area.'
+grep -q "tooltip: 'Diminuir zoom'" lib/screens/offline_area_selection_screen.dart \
+  && grep -q "tooltip: 'Aumentar zoom'" lib/screens/offline_area_selection_screen.dart \
+  || fail 'Selecao offline nao possui controles inferiores de zoom.'
+grep -q '_MapTelemetryStrip' lib/screens/map_monitoring_screen.dart \
+  && grep -q '_RouteButtonBar' lib/screens/map_monitoring_screen.dart \
+  || fail 'Mapa completo nao separa telemetria superior da acao principal inferior.'
+grep -q 'secondaryCameraPreviewBuilder' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart \
+  || fail 'Segunda camera nao esta conectada ao mapa completo.'
+grep -q 'cameraAspectRatioProvider' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart \
+  || fail 'PiP principal nao recebe proporcao dinamica da transmissao.'
+grep -q 'secondaryCameraAspectRatioProvider' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart \
+  || fail 'PiP secundario nao recebe proporcao dinamica quando disponivel.'
+grep -q "tooltip: _camerasVisible ? 'Ocultar câmeras' : 'Mostrar câmeras'" lib/screens/map_monitoring_screen.dart \
+  || fail 'Mapa completo nao permite mostrar/ocultar os PiPs.'
+if grep -q 'widget.cameraLabel' lib/screens/map_monitoring_screen.dart; then
+  fail 'Faixa textual Local/label reapareceu no PiP do mapa.'
+fi
+
 echo 'Verificacao preventiva concluida com sucesso.'
 
 # Tela vertical / mapa - 1.0.90
@@ -1947,8 +1983,9 @@ grep -q "SQLite format 3" lib/services/offline_map_service.dart \
   || fail 'Validacao basica de arquivo MBTiles/SQLite nao encontrada.'
 grep -q 'cameraPreviewBuilder' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart \
   || fail 'Camera principal nao esta ligada ao mapa completo.'
-grep -q '_cameraOffset' lib/screens/map_monitoring_screen.dart \
-  || fail 'Posicao da camera flutuante do mapa nao esta persistida no estado da tela.'
+grep -q '_primaryCameraOffset' lib/screens/map_monitoring_screen.dart \
+  && grep -q '_secondaryCameraOffset' lib/screens/map_monitoring_screen.dart \
+  || fail 'Offsets independentes das cameras flutuantes do mapa nao encontrados.'
 grep -q 'onPanUpdate:' lib/screens/map_monitoring_screen.dart \
   || fail 'Camera flutuante do mapa completo nao pode ser arrastada.'
 if grep -q 'tile.openstreetmap.org' lib/services/offline_map_service.dart; then
@@ -1962,8 +1999,8 @@ grep -q "TileDisplay.instantaneous" lib/screens/map_monitoring_screen.dart \
   || fail 'Camada MBTiles nao preserva o provider ao alternar Online/Offline.'
 grep -q 'constraints.maxWidth - width - 8' lib/screens/map_monitoring_screen.dart \
   || fail 'Camera flutuante nao pode percorrer toda a largura util do mapa.'
-grep -q 'constraints.maxHeight - height - 8' lib/screens/map_monitoring_screen.dart \
-  || fail 'Camera flutuante nao pode percorrer toda a altura util do mapa.'
+grep -q 'constraints.maxHeight - height - 74' lib/screens/map_monitoring_screen.dart \
+  || fail 'Camera flutuante nao preserva somente a barra essencial da rota ao usar a altura do mapa.'
 grep -q "rasterFormats = <String>{'png', 'jpg', 'jpeg', 'webp'}" lib/services/offline_map_service.dart \
   || fail 'Downloader nao valida se o MBTiles contem tiles raster compativeis.'
 grep -q 'metadata.maxZoom' lib/screens/map_monitoring_screen.dart \

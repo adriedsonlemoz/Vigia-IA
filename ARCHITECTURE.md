@@ -1,6 +1,16 @@
-# Arquitetura — Vigia IA 1.0.103+103
+# Arquitetura — Vigia IA 1.0.104+104
 
 ## 1. Princípios
+
+## Evolução 1.0.104 — painel de fonte e mapa com PiPs adaptativos
+
+- `OfflineMapService` expõe somente sob ação explícita do usuário a chave descriptografada em memória para **Ver/Copiar** e adiciona um teste de credencial por requisição mínima; a persistência continua protegida pelo Android Keystore.
+- `OfflineMapManagerSheet` concentra estado, edição, teste e orçamento de créditos da fonte Stadia em um único painel, sem preencher automaticamente o campo de edição com o segredo salvo.
+- `OfflineAreaSelectionScreen` separa os gestos de mover o mapa e ajustar o retângulo de seleção e oferece controle explícito do zoom pela barra inferior.
+- `MapMonitoringScreen` usa uma faixa horizontal de telemetria sobre o mapa e reserva a região inferior somente para a ação principal da rota.
+- O mapa recebe builders/listenables independentes da câmera principal e da segunda câmera; cada PiP mantém offset próprio e recalcula dimensões com base no aspect ratio corrente.
+- A proporção da câmera principal é lida dinamicamente de `MonitorController`; a segunda câmera expõe proporção para câmera local/frontal e stream remoto quando disponível.
+- Ações secundárias da rota permanecem acessíveis pelo menu do AppBar, reduzindo a área ocupada sobre o trajeto.
 
 ## Evolução 1.0.103 — orçamento local de créditos para mapas
 

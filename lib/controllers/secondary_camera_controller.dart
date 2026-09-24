@@ -34,6 +34,14 @@ class SecondaryCameraController extends ChangeNotifier {
           VideoSourceType.remotePhone => 'Celular remoto',
           VideoSourceType.esp32 => 'Câmera ESP32',
         };
+  double? get previewAspectRatio {
+    final source = _source;
+    if (source is FrontCameraPreviewSource) return source.previewAspectRatio;
+    if (source is LocalCameraSource) return source.previewAspectRatio;
+    if (source is RemotePhoneCameraSource) return source.previewAspectRatio;
+    return null;
+  }
+
   RemotePhoneStatus? get remoteStatus {
     final source = _source;
     return source is RemotePhoneCameraSource ? source.remoteStatus : null;

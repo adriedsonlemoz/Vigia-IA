@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.103+103`
+> **Versão atual:** `1.0.104+104`
 
 ## Estado atual
 
-A `1.0.103+103` corrige o Android-APK-71 e adiciona controle local de créditos para downloads diretos de mapas, com estimativa antes do download e limite mensal configurável.
+A `1.0.104+104` melhora a configuração da Stadia Maps, os controles de seleção offline e a experiência do mapa completo com telemetria compacta e até duas câmeras flutuantes.
+
+### Evolução 1.0.104 — Painel Stadia, seleção offline e câmeras no mapa
+
+- **Configurar fonte** virou um painel completo: identifica se há chave salva, mostra versão mascarada, permite **Colar**, **Ver**, **Copiar**, **Testar**, **Trocar** e **Remover**;
+- o teste da chave faz uma requisição mínima, informa sucesso/erro e latência e avisa quando aproximadamente 1 crédito foi consumido;
+- a seleção visual de região offline ganhou modos **Mapa / Área** e controles inferiores explícitos **− / z / +**, evitando depender apenas de gestos;
+- no mapa completo, velocidade, distância, tempo, altitude, rumo e **Seguindo / Mapa livre** foram movidos para chips compactos no topo;
+- a parte inferior do mapa mantém somente a ação principal **Iniciar rota / Encerrar rota**; pausar/continuar e exportar GPX ficam no menu de ações da rota;
+- a câmera principal pode ser mostrada/ocultada e o PiP muda de formato conforme a proporção da transmissão detectada;
+- quando houver segunda câmera, ela também é enviada ao mapa completo, aparece inicialmente abaixo da principal e pode ser arrastada de forma independente;
+- removido o rodapé textual **Local** do PiP para liberar imagem e reduzir poluição visual.
+
 
 ### Evolução 1.0.103 — Créditos de mapas e buildfix Android-APK-71
 

@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.103',
+          version: '1.0.104',
           current: true,
+          changes: [
+            'Configuração Stadia ganhou painel completo com status da chave, Colar, Ver, Copiar, Testar, Trocar e Remover.',
+            'Seleção offline ganhou modos Mapa/Área e controles de zoom − / z / + na parte inferior.',
+            'Mapa completo moveu velocidade, distância, tempo, altitude, rumo e acompanhamento para chips no topo; embaixo fica somente Iniciar/Encerrar rota.',
+            'Câmera principal e segunda câmera podem aparecer juntas sobre o mapa, são arrastáveis, podem ser ocultadas e adaptam o PiP à proporção detectada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.103',
           changes: [
             'Corrigido o warning unnecessary_non_null_assertion que interrompia o flutter analyze no Android-APK-71.',
             'Mapas offline agora mostram créditos estimados antes do download: um tile raster padrão corresponde a aproximadamente um crédito.',
@@ -943,8 +953,24 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.102',
+          version: '1.0.104',
           current: true,
+          changes: [
+            'Painel Stadia completo com Colar, Ver, Copiar, Testar, Trocar e Remover a API key.',
+            'Seleção offline ganhou modos Mapa/Área e zoom − / z / +; mapa completo ganhou telemetria no topo e até duas câmeras flutuantes.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.103',
+          changes: [
+            'Mapas offline mostram créditos estimados e usam limite mensal local configurável para evitar consumo excessivo.',
+            'Corrigido o Android-APK-71 sem alterar as demais funções do mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.102',
           changes: [
             'Mapas offline explica como obter a API key da Stadia Maps e oferece link direto para o painel oficial.',
             'Também há acesso às instruções oficiais e fallback que copia o link quando o navegador não abre.',

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.104+104 — 2026-09-23
+
+- A configuração da API Stadia Maps passa a indicar claramente se existe chave salva e oferece **Colar / Ver / Copiar / Testar / Trocar / Remover** no mesmo painel.
+- O teste de credencial usa uma requisição mínima à fonte Stadia, retorna latência/status e registra o crédito local quando a requisição válida é concluída.
+- `OfflineAreaSelectionScreen` ganha alternância **Mapa / Área** e botões de zoom **− / z / +** na parte inferior.
+- `MapMonitoringScreen` move telemetria de velocidade, distância, tempo, altitude, rumo e acompanhamento para chips superiores; a parte inferior preserva apenas **Iniciar/Encerrar rota**.
+- Ações secundárias da rota, como Pausar/Continuar e Exportar GPX, passam para o menu do AppBar.
+- A câmera flutuante deixa de exibir a faixa **Local**, pode ser ocultada/mostrada e recalcula largura/altura quando a proporção da transmissão muda.
+- O mapa completo agora recebe também a segunda câmera, exibindo dois PiPs independentes e arrastáveis quando duas fontes estão ativas.
+- `SecondaryCameraController` expõe a proporção disponível da segunda fonte; câmera frontal/local e stream remoto atualizam o formato do PiP sem reiniciar a tela.
+- Versionamento e documentação sincronizados em `1.0.104+104`.
+
 ## 1.0.103+103 — 2026-09-23
 
 - Corrigido o `unnecessary_non_null_assertion` em `offline_map_manager_sheet.dart` apontado pelo Android-APK-71; o `flutter analyze` não deve mais parar nesse warning.

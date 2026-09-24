@@ -1,4 +1,18 @@
-# Validação — Vigia IA 1.0.103+103
+# Validação — Vigia IA 1.0.104+104
+
+## 1.0.104+104 — painel Stadia + seleção offline + mapa multicâmera
+
+- Confirmar painel Stadia com status configurado/não configurado, Colar, Ver, Copiar, Testar, Trocar e Remover.
+- Confirmar que o campo de edição permanece vazio ao abrir quando já existe chave, enquanto o status mascarado identifica a configuração existente.
+- Confirmar seleção offline com alternância Mapa/Área e botões de zoom − / z / +.
+- Confirmar que o mapa completo mantém telemetria no topo e somente Iniciar/Encerrar rota na barra inferior.
+- Confirmar botão de mostrar/ocultar câmeras no mapa.
+- Confirmar PiP principal alternando formato vertical/horizontal quando `previewAspectRatio` muda.
+- Confirmar segunda câmera abaixo da principal por padrão e ambos os PiPs arrastáveis independentemente.
+- Confirmar ausência da faixa textual Local sobre o PiP.
+- `python3 tool/check_version_sync.py`: **PASSOU** em `1.0.104+104`.
+- `bash tool/verify_project.sh`: **PASSOU** em `1.0.104+104`.
+- Flutter/Dart/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK precisam ser confirmados pelo workflow.
 
 ## 1.0.103+103 — créditos de mapas + Android-APK-71
 

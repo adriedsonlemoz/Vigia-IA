@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
@@ -23,6 +24,17 @@ class FrontCameraPreviewSource implements VideoSource {
   CameraController? _controller;
   bool _started = false;
   bool _disposed = false;
+
+  double? get previewAspectRatio {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return null;
+    final base = controller.value.aspectRatio;
+    if (!base.isFinite || base <= 0) return null;
+    final orientation = controller.value.deviceOrientation;
+    final portrait = orientation == DeviceOrientation.portraitUp ||
+        orientation == DeviceOrientation.portraitDown;
+    return portrait ? 1 / base : base;
+  }
 
   @override
   Stream<RgbFrame> get frames => _frames.stream;

@@ -23,9 +23,24 @@ class _OfflineAreaSelectionScreenState
     extends State<OfflineAreaSelectionScreen> {
   final MapController _controller = MapController();
   bool _ready = false;
+  bool _adjustArea = true;
+  double _currentZoom = 13;
 
   // Retângulo normalizado em relação à área útil do mapa.
   Rect _selection = const Rect.fromLTRB(0.12, 0.18, 0.88, 0.82);
+
+  @override
+  void initState() {
+    super.initState();
+    _currentZoom = widget.initialZoom.clamp(3.0, 18.0).toDouble();
+  }
+
+  void _changeZoom(double delta) {
+    if (!_ready) return;
+    final next = (_controller.camera.zoom + delta).clamp(3.0, 18.0).toDouble();
+    _controller.move(_controller.camera.center, next);
+    setState(() => _currentZoom = next);
+  }
 
   void _confirm() {
     if (!_ready) return;
@@ -136,7 +151,16 @@ class _OfflineAreaSelectionScreenState
                   initialZoom: widget.initialZoom,
                   minZoom: 3,
                   maxZoom: 18,
-                  onMapReady: () => setState(() => _ready = true),
+                  onMapReady: () => setState(() {
+                    _ready = true;
+                    _currentZoom = _controller.camera.zoom;
+                  }),
+                  onPositionChanged: (camera, _) {
+                    final zoom = camera.zoom;
+                    if ((zoom - _currentZoom).abs() > 0.01 && mounted) {
+                      setState(() => _currentZoom = zoom);
+                    }
+                  },
                 ),
                 children: [
                   TileLayer(
@@ -161,10 +185,12 @@ class _OfflineAreaSelectionScreenState
                 top: _selection.top * size.height,
                 width: _selection.width * size.width,
                 height: _selection.height * size.height,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onPanUpdate: (details) => _moveSelection(details, size),
-                  child: DecoratedBox(
+                child: IgnorePointer(
+                  ignoring: !_adjustArea,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onPanUpdate: (details) => _moveSelection(details, size),
+                    child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: scheme.primary.withValues(alpha: 0.08),
                       border: Border.all(color: scheme.primary, width: 3),
@@ -229,6 +255,7 @@ class _OfflineAreaSelectionScreenState
                         ),
                       ],
                     ),
+                    ),
                   ),
                 ),
               ),
@@ -242,13 +269,69 @@ class _OfflineAreaSelectionScreenState
                         color: scheme.surface.withValues(alpha: 0.94),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Text(
-                          'Mova o mapa fora do quadro. Arraste o quadro para reposicionar e use os cantos para redimensionar a região offline.',
+                          _adjustArea
+                              ? 'Ajuste a área: arraste o quadro e use os cantos para redimensionar.'
+                              : 'Mover mapa: arraste livremente e use − / + para controlar o zoom.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                minimum: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Material(
+                    elevation: 7,
+                    color: scheme.surface.withValues(alpha: 0.96),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ChoiceChip(
+                            selected: !_adjustArea,
+                            avatar: const Icon(Icons.pan_tool_alt_outlined, size: 16),
+                            label: const Text('Mapa'),
+                            visualDensity: VisualDensity.compact,
+                            onSelected: (_) => setState(() => _adjustArea = false),
+                          ),
+                          const SizedBox(width: 5),
+                          ChoiceChip(
+                            selected: _adjustArea,
+                            avatar: const Icon(Icons.crop_free_rounded, size: 16),
+                            label: const Text('Área'),
+                            visualDensity: VisualDensity.compact,
+                            onSelected: (_) => setState(() => _adjustArea = true),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filledTonal(
+                            tooltip: 'Diminuir zoom',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: _ready ? () => _changeZoom(-1) : null,
+                            icon: const Icon(Icons.remove_rounded),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              'z${_currentZoom.round()}',
+                              style: const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          IconButton.filledTonal(
+                            tooltip: 'Aumentar zoom',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: _ready ? () => _changeZoom(1) : null,
+                            icon: const Icon(Icons.add_rounded),
+                          ),
+                        ],
                       ),
                     ),
                   ),

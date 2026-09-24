@@ -38,11 +38,14 @@ class RemotePhoneCameraSource implements VideoSource {
   int? _lastFrameSequence;
   DateTime? _lastRemoteCapturedAt;
   int? _frameNetworkLatencyMs;
+  double? _previewAspectRatio;
+  DateTime _lastAspectRatioProbe = DateTime.fromMillisecondsSinceEpoch(0);
   final ValueNotifier<RemotePhoneStatus?> remoteStatusNotifier =
       ValueNotifier<RemotePhoneStatus?>(null);
 
   RemotePhoneStatus? get remoteStatus => remoteStatusNotifier.value;
   int? get frameNetworkLatencyMs => _frameNetworkLatencyMs;
+  double? get previewAspectRatio => _previewAspectRatio;
 
   @override
   Stream<RgbFrame> get frames => _frames.stream;
@@ -125,6 +128,16 @@ class RemotePhoneCameraSource implements VideoSource {
       final receivedAt = DateTime.now();
       _frameNetworkLatencyMs = receivedAt.difference(startedAt).inMilliseconds;
       _latestJpeg.value = bytes;
+      if (!emitFrames &&
+          (_previewAspectRatio == null ||
+              receivedAt.difference(_lastAspectRatioProbe) >=
+                  const Duration(seconds: 2))) {
+        _lastAspectRatioProbe = receivedAt;
+        final ratio = await compute<Uint8List, double?>(_decodeJpegAspectRatio, bytes);
+        if (ratio != null && ratio.isFinite && ratio > 0) {
+          _previewAspectRatio = ratio;
+        }
+      }
       final isDuplicateSequence =
           sequence != null && _lastFrameSequence != null && sequence <= _lastFrameSequence!;
       final isDuplicateTimestamp = sequence == null &&
@@ -238,6 +251,7 @@ class RemotePhoneCameraSource implements VideoSource {
     _lastFrameSequence = null;
     _lastRemoteCapturedAt = null;
     _frameNetworkLatencyMs = null;
+    _previewAspectRatio = null;
     _statusBusy = false;
     remoteStatusNotifier.value = null;
     if (!_statuses.isClosed) {
@@ -271,4 +285,11 @@ Map<String, Object>? _decodeJpeg(Uint8List bytes) {
     'height': image.height,
     'bytes': Uint8List.fromList(rgb),
   };
+}
+
+
+double? _decodeJpegAspectRatio(Uint8List bytes) {
+  final image = img.decodeJpg(bytes);
+  if (image == null || image.width <= 0 || image.height <= 0) return null;
+  return image.width / image.height;
 }

@@ -23,6 +23,22 @@ class OfflineMapDownloadEstimate {
   int get credits => tiles * OfflineMapService.stadiaRasterCreditsPerTile;
 }
 
+class StadiaApiKeyTestResult {
+  const StadiaApiKeyTestResult({
+    required this.success,
+    required this.message,
+    required this.latency,
+    this.statusCode,
+    this.creditCounted = false,
+  });
+
+  final bool success;
+  final String message;
+  final Duration latency;
+  final int? statusCode;
+  final bool creditCounted;
+}
+
 class OfflineMapBounds {
   const OfflineMapBounds({
     required this.west,
@@ -201,6 +217,101 @@ class OfflineMapService extends ChangeNotifier {
     }
     await _persist();
     notifyListeners();
+  }
+
+  String get maskedStadiaApiKey {
+    final value = _stadiaApiKey?.trim();
+    if (value == null || value.isEmpty) return 'Não configurada';
+    final tail = value.length <= 4 ? value : value.substring(value.length - 4);
+    return '••••••••••••$tail';
+  }
+
+  Future<String?> revealStadiaApiKey() async {
+    await initialize();
+    final value = _stadiaApiKey?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  Future<StadiaApiKeyTestResult> testStadiaApiKey({String? candidate}) async {
+    await initialize();
+    final candidateValue = candidate?.trim();
+    final key = candidateValue != null && candidateValue.isNotEmpty
+        ? candidateValue
+        : _stadiaApiKey?.trim();
+    if (key == null || key.isEmpty) {
+      return const StadiaApiKeyTestResult(
+        success: false,
+        message: 'Informe ou salve uma API key antes de testar.',
+        latency: Duration.zero,
+      );
+    }
+
+    final stopwatch = Stopwatch()..start();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10)
+      ..idleTimeout = const Duration(seconds: 10);
+    try {
+      final uri = Uri.parse(
+        'https://tiles.stadiamaps.com/tiles/alidade_smooth/0/0/0.png',
+      );
+      final request = await client.getUrl(uri);
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0 key-test');
+      request.headers.set(HttpHeaders.authorizationHeader, 'Stadia-Auth $key');
+      final response = await request.close().timeout(const Duration(seconds: 12));
+      final status = response.statusCode;
+      await response.drain<void>();
+      stopwatch.stop();
+      if (status >= 200 && status < 300) {
+        _resetCreditWindowIfNeeded();
+        _stadiaCreditsUsedThisMonth += stadiaRasterCreditsPerTile;
+        await _persist();
+        notifyListeners();
+        return StadiaApiKeyTestResult(
+          success: true,
+          message: 'Chave válida · ${stopwatch.elapsedMilliseconds} ms',
+          latency: stopwatch.elapsed,
+          statusCode: status,
+          creditCounted: true,
+        );
+      }
+      final String message;
+      if (status == 401 || status == 403) {
+        message = 'Chave recusada pela Stadia Maps (HTTP $status).';
+      } else if (status == 429) {
+        message = 'Limite de requisições/créditos atingido (HTTP 429).';
+      } else {
+        message = 'A Stadia Maps respondeu HTTP $status.';
+      }
+      return StadiaApiKeyTestResult(
+        success: false,
+        message: message,
+        latency: stopwatch.elapsed,
+        statusCode: status,
+      );
+    } on SocketException {
+      stopwatch.stop();
+      return StadiaApiKeyTestResult(
+        success: false,
+        message: 'Sem conexão com a internet ou servidor indisponível.',
+        latency: stopwatch.elapsed,
+      );
+    } on TimeoutException {
+      stopwatch.stop();
+      return StadiaApiKeyTestResult(
+        success: false,
+        message: 'O teste excedeu o tempo de espera.',
+        latency: stopwatch.elapsed,
+      );
+    } catch (error) {
+      stopwatch.stop();
+      return StadiaApiKeyTestResult(
+        success: false,
+        message: 'Não foi possível testar a chave: $error',
+        latency: stopwatch.elapsed,
+      );
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<void> configureStadiaMonthlyCreditLimit(int credits) async {
