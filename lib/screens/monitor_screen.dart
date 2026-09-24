@@ -1,11 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
-
 import '../core/adaptive_camera_layout.dart';
 import '../controllers/monitor_controller.dart';
 import '../controllers/secondary_camera_controller.dart';
@@ -19,6 +17,7 @@ import '../models/camera_endpoint.dart';
 import '../models/monitoring_zone.dart';
 import '../models/device_telemetry.dart';
 import '../models/map_route_point.dart';
+import '../models/route_explorer_models.dart';
 import '../models/offline_map_package.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
@@ -26,6 +25,7 @@ import '../services/native_platform_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_route_service.dart';
 import '../services/offline_map_service.dart';
+import '../services/route_explorer_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../widgets/detection_overlay.dart';
@@ -34,6 +34,7 @@ import '../widgets/bike_ride_hud.dart';
 import '../widgets/monitoring_zone_overlay.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/remote_bike_status_panel.dart';
+import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/session_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
@@ -41,13 +42,13 @@ import 'launch_mode_screen.dart';
 import 'map_monitoring_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 import 'settings_screen.dart';
-
 part 'monitor_screen_components.dart';
 part 'monitor_screen_fullscreen.dart';
 part 'monitor_screen_multicamera.dart';
 part 'monitor_screen_offline_map.dart';
 part 'monitor_screen_portrait.dart';
 part 'monitor_screen_landscape_dashboard.dart';
+part 'monitor_screen_map_explorer.dart';
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
@@ -73,6 +74,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
   final MapRouteService _mapRoute = MapRouteService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
+  final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapController _miniMapController = MapController();
   MbTilesTileProvider? _miniOfflineTileProvider;
   String? _miniOfflinePackageId;
@@ -96,7 +98,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false;
   Offset? _portraitPipOffset;
-
   @override
   void initState() {
     super.initState();
@@ -116,7 +117,9 @@ class _MonitorScreenState extends State<MonitorScreen>
     _bikeSensors.addListener(_refresh);
     _mapRoute.addListener(_onMapRouteChanged);
     _offlineMaps.addListener(_onOfflineMapsChanged);
+    _routeExplorer.addListener(_refresh);
     unawaited(_initializeOfflineMiniMap());
+    unawaited(_routeExplorer.initialize());
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
     unawaited(_initializeMiniMap(requestPermission: false));
@@ -179,6 +182,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     _bikeSensors.removeListener(_refresh);
     _mapRoute.removeListener(_onMapRouteChanged);
     _offlineMaps.removeListener(_onOfflineMapsChanged);
+    _routeExplorer.removeListener(_refresh);
     _miniOfflineTileProvider?.dispose();
     _miniMapController.dispose();
     _controller.dispose();

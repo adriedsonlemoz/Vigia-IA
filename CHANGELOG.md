@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.0.111+111 — 2026-09-24
+
+- O botão **Mapa** do monitor Ao vivo agora abre o painel **Mapa e percurso** em vez de apenas alternar o mini mapa diretamente.
+- O novo painel reúne controles do mini mapa, raio da busca, categorias de interesse, busca online, abertura do mapa completo e atalho para mapas offline.
+- Implementada exploração de pontos úteis por raio usando OpenStreetMap/Overpass com categorias: postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.
+- A lista atual de resultados pode ser salva para uso offline e passa a ser usada como fallback quando a internet estiver indisponível.
+- Adicionados alertas automáticos de aproximação com fala e/ou notificação, usando a lista atual ou a última lista offline salva.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.111+111`.
+
 ## 1.0.110+110 — 2026-09-24
 
 - A fileira fixa do monitor Ao vivo passa a ter cinco ações: **Câmera, Mapa, Áudio, Painel e Ajustes**.

@@ -488,13 +488,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                 label: 'Mapa',
                 accent: mapVisible,
                 compact: true,
-                onPressed: () => unawaited(
-                  _setMonitorMapVisibilityQuick(
-                    mapVisible
-                        ? MonitorMapVisibilityMode.hidden
-                        : MonitorMapVisibilityMode.always,
-                  ),
-                ),
+                onPressed: () => unawaited(_showMapExplorerSheet()),
               ),
             ),
             const SizedBox(width: 4),

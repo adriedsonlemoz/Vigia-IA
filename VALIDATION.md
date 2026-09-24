@@ -1,4 +1,14 @@
-# Validação — Vigia IA 1.0.110+110
+# Validação — Vigia IA 1.0.111+111
+
+## 1.0.111+111 — mapa e percurso com lista offline e alertas
+
+- Confirmar que o botão **Mapa** da fileira fixa retrato e o botão **Mapa** do painel em paisagem agora abrem `_showMapExplorerSheet()`.
+- Confirmar que o bottom sheet **Mapa e percurso** oferece raio, categorias, botões **Buscar agora**, **Salvar lista offline**, **Buscar e salvar**, **Mapas offline** e **Abrir mapa completo**.
+- Confirmar que `RouteExplorerService` persiste preferências e lista offline em `route_explorer_state.json`.
+- Confirmar que `searchNow()` usa Overpass/OpenStreetMap online e recai para a lista offline quando a requisição falhar.
+- Confirmar que os switches de **Fala** e **Notificação** controlam os alertas automáticos de aproximação.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.111+111`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK final ainda precisam ser confirmados pelo workflow.
 
 ## 1.0.110+110 — quinto botão de mapa + Android-APK-78
 

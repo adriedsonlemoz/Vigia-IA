@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.110',
+          version: '1.0.111',
           current: true,
+          changes: [
+            'O botão Mapa agora abre o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
+            'A nova exploração consulta locais úteis por categoria: postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
+            'A lista pode ser salva para uso offline e também alimenta alertas automáticos por fala e notificação durante o percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.110',
           changes: [
             'A fileira fixa do monitor agora tem cinco ações: Câmera, Mapa, Áudio, Painel e Ajustes.',
             'O botão Mapa mostra ou oculta o mini mapa diretamente e destaca o estado quando ele está visível.',
@@ -1007,8 +1016,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.110',
+          version: '1.0.111',
           current: true,
+          changes: [
+            'O botão Mapa agora abre o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
+            'A nova exploração consulta locais úteis por categoria: postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
+            'A lista pode ser salva para uso offline e também alimenta alertas automáticos por fala e notificação durante o percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.110',
           changes: [
             'A fileira fixa do monitor agora tem cinco ações: Câmera, Mapa, Áudio, Painel e Ajustes.',
             'O botão Mapa mostra ou oculta o mini mapa diretamente e destaca o estado quando ele está visível.',

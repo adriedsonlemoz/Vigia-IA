@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.110+110`
+> **Versão atual:** `1.0.111+111`
 
 ## Estado atual
 
-A `1.0.110+110` coloca o controle do mapa diretamente na fileira de ações do monitor e corrige o Android-APK-78, que falhava porque o `.gitignore` não havia sido incluído no ZIP-fonte anterior.
+A `1.0.111+111` transforma o botão Mapa em um painel “Mapa e percurso”, com exploração por raio, lista de pontos úteis, suporte offline e alertas por fala/notificação.
+
+### Evolução 1.0.111 — mapa e percurso com pontos úteis
+
+- o botão **Mapa** do monitor agora abre o painel **Mapa e percurso**, em vez de apenas alternar o mini mapa diretamente;
+- dentro do painel é possível ajustar o raio da busca e filtrar categorias como **postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes**;
+- o app consulta pontos úteis próximos via OpenStreetMap/Overpass quando houver internet e exibe a listagem no próprio pop-up;
+- a lista atual pode ser salva para **uso offline**, servindo de fallback quando a conexão falhar;
+- foi adicionada uma área de **alertas no percurso** com fala e/ou notificação para avisar sobre locais importantes se aproximando;
+- o painel também concentra o controle do mini mapa e o atalho para **Mapas offline** e **Abrir mapa completo**.
 
 ### Evolução 1.0.110 — quinto botão de mapa + correção Android-APK-78
 

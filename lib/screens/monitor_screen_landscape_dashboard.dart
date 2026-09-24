@@ -775,9 +775,9 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                 Expanded(
                   child: _DashboardActionButton(
                     icon: Icons.map_outlined,
-                    label: 'Mostrar mapa',
+                    label: 'Mapa',
                     accent: true,
-                    onPressed: () => unawaited(_openFullMap()),
+                    onPressed: () => unawaited(_showMapExplorerSheet()),
                   ),
                 ),
                 const SizedBox(width: 10),

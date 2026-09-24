@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.110 adiciona o botão Mapa à fileira de ações do monitor e corrige o Android-APK-78 garantindo que o .gitignore seja preservado no ZIP-fonte.",
-  "version": "1.0.110",
-  "build": 110
+  "notes": "A 1.0.111 transforma o botão Mapa em um painel Mapa e percurso com busca por raio, lista offline e alertas de locais úteis ao longo do caminho.",
+  "version": "1.0.111",
+  "build": 111
 }

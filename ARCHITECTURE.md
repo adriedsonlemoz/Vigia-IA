@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.110+110
+# Arquitetura — Vigia IA 1.0.111+111
 
 ## 1. Princípios
+
+## Evolução 1.0.111 — painel Mapa e percurso
+
+- O controle de mapa do monitor deixou de ser um simples toggle e passou a abrir `_showMapExplorerSheet()`, centralizando em um único fluxo as preferências de mini mapa, exploração da região e atalhos de navegação.
+- O novo `RouteExplorerService` persiste preferências (raio, categorias, alertas), resultados recentes e uma lista offline local em `route_explorer_state.json`.
+- A busca online usa Overpass/OpenStreetMap por HTTP, normaliza elementos `node/way/relation`, classifica por categoria e ordena por distância até a posição atual do trajeto.
+- Quando a conexão falha, o serviço recalcula a distância da última lista offline salva e a reaproveita como fallback sem depender da internet.
+- O mesmo serviço escuta atualizações do `MapRouteService` para recalcular distâncias e disparar alertas de aproximação via `AlertDeliveryService`, com saída por fala e/ou notificação.
 
 ## Evolução 1.0.110 — ação fixa de mapa e integridade do pacote-fonte
 
