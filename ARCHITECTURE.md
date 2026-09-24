@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.114+114
+# Arquitetura — Vigia IA 1.0.115+115
 
 ## 1. Princípios
+
+## Evolução 1.0.115 — compactação da Home e do mapa
+
+- `HomeScreen` apresenta quatro entradas principais em grade responsiva 2x2 no celular e 4 colunas em telas largas: Monitor, Transmissão, Bike e ESP32.
+- `VigiaModeCard` ganhou variante `compact`, mantendo o mesmo design system sem criar um componente visual paralelo.
+- O acesso dedicado ao ESP32 reutiliza `Esp32SettingsScreen`; a entrada redundante de **Ajustes > Monitoramento** foi removida, mas os serviços, modelos e integrações continuam intactos.
+- `monitor_screen_map_explorer.dart` mantém `RouteExplorerService`/`MapRouteService` como única fonte de estado e apenas compacta a apresentação de raio, busca, categorias, alertas, offline e mini mapa.
+- Os acessos rápidos da Home usam grade adaptativa para impedir overflow e corte de texto em telas estreitas.
 
 ## Correção 1.0.114 — integridade do redesign no analyzer
 

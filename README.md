@@ -2,12 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.114+114`
+> **Versão atual:** `1.0.115+115`
 
 ## Estado atual
 
-A `1.0.114+114` corrige os bloqueios encontrados no Android-APK-82 durante `flutter analyze`, mantendo intacta a fundação visual e a nova Home introduzidas na 1.0.113.
+A `1.0.115+115` compacta a Home e as configurações de mapa, adiciona um acesso dedicado ao ESP32 e preserva a lógica existente de monitoramento, mapas, sensores e transmissão.
 
+
+### Evolução 1.0.115 — Home compacta, mapa compacto e ESP32 dedicado
+
+- Os quatro módulos principais ficam em grade 2x2: **Monitor ao vivo**, **Modo transmissão**, **Modo Bike** e **ESP32**.
+- O card **ESP32** abre a tela já existente de configuração do módulo, sensores, calibração e câmera; o item duplicado foi removido de **Ajustes > Monitoramento**.
+- Os cinco **Acessos rápidos** usam grade responsiva em telas estreitas para evitar corte de rótulos como Diagnóstico.
+- **Configurações do mapa e percurso** concentra mais opções na mesma área sem misturar uso e configuração: chips menores para raio, busca, categorias, alertas e distância; ações offline em duas colunas; mini mapa compacto.
+- Os controles continuam ligados aos mesmos `RouteExplorerService` e `MapRouteService`; mapas offline, alertas, busca e persistência não foram duplicados.
 
 ### Correção 1.0.114 — Android-APK-82
 

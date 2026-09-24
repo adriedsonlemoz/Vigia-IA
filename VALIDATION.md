@@ -1,5 +1,16 @@
-# Validação — Vigia IA 1.0.114+114
+# Validação — Vigia IA 1.0.115+115
 
+
+## 1.0.115+115 — Home, mapa e ESP32 compactos
+
+- Confirmar quatro cards principais na Home: **Monitor ao vivo**, **Modo transmissão**, **Modo Bike** e **ESP32**.
+- Confirmar grade 2x2 dos modos em celular e quatro colunas em telas largas.
+- Confirmar que o card **ESP32** abre `Esp32SettingsScreen` e que **Ajustes > Monitoramento** não mantém atalho duplicado para ESP32.
+- Confirmar que **Acessos rápidos** usa grade responsiva e não corta **Diagnóstico** em largura estreita.
+- Confirmar que **Configurações do mapa e percurso** usa controles compactos para raio, modo de busca, categorias, alertas, distância, offline e mini mapa.
+- Confirmar que `RouteExplorerService` e `MapRouteService` seguem sendo reutilizados sem duplicação de lógica.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK devem ser confirmados pelo workflow.
 
 ## 1.0.114+114 — correção Android-APK-82
 

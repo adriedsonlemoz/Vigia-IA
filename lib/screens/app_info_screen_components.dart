@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.114',
+          version: '1.0.115',
           current: true,
+          changes: [
+            'Home compactada em grade 2x2 com Monitor ao vivo, Modo transmissão, Modo Bike e acesso dedicado ao ESP32.',
+            'ESP32 saiu da lista geral de Monitoramento em Ajustes e abre diretamente sua tela existente de módulo, sensores e câmera.',
+            'Configurações do mapa e percurso ficaram mais compactas, com categorias, alertas, distâncias e ações offline reduzidas sem duplicar serviços.',
+            'Acessos rápidos passam a usar grade responsiva para evitar rótulos cortados em celulares estreitos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.114',
           changes: [
             'Corrigido o Android-APK-82: ButtonStyle usa minimumSize compatível com Flutter 3.44.9.',
             'Corrigidos delimitadores no monitor multicâmera que geravam a cascata de erros de parser no analyzer.',
@@ -1044,8 +1054,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.114',
+          version: '1.0.115',
           current: true,
+          changes: [
+            'Home compactada em grade 2x2 com Monitor ao vivo, Modo transmissão, Modo Bike e acesso dedicado ao ESP32.',
+            'ESP32 saiu da lista geral de Monitoramento em Ajustes e abre diretamente sua tela existente de módulo, sensores e câmera.',
+            'Configurações do mapa e percurso ficaram mais compactas, com categorias, alertas, distâncias e ações offline reduzidas sem duplicar serviços.',
+            'Acessos rápidos passam a usar grade responsiva para evitar rótulos cortados em celulares estreitos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.114',
           changes: [
             'Corrigido o Android-APK-82: ButtonStyle usa minimumSize compatível com Flutter 3.44.9.',
             'Corrigidos delimitadores no monitor multicâmera que geravam a cascata de erros de parser no analyzer.',

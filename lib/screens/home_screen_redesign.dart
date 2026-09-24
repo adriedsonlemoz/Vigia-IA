@@ -252,50 +252,60 @@ extension _HomeRedesign on _HomeScreenState {
       builder: (context, constraints) {
         final cards = <Widget>[
           VigiaModeCard(
+            compact: true,
             icon: Icons.videocam_rounded,
             title: 'Monitor ao vivo',
-            subtitle: 'Acompanhe a câmera, a transmissão e a IA em tempo real.',
+            subtitle: 'Câmera, transmissão e IA em tempo real.',
             accent: VigiaColors.cyan,
-            tags: const ['IA local', 'Alertas'],
+            tags: const ['IA', 'Alertas'],
             onTap: () => unawaited(_start()),
           ),
           VigiaModeCard(
+            compact: true,
             icon: Icons.cast_connected_rounded,
             title: 'Modo transmissão',
-            subtitle:
-                'Envie a imagem deste aparelho para outro celular na rede local.',
+            subtitle: 'Envie a imagem deste aparelho pela rede local.',
             accent: VigiaColors.blue,
-            tags: const ['Transmissor', 'LAN'],
+            tags: const ['LAN', 'Enviar'],
             onTap: () => _openScreen(const CameraModeScreen()),
           ),
           VigiaModeCard(
+            compact: true,
             icon: Icons.directions_bike_rounded,
             title: 'Modo Bike',
-            subtitle:
-                'Use câmera, telemetria e sensores em uma experiência própria para a bike.',
+            subtitle: 'Câmera, telemetria e sensores para a bike.',
             accent: VigiaColors.green,
-            tags: const ['Sensores', 'Paisagem'],
+            tags: const ['Sensores', 'Bike'],
             onTap: () => _openScreen(const BikeModeScreen()),
           ),
+          VigiaModeCard(
+            compact: true,
+            icon: Icons.memory_rounded,
+            title: 'ESP32',
+            subtitle: 'Conecte o módulo e configure sensores e câmera.',
+            accent: VigiaColors.blue,
+            tags: const ['Módulo', 'Sensores'],
+            onTap: () => _openScreen(const Esp32SettingsScreen()),
+          ),
         ];
-        if (constraints.maxWidth >= 780) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var index = 0; index < cards.length; index++) ...[
-                if (index > 0) const SizedBox(width: 12),
-                Expanded(child: cards[index]),
-              ],
-            ],
-          );
-        }
-        return Column(
-          children: [
-            for (var index = 0; index < cards.length; index++) ...[
-              if (index > 0) const SizedBox(height: 10),
-              cards[index],
-            ],
-          ],
+        final columns = constraints.maxWidth >= 780 ? 4 : 2;
+        final spacing = constraints.maxWidth < 420 ? 8.0 : 10.0;
+        final ratio = columns == 4
+            ? 1.12
+            : constraints.maxWidth < 420
+                ? 0.95
+                : 1.30;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: cards.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: ratio,
+          ),
+          itemBuilder: (context, index) => cards[index],
         );
       },
     );
@@ -304,8 +314,6 @@ extension _HomeRedesign on _HomeScreenState {
   Widget _buildQuickActions() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const gap = 8.0;
-        final itemWidth = (constraints.maxWidth - gap * 4) / 5;
         final actions = <({IconData icon, String label, VoidCallback onTap})>[
           (
             icon: Icons.video_library_outlined,
@@ -333,21 +341,25 @@ extension _HomeRedesign on _HomeScreenState {
             onTap: () => unawaited(_openSettings()),
           ),
         ];
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var index = 0; index < actions.length; index++) ...[
-              if (index > 0) const SizedBox(width: gap),
-              SizedBox(
-                width: itemWidth,
-                child: VigiaQuickAction(
-                  icon: actions[index].icon,
-                  label: actions[index].label,
-                  onTap: actions[index].onTap,
-                ),
-              ),
-            ],
-          ],
+        final columns = constraints.maxWidth < 520 ? 3 : 5;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: actions.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: columns == 3 ? 1.08 : 0.92,
+          ),
+          itemBuilder: (context, index) {
+            final action = actions[index];
+            return VigiaQuickAction(
+              icon: action.icon,
+              label: action.label,
+              onTap: action.onTap,
+            );
+          },
         );
       },
     );

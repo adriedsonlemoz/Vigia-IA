@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.114 corrige os bloqueios do Android-APK-82 no analyzer, preservando a fundação do redesign amplo iniciada na 1.0.113.",
-  "version": "1.0.114",
-  "build": 114
+  "notes": "A 1.0.115 compacta a Home e as configurações de mapa, adiciona acesso dedicado ao ESP32 e preserva toda a lógica existente.",
+  "version": "1.0.115",
+  "build": 115
 }

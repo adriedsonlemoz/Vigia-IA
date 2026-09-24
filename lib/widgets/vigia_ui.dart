@@ -145,6 +145,7 @@ class VigiaModeCard extends StatelessWidget {
     required this.accent,
     required this.onTap,
     this.tags = const <String>[],
+    this.compact = false,
   });
 
   final IconData icon;
@@ -153,6 +154,7 @@ class VigiaModeCard extends StatelessWidget {
   final Color accent;
   final VoidCallback onTap;
   final List<String> tags;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -177,53 +179,66 @@ class VigiaModeCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(VigiaRadii.large),
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(compact ? 12 : 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 46,
-                      height: 46,
+                      width: compact ? 36 : 46,
+                      height: compact ? 36 : 46,
                       decoration: BoxDecoration(
                         color: accent.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(compact ? 12 : 15),
                       ),
-                      child: Icon(icon, color: accent, size: 25),
+                      child: Icon(
+                        icon,
+                        color: accent,
+                        size: compact ? 21 : 25,
+                      ),
                     ),
                     const Spacer(),
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: compact ? 28 : 34,
+                      height: compact ? 28 : 34,
                       decoration: BoxDecoration(
                         color: scheme.surface.withValues(alpha: 0.72),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_forward_rounded, size: 19),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: compact ? 16 : 19,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: compact ? 10 : 18),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 19,
+                  maxLines: compact ? 1 : null,
+                  overflow: compact ? TextOverflow.ellipsis : null,
+                  style: TextStyle(
+                    fontSize: compact ? 15 : 19,
                     fontWeight: FontWeight.w900,
+                    height: compact ? 1.1 : null,
                   ),
                 ),
-                const SizedBox(height: 5),
+                SizedBox(height: compact ? 3 : 5),
                 Text(
                   subtitle,
+                  maxLines: compact ? 2 : null,
+                  overflow: compact ? TextOverflow.ellipsis : null,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        height: 1.35,
+                        height: compact ? 1.2 : 1.35,
+                        fontSize: compact ? 10.5 : null,
                       ),
                 ),
                 if (tags.isNotEmpty) ...[
-                  const SizedBox(height: 14),
+                  SizedBox(height: compact ? 8 : 14),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: compact ? 4 : 6,
+                    runSpacing: compact ? 4 : 6,
                     children: [
                       for (final tag in tags)
                         VigiaStatusPill(label: tag, color: accent),

@@ -1,3 +1,12 @@
+## 1.0.115+115 — 2026-09-24
+
+- Home compactada em grade 2x2 para **Monitor ao vivo**, **Modo transmissão**, **Modo Bike** e **ESP32**, reduzindo a altura ocupada pelos modos principais.
+- O novo card **ESP32** abre diretamente a tela existente de módulo, sensores, calibração e câmera; o atalho duplicado foi removido de **Ajustes > Monitoramento**.
+- **Acessos rápidos** agora usam grade responsiva para evitar rótulos quebrados/cortados em celulares estreitos.
+- **Configurações do mapa e percurso** foram reformuladas para um layout muito mais compacto: raio e modo de busca reduzidos, categorias com ícones menores, alertas em chips, distância em escolhas rápidas, ações offline em grade 2x2 e mini mapa em controles compactos.
+- `RouteExplorerService`, `MapRouteService`, mapas offline, alertas e persistência existentes continuam sendo reutilizados; não foi criado sistema paralelo.
+- Versionamento, AppMetadata, identidade, Mudanças, documentação, testes e verificadores sincronizados em `1.0.115+115`.
+
 ## 1.0.114+114 — 2026-09-24
 
 - Corrigido o Android-APK-82, que parava em `flutter analyze` antes dos testes e do build.
