@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.106+106
+# Arquitetura — Vigia IA 1.0.107+107
 
 ## 1. Princípios
+
+## Correção 1.0.107 — compatibilidade Gradle/Kotlin do Android-APK-75
+
+- `android/app/build.gradle.kts` segue o formato emitido pelo Flutter 3.44.9 para AGP 9.0.1: o app não declara mais `kotlin-android` diretamente.
+- A configuração de JVM do Kotlin fica no bloco de nível superior `kotlin { compilerOptions { jvmTarget = ... } }`, evitando o `kotlinOptions.jvmTarget` legado que virou erro de compilação do script no Android-APK-75.
+- `android.newDsl=false` e `android.builtInKotlin=false` permanecem como compatibilidade transitória do Flutter 3.44 para plugins ainda baseados no KGP; a aplicação do plugin é administrada pelo Flutter Gradle Plugin.
+- A estratégia de build da 1.0.106 permanece: uma única `assembleRelease` produz universal + três ABIs e usa cache/paralelismo.
 
 ## Otimização 1.0.106 — pipeline Android de uma passagem
 

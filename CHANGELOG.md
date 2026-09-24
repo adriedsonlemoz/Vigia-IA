@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.107+107 — 2026-09-23
+
+- Corrigido o Android-APK-75, que chegou ao build após `flutter analyze` sem issues e 176 testes aprovados, mas falhou na compilação de `android/app/build.gradle.kts`.
+- Removido `id("kotlin-android")` explícito do módulo app para seguir o template oficial do Flutter 3.44.9 com AGP 9.0.1.
+- Removido `android.kotlinOptions.jvmTarget` legado e adotado `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }`.
+- Mantidos `android.builtInKotlin=false` e `android.newDsl=false` para a compatibilidade transitória do Flutter 3.44 com plugins ainda baseados em KGP.
+- Preservada a otimização da 1.0.106: uma única `assembleRelease` gera APK universal e três APKs por ABI, com cache e paralelismo do Gradle.
+- `tool/verify_project.sh` ganhou guardas específicas contra a regressão do Android-APK-75.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.107+107`.
+
 ## 1.0.106+106 — 2026-09-23
 
 - Workflow Android otimizado a partir do Android-APK-74, cujo job levou cerca de 10m16s e concentrou ~7m30s na etapa de build.

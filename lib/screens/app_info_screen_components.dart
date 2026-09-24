@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.106',
+          version: '1.0.107',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-75, que falhava ao compilar o script Gradle Android antes de gerar os APKs.',
+            'build.gradle.kts foi alinhado ao template oficial do Flutter 3.44.9: Kotlin explícito legado removido e compilerOptions moderno aplicado.',
+            'A compilação única de universal + três ABIs, o cache e o paralelismo da 1.0.106 foram preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.106',
           changes: [
             'Workflow Android otimizado para gerar APK universal e APKs por ABI em uma única compilação Gradle.',
             'Cache e paralelismo do Gradle foram ativados; o projeto Android versionado deixa de ser recriado em todo build.',
@@ -971,8 +980,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.106',
+          version: '1.0.107',
           current: true,
+          changes: [
+            'Android-APK-75 corrigido com o Gradle Android alinhado ao template do Flutter 3.44.9.',
+            'Mantida a geração universal + três ABIs em uma única compilação, com cache e paralelismo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.106',
           changes: [
             'Build Android passa a gerar universal + três ABIs em uma única chamada Gradle, removendo a segunda compilação release.',
             'Gradle usa cache/paralelismo e o workflow reutiliza o diretório Android existente para melhorar builds seguintes.',

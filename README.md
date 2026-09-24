@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.106+106`
+> **Versão atual:** `1.0.107+107`
 
 ## Estado atual
 
-A `1.0.106+106` otimiza o workflow Android com base no Android-APK-74: o APK universal e os três APKs por ABI passam a sair de uma única compilação Gradle, com cache/paralelismo e sem recriar o projeto Android em toda execução.
+A `1.0.107+107` corrige o Android-APK-75 alinhando a configuração Android ao template oficial do Flutter 3.44.9, mantendo a otimização de uma única compilação release introduzida na versão anterior.
+
+### Correção 1.0.107 — Android-APK-75
+
+- removido `id("kotlin-android")` explícito de `android/app/build.gradle.kts`, conforme o template do Flutter 3.44.9;
+- `android { kotlinOptions { ... } }` legado foi substituído por `kotlin { compilerOptions { ... } }`;
+- preservados `VIGIAIA_CI_MULTI_APK=1`, universal + três ABIs, Build Cache e paralelismo;
+- o verificador preventivo agora bloqueia a reintrodução do DSL Kotlin que derrubou o Android-APK-75.
 
 ### Otimização 1.0.106 — Android-APK-74
 

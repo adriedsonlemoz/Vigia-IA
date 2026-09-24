@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -q '^version: 1\.0\.106+106$' pubspec.yaml || fail 'Versao esperada 1.0.106+106 nao encontrada.'
+grep -q '^version: 1\.0\.107+107$' pubspec.yaml || fail 'Versao esperada 1.0.107+107 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -327,12 +327,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.106';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.106.'
-grep -q 'static const int build = 106;' lib/core/app_metadata.dart \
+grep -q "static const String version = '1.0.107';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.107.'
+grep -q 'static const int build = 107;' lib/core/app_metadata.dart \
   || fail 'Build de AppMetadata nao esta em 106.'
-grep -q "version: '1.0.106'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.106.'
+grep -q "version: '1.0.107'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.107.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -498,18 +498,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -q '^version: 1.0.106+106$' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.106+106.'
+grep -q '^version: 1.0.107+107$' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.107+107.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.106"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.106.'
-grep -q '"build": 106' app_identity.json \
-  || fail 'app_identity.json nao esta no build 106.'
+grep -q '"version": "1.0.107"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.107.'
+grep -q '"build": 107' app_identity.json \
+  || fail 'app_identity.json nao esta no build 107.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -826,7 +826,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -q 'Vigia IA 1.0.106+106' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.106+106.'
+grep -q 'Vigia IA 1.0.107+107' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.107+107.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2212,3 +2212,18 @@ grep -q '^org.gradle.parallel=true$' android/gradle.properties || fail 'Gradle p
 grep -q 'output-metadata.json' .github/workflows/android-apk.yml || fail 'Workflow nao descobre APKs via output-metadata.json.'
 
 grep -q 'VigiaIA-v${VERSION}-source.zip' tool/package_source.sh || fail 'Empacotador nao inclui a versao completa no nome do ZIP.'
+# Correcao Android-APK-75 - 1.0.107
+grep -q '^## 1.0.107+107' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.107.'
+grep -q 'Correção 1.0.107' README.md || fail 'README nao documenta 1.0.107.'
+grep -q "version: '1.0.107'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.107.'
+[[ -f RELEASE-1.0.107.md ]] || fail 'Notas da entrega 1.0.107 ausentes.'
+if grep -q 'id("kotlin-android")' android/app/build.gradle.kts; then
+  fail 'Android-APK-75: modulo app voltou a aplicar kotlin-android explicitamente.'
+fi
+if grep -q 'kotlinOptions[[:space:]]*{' android/app/build.gradle.kts; then
+  fail 'Android-APK-75: bloco kotlinOptions legado voltou ao modulo app.'
+fi
+grep -q '^kotlin {' android/app/build.gradle.kts || fail 'Android-APK-75: bloco kotlin moderno ausente.'
+grep -q 'jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17' android/app/build.gradle.kts \
+  || fail 'Android-APK-75: jvmTarget moderno JVM_17 ausente.'
+

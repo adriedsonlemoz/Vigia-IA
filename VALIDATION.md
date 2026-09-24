@@ -1,4 +1,13 @@
-# Validação — Vigia IA 1.0.106+106
+# Validação — Vigia IA 1.0.107+107
+
+## 1.0.107+107 — correção do Android-APK-75
+
+- Android-APK-75: `flutter analyze` passou sem issues e os 176 testes passaram antes da etapa de build.
+- Falha isolada em `android/app/build.gradle.kts`: `BaseAppModuleExtension`, `kotlinOptions` e `jvmTarget` legados foram tratados como erros durante a compilação do script com Gradle 9.1.0 / AGP 9.0.1.
+- `build.gradle.kts` alinhado ao template oficial do Flutter 3.44.9, removendo `id("kotlin-android")` explícito e migrando para `kotlin.compilerOptions.jvmTarget`.
+- Verificadores adicionados para impedir retorno do plugin Kotlin explícito e do bloco `kotlinOptions` no módulo app.
+- A compilação única da 1.0.106 permanece intacta; o próximo workflow deve confirmar geração dos quatro APKs e medir o tempo real com cache.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK desta versão ainda precisam ser confirmados pelo workflow.
 
 ## 1.0.106+106 — otimização do Android-APK-74
 

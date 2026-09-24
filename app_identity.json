@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.106 otimiza o workflow Android: uma única compilação Gradle gera APK universal e APKs por ABI, com cache/paralelismo e reutilização do projeto Android.",
-  "version": "1.0.106",
-  "build": 106
+  "notes": "A 1.0.107 corrige o Android-APK-75 alinhando o Gradle Android ao template oficial do Flutter 3.44.9 sem desfazer a compilação única, o cache e o paralelismo.",
+  "version": "1.0.107",
+  "build": 107
 }
