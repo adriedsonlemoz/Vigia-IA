@@ -2,12 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.113+113`
+> **Versão atual:** `1.0.114+114`
 
 ## Estado atual
 
-A `1.0.113+113` inicia o redesign amplo do Vigia IA com uma fundação visual compartilhada, nova Home orientada aos três modos principais e navegação mais clara, preservando as funções existentes.
+A `1.0.114+114` corrige os bloqueios encontrados no Android-APK-82 durante `flutter analyze`, mantendo intacta a fundação visual e a nova Home introduzidas na 1.0.113.
 
+
+### Correção 1.0.114 — Android-APK-82
+
+- Corrigidos dois parâmetros inválidos `minSize` no `ButtonStyle`; o design system agora usa `minimumSize`, compatível com Flutter 3.44.9.
+- Corrigidos os delimitadores de listas/`Stack` em `monitor_screen_multicamera.dart` que interrompiam o parser do analyzer.
+- O estado dos toggles da Home deixou de chamar `setState` diretamente pela extension e passa por um helper pertencente ao próprio `State`.
+- Removidos componentes/método privados não utilizados que geravam warnings no analyzer.
+- Mantidas a fundação do redesign, a Home, mapas, IA, áudio, transmissão, multicâmera, ESP32 e Bike sem duplicação de lógica.
 
 ### Evolução 1.0.113 — fundação do novo design e Home
 

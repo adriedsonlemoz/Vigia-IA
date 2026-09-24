@@ -1,3 +1,12 @@
+## 1.0.114+114 — 2026-09-24
+
+- Corrigido o Android-APK-82, que parava em `flutter analyze` antes dos testes e do build.
+- `ButtonStyle.minSize` foi corrigido para `minimumSize` em `lib/core/vigia_design.dart`.
+- Corrigidos delimitadores de coleção em `lib/screens/monitor_screen_multicamera.dart`, eliminando a cascata de erros de parser iniciada nas linhas reportadas pelo analyzer.
+- Toggles da Home agora atualizam o estado por `_updateHomeState`, evitando uso protegido de `setState` a partir da extension.
+- Removidos `_MetricChip`, `_LiveDot` e `_showLandscapeQuickActions`, que estavam privados e sem referência.
+- Versionamento, AppMetadata, Mudanças, documentação, testes e verificadores sincronizados em `1.0.114+114`.
+
 ## 1.0.113+113 — 2026-09-24
 
 - Iniciado o redesign amplo do Vigia IA com fundação visual compartilhada em `VigiaTheme` e componentes reutilizáveis para cards, seções, status e acessos rápidos.

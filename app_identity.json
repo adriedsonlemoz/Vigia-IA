@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.113 inicia o redesign amplo com design system compartilhado, nova Home por modos e navegação principal reorganizada.",
-  "version": "1.0.113",
-  "build": 113
+  "notes": "A 1.0.114 corrige os bloqueios do Android-APK-82 no analyzer, preservando a fundação do redesign amplo iniciada na 1.0.113.",
+  "version": "1.0.114",
+  "build": 114
 }

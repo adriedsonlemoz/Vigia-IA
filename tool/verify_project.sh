@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.113+113' pubspec.yaml || fail 'Versao esperada 1.0.113+113 nao encontrada.'
+grep -Fxq 'version: 1.0.114+114' pubspec.yaml || fail 'Versao esperada 1.0.114+114 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.113';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.113.'
-grep -q 'static const int build = 113;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 113.'
-grep -q "version: '1.0.113'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.113.'
+grep -q "static const String version = '1.0.114';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.114.'
+grep -q 'static const int build = 114;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 114.'
+grep -q "version: '1.0.114'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.114.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.113+113' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.113+113.'
+grep -Fq 'version: 1.0.114+114' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.114+114.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.113"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.113.'
-grep -q '"build": 113' app_identity.json \
-  || fail 'app_identity.json nao esta no build 113.'
+grep -q '"version": "1.0.114"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.114.'
+grep -q '"build": 114' app_identity.json \
+  || fail 'app_identity.json nao esta no build 114.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.113+113' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.113+113.'
+grep -Fq 'Vigia IA 1.0.114+114' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.114+114.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2291,6 +2291,25 @@ grep -q "label: Text('Mapa')" lib/screens/monitor_screen_multicamera.dart || fai
 grep -q "alertDistanceMeters" lib/models/route_explorer_models.dart || fail 'Distancia configuravel de alerta ausente.'
 grep -q "clearOfflineResults" lib/services/route_explorer_service.dart || fail 'Exclusao de pontos offline ausente.'
 
+
+# Correcao Android-APK-82 - 1.0.114
+grep -Fq '## 1.0.114+114' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.114.'
+grep -q 'Correção 1.0.114' README.md || fail 'README nao documenta 1.0.114.'
+grep -q "version: '1.0.114'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.114.'
+[[ -f RELEASE-1.0.114.md ]] || fail 'Notas da entrega 1.0.114 ausentes.'
+if grep -q 'minSize:' lib/core/vigia_design.dart; then
+  fail 'ButtonStyle.minSize invalido reapareceu no design system.'
+fi
+grep -q 'minimumSize:' lib/core/vigia_design.dart || fail 'ButtonStyle.minimumSize ausente do design system.'
+if grep -q '^[[:space:]]*setState(' lib/screens/home_screen_redesign.dart; then
+  fail 'Extension da Home voltou a chamar setState diretamente.'
+fi
+if grep -q 'class _LiveDot' lib/screens/home_screen_components.dart || grep -q 'class _MetricChip' lib/screens/home_screen_components.dart; then
+  fail 'Componentes privados sem uso do Android-APK-82 reapareceram na Home.'
+fi
+if grep -q '_showLandscapeQuickActions' lib/screens/monitor_screen_landscape_dashboard.dart; then
+  fail 'Metodo privado sem uso do Android-APK-82 reapareceu no monitor paisagem.'
+fi
 
 # Fundacao do redesign amplo - 1.0.113
 grep -Fq '## 1.0.113+113' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.113.'

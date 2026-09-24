@@ -111,7 +111,7 @@ class VigiaTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: ButtonStyle(
-          minSize: const WidgetStatePropertyAll(Size(0, 46)),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 46)),
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
@@ -127,7 +127,7 @@ class VigiaTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
-          minSize: const WidgetStatePropertyAll(Size(0, 44)),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           ),

@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.113',
+          version: '1.0.114',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-82: ButtonStyle usa minimumSize compatível com Flutter 3.44.9.',
+            'Corrigidos delimitadores no monitor multicâmera que geravam a cascata de erros de parser no analyzer.',
+            'Toggles da Home atualizam o estado por helper do próprio State e warnings privados sem uso foram removidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.113',
           changes: [
             'Iniciado o redesign amplo com um design system compartilhado para tema, cards, botões, chips, painéis e navegação.',
             'A Home agora destaca Monitor ao vivo, Modo transmissão e Modo Bike, com acessos rápidos para Câmeras, Mapa, Histórico, Diagnóstico e Ajustes.',
@@ -1035,8 +1044,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.113',
+          version: '1.0.114',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-82: ButtonStyle usa minimumSize compatível com Flutter 3.44.9.',
+            'Corrigidos delimitadores no monitor multicâmera que geravam a cascata de erros de parser no analyzer.',
+            'Toggles da Home atualizam o estado por helper do próprio State e warnings privados sem uso foram removidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.113',
           changes: [
             'Iniciado o redesign amplo com um design system compartilhado para tema, cards, botões, chips, painéis e navegação.',
             'A Home agora destaca Monitor ao vivo, Modo transmissão e Modo Bike, com acessos rápidos para Câmeras, Mapa, Histórico, Diagnóstico e Ajustes.',

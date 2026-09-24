@@ -99,29 +99,29 @@ extension _HomeRedesign on _HomeScreenState {
         backgroundMonitoringEnabled: _backgroundMonitoringEnabled,
         voiceEnabled: _voiceEnabled,
         onMotionChanged: (value) {
-          setState(() => _motionOnly = value);
+          _updateHomeState(() => _motionOnly = value);
           _schedulePersist();
         },
         onClipChanged: (value) {
-          setState(() => _clipRecordingEnabled = value);
+          _updateHomeState(() => _clipRecordingEnabled = value);
           _schedulePersist();
         },
         onTrackingChanged: (value) {
-          setState(() => _trackingEnabled = value);
+          _updateHomeState(() => _trackingEnabled = value);
           _schedulePersist();
         },
         onEntryExitChanged: _trackingEnabled
             ? (value) {
-                setState(() => _announceEntryExit = value);
+                _updateHomeState(() => _announceEntryExit = value);
                 _schedulePersist();
               }
             : null,
         onBackgroundChanged: (value) {
-          setState(() => _backgroundMonitoringEnabled = value);
+          _updateHomeState(() => _backgroundMonitoringEnabled = value);
           _schedulePersist();
         },
         onVoiceChanged: (value) {
-          setState(() => _voiceEnabled = value);
+          _updateHomeState(() => _voiceEnabled = value);
           _schedulePersist();
         },
       ),

@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.113+113
+# Arquitetura — Vigia IA 1.0.114+114
 
 ## 1. Princípios
+
+## Correção 1.0.114 — integridade do redesign no analyzer
+
+- O design system mantém `ButtonStyle` compatível com Flutter 3.44.9 usando `minimumSize`.
+- `monitor_screen_multicamera.dart` preserva a lógica existente de seleção de fonte e HUD, com a estrutura de coleções corrigida sem alterar serviços de câmera ou IA.
+- Atualizações de estado disparadas pela extension da Home passam por `_HomeScreenState._updateHomeState`, mantendo a responsabilidade do `setState` dentro da subclasse de `State`.
+- Elementos privados sem uso foram retirados para manter `flutter analyze` livre dos warnings observados no Android-APK-82.
 
 ## Evolução 1.0.113 — design system e Home orientada a modos
 

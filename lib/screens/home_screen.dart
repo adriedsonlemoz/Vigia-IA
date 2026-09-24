@@ -75,6 +75,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _voiceEnabled = true;
   bool _autoStartTriggered = false;
 
+  void _updateHomeState(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+  }
+
   @override
   void initState() {
     super.initState();

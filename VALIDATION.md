@@ -1,5 +1,14 @@
-# Validação — Vigia IA 1.0.113+113
+# Validação — Vigia IA 1.0.114+114
 
+
+## 1.0.114+114 — correção Android-APK-82
+
+- Confirmar ausência de `minSize:` em `lib/core/vigia_design.dart` e presença de `minimumSize:` nos temas de botão.
+- Confirmar que `monitor_screen_multicamera.dart` mantém balanceados os delimitadores das listas do seletor de câmera e do `Stack` do monitor.
+- Confirmar que `home_screen_redesign.dart` não chama `setState` diretamente pela extension.
+- Confirmar remoção dos elementos privados sem uso reportados no log: `_MetricChip`, `_LiveDot` e `_showLandscapeQuickActions`.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- O próximo workflow deve reconfirmar `flutter analyze`, `flutter test` e o build APK, pois o ambiente local não possui Flutter/Android SDK.
 
 ## 1.0.113+113 — fundação visual, Home e navegação
 

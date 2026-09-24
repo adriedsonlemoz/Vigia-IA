@@ -442,6 +442,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
                       );
                     }),
                   ],
+                  ],
                 ],
               ),
             ),
@@ -1079,7 +1080,6 @@ extension _MonitorMulticamera on _MonitorScreenState {
                         ),
                       ],
                     ),
-                  ],
                   ],
                 ],
               ),
