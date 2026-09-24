@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.109 adiciona um atalho global no monitor Ao vivo para mostrar, ocultar ou voltar o mapa ao modo automático a partir do menu dos três pontinhos.",
-  "version": "1.0.109",
-  "build": 109
+  "notes": "A 1.0.110 adiciona o botão Mapa à fileira de ações do monitor e corrige o Android-APK-78 garantindo que o .gitignore seja preservado no ZIP-fonte.",
+  "version": "1.0.110",
+  "build": 110
 }

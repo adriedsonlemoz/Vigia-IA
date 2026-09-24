@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.109',
+          version: '1.0.110',
           current: true,
+          changes: [
+            'A fileira fixa do monitor agora tem cinco ações: Câmera, Mapa, Áudio, Painel e Ajustes.',
+            'O botão Mapa mostra ou oculta o mini mapa diretamente e destaca o estado quando ele está visível.',
+            'Corrigido o Android-APK-78: o ZIP-fonte volta a preservar o .gitignore exigido pela verificação de segurança da assinatura.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.109',
           changes: [
             'O menu dos três pontinhos do monitor Ao vivo agora traz um atalho Mostrar mapa / Ocultar mapa, funcionando mesmo fora do modo bicicleta.',
             'Quando o mapa foi forçado ou ocultado, o mesmo menu oferece Mapa automático para voltar ao comportamento inteligente anterior.',
@@ -998,8 +1007,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.109',
+          version: '1.0.110',
           current: true,
+          changes: [
+            'A fileira fixa do monitor agora tem cinco ações: Câmera, Mapa, Áudio, Painel e Ajustes.',
+            'O botão Mapa mostra ou oculta o mini mapa diretamente e destaca o estado quando ele está visível.',
+            'Corrigido o Android-APK-78: o ZIP-fonte volta a preservar o .gitignore exigido pela verificação de segurança da assinatura.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.109',
           changes: [
             'O menu dos três pontinhos do monitor Ao vivo agora traz um atalho Mostrar mapa / Ocultar mapa, funcionando mesmo fora do modo bicicleta.',
             'Quando o mapa foi forçado ou ocultado, o mesmo menu oferece Mapa automático para voltar ao comportamento inteligente anterior.',

@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.109+109' pubspec.yaml || fail 'Versao esperada 1.0.108+108 nao encontrada.'
+grep -Fxq 'version: 1.0.110+110' pubspec.yaml || fail 'Versao esperada 1.0.110+110 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.109';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.109.'
-grep -q 'static const int build = 109;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 109.'
-grep -q "version: '1.0.109'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.108.'
+grep -q "static const String version = '1.0.110';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.110.'
+grep -q 'static const int build = 110;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 110.'
+grep -q "version: '1.0.110'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.110.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.109+109' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.109+109.'
+grep -Fq 'version: 1.0.110+110' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.110+110.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.109"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.109.'
-grep -q '"build": 109' app_identity.json \
-  || fail 'app_identity.json nao esta no build 109.'
+grep -q '"version": "1.0.110"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.110.'
+grep -q '"build": 110' app_identity.json \
+  || fail 'app_identity.json nao esta no build 110.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.109+109' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.108+108.'
+grep -Fq 'Vigia IA 1.0.110+110' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.110+110.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2250,3 +2250,18 @@ grep -q '_setMonitorMapVisibilityQuick' lib/screens/monitor_screen_fullscreen.da
 grep -q 'name="LaunchTheme"' android/app/src/main/res/values/styles.xml || fail 'Android-APK-76: LaunchTheme ausente.'
 grep -q 'name="NormalTheme"' android/app/src/main/res/values/styles.xml || fail 'Android-APK-76: NormalTheme ausente.'
 grep -q 'android/app/src/main/res/values/styles.xml' .github/workflows/android-apk.yml || fail 'Workflow nao verifica integridade dos recursos Android.'
+
+# Evolucao do quinto botao e correcao Android-APK-78 - 1.0.110
+grep -Fq '## 1.0.110+110' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.110.'
+grep -q 'Evolução 1.0.110' README.md || fail 'README nao documenta 1.0.110.'
+grep -q "version: '1.0.110'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.110.'
+[[ -f RELEASE-1.0.110.md ]] || fail 'Notas da entrega 1.0.110 ausentes.'
+grep -q "label: 'Mapa'" lib/screens/monitor_screen_portrait.dart || fail 'Botao Mapa nao foi adicionado a fileira fixa.'
+grep -q 'MonitorMapVisibilityMode.hidden' lib/screens/monitor_screen_portrait.dart || fail 'Botao Mapa nao oculta o mini mapa.'
+grep -q 'MonitorMapVisibilityMode.always' lib/screens/monitor_screen_portrait.dart || fail 'Botao Mapa nao mostra o mini mapa.'
+[[ -f .gitignore ]] || fail 'Android-APK-78: .gitignore ausente.'
+grep -Fxq '*.jks' .gitignore || fail 'Android-APK-78: .gitignore nao bloqueia arquivos JKS.'
+grep -Fxq '*.keystore' .gitignore || fail 'Android-APK-78: .gitignore nao bloqueia arquivos keystore.'
+grep -Fxq 'android/key.properties' .gitignore || fail 'Android-APK-78: .gitignore nao bloqueia key.properties.'
+grep -Fq "'.gitignore'" tool/package_source.sh || fail 'Empacotador nao exige .gitignore no ZIP-fonte.'
+

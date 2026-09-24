@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.109+109
+# Arquitetura — Vigia IA 1.0.110+110
 
 ## 1. Princípios
+
+## Evolução 1.0.110 — ação fixa de mapa e integridade do pacote-fonte
+
+- `_buildPortraitActionRow()` agora distribui cinco ações com espaçamento reduzido e `FittedBox` já existente para evitar corte dos rótulos em telas estreitas.
+- O botão **Mapa** reutiliza `_setMonitorMapVisibilityQuick()`: quando visível envia `hidden`; quando oculto envia `always`. Não existe um segundo estado concorrente.
+- O estado ativo é refletido por ícone e `accent`, mantendo a leitura visual consistente com os demais controles do monitor.
+- O Android-APK-78 não chegou a `flutter analyze`: `verify_project.sh` falhou porque `.gitignore` não estava no ZIP submetido. O arquivo foi restaurado e o empacotamento oficial `tool/package_source.sh` permanece responsável por incluir e validar arquivos ocultos obrigatórios.
 
 ## Evolução 1.0.109 — atalho global do mapa no monitor
 

@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.109+109`
+> **Versão atual:** `1.0.110+110`
 
 ## Estado atual
 
-A `1.0.109+109` adiciona um atalho global no monitor Ao vivo para mostrar ou ocultar o mapa a partir do menu dos três pontinhos, mesmo fora do modo bicicleta, e permite voltar ao comportamento automático no mesmo local.
+A `1.0.110+110` coloca o controle do mapa diretamente na fileira de ações do monitor e corrige o Android-APK-78, que falhava porque o `.gitignore` não havia sido incluído no ZIP-fonte anterior.
+
+### Evolução 1.0.110 — quinto botão de mapa + correção Android-APK-78
+
+- a fileira fixa do monitor passa de quatro para cinco ações: **Câmera, Mapa, Áudio, Painel e Ajustes**;
+- **Mapa** alterna diretamente entre mostrar e ocultar o mini mapa, usando a mesma preferência persistida já existente;
+- o botão fica destacado quando o mapa está visível e continua funcionando fora do modo Bike;
+- restaurado `.gitignore` com bloqueio de `*.jks`, `*.keystore` e `android/key.properties`;
+- o ZIP final passa obrigatoriamente por `tool/package_source.sh`, que inclui arquivos ocultos necessários e falha se `.gitignore` estiver ausente.
 
 ### Evolução 1.0.109 — atalho global do mapa no monitor
 

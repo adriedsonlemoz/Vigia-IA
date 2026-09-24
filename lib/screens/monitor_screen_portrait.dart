@@ -465,6 +465,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
   }
 
   Widget _buildPortraitActionRow(BuildContext context) {
+    final mapVisible = _shouldShowMonitorMap;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: SizedBox(
@@ -480,7 +481,23 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                 onPressed: () => unawaited(_showCameraHub()),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _DashboardActionButton(
+                icon: mapVisible ? Icons.map_rounded : Icons.map_outlined,
+                label: 'Mapa',
+                accent: mapVisible,
+                compact: true,
+                onPressed: () => unawaited(
+                  _setMonitorMapVisibilityQuick(
+                    mapVisible
+                        ? MonitorMapVisibilityMode.hidden
+                        : MonitorMapVisibilityMode.always,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
             Expanded(
               child: _DashboardActionButton(
                 icon: _controller.voiceEnabled
@@ -492,7 +509,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                     _controller.setVoiceEnabled(!_controller.voiceEnabled),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Expanded(
               child: _DashboardActionButton(
                 icon: Icons.tune_rounded,
@@ -501,7 +518,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                 onPressed: () => unawaited(_showPortraitQuickPanel()),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Expanded(
               child: _DashboardActionButton(
                 icon: Icons.settings_outlined,

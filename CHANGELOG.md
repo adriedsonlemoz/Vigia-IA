@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.110+110 — 2026-09-24
+
+- A fileira fixa do monitor Ao vivo passa a ter cinco ações: **Câmera, Mapa, Áudio, Painel e Ajustes**.
+- O novo botão **Mapa** alterna diretamente entre exibir e ocultar o mini mapa e usa destaque visual quando está ativo.
+- O controle reutiliza `MonitorMapVisibilityMode.always/hidden`, portanto funciona também fora do modo Bike e mantém a preferência persistida.
+- Corrigido o Android-APK-78, que parava em `verify_project.sh` porque o ZIP anterior não continha `.gitignore`.
+- Restaurado `.gitignore` com proteção para `*.jks`, `*.keystore` e `android/key.properties`.
+- O empacotamento final usa `tool/package_source.sh`, cuja lista de arquivos obrigatórios inclui `.gitignore`, evitando repetir a regressão.
+- Versionamento, AppMetadata, `app_identity.json`, Mudanças, README, arquitetura, validação, testes e verificadores sincronizados em `1.0.110+110`.
+
 ## 1.0.109+109 — 2026-09-24
 
 - Monitor Ao vivo ganhou atalho global de mapa no menu dos três pontinhos, disponível também fora do modo bicicleta.

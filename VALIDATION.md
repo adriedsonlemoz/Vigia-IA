@@ -1,4 +1,13 @@
-# Validação — Vigia IA 1.0.109+109
+# Validação — Vigia IA 1.0.110+110
+
+## 1.0.110+110 — quinto botão de mapa + Android-APK-78
+
+- Confirmar que `_buildPortraitActionRow()` contém cinco `_DashboardActionButton` e inclui o rótulo **Mapa** entre Câmera e Áudio.
+- Confirmar que o botão chama `_setMonitorMapVisibilityQuick()` com `always` ao mostrar e `hidden` ao ocultar.
+- Confirmar que `.gitignore` existe e bloqueia `*.jks`, `*.keystore` e `android/key.properties`.
+- Confirmar que `tool/package_source.sh` mantém `.gitignore` na lista de arquivos obrigatórios do ZIP.
+- `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh` devem passar em `1.0.110+110`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e o build APK final ainda precisam ser confirmados pelo workflow.
 
 ## 1.0.109+109 — atalho global do mapa no monitor
 
