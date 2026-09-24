@@ -117,6 +117,7 @@ class RouteExplorerSettings {
     this.voiceEnabled = true,
     this.notificationEnabled = true,
     this.searchAheadWhenMoving = true,
+    this.alertDistanceMeters = 5000,
   });
 
   final int radiusKm;
@@ -125,6 +126,7 @@ class RouteExplorerSettings {
   final bool voiceEnabled;
   final bool notificationEnabled;
   final bool searchAheadWhenMoving;
+  final int alertDistanceMeters;
 
   RouteExplorerSettings copyWith({
     int? radiusKm,
@@ -133,6 +135,7 @@ class RouteExplorerSettings {
     bool? voiceEnabled,
     bool? notificationEnabled,
     bool? searchAheadWhenMoving,
+    int? alertDistanceMeters,
   }) {
     return RouteExplorerSettings(
       radiusKm: radiusKm ?? this.radiusKm,
@@ -142,6 +145,7 @@ class RouteExplorerSettings {
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       searchAheadWhenMoving:
           searchAheadWhenMoving ?? this.searchAheadWhenMoving,
+      alertDistanceMeters: alertDistanceMeters ?? this.alertDistanceMeters,
     );
   }
 
@@ -152,6 +156,7 @@ class RouteExplorerSettings {
         'voiceEnabled': voiceEnabled,
         'notificationEnabled': notificationEnabled,
         'searchAheadWhenMoving': searchAheadWhenMoving,
+        'alertDistanceMeters': alertDistanceMeters,
       };
 
   factory RouteExplorerSettings.fromJson(Map<String, dynamic> json) {
@@ -174,6 +179,7 @@ class RouteExplorerSettings {
       voiceEnabled: json['voiceEnabled'] as bool? ?? true,
       notificationEnabled: json['notificationEnabled'] as bool? ?? true,
       searchAheadWhenMoving: json['searchAheadWhenMoving'] as bool? ?? true,
+      alertDistanceMeters: (json['alertDistanceMeters'] as num?)?.toInt() ?? 5000,
     );
   }
 }

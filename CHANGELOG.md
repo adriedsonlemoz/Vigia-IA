@@ -1,3 +1,13 @@
+## 1.0.112+112 — 2026-09-24
+
+- Redesenhado o botão Mapa: abre diretamente o painel **Próximos pontos**, separado das configurações.
+- Adicionados filtros rápidos Todos, Postos, Comida, Saúde, Água e Outros, com distância, categoria e origem Online/Offline.
+- Criado painel separado **Configurações do mapa e percurso** para raio 5/10/20/50 km, busca ao redor/no caminho, categorias, alertas, fala, notificação, distância do aviso, dados offline, mapas offline e mini mapa.
+- `RouteExplorerService` foi reaproveitado e ampliado com distância configurável de alerta e exclusão segura da lista offline, sem duplicar busca, persistência ou alertas.
+- Botão Câmera agora alterna entre câmera ligada, câmera desligada e mapa ocupando a área principal da transmissão.
+- Paisagem passa a manter as cinco ações inferiores Câmera, Mapa, Áudio, Painel e Ajustes.
+- Versionamento e verificadores sincronizados em `1.0.112+112`.
+
 # CHANGELOG
 
 ## 1.0.111+111 — 2026-09-24

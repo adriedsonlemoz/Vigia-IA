@@ -11,7 +11,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         final bikeSnapshot = _effectiveBikeSnapshot;
         final previewRatio = _controller.previewAspectRatio;
         final horizontalFeed = (previewRatio ?? 0) > 1.05;
-        final showMap = _shouldShowMonitorMap;
+        final showMap = _shouldShowMonitorMap && _primaryContentMode != _MonitorPrimaryContentMode.map;
         final width = constraints.maxWidth - 20;
         final calculatedCameraHeight = previewRatio != null && previewRatio > 0
             ? width / previewRatio
@@ -24,11 +24,13 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
-        final cameraHeight = showMap
-            ? baseCameraHeight
-            : (baseCameraHeight + mapHeight * 0.62)
-                .clamp(baseCameraHeight, constraints.maxHeight * 0.64)
-                .toDouble();
+        final cameraHeight = _primaryContentMode == _MonitorPrimaryContentMode.map
+            ? (constraints.maxHeight * 0.58).clamp(330.0, 620.0).toDouble()
+            : showMap
+                ? baseCameraHeight
+                : (baseCameraHeight + mapHeight * 0.62)
+                    .clamp(baseCameraHeight, constraints.maxHeight * 0.64)
+                    .toDouble();
 
         return ColoredBox(
           color: scheme.surface,
@@ -80,9 +82,10 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         onDoubleTap: _fullscreenChanging
                             ? null
                             : () => unawaited(_toggleFullscreen()),
-                        child: _buildAdaptiveCameraStage(
+                        child: _buildPrimaryMonitorStage(
                           context,
                           portraitEmbedded: true,
+                          mapHeight: cameraHeight,
                         ),
                       ),
                     ),
@@ -462,6 +465,39 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         ),
       ),
     );
+  }
+
+  Widget _buildPrimaryMonitorStage(
+    BuildContext context, {
+    required bool portraitEmbedded,
+    required double mapHeight,
+  }) {
+    switch (_primaryContentMode) {
+      case _MonitorPrimaryContentMode.camera:
+        return _buildAdaptiveCameraStage(context, portraitEmbedded: portraitEmbedded);
+      case _MonitorPrimaryContentMode.cameraOff:
+        return ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.videocam_off_rounded, size: 46),
+                const SizedBox(height: 10),
+                const Text('Câmera desligada', style: TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  onPressed: () => unawaited(_setPrimaryContentMode(_MonitorPrimaryContentMode.camera)),
+                  icon: const Icon(Icons.videocam_rounded),
+                  label: const Text('Ligar câmera'),
+                ),
+              ],
+            ),
+          ),
+        );
+      case _MonitorPrimaryContentMode.map:
+        return _buildPortraitMapCard(context, height: mapHeight);
+    }
   }
 
   Widget _buildPortraitActionRow(BuildContext context) {

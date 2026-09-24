@@ -50,6 +50,7 @@ part 'monitor_screen_portrait.dart';
 part 'monitor_screen_landscape_dashboard.dart';
 part 'monitor_screen_map_explorer.dart';
 
+enum _MonitorPrimaryContentMode { camera, cameraOff, map }
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
     super.key,
@@ -96,7 +97,7 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _fullscreenControlsVisible = true;
   bool _fillBeforeFullscreen = false;
   Timer? _fullscreenControlsTimer;
-  bool _landscapePanelExpanded = false;
+  bool _landscapePanelExpanded = false; _MonitorPrimaryContentMode _primaryContentMode = _MonitorPrimaryContentMode.camera;
   Offset? _portraitPipOffset;
   @override
   void initState() {
@@ -158,8 +159,8 @@ class _MonitorScreenState extends State<MonitorScreen>
             ? SystemUiService.immersive()
             : SystemUiService.edgeToEdge(),
       );
-      unawaited(_controller.resume());
-      unawaited(_secondaryController?.resume());
+      if (_primaryContentMode == _MonitorPrimaryContentMode.camera) unawaited(_controller.resume());
+      if (_primaryContentMode == _MonitorPrimaryContentMode.camera) unawaited(_secondaryController?.resume());
       return;
     }
     if (state == AppLifecycleState.inactive && _fullscreenChanging) return;

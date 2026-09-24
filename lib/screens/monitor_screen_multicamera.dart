@@ -1,6 +1,18 @@
 part of 'monitor_screen.dart';
 
 extension _MonitorMulticamera on _MonitorScreenState {
+  Future<void> _setPrimaryContentMode(_MonitorPrimaryContentMode mode) async {
+    if (_primaryContentMode == mode) return;
+    _updateMulticameraState(() => _primaryContentMode = mode);
+    if (mode == _MonitorPrimaryContentMode.camera) {
+      await _controller.resume();
+      await _secondaryController?.resume();
+    } else {
+      await _controller.suspend();
+      await _secondaryController?.suspend();
+    }
+  }
+
   VideoSourceConfig _sourceForEndpoint(CameraEndpoint camera) =>
       switch (camera.type) {
         CameraEndpointType.local => VideoSourceConfig(
@@ -299,9 +311,23 @@ extension _MonitorMulticamera on _MonitorScreenState {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Escolha a fonte principal e, se quiser, uma segunda câmera em janela pequena.',
+                    'Escolha o que ocupa a área principal e, quando a câmera estiver ligada, selecione as fontes.',
                   ),
                   const SizedBox(height: 12),
+                  SegmentedButton<_MonitorPrimaryContentMode>(
+                    segments: const [
+                      ButtonSegment(value: _MonitorPrimaryContentMode.camera, icon: Icon(Icons.videocam_rounded), label: Text('Ligada')),
+                      ButtonSegment(value: _MonitorPrimaryContentMode.cameraOff, icon: Icon(Icons.videocam_off_rounded), label: Text('Desligada')),
+                      ButtonSegment(value: _MonitorPrimaryContentMode.map, icon: Icon(Icons.map_rounded), label: Text('Mapa')),
+                    ],
+                    selected: <_MonitorPrimaryContentMode>{_primaryContentMode},
+                    onSelectionChanged: (selection) {
+                      unawaited(_setPrimaryContentMode(selection.first));
+                      setSheetState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  if (_primaryContentMode == _MonitorPrimaryContentMode.camera) ...[
                   SegmentedButton<bool>(
                     segments: const [
                       ButtonSegment<bool>(
@@ -1053,6 +1079,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
                         ),
                       ],
                     ),
+                  ],
                   ],
                 ],
               ),

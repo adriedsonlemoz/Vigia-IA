@@ -1,4 +1,12 @@
-# Validação — Vigia IA 1.0.111+111
+# Validação — Vigia IA 1.0.112+112
+
+
+## 1.0.112+112 — Próximos pontos e mapa expandido
+
+- Validar separação entre **Próximos pontos** e **Configurações do mapa e percurso**.
+- Validar filtros rápidos e indicação Online/Offline.
+- Validar Câmera: Ligada, Desligada e Mapa na área principal em retrato e paisagem.
+- Validar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
 
 ## 1.0.111+111 — mapa e percurso com lista offline e alertas
 

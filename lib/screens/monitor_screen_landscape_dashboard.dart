@@ -400,6 +400,34 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
                                     : () => unawaited(_controller.retry()),
                               ),
                             ),
+                          if (_primaryContentMode != _MonitorPrimaryContentMode.camera)
+                            Positioned.fill(
+                              child: _primaryContentMode == _MonitorPrimaryContentMode.map
+                                  ? LayoutBuilder(
+                                      builder: (context, constraints) => _buildPortraitMapCard(
+                                        context,
+                                        height: constraints.maxHeight,
+                                      ),
+                                    )
+                                  : ColoredBox(
+                                      color: Colors.black,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.videocam_off_rounded, size: 48),
+                                            const SizedBox(height: 10),
+                                            const Text('Câmera desligada', style: TextStyle(fontWeight: FontWeight.w800)),
+                                            TextButton.icon(
+                                              onPressed: () => unawaited(_setPrimaryContentMode(_MonitorPrimaryContentMode.camera)),
+                                              icon: const Icon(Icons.videocam_rounded),
+                                              label: const Text('Ligar câmera'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                            ),
                         ],
                       ),
                     ),
@@ -756,49 +784,15 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _DashboardActionButton(
-                    icon: Icons.close_rounded,
-                    label: 'Sair',
-                    onPressed: () => unawaited(_closeMonitor()),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DashboardActionButton(
-                    icon: Icons.radar_rounded,
-                    label: 'Detectados $_currentDetectionCount',
-                    onPressed: () => unawaited(_showLandscapeDetections()),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DashboardActionButton(
-                    icon: Icons.map_outlined,
-                    label: 'Mapa',
-                    accent: true,
-                    onPressed: () => unawaited(_showMapExplorerSheet()),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DashboardActionButton(
-                    icon: _controller.voiceEnabled
-                        ? Icons.volume_up_rounded
-                        : Icons.volume_off_rounded,
-                    label: 'Áudio',
-                    onPressed: () =>
-                        _controller.setVoiceEnabled(!_controller.voiceEnabled),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DashboardActionButton(
-                    icon: Icons.more_horiz_rounded,
-                    label: 'Mais',
-                    onPressed: () => unawaited(_showLandscapeQuickActions()),
-                  ),
-                ),
+                Expanded(child: _DashboardActionButton(icon: Icons.videocam_outlined, label: 'Câmera', accent: _primaryContentMode != _MonitorPrimaryContentMode.cameraOff, onPressed: () => unawaited(_showCameraHub()))),
+                const SizedBox(width: 8),
+                Expanded(child: _DashboardActionButton(icon: Icons.map_outlined, label: 'Mapa', accent: true, onPressed: () => unawaited(_showMapExplorerSheet()))),
+                const SizedBox(width: 8),
+                Expanded(child: _DashboardActionButton(icon: _controller.voiceEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded, label: 'Áudio', onPressed: () => _controller.setVoiceEnabled(!_controller.voiceEnabled))),
+                const SizedBox(width: 8),
+                Expanded(child: _DashboardActionButton(icon: Icons.tune_rounded, label: 'Painel', onPressed: () => unawaited(_showSessionStatus()))),
+                const SizedBox(width: 8),
+                Expanded(child: _DashboardActionButton(icon: Icons.settings_outlined, label: 'Ajustes', onPressed: () => unawaited(_openStandardScreen(const SettingsScreen())))),
               ],
             ),
           ],

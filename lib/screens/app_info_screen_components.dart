@@ -65,12 +65,21 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.111',
+          version: '1.0.112',
           current: true,
           changes: [
-            'O botão Mapa agora abre o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
-            'A nova exploração consulta locais úteis por categoria: postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
-            'A lista pode ser salva para uso offline e também alimenta alertas automáticos por fala e notificação durante o percurso.',
+            'Mapa abre diretamente Próximos pontos, com filtros rápidos, distância, categoria e origem Online/Offline.',
+            'Configurações do mapa e percurso ficam separadas na engrenagem, incluindo raio, categorias, alertas, dados e mapas offline.',
+            'Câmera permite Ligada, Desligada ou Mapa, que expande para ocupar a área principal da transmissão.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.111',
+          changes: [
+            'O botão Mapa passou a abrir o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
+            'A exploração consulta postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
+            'A lista pode ser salva para uso offline e alimentar alertas por fala e notificação.',
           ],
         ),
         SizedBox(height: 10),
@@ -1016,12 +1025,21 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.111',
+          version: '1.0.112',
           current: true,
           changes: [
-            'O botão Mapa agora abre o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
-            'A nova exploração consulta locais úteis por categoria: postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
-            'A lista pode ser salva para uso offline e também alimenta alertas automáticos por fala e notificação durante o percurso.',
+            'Mapa abre diretamente Próximos pontos, com filtros rápidos, distância, categoria e origem Online/Offline.',
+            'Configurações do mapa e percurso ficam separadas na engrenagem, incluindo raio, categorias, alertas, dados e mapas offline.',
+            'Câmera permite Ligada, Desligada ou Mapa, que expande para ocupar a área principal da transmissão.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.111',
+          changes: [
+            'O botão Mapa passou a abrir o painel Mapa e percurso com busca por raio, lista de resultados e atalhos do mapa.',
+            'A exploração consulta postos, restaurantes, paradas, oficinas, saúde, água/banheiro e rios/pontes.',
+            'A lista pode ser salva para uso offline e alimentar alertas por fala e notificação.',
           ],
         ),
         SizedBox(height: 10),

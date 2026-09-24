@@ -141,6 +141,29 @@ class RouteExplorerService extends ChangeNotifier {
     await _persistNow();
   }
 
+  Future<void> setAlertDistanceMeters(int value) async {
+    await initialize();
+    if (_settings.alertDistanceMeters == value) return;
+    _settings = _settings.copyWith(alertDistanceMeters: value);
+    _deliveredThresholds.clear();
+    notifyListeners();
+    await _persistNow();
+  }
+
+  Future<void> clearOfflineResults() async {
+    await initialize();
+    _offlineResults = const <RouteExplorerResult>[];
+    _offlineUpdatedAt = null;
+    if (_lastSource == 'offline') {
+      _results = const <RouteExplorerResult>[];
+      _lastSource = 'none';
+      _resultsUpdatedAt = null;
+    }
+    _statusMessage = 'Lista offline excluída.';
+    notifyListeners();
+    await _persistNow();
+  }
+
   Future<List<RouteExplorerResult>> searchNow({
     bool requestPermission = true,
     bool saveAsOffline = false,
@@ -251,7 +274,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.111');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.112');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -574,7 +597,8 @@ class RouteExplorerService extends ChangeNotifier {
           !_isAheadOrNearby(current, LatLng(item.latitude, item.longitude))) {
         continue;
       }
-      final thresholds = <int>[5000, 1000];
+      final thresholds = <int>{_settings.alertDistanceMeters, 1000}.toList()
+        ..sort((a, b) => b.compareTo(a));
       final delivered = _deliveredThresholds.putIfAbsent(item.id, () => <int>{});
       for (final threshold in thresholds) {
         if (distanceMeters <= threshold && !delivered.contains(threshold)) {

@@ -1,6 +1,13 @@
-# Arquitetura — Vigia IA 1.0.111+111
+# Arquitetura — Vigia IA 1.0.112+112
 
 ## 1. Princípios
+
+## Evolução 1.0.112 — Próximos pontos separado das configurações
+
+- `monitor_screen_map_explorer.dart` mantém a lógica de `RouteExplorerService` e divide a UX em dois painéis: **Próximos pontos** para consulta rápida e **Configurações do mapa e percurso** para preferências e dados offline.
+- O filtro rápido é apenas de apresentação; as categorias efetivamente consultadas continuam persistidas no serviço, evitando um segundo sistema de busca.
+- `RouteExplorerSettings.alertDistanceMeters` torna configurável o primeiro aviso de aproximação, preservando também o aviso final de 1 km.
+- `_MonitorPrimaryContentMode` controla somente a apresentação principal do monitor: câmera, câmera desligada ou mapa expandido, sem remover fontes e multicâmera já cadastradas.
 
 ## Evolução 1.0.111 — painel Mapa e percurso
 

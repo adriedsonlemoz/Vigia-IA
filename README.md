@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.111+111`
+> **Versão atual:** `1.0.112+112`
 
 ## Estado atual
 
-A `1.0.111+111` transforma o botão Mapa em um painel “Mapa e percurso”, com exploração por raio, lista de pontos úteis, suporte offline e alertas por fala/notificação.
+A `1.0.112+112` separa o uso rápido em **Próximos pontos** das configurações do mapa e permite usar o mapa expandido no lugar da câmera no monitor.
+
+
+### Evolução 1.0.112 — Próximos pontos e mapa expandido
+
+- O botão **Mapa** abre diretamente **Próximos pontos**, com filtros rápidos, distância, categoria, origem Online/Offline e atualização sem misturar configurações.
+- A engrenagem abre **Configurações do mapa e percurso**, reaproveitando `RouteExplorerService`, mapas offline, alertas, fala/notificação e preferência do mini mapa.
+- O botão **Câmera** oferece **Ligada**, **Desligada** e **Mapa**; no modo Mapa a área principal da transmissão é ocupada pelo mapa expandido.
+- Retrato e paisagem mantêm as cinco ações fixas: Câmera, Mapa, Áudio, Painel e Ajustes.
 
 ### Evolução 1.0.111 — mapa e percurso com pontos úteis
 

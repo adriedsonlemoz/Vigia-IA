@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.111 transforma o botão Mapa em um painel Mapa e percurso com busca por raio, lista offline e alertas de locais úteis ao longo do caminho.",
-  "version": "1.0.111",
-  "build": 111
+  "notes": "A 1.0.112 separa Próximos pontos das configurações do mapa e permite câmera ligada, desligada ou mapa expandido no monitor.",
+  "version": "1.0.112",
+  "build": 112
 }
