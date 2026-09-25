@@ -10,6 +10,7 @@ class BikeApproachStatus {
     this.growthRatePerSecond = 0,
     this.confidence = 0,
     this.simulated = false,
+    this.vehicleDetected = false,
   });
 
   factory BikeApproachStatus.clear(DateTime now) => BikeApproachStatus(
@@ -28,6 +29,7 @@ class BikeApproachStatus {
   final double growthRatePerSecond;
   final double confidence;
   final bool simulated;
+  final bool vehicleDetected;
 
   bool get visible => level != BikeApproachLevel.clear;
   bool get shouldAlert =>

@@ -34,6 +34,7 @@ extension _MonitorControllerEventSupport on MonitorController {
         growthRatePerSecond: 1 / ttc,
         confidence: 0.98,
         simulated: true,
+        vehicleDetected: true,
       );
     } else if (!_bikeConfig.enabled || !_bikeConfig.approachAlertsEnabled) {
       _bikeApproachEstimator.reset();
@@ -57,6 +58,7 @@ extension _MonitorControllerEventSupport on MonitorController {
     if (previous.level != next.level ||
         previous.trackId != next.trackId ||
         previous.simulated != next.simulated ||
+        previous.vehicleDetected != next.vehicleDetected ||
         (next.visible && ttcChanged)) {
       _notify();
     }

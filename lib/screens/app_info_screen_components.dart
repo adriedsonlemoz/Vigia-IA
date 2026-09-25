@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.142',
+          version: '1.0.143',
           current: true,
+          changes: [
+            'PiP da câmera analisada no mapa passa a mostrar aproximação de veículos usando o mesmo estimador TTC do Modo Bike.',
+            'O indicador diferencia veículo sem aproximação, atenção, risco alto e risco crítico sem bloquear informações da navegação.',
+            'Novo sistema global de Novidades da atualização aparece uma única vez por versão instalada e funciona offline.',
+            'A versão instalada é lida do Android e o histórico exibido é persistido localmente por versão + build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.142',
           changes: [
             'Corrigido o Android-APK-107: o teste do painel de POI agora rola até a comodidade realmente ficar visível.',
             'A rolagem usa scrollUntilVisible e não depende mais de um deslocamento fixo que podia apenas expandir o painel.',
@@ -1311,8 +1321,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.142',
+          version: '1.0.143',
           current: true,
+          changes: [
+            'PiP da câmera analisada no mapa passa a mostrar aproximação de veículos usando o mesmo estimador TTC do Modo Bike.',
+            'O indicador diferencia veículo sem aproximação, atenção, risco alto e risco crítico sem bloquear informações da navegação.',
+            'Novo sistema global de Novidades da atualização aparece uma única vez por versão instalada e funciona offline.',
+            'A versão instalada é lida do Android e o histórico exibido é persistido localmente por versão + build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.142',
           changes: [
             'Corrigido o Android-APK-107: o teste do painel de POI agora rola até a comodidade realmente ficar visível.',
             'A rolagem usa scrollUntilVisible e não depende mais de um deslocamento fixo que podia apenas expandir o painel.',

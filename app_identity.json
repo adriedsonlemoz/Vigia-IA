@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.142 corrige o Android-APK-107 tornando robusta a rolagem do teste do painel de POI até conteúdo lazy fora da dobra.",
-  "version": "1.0.142",
-  "build": 142
+  "notes": "A 1.0.143 integra o estimador de aproximação do Modo Bike ao PiP traseiro do mapa e adiciona o sistema global de Novidades da atualização por versão.",
+  "version": "1.0.143",
+  "build": 143
 }

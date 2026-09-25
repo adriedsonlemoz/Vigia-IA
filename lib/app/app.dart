@@ -10,6 +10,7 @@ import '../services/appearance_settings_service.dart';
 import '../services/app_launch_mode_service.dart';
 import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
+import '../widgets/update_news_host.dart';
 
 class VigiaIaApp extends StatelessWidget {
   const VigiaIaApp({super.key});
@@ -28,7 +29,7 @@ class VigiaIaApp extends StatelessWidget {
         themeMode: appearance.themeMode,
         theme: _theme(brightness: Brightness.light, seed: appearance.seedColor),
         darkTheme: _theme(brightness: Brightness.dark, seed: appearance.seedColor),
-        home: const _StartupGate(),
+        home: const UpdateNewsHost(child: _StartupGate()),
       ),
     );
   }

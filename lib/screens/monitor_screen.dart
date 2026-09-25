@@ -980,22 +980,6 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  Widget _mapMonitoringScreen({RouteExplorerResult? focus}) {
-    final secondary = _secondaryController;
-    return MapMonitoringScreen(
-      cameraPreviewBuilder: (_) => _controller.buildPreview(),
-      cameraAspectRatio: _controller.previewAspectRatio,
-      cameraListenable: _controller,
-      cameraAspectRatioProvider: () => _controller.previewAspectRatio,
-      externalCameraSourceProvider: (second) => second ? secondary?.sourceConfig : _controller.sourceConfig,
-      secondaryCameraPreviewBuilder:
-          secondary == null ? null : (_) => secondary.buildPreview(),
-      secondaryCameraListenable: secondary,
-      secondaryCameraAspectRatioProvider:
-          secondary == null ? null : () => secondary.previewAspectRatio,
-      initialPointOfInterest: focus,
-    );
-  }
 
   Future<void> _openStandardScreen(Widget screen) async {
     if (_fullscreen) await _toggleFullscreen();

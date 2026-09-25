@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.142+142
+# Validação Vigia IA 1.0.143+143
+
+
+## 1.0.143+143 — aproximação de veículos + novidades da atualização
+
+- Confirmar que o mapa aberto pelo Monitor mostra o estado de aproximação somente no PiP da câmera principal analisada e nunca nas câmeras abertas apenas para visualização pelo mapa.
+- Validar veículo sem aproximação como `sem risco`, aproximação em observação, risco alto/crítico e TTC quando calculável.
+- Confirmar que o overlay permanece dentro do PiP e não altera as reservas do HUD, banner de navegação ou card de POI.
+- Executar `test/bike_approach_estimator_test.dart` e `test/map_bike_approach_overlay_test.dart`.
+- Executar `test/update_news_service_test.dart`: primeira abertura mostra; segunda não; nova versão mostra novamente; salto de versão agrega releases; estado ausente/corrompido permanece seguro.
+- Confirmar no Android que `appVersionInfo` retorna `versionName/versionCode` do pacote instalado e que `update_news_state.json` registra `1.0.143+143` após fechar o modal.
+- Confirmar que fechar o modal por `Entendi`, toque externo ou voltar não bloqueia a inicialização e que falha de persistência também libera o app.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow quando o SDK Flutter estiver disponível.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- Limitação local: o ambiente atual não possui os executáveis Flutter/Dart, portanto `flutter analyze`, `flutter test` e build Android não puderam ser executados aqui.
 
 
 ## 1.0.142+142 — buildfix Android-APK-107

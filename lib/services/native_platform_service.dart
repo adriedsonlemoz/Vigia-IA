@@ -3,10 +3,19 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../core/app_metadata.dart';
 import '../models/alert_preferences.dart';
 import '../models/device_telemetry.dart';
 import '../models/system_health.dart';
 import 'error_log_service.dart';
+
+
+class AppVersionInfo {
+  const AppVersionInfo({required this.version, required this.build});
+
+  final String version;
+  final int build;
+}
 
 class CameraPermissionStatus {
   const CameraPermissionStatus({
@@ -57,6 +66,29 @@ class NativePlatformService {
 
   static final NativePlatformService instance = NativePlatformService._();
   static const MethodChannel _channel = MethodChannel('vigiaia/native');
+
+
+  Future<AppVersionInfo> appVersionInfo() async {
+    if (!Platform.isAndroid) {
+      return const AppVersionInfo(
+        version: AppMetadata.version,
+        build: AppMetadata.build,
+      );
+    }
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>('appVersionInfo');
+      final version = raw?['versionName'] as String?;
+      final buildValue = raw?['versionCode'];
+      final build = buildValue is num ? buildValue.toInt() : null;
+      if (version != null && version.isNotEmpty && build != null) {
+        return AppVersionInfo(version: version, build: build);
+      }
+    } catch (_) {}
+    return const AppVersionInfo(
+      version: AppMetadata.version,
+      build: AppMetadata.build,
+    );
+  }
 
   Future<String> protectSecret(String value) async {
     if (value.isEmpty) return '';

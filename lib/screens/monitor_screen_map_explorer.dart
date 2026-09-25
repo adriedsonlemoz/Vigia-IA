@@ -3,6 +3,28 @@ part of 'monitor_screen.dart';
 enum _RouteQuickFilter { all, fuel, food, health, water, nature, travel, other }
 
 extension _MonitorScreenMapExplorer on _MonitorScreenState {
+  Widget _mapMonitoringScreen({RouteExplorerResult? focus}) {
+    final secondary = _secondaryController;
+    return MapMonitoringScreen(
+      cameraPreviewBuilder: (_) => _controller.buildPreview(),
+      cameraAspectRatio: _controller.previewAspectRatio,
+      cameraListenable: _controller,
+      cameraAspectRatioProvider: () => _controller.previewAspectRatio,
+      externalCameraSourceProvider: (second) => second ? secondary?.sourceConfig : _controller.sourceConfig,
+      secondaryCameraPreviewBuilder:
+          secondary == null ? null : (_) => secondary.buildPreview(),
+      secondaryCameraListenable: secondary,
+      secondaryCameraAspectRatioProvider:
+          secondary == null ? null : () => secondary.previewAspectRatio,
+      bikeApproachStatusProvider: () => _controller.bikeApproachStatus,
+      bikeApproachEnabledProvider: () =>
+          _controller.bikeModeConfig.enabled &&
+          _controller.bikeModeConfig.approachAlertsEnabled,
+      initialPointOfInterest: focus,
+    );
+  }
+
+
   Future<void> _showMapExplorerSheet() async {
     await _routeExplorer.initialize();
     if (!mounted) return;

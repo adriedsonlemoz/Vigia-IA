@@ -82,7 +82,21 @@ class BikeApproachEstimator {
       }
     }
 
-    return best ?? BikeApproachStatus.clear(now);
+    if (best != null) return best;
+    if (vehicles.isNotEmpty) {
+      final strongest = vehicles.reduce(
+        (current, candidate) =>
+            candidate.confidence > current.confidence ? candidate : current,
+      );
+      return BikeApproachStatus(
+        level: BikeApproachLevel.clear,
+        updatedAt: now,
+        label: strongest.label,
+        confidence: strongest.confidence,
+        vehicleDetected: true,
+      );
+    }
+    return BikeApproachStatus.clear(now);
   }
 
   void reset() {
@@ -251,6 +265,7 @@ class _ApproachTrack {
       estimatedTtcSeconds: ttc,
       growthRatePerSecond: smoothedScaleGrowth,
       confidence: confidence,
+      vehicleDetected: true,
     );
   }
 }

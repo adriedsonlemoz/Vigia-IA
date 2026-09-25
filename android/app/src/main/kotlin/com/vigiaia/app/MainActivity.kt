@@ -213,6 +213,24 @@ class MainActivity : FlutterActivity() {
 
     private fun handleNativeCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "appVersionInfo" -> {
+                try {
+                    @Suppress("DEPRECATION")
+                    val info = packageManager.getPackageInfo(packageName, 0)
+                    val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        info.longVersionCode
+                    } else {
+                        @Suppress("DEPRECATION")
+                        info.versionCode.toLong()
+                    }
+                    result.success(mapOf(
+                        "versionName" to (info.versionName ?: ""),
+                        "versionCode" to versionCode,
+                    ))
+                } catch (error: Throwable) {
+                    result.error("app_version", error.message, null)
+                }
+            }
             "protectSecret" -> {
                 try {
                     result.success(protectSecret(call.argument<String>("value") ?: ""))

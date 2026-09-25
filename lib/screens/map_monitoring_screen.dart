@@ -9,6 +9,7 @@ import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../controllers/secondary_camera_controller.dart';
+import '../models/bike_approach_status.dart';
 import '../models/camera_endpoint.dart';
 import '../models/map_navigation_target.dart';
 import '../models/map_cycling_route.dart';
@@ -34,6 +35,7 @@ import '../services/route_explorer_service.dart';
 import '../services/system_ui_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/map_poi_details_sheet.dart';
+import '../widgets/map_bike_approach_overlay.dart';
 
 enum _MapPoiQuickFilter { all, fuel, food, health, water, nature, travel, other }
 
@@ -52,6 +54,8 @@ class MapMonitoringScreen extends StatefulWidget {
     this.secondaryCameraPreviewBuilder,
     this.secondaryCameraListenable,
     this.secondaryCameraAspectRatioProvider,
+    this.bikeApproachStatusProvider,
+    this.bikeApproachEnabledProvider,
     this.initialPointOfInterest,
   });
 
@@ -63,6 +67,8 @@ class MapMonitoringScreen extends StatefulWidget {
   final WidgetBuilder? secondaryCameraPreviewBuilder;
   final Listenable? secondaryCameraListenable;
   final double? Function()? secondaryCameraAspectRatioProvider;
+  final BikeApproachStatus Function()? bikeApproachStatusProvider;
+  final bool Function()? bikeApproachEnabledProvider;
   final RouteExplorerResult? initialPointOfInterest;
 
   @override
@@ -1272,6 +1278,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   double? _cameraFallbackAspectRatioFor(bool secondary) {
     if (secondary) return 16 / 9;
     return _primaryUsesExternal ? widget.cameraAspectRatio : 16 / 9;
+  }
+
+  BikeApproachStatus? _bikeApproachForPip(bool secondary) {
+    if (secondary || !_primaryUsesExternal) return null;
+    if (widget.bikeApproachEnabledProvider?.call() != true) return null;
+    final source = _activeCameraConfig(false);
+    if (source == null || source.isFrontCameraTest) return null;
+    final status = widget.bikeApproachStatusProvider?.call();
+    if (status == null || status.updatedAt.millisecondsSinceEpoch <= 0) return null;
+    return status;
   }
 
   List<RouteExplorerResult> get _visiblePois => _routeExplorer.results
@@ -3067,6 +3083,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         raw.dy.clamp(minY, maxY).toDouble(),
       );
       final label = _activeCameraLabel(secondary);
+      final bikeApproach = _bikeApproachForPip(secondary);
 
       Future<void> snapAndPersist() async {
         final current = secondary
@@ -3208,6 +3225,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ),
                         ),
                       ),
+                      if (bikeApproach != null)
+                        Positioned(
+                          left: 4,
+                          right: 4,
+                          bottom: 4,
+                          child: MapBikeApproachOverlay(status: bikeApproach),
+                        ),
                       Positioned(
                         right: 4,
                         top: 4,

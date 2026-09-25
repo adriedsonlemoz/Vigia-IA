@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.142+142`
+> **Versão atual:** `1.0.143+143`
 
 ## Estado atual
 
-A `1.0.142+142` é um buildfix do Android-APK-107: torna determinística a rolagem do teste do painel de POI até uma comodidade criada de forma lazy fora da dobra.
+A `1.0.143+143` inicia o bloco de aproximação de veículos no mapa: o PiP que reutiliza a câmera analisada pelo Monitor passa a exibir o estado do estimador TTC já existente no Modo Bike. A mesma versão inaugura o sistema global de Novidades da atualização, mostrado somente uma vez por versão instalada.
+
+### Evolução 1.0.143 — aproximação de veículos + novidades da atualização
+
+- O mapa reutiliza `MonitorController.bikeApproachStatus`; não existe um segundo estimador nem uma segunda inferência para o PiP.
+- O PiP analisado distingue veículo detectado sem aproximação, aproximação em observação, risco alto e risco crítico, incluindo TTC quando disponível.
+- A informação fica em uma faixa compacta dentro do PiP e não altera as reservas de HUD, rota ou cards de navegação.
+- Câmeras abertas apenas pelo mapa não recebem o indicador de risco, evitando atribuir IA a uma fonte que não está sendo analisada pelo Monitor.
+- `UpdateNewsService` compara a versão realmente instalada no Android, persiste `version+build` localmente e reúne versões não vistas quando o usuário pula atualizações.
+- `UpdateNewsHost` libera a abertura do app mesmo se leitura/persistência das novidades falhar.
 
 ### Buildfix 1.0.142 — Android-APK-107
 

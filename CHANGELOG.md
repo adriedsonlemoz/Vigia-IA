@@ -1,3 +1,14 @@
+## 1.0.143+143 — 2026-09-25
+
+- Integrado ao PiP da câmera analisada no mapa o mesmo `BikeApproachEstimator` já usado pelo Modo Bike; não foi criado pipeline paralelo de TTC ou detecção.
+- `BikeApproachStatus` passa a registrar também quando há veículo detectado sem aproximação, permitindo exibir estado sem risco sem mudar a regra atual de alertas.
+- Novo `MapBikeApproachOverlay` mostra veículo, aproximação, risco e TTC de forma compacta e somente sobre a câmera realmente analisada pelo Monitor.
+- Criado sistema modular de **Novidades da atualização** com modelo de release, catálogo, serviço de decisão, persistência local, leitura da versão instalada no Android e modal responsivo.
+- O sistema registra a última `versão+build` exibida, não repete na mesma versão, volta a aparecer após atualização e agrega versões não vistas quando houver salto de release.
+- Dados de novidades ausentes/corrompidos e falhas de persistência usam fallback seguro e nunca impedem a abertura do aplicativo.
+- Adicionados testes do fluxo de novidades, versão pulada, estado corrompido e apresentação do risco/TTC no PiP.
+- User-Agents, metadados e versionamento sincronizados em `1.0.143+143`.
+
 ## 1.0.142+142 — 2026-09-25
 
 - Corrigido o Android-APK-107: o teste do painel de POI deixa de depender de uma única rolagem fixa.

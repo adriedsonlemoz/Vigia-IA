@@ -66,6 +66,7 @@ void main() {
       baseConfidenceThreshold: 0.55,
     );
     expect(status.level, BikeApproachLevel.clear);
+    expect(status.vehicleDetected, isTrue);
   });
 
   test('objeto nao veicular e ignorado pelo caminho rapido', () {
@@ -83,6 +84,7 @@ void main() {
       baseConfidenceThreshold: 0.55,
     );
     expect(status.level, BikeApproachLevel.clear);
+    expect(status.vehicleDetected, isFalse);
   });
 
   test('reset remove memoria temporal de aproximacao', () {

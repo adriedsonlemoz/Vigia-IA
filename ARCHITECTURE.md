@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.142+142
+# Arquitetura — Vigia IA 1.0.143+143
+
+## Aproximação de veículos no PiP + novidades 1.0.143
+
+- `MonitorController` continua como dono do único `BikeApproachEstimator`; `MapMonitoringScreen` recebe apenas providers de leitura do estado e da habilitação, reutilizando o mesmo `Listenable` da câmera do Monitor.
+- `BikeApproachStatus.vehicleDetected` diferencia presença de veículo sem aproximação de um quadro sem veículo; `visible` e `shouldAlert` mantêm a semântica anterior para não alterar o HUD/áudio do Bike.
+- `MapBikeApproachOverlay` é um widget isolado e só é montado para o PiP primário externo realmente analisado pelo Monitor; fontes abertas exclusivamente pelo mapa permanecem apenas visuais.
+- `UpdateNewsCatalog` concentra releases e mudanças; `UpdateNewsService` compara versão instalada, estado persistido e catálogo sem depender da UI.
+- `FileUpdateNewsStore` grava `update_news_state.json` de forma atômica no diretório de suporte. Dados inválidos são tratados como ausência de estado.
+- `NativeInstalledVersionProvider` obtém `versionName/versionCode` do pacote Android por MethodChannel, com fallback para `AppMetadata` sincronizado.
+- `UpdateNewsHost` coordena a exibição antes do restante da experiência inicial, evitando conflito com o lembrete de permissões e liberando o app em qualquer falha informativa.
+
 
 ## Buildfix de testes 1.0.142
 
