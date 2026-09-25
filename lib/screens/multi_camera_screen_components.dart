@@ -221,31 +221,53 @@ class _CameraCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            '$sourceKind · $statusText',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (online && latency != null) ...[
-                            const Text(' · '),
-                            Text(
-                              '${latency.inMilliseconds} ms',
+                          Expanded(
+                            child: Text(
+                              online && latency != null
+                                  ? '$sourceKind · $statusText · ${latency.inMilliseconds} ms'
+                                  : '$sourceKind · $statusText',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                if (onEdit != null || onToggle != null || onDelete != null)
+                const SizedBox(width: 6),
+                FilledButton.icon(
+                  onPressed: camera.enabled && cameraAvailable ? onOpen : null,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 38),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 17),
+                  label: const Text(
+                    'Monitorar',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                if (onOpenWithSecond != null ||
+                    onEdit != null ||
+                    onToggle != null ||
+                    onDelete != null)
                   PopupMenuButton<String>(
                     tooltip: 'Opções da câmera',
                     onSelected: (value) {
+                      if (value == 'second') onOpenWithSecond?.call();
                       if (value == 'edit') onEdit?.call();
                       if (value == 'toggle') onToggle?.call();
                       if (value == 'delete') onDelete?.call();
                     },
                     itemBuilder: (_) => [
+                      if (onOpenWithSecond != null)
+                        const PopupMenuItem(
+                          value: 'second',
+                          child: Text('Duas câmeras'),
+                        ),
                       if (onEdit != null)
                         const PopupMenuItem(
                           value: 'edit',
@@ -287,33 +309,6 @@ class _CameraCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                if (onOpenWithSecond != null) ...[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                    onPressed: camera.enabled && cameraAvailable
-                        ? onOpenWithSecond
-                        : null,
-                      icon: const Icon(Icons.video_collection_outlined),
-                      label: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text('Duas câmeras'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: camera.enabled && cameraAvailable ? onOpen : null,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Monitorar'),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

@@ -253,6 +253,7 @@ extension _HomeRedesign on _HomeScreenState {
           VigiaModeCard(
             compact: true,
             icon: Icons.videocam_rounded,
+            imageAsset: 'assets/images/modes/live.png',
             title: 'Ao vivo',
             subtitle: 'Câmera + IA',
             accent: VigiaColors.cyan,
@@ -261,6 +262,7 @@ extension _HomeRedesign on _HomeScreenState {
           VigiaModeCard(
             compact: true,
             icon: Icons.cast_connected_rounded,
+            imageAsset: 'assets/images/modes/transmission.png',
             title: 'Transmissão',
             subtitle: 'Enviar imagem',
             accent: VigiaColors.blue,
@@ -269,6 +271,7 @@ extension _HomeRedesign on _HomeScreenState {
           VigiaModeCard(
             compact: true,
             icon: Icons.phonelink_ring_rounded,
+            imageAsset: 'assets/images/modes/remote.png',
             title: 'Remoto',
             subtitle: 'Receber imagem',
             accent: VigiaColors.green,
@@ -277,6 +280,7 @@ extension _HomeRedesign on _HomeScreenState {
           VigiaModeCard(
             compact: true,
             icon: Icons.memory_rounded,
+            imageAsset: 'assets/images/modes/esp32.png',
             title: 'ESP32',
             subtitle: 'Módulos e sensores',
             accent: VigiaColors.blue,

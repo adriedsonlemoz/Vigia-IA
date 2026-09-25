@@ -152,6 +152,7 @@ class VigiaModeCard extends StatelessWidget {
     required this.onTap,
     this.tags = const <String>[],
     this.compact = false,
+    this.imageAsset,
   });
 
   final IconData icon;
@@ -161,6 +162,7 @@ class VigiaModeCard extends StatelessWidget {
   final VoidCallback onTap;
   final List<String> tags;
   final bool compact;
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -192,17 +194,31 @@ class VigiaModeCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: compact ? 32 : 46,
-                      height: compact ? 32 : 46,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(compact ? 10 : 15),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: accent,
-                        size: compact ? 19 : 25,
-                      ),
+                      width: imageAsset != null
+                          ? (compact ? 44 : 56)
+                          : (compact ? 32 : 46),
+                      height: imageAsset != null
+                          ? (compact ? 44 : 56)
+                          : (compact ? 32 : 46),
+                      decoration: imageAsset == null
+                          ? BoxDecoration(
+                              color: accent.withValues(alpha: 0.16),
+                              borderRadius:
+                                  BorderRadius.circular(compact ? 10 : 15),
+                            )
+                          : null,
+                      child: imageAsset == null
+                          ? Icon(
+                              icon,
+                              color: accent,
+                              size: compact ? 19 : 25,
+                            )
+                          : Image.asset(
+                              imageAsset!,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.medium,
+                              semanticLabel: title,
+                            ),
                     ),
                     const Spacer(),
                     Container(
@@ -219,7 +235,7 @@ class VigiaModeCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: compact ? 6 : 18),
+                SizedBox(height: compact ? 3 : 18),
                 Text(
                   title,
                   maxLines: compact ? 1 : null,

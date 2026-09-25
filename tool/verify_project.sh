@@ -11,7 +11,7 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.118+118' pubspec.yaml || fail 'Versao esperada 1.0.118+118 nao encontrada.'
+grep -Fxq 'version: 1.0.119+119' pubspec.yaml || fail 'Versao esperada 1.0.119+119 nao encontrada.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -333,12 +333,12 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.118';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.118.'
-grep -q 'static const int build = 118;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 118.'
-grep -q "version: '1.0.118'" lib/screens/app_info_screen*.dart \
-  || fail 'Tela Mudancas nao marca a versao 1.0.118.'
+grep -q "static const String version = '1.0.119';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.119.'
+grep -q 'static const int build = 119;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 119.'
+grep -q "version: '1.0.119'" lib/screens/app_info_screen*.dart \
+  || fail 'Tela Mudancas nao marca a versao 1.0.119.'
 
 [[ -f lib/models/alert_preferences.dart ]] || fail 'Preferencias configuraveis de alerta nao encontradas.'
 [[ -f lib/screens/alerts_clips_screen.dart ]] || fail 'Tela Alertas e clipes nao encontrada.'
@@ -504,18 +504,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.118+118' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.118+118.'
+grep -Fq 'version: 1.0.119+119' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.119+119.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.118"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.118.'
-grep -q '"build": 118' app_identity.json \
-  || fail 'app_identity.json nao esta no build 118.'
+grep -q '"version": "1.0.119"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.119.'
+grep -q '"build": 119' app_identity.json \
+  || fail 'app_identity.json nao esta no build 119.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -832,7 +832,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.118+118' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.118+118.'
+grep -Fq 'Vigia IA 1.0.119+119' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.119+119.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2292,6 +2292,22 @@ grep -q "alertDistanceMeters" lib/models/route_explorer_models.dart || fail 'Dis
 grep -q "clearOfflineResults" lib/services/route_explorer_service.dart || fail 'Exclusao de pontos offline ausente.'
 
 
+# Assets da Home + Histórico/Câmeras compactos - 1.0.119
+grep -Fq '## 1.0.119+119' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.119.'
+grep -q 'Evolução 1.0.119' README.md || fail 'README nao documenta 1.0.119.'
+grep -q "version: '1.0.119'" lib/screens/app_info_screen_components.dart || fail 'Tela de Mudancas nao documenta 1.0.119.'
+[[ -f RELEASE-1.0.119.md ]] || fail 'Notas da entrega 1.0.119 ausentes.'
+for asset in live transmission remote esp32; do
+  [[ -f "assets/images/modes/${asset}.png" ]] || fail "Asset de modo ausente: ${asset}.png"
+done
+grep -q "imageAsset: 'assets/images/modes/live.png'" lib/screens/home_screen_redesign.dart || fail 'Home nao usa o asset Ao vivo.'
+grep -q "imageAsset: 'assets/images/modes/transmission.png'" lib/screens/home_screen_redesign.dart || fail 'Home nao usa o asset Transmissao.'
+grep -q "imageAsset: 'assets/images/modes/remote.png'" lib/screens/home_screen_redesign.dart || fail 'Home nao usa o asset Remoto.'
+grep -q "imageAsset: 'assets/images/modes/esp32.png'" lib/screens/home_screen_redesign.dart || fail 'Home nao usa o asset ESP32.'
+grep -q "'Veículos'" lib/screens/events_screen.dart || fail 'Historico nao usa rotulo Veiculos corrigido.'
+grep -q "child: Text('Duas câmeras')" lib/screens/multi_camera_screen_components.dart || fail 'Acao de segunda camera nao foi preservada no menu.'
+grep -q 'minimumSize: const Size(0, 38)' lib/screens/multi_camera_screen_components.dart || fail 'Botao Monitorar compacto ausente.'
+
 # Voz configuravel + qualidade Bike - 1.0.118
 grep -Fq '## 1.0.118+118' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.118.'
 grep -q 'Evolução 1.0.118' README.md || fail 'README nao documenta 1.0.118.'
@@ -2345,7 +2361,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.118' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.119' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 

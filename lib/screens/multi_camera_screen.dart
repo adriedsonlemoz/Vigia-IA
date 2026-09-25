@@ -598,7 +598,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          mainAxisExtent: 285,
+                          mainAxisExtent: 220,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {

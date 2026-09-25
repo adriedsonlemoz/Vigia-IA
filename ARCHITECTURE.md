@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.118+118
+# Arquitetura — Vigia IA 1.0.119+119
+
+## Evolução 1.0.119 — assets de modos e compactação de Histórico/Câmeras
+
+- `assets/images/modes/` passa a concentrar os quatro assets transparentes usados na Home (`live.png`, `transmission.png`, `remote.png`, `esp32.png`).
+- `VigiaModeCard` mantém a API de ícone existente e adiciona `imageAsset` opcional, permitindo fallback seguro sem criar uma segunda família de cards.
+- `EventsScreen` substitui `ChoiceChip` por filtro visual próprio e estável em quatro colunas, mantendo a mesma enum e a mesma filtragem de eventos.
+- `_CameraCard` mantém a lógica de abertura/segunda câmera/edição, mas move a ação principal para o cabeçalho e usa o menu para a ação de segunda câmera.
+- `MultiCameraScreen` reduz o `mainAxisExtent` dos cards de 285 para 220 px para eliminar espaço vertical desperdiçado.
 
 ## Evolução 1.0.118 — política de voz e transmissão econômica
 

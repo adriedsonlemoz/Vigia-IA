@@ -1,4 +1,13 @@
-# Validação — Vigia IA 1.0.118+118
+# Validação — Vigia IA 1.0.119+119
+
+## 1.0.119+119 — Home com assets, Histórico e Câmeras compactos
+
+- Confirmar que os quatro cards da Home carregam `assets/images/modes/live.png`, `transmission.png`, `remote.png` e `esp32.png` com fundo transparente.
+- Confirmar que os quatro filtros do Histórico permanecem na mesma linha em 320/360 px, com rótulos **Todos/Pessoas/Veículos/Animais** sem check duplicado ou overflow.
+- Confirmar que **Monitorar** aparece ao lado direito do nome da câmera e que o card não mantém botão grande no rodapé.
+- Confirmar que **Abrir com segunda câmera** continua acessível pelo menu quando houver outra câmera habilitada.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
 
 ## 1.0.118+118 — voz configurável e qualidade Bike
 

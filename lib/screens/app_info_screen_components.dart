@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.118',
+          version: '1.0.119',
           current: true,
+          changes: [
+            'A Home passa a usar os novos ícones transparentes de Ao vivo, Transmissão, Remoto e ESP32 diretamente nos cards.',
+            'Os filtros do Histórico foram refeitos para manter ícones e rótulos Todos, Pessoas, Veículos e Animais alinhados sem check duplicado.',
+            'Em Câmeras, Monitorar fica compacto ao lado do nome da câmera; abrir com segunda câmera continua disponível no menu.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.118',
           changes: [
             'Perfis Bike passam a preservar mais informação visual: Economia usa 7 FPS/960 px/JPEG 76 e Economia extrema 5 FPS/800 px/JPEG 72.',
             'Áudios e voz ganhou controle por fala: cada aviso pode ser ativado ou silenciado individualmente, com ações para ativar ou silenciar todos.',
@@ -1083,8 +1092,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.118',
+          version: '1.0.119',
           current: true,
+          changes: [
+            'A Home passa a usar os novos ícones transparentes de Ao vivo, Transmissão, Remoto e ESP32 diretamente nos cards.',
+            'Os filtros do Histórico foram refeitos para manter ícones e rótulos Todos, Pessoas, Veículos e Animais alinhados sem check duplicado.',
+            'Em Câmeras, Monitorar fica compacto ao lado do nome da câmera; abrir com segunda câmera continua disponível no menu.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.118',
           changes: [
             'Perfis Bike passam a preservar mais informação visual: Economia usa 7 FPS/960 px/JPEG 76 e Economia extrema 5 FPS/800 px/JPEG 72.',
             'Áudios e voz ganhou controle por fala: cada aviso pode ser ativado ou silenciado individualmente, com ações para ativar ou silenciar todos.',

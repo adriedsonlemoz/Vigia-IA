@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.118 preserva mais qualidade nos perfis Bike, adiciona controle por fala e reduz o uso de TTS ao priorizar os áudios integrados, incluindo o emulador ESP32.",
-  "version": "1.0.118",
-  "build": 118
+  "notes": "A 1.0.119 incorpora os novos ícones visuais na Home, corrige os filtros do Histórico e compacta o cartão de câmera com Monitorar ao lado do nome.",
+  "version": "1.0.119",
+  "build": 119
 }

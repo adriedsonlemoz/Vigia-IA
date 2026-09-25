@@ -1,3 +1,12 @@
+## 1.0.119+119 — 2026-09-24
+
+- Os quatro cards da Home passam a usar os novos assets transparentes de **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**, preservando os ícones Material como fallback sem duplicar navegação.
+- `VigiaModeCard` ganha suporte opcional a imagem/asset e mantém o comportamento compacto da grade 2x2.
+- Os filtros superiores do **Histórico** deixam de usar `ChoiceChip` esticado e passam a botões próprios, alinhados em quatro colunas, com ícone + rótulo **Todos/Pessoas/Veículos/Animais** e estado selecionado consistente.
+- Em **Câmeras**, o botão **Monitorar** foi movido para a direita do nome/status da câmera e o card foi compactado; **Abrir com segunda câmera** permanece disponível no menu da câmera.
+- O resumo de status da câmera agora usa ellipsis em largura estreita para evitar overflow ao lado do novo botão Monitorar.
+- Versionamento, AppMetadata, identidade, Mudanças, documentação, assets e verificadores sincronizados em `1.0.119+119`.
+
 ## 1.0.118+118 — 2026-09-24
 
 - Perfis Bike foram recalibrados para preservar informação visual no receptor: **Normal 10 FPS/960 px/JPEG 78**, **Economia 7 FPS/960 px/JPEG 76** e **Economia extrema 5 FPS/800 px/JPEG 72**.

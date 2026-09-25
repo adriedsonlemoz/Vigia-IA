@@ -2,12 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.118+118`
+> **Versão atual:** `1.0.119+119`
 
 ## Estado atual
 
-A `1.0.118+118` melhora a transmissão econômica sem destruir a imagem recebida e reorganiza a voz: áudios integrados têm prioridade, cada fala pode ser ligada/desligada e o emulador ESP32 já dispara os avisos disponíveis.
+A `1.0.119+119` aplica os novos ícones transparentes aos modos da Home, corrige os filtros do Histórico e compacta o gerenciamento de câmeras com Monitorar ao lado do nome.
 
+
+### Evolução 1.0.119 — ícones reais na Home e telas compactadas
+
+- **Ao vivo**, **Transmissão**, **Remoto** e **ESP32** usam os quatro PNGs transparentes gerados para o redesign diretamente como assets Flutter.
+- `VigiaModeCard` aceita `imageAsset` sem perder o ícone Material de fallback e sem alterar o destino de cada card.
+- O Histórico usa quatro filtros compactos próprios — **Todos, Pessoas, Veículos e Animais** — evitando o check/ícone desalinhado do `ChoiceChip`.
+- O card de cada câmera coloca **Monitorar** no cabeçalho, ao lado do nome, reduz altura e mantém **Abrir com segunda câmera** dentro do menu de opções.
 
 ### Evolução 1.0.118 — qualidade Bike e controle fino de voz
 

@@ -169,8 +169,8 @@ class _EventsScreenState extends State<EventsScreen> {
                   childAspectRatio: singleRow ? 1.35 : 2.8,
                   children: [
                   _filterChip(
-                    'Tudo',
-                    Icons.select_all_rounded,
+                    'Todos',
+                    Icons.done_all_rounded,
                     _HistoryGroupFilter.all,
                   ),
                   _filterChip(
@@ -179,7 +179,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     _HistoryGroupFilter.people,
                   ),
                   _filterChip(
-                    'Carros',
+                    'Veículos',
                     Icons.directions_car_outlined,
                     _HistoryGroupFilter.automobiles,
                   ),
@@ -326,14 +326,49 @@ class _EventsScreenState extends State<EventsScreen> {
     IconData icon,
     _HistoryGroupFilter filter,
   ) {
-    return SizedBox.expand(
-      child: ChoiceChip(
-        avatar: Icon(icon, size: 17),
-        label: Center(
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    final selected = _groupFilter == filter;
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = selected ? scheme.primary : scheme.onSurfaceVariant;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _groupFilter = filter),
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? scheme.primary.withValues(alpha: 0.16)
+                : scheme.surfaceContainerHighest.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? scheme.primary.withValues(alpha: 0.58)
+                  : scheme.outline.withValues(alpha: 0.24),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: foreground),
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 10.5,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        selected: _groupFilter == filter,
-        onSelected: (_) => setState(() => _groupFilter = filter),
       ),
     );
   }
