@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.126+126
+# Arquitetura — Vigia IA 1.0.127+127
+
+## Evolução 1.0.127 — política de câmera e visão à frente
+
+- `MapViewPolicy` concentra regras puras de câmera: zoom Perto/Região, normalização angular, rotação heading-up, dead-zone e offset vertical de seguimento.
+- `MapViewSettingsService` persiste `MapOrientationMode` e o preset de acompanhamento em `map_view_settings.json`, isolando preferência visual do estado de percurso/GPS.
+- `MapMonitoringScreen` mantém três estados de enquadramento rápido: **Perto**, **Região** e **Rota**. Os dois primeiros seguem o GPS; Rota é um overview temporário obtido por `CameraFit.coordinates`.
+- Em seguimento, a câmera primeiro aplica Norte fixo ou rotação oposta ao heading e depois usa `MapController.move(..., offset:)` para posicionar a coordenada atual abaixo do centro.
+- O offset é calculado em pixels conforme a altura da viewport e reduzido em paisagem curta; portanto nenhuma coordenada GPS é fabricada para simular look-ahead.
+- A rotação heading-up é limitada por velocidade e dead-zone para preservar estabilidade; rotação manual por gesto é desativada e o controle explícito governa a orientação.
+- POIs e pins estáticos usam contrarrotação; o marcador do usuário acompanha a transformação do mapa, mantendo sua seta relativa ao heading.
+- O listener de `MapRouteService` compara `recordedAt` antes de mover a câmera, separando atualização visual de GPS dos `notifyListeners()` periódicos usados pelo cronômetro do percurso.
 
 ## Evolução 1.0.126 — pipeline de GPS e separação gravação/navegação
 

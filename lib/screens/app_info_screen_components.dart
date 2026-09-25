@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.126',
+          version: '1.0.127',
           current: true,
+          changes: [
+            'Mapa ganha visão à frente: ao seguir o GPS, o usuário fica abaixo do centro para mostrar mais estrada no sentido do deslocamento.',
+            'Novo controle alterna Norte fixo e acompanhamento por direção, com rotação suavizada por dead-zone e sem tremedeira quando parado.',
+            'Atalhos Perto, Região e Rota mudam rapidamente o enquadramento; Rota ajusta a câmera ao percurso gravado e/ou destino ativo.',
+            'Preferência de orientação e visão de acompanhamento é persistida, e o mapa deixa de recentralizar a câmera a cada tick do cronômetro.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.126',
           changes: [
             'GPS passa por filtro de precisão, ordem temporal, velocidade e deslocamento plausível antes de mover a posição do mapa.',
             'Gravação de percurso usa precisão mais rigorosa, suavização de posição/rumo e limiar contra jitter para evitar distância artificial.',
@@ -1162,8 +1172,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.126',
+          version: '1.0.127',
           current: true,
+          changes: [
+            'Mapa ganha visão à frente: ao seguir o GPS, o usuário fica abaixo do centro para mostrar mais estrada no sentido do deslocamento.',
+            'Novo controle alterna Norte fixo e acompanhamento por direção, com rotação suavizada por dead-zone e sem tremedeira quando parado.',
+            'Atalhos Perto, Região e Rota mudam rapidamente o enquadramento; Rota ajusta a câmera ao percurso gravado e/ou destino ativo.',
+            'Preferência de orientação e visão de acompanhamento é persistida, e o mapa deixa de recentralizar a câmera a cada tick do cronômetro.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.126',
           changes: [
             'GPS passa por filtro de precisão, ordem temporal, velocidade e deslocamento plausível antes de mover a posição do mapa.',
             'Gravação de percurso usa precisão mais rigorosa, suavização de posição/rumo e limiar contra jitter para evitar distância artificial.',

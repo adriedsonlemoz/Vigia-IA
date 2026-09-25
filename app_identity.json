@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.126 fortalece GPS e percurso: filtra leituras ruins, suaviza posição/rumo, separa gravação de percurso de navegação até destino e preserva migração do estado anterior.",
-  "version": "1.0.126",
-  "build": 126
+  "notes": "A 1.0.127 evolui a câmera do mapa: visão à frente com usuário abaixo do centro, Norte fixo ou acompanhamento por direção e atalhos Perto/Região/Rota.",
+  "version": "1.0.127",
+  "build": 127
 }

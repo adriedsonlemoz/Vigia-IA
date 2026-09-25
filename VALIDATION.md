@@ -1,3 +1,16 @@
+## 1.0.127+127 — visão à frente, orientação e enquadramentos rápidos
+
+- Com GPS válido, abrir o mapa e confirmar que **Perto** segue a posição com o marcador abaixo do centro, deixando mais mapa visível à frente.
+- Alternar para **Região** e confirmar zoom mais aberto sem perder o seguimento; usar +/− e confirmar que o zoom manual continua seguindo a posição.
+- Selecionar **Norte fixo** e confirmar câmera em 0°; selecionar **Acompanhar direção**, mover-se acima de ~3 km/h e confirmar que o rumo passa a apontar para o topo sem oscilar continuamente parado.
+- Girar o aparelho e validar que o offset diminui em paisagem curta e que controles/PiPs não encobrem os atalhos Perto/Região/Rota.
+- Iniciar percurso e/ou navegar até um POI; tocar **Rota** e confirmar enquadramento de todo o conjunto. Tocar Perto/Região para retomar acompanhamento.
+- Com mapa rotacionado, confirmar que POIs, início, fim e destino ficam retos e legíveis, enquanto a seta do usuário representa corretamente o rumo.
+- Deixar percurso gravando sem deslocamento e confirmar que o ticker de tempo atualiza a telemetria sem recentralizações perceptíveis da câmera.
+- Fechar/reabrir o mapa após selecionar orientação e preset e confirmar persistência.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 ## 1.0.126+126 — GPS filtrado, percurso e navegação separados
 
 - Com GPS bom (≤35 m), tocar **Gravar percurso**, caminhar/pedalar, pausar, retomar e encerrar; confirmar distância crescente sem saltos e exportação `VigiaIA-percurso-*.gpx`.

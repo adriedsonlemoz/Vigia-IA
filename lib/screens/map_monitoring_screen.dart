@@ -14,6 +14,8 @@ import '../models/route_explorer_models.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_route_service.dart';
+import '../services/map_view_policy.dart';
+import '../services/map_view_settings_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
@@ -21,6 +23,8 @@ import '../services/system_ui_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 
 enum _MapPoiQuickFilter { all, fuel, food, health, water, other }
+
+enum _MapQuickView { near, region, route }
 
 class MapMonitoringScreen extends StatefulWidget {
   const MapMonitoringScreen({
@@ -55,6 +59,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   final MapRouteService _routeState = MapRouteService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
+  final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
 
   MbTilesTileProvider? _offlineTileProvider;
   String? _offlineTilePackageId;
@@ -67,6 +72,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
 
   bool _followPosition = true;
   bool _mapReady = false;
+  Size _mapViewportSize = Size.zero;
+  bool _compactLandscape = false;
+  _MapQuickView? _quickView = _MapQuickView.near;
+  double? _customFollowZoom;
+  DateTime? _lastFollowCameraPointAt;
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
   String? _selectedPoiId;
 
@@ -132,6 +142,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   }
 
   Future<void> _initialize() async {
+    await _mapViewSettings.initialize();
+    _quickView = switch (_mapViewSettings.followViewPreset) {
+      MapFollowViewPreset.near => _MapQuickView.near,
+      MapFollowViewPreset.region => _MapQuickView.region,
+    };
     await _routeState.initialize(requestPermission: true);
     await _routeExplorer.initialize();
     if (!mounted) return;
@@ -153,12 +168,59 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     if (!mounted) return;
     setState(() {});
     final current = _routeState.current;
-    if (_followPosition && current != null) _centerOn(current, zoom: 15);
+    if (_followPosition &&
+        current != null &&
+        current.recordedAt != _lastFollowCameraPointAt) {
+      _applyFollowCamera(current);
+    }
   }
 
-  void _centerOn(MapRoutePoint point, {double zoom = 15}) {
+  double get _followZoom {
+    final custom = _customFollowZoom;
+    if (custom != null) return custom;
+    if (_quickView == _MapQuickView.region) {
+      return MapViewPolicy.regionZoom;
+    }
+    return MapViewPolicy.nearZoom;
+  }
+
+  double get _followOffsetY => MapViewPolicy.followOffsetPixels(
+        viewportHeight: _mapViewportSize.height,
+        compactLandscape: _compactLandscape,
+      );
+
+  void _applyFollowCamera(
+    MapRoutePoint point, {
+    double? zoom,
+    bool forceRotation = false,
+  }) {
     if (!_mapReady) return;
-    _mapController.move(LatLng(point.latitude, point.longitude), zoom);
+    try {
+      if (_mapViewSettings.orientationMode == MapOrientationMode.northUp) {
+        if (_mapController.camera.rotation.abs() > 0.1) {
+          _mapController.rotate(0);
+        }
+      } else {
+        final heading = point.headingDegrees;
+        if (heading != null &&
+            MapViewPolicy.shouldApplyHeadingRotation(
+              headingDegrees: heading,
+              speedKmh: point.speedKilometersPerHour,
+              currentMapRotationDegrees: _mapController.camera.rotation,
+              force: forceRotation,
+            )) {
+          _mapController.rotate(
+            MapViewPolicy.mapRotationForHeading(heading),
+          );
+        }
+      }
+      _mapController.move(
+        LatLng(point.latitude, point.longitude),
+        zoom ?? _followZoom,
+        offset: Offset(0, _followOffsetY),
+      );
+      _lastFollowCameraPointAt = point.recordedAt;
+    } catch (_) {}
   }
 
   Future<void> _openOfflineMaps() async {
@@ -184,7 +246,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   }
 
   Future<void> _startRecording() async {
-    setState(() => _followPosition = true);
+    setState(() {
+      _followPosition = true;
+      if (_quickView == _MapQuickView.route) {
+        _quickView = _MapQuickView.near;
+        _customFollowZoom = null;
+      }
+    });
     final started = await _routeState.startRecording();
     if (!mounted) return;
     if (!started) {
@@ -199,7 +267,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
       return;
     }
     final current = _routeState.current;
-    if (current != null) _centerOn(current);
+    if (current != null) _applyFollowCamera(current, forceRotation: true);
   }
 
   void _finishRecording() {
@@ -218,6 +286,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   void _navigateToPoi(RouteExplorerResult item) {
     setState(() {
       _followPosition = true;
+      _quickView = _MapQuickView.near;
+      _customFollowZoom = null;
       _selectedPoiId = item.id;
     });
     unawaited(
@@ -232,7 +302,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
       ),
     );
     final current = _routeState.current;
-    if (current != null) _centerOn(current);
+    if (current != null) _applyFollowCamera(current, forceRotation: true);
   }
 
   void _stopNavigation() {
@@ -295,8 +365,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     final current = _routeState.current;
     if (current == null) return;
     final next = !_followPosition;
-    setState(() => _followPosition = next);
-    if (next) _centerOn(current);
+    setState(() {
+      _followPosition = next;
+      if (next && _quickView == _MapQuickView.route) {
+        _quickView = _MapQuickView.near;
+        _customFollowZoom = null;
+      }
+    });
+    if (next) _applyFollowCamera(current, forceRotation: true);
   }
 
   void _zoomBy(double delta) {
@@ -304,8 +380,118 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     try {
       final camera = _mapController.camera;
       final nextZoom = (camera.zoom + delta).clamp(3.0, 19.0).toDouble();
-      _mapController.move(camera.center, nextZoom);
-      if (_followPosition) setState(() => _followPosition = false);
+      final current = _routeState.current;
+      if (_followPosition && current != null) {
+        setState(() {
+          _quickView = null;
+          _customFollowZoom = nextZoom;
+        });
+        _applyFollowCamera(current, zoom: nextZoom);
+      } else {
+        setState(() {
+          _quickView = null;
+          _customFollowZoom = null;
+        });
+        _mapController.move(camera.center, nextZoom);
+      }
+    } catch (_) {}
+  }
+
+  void _toggleOrientationMode() {
+    final next = _mapViewSettings.orientationMode == MapOrientationMode.northUp
+        ? MapOrientationMode.headingUp
+        : MapOrientationMode.northUp;
+    final persistChange = _mapViewSettings.setOrientationMode(next);
+    setState(() {});
+    unawaited(persistChange);
+
+    if (!_mapReady) return;
+    final current = _routeState.current;
+    if (next == MapOrientationMode.northUp) {
+      _mapController.rotate(0);
+      if (_followPosition && current != null) {
+        _applyFollowCamera(current, forceRotation: true);
+      }
+      return;
+    }
+    final heading = current?.headingDegrees;
+    if (heading == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Acompanhamento por direção ativado; aguardando rumo do GPS.'),
+        ),
+      );
+      return;
+    }
+    if (_followPosition && current != null) {
+      _applyFollowCamera(current, forceRotation: true);
+    } else {
+      _mapController.rotate(MapViewPolicy.mapRotationForHeading(heading));
+    }
+  }
+
+  void _selectQuickView(_MapQuickView view) {
+    final current = _routeState.current;
+    if (view == _MapQuickView.route) {
+      _showRouteOverview();
+      return;
+    }
+    if (current == null) return;
+    final preset = view == _MapQuickView.near
+        ? MapFollowViewPreset.near
+        : MapFollowViewPreset.region;
+    setState(() {
+      _quickView = view;
+      _customFollowZoom = null;
+      _followPosition = true;
+    });
+    unawaited(_mapViewSettings.setFollowViewPreset(preset));
+    _applyFollowCamera(
+      current,
+      zoom: MapViewPolicy.zoomFor(preset),
+      forceRotation: true,
+    );
+  }
+
+  void _showRouteOverview() {
+    if (!_mapReady) return;
+    final coordinates = <LatLng>[
+      for (final point in _routeState.route)
+        LatLng(point.latitude, point.longitude),
+    ];
+    final current = _routeState.current;
+    if (current != null) {
+      coordinates.add(LatLng(current.latitude, current.longitude));
+    }
+    final target = _routeState.navigationTarget;
+    if (target != null) {
+      coordinates.add(LatLng(target.latitude, target.longitude));
+    }
+    if (coordinates.length < 2) {
+      if (current != null) {
+        _selectQuickView(_MapQuickView.region);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Grave um percurso ou escolha um destino para usar a visão Rota.'),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _quickView = _MapQuickView.route;
+      _customFollowZoom = null;
+      _followPosition = false;
+    });
+    try {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: coordinates,
+          padding: const EdgeInsets.fromLTRB(52, 138, 68, 132),
+          minZoom: 3,
+          maxZoom: 15.5,
+        ),
+      );
     } catch (_) {}
   }
 
@@ -351,6 +537,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     if (!_mapReady) return;
     setState(() {
       _followPosition = false;
+      _quickView = null;
+      _customFollowZoom = null;
       _selectedPoiId = item.id;
     });
     _mapController.move(LatLng(item.latitude, item.longitude), 16);
@@ -844,6 +1032,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final horizontalControls = constraints.maxHeight < 520;
+          _mapViewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+          _compactLandscape = horizontalControls;
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -851,14 +1041,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
-                  initialZoom: current == null ? 12.5 : 15,
+                  initialZoom: current == null ? 12.5 : _followZoom,
                   minZoom: 3,
                   maxZoom: 19,
+                  interactionOptions: InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
                   onMapReady: () {
                     _mapReady = true;
                     final initialPoi = widget.initialPointOfInterest;
                     if (initialPoi != null) {
                       _followPosition = false;
+                      _quickView = null;
+                      _customFollowZoom = null;
                       _selectedPoiId = initialPoi.id;
                       _mapController.move(
                         LatLng(initialPoi.latitude, initialPoi.longitude),
@@ -866,12 +1061,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       );
                     } else {
                       final point = _routeState.current;
-                      if (point != null) _centerOn(point);
+                      if (point != null) {
+                        _applyFollowCamera(point, forceRotation: true);
+                      }
                     }
                   },
                   onPositionChanged: (_, hasGesture) {
                     if (hasGesture && _followPosition && mounted) {
-                      setState(() => _followPosition = false);
+                      setState(() {
+                        _followPosition = false;
+                        _quickView = null;
+                        _customFollowZoom = null;
+                      });
                     }
                   },
                   onTap: (_, _) {
@@ -918,6 +1119,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                         Marker(
                           point: LatLng(item.latitude, item.longitude),
                           width: item.id == _selectedPoiId ? 48 : 40,
+                          rotate: true,
                           height: item.id == _selectedPoiId ? 48 : 40,
                           child: Semantics(
                             button: true,
@@ -977,6 +1179,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                             navigationTarget.longitude,
                           ),
                           width: 52,
+                          rotate: true,
                           height: 52,
                           child: Tooltip(
                             message: 'Destino: ${navigationTarget.label}',
@@ -1008,6 +1211,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                         Marker(
                           point: LatLng(current.latitude, current.longitude),
                           width: 54,
+                          rotate: false,
                           height: 54,
                           child: Container(
                             decoration: BoxDecoration(
@@ -1093,9 +1297,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   onToggleFollow: current == null ? null : _toggleFollow,
                 ),
               ),
+              Positioned(
+                top: topInset + 87,
+                left: 8,
+                child: _MapQuickViewBar(
+                  selected: _quickView,
+                  routeAvailable:
+                      _routeState.route.length >= 2 || navigationTarget != null,
+                  onSelected: _selectQuickView,
+                ),
+              ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
-                  top: topInset + 87,
+                  top: topInset + 128,
                   left: 8,
                   child: _OfflineAreaWarning(
                     onTap: () => unawaited(_openOfflineMaps()),
@@ -1131,6 +1345,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                           : Icons.my_location_rounded,
                       active: _followPosition,
                       onPressed: current == null ? null : _toggleFollow,
+                    ),
+                    _MapControlGap(horizontal: horizontalControls),
+                    _MapControlButton(
+                      tooltip: _mapViewSettings.orientationMode ==
+                              MapOrientationMode.headingUp
+                          ? 'Acompanhando direção · tocar para Norte fixo'
+                          : 'Norte fixo · tocar para acompanhar direção',
+                      icon: _mapViewSettings.orientationMode ==
+                              MapOrientationMode.headingUp
+                          ? Icons.explore_rounded
+                          : Icons.north_rounded,
+                      active: _mapViewSettings.orientationMode ==
+                          MapOrientationMode.headingUp,
+                      onPressed: current == null ? null : _toggleOrientationMode,
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
@@ -1272,7 +1500,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
 
       final safePadding = MediaQuery.paddingOf(context);
       final shortLayout = constraints.maxHeight < 520;
-      final defaultTop = safePadding.top + (shortLayout ? 96.0 : secondary ? 270.0 : 112.0);
+      final defaultTop = safePadding.top +
+          (shortLayout ? 164.0 : secondary ? 320.0 : 164.0);
       // Em paisagem as duas câmeras começam lado a lado; em retrato, empilhadas.
       final fallback = Offset(
         shortLayout && secondary ? width + 20 : 10,
@@ -1387,6 +1616,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     return Marker(
       point: LatLng(point.latitude, point.longitude),
       width: 42,
+      rotate: true,
       height: 42,
       child: Semantics(
         label: semanticLabel,
@@ -1455,6 +1685,108 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapQuickViewBar extends StatelessWidget {
+  const _MapQuickViewBar({
+    required this.selected,
+    required this.routeAvailable,
+    required this.onSelected,
+  });
+
+  final _MapQuickView? selected;
+  final bool routeAvailable;
+  final ValueChanged<_MapQuickView> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 3,
+      color: scheme.surface.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _MapQuickViewButton(
+            label: 'Perto',
+            icon: Icons.near_me_rounded,
+            active: selected == _MapQuickView.near,
+            onPressed: () => onSelected(_MapQuickView.near),
+          ),
+          _MapQuickViewButton(
+            label: 'Região',
+            icon: Icons.public_rounded,
+            active: selected == _MapQuickView.region,
+            onPressed: () => onSelected(_MapQuickView.region),
+          ),
+          _MapQuickViewButton(
+            label: 'Rota',
+            icon: Icons.route_rounded,
+            active: selected == _MapQuickView.route,
+            onPressed:
+                routeAvailable ? () => onSelected(_MapQuickView.route) : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapQuickViewButton extends StatelessWidget {
+  const _MapQuickViewButton({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onPressed != null;
+    return InkWell(
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        color: active ? scheme.primaryContainer : Colors.transparent,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: !enabled
+                  ? scheme.onSurface.withValues(alpha: 0.32)
+                  : active
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSurface,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: active ? FontWeight.w900 : FontWeight.w700,
+                color: !enabled
+                    ? scheme.onSurface.withValues(alpha: 0.32)
+                    : active
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurface,
+              ),
+            ),
+          ],
         ),
       ),
     );

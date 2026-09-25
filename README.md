@@ -2,11 +2,25 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.126+126`
+> **Versão atual:** `1.0.127+127`
 
 ## Estado atual
 
-A `1.0.126+126` fortalece a base do mapa para uso real em movimento: GPS filtrado e suavizado, gravação de percurso confiável e navegação até destino separada da gravação.
+A `1.0.127+127` melhora a câmera do mapa para uso em bike e viagem: visão à frente, orientação por rumo e enquadramentos rápidos Perto/Região/Rota sobre a base de GPS filtrado da 1.0.126.
+
+### Evolução 1.0.127 — visão à frente e orientação do mapa
+
+- Ao acompanhar o GPS, o usuário deixa de ficar cravado no centro: `MapController.move(offset:)` o posiciona mais abaixo da tela para ampliar a estrada visível à frente sem alterar a coordenada real.
+- O zoom de acompanhamento padrão abre mais contexto (`14.7`) e o modo **Região** usa `12.2`; zoom manual continua possível sem desligar automaticamente o acompanhamento.
+- Novo controle alterna **Norte fixo** e **Acompanhar direção**. O modo por direção gira a câmera no sentido oposto ao heading para manter o deslocamento apontando para o topo.
+- A rotação por heading só é atualizada acima de 3 km/h e com mudança angular relevante, reduzindo tremedeira quando a bike está parada ou o rumo oscila poucos graus.
+- Gestos de rotação manual ficam desativados; a orientação é explícita e previsível pelos dois modos do mapa.
+- Atalhos flutuantes **Perto / Região / Rota** permitem trocar o enquadramento rapidamente. **Rota** ajusta a câmera para conter percurso gravado, posição atual e destino ativo quando disponíveis.
+- Orientação e preset de acompanhamento ficam persistidos em `map_view_settings.json` para manter a preferência entre aberturas.
+- POIs, início/fim e destino são contrarrotacionados para permanecerem legíveis; o marcador do usuário gira junto com o mapa e mantém a seta coerente com o heading.
+- Corrigido trabalho desnecessário: ticks do cronômetro do percurso não recentralizam mais a câmera quando não chegou uma nova posição GPS.
+- Posições iniciais dos PiPs foram deslocadas para não cobrir os novos atalhos de visão.
+- Adicionado `MapViewPolicy` com testes de zoom, rotação, dead-zone angular e deslocamento visual.
 
 ### Evolução 1.0.126 — GPS confiável, percurso e destino separados
 

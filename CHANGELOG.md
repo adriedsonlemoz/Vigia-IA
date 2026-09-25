@@ -1,3 +1,18 @@
+## 1.0.127+127 — 2026-09-25
+
+- Seguimento do GPS passa a usar offset de câmera, mantendo o usuário abaixo do centro e aumentando a área visível à frente sem adulterar latitude/longitude.
+- Zoom padrão de acompanhamento passa para 14.7 e é complementado pelos modos rápidos **Perto**, **Região** (12.2) e **Rota**.
+- **Rota** usa `CameraFit.coordinates` para enquadrar percurso, posição atual e destino, sem misturar esse overview com o modo de seguimento.
+- Adicionado modo **Norte fixo / Acompanhar direção**; heading-up aplica rotação oposta ao rumo GPS e dead-zone de 2,5° acima de 3 km/h para evitar jitter parado.
+- Rotação por gesto é desativada para que o estado de orientação permaneça explícito e previsível.
+- Preferências de orientação e preset Perto/Região passam a ser persistidas em `map_view_settings.json`.
+- Marcadores de POI/início/fim/destino permanecem visualmente retos com mapa girado; seta da posição continua coerente com o rumo.
+- Zoom manual durante seguimento não desliga mais o GPS automaticamente e passa a manter um zoom personalizado até outro preset ser escolhido.
+- Corrigida recentralização redundante disparada pelo ticker de tempo do percurso: a câmera só segue quando chega um novo timestamp GPS ou por ação explícita do usuário.
+- PiPs de câmera iniciam abaixo dos novos controles rápidos para reduzir sobreposição.
+- Adicionados `MapViewPolicy`, `MapViewSettingsService` e testes de política da câmera.
+- Versão, identidade, README, arquitetura, validação, Mudanças e verificadores sincronizados em `1.0.127+127`.
+
 ## 1.0.126+126 — 2026-09-25
 
 - Criado `MapGpsFilter` para rejeitar coordenadas inválidas, precisão >60 m, leituras fora de ordem, velocidade >70 m/s e deslocamentos incompatíveis com o tempo transcorrido.
