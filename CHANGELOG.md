@@ -1,3 +1,11 @@
+## 1.0.135+135 — 2026-09-25
+
+- Corrigido o Android-APK-102, que parava no `flutter analyze` antes de testes/build Android.
+- Removidos cinco usos redundantes de `selectedPoi!` em `MapMonitoringScreen`, eliminando os avisos `unnecessary_non_null_assertion`.
+- O ajuste usa a promoção de nulabilidade já garantida pelo bloco `showSelectedPoiCard`, sem mudar o comportamento do card de POI.
+- Rota ciclável, distância/duração no HUD e fallback por direção direta da 1.0.134 permanecem inalterados.
+- Versionamento sincronizado em `1.0.135+135`.
+
 ## 1.0.134+134 — 2026-09-25
 
 - Mapa passa a calcular rota viária real para bicicleta entre a posição atual e o POI escolhido.

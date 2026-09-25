@@ -2726,14 +2726,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   right: 10,
                   bottom: bottomInset + (navigationTarget == null ? 62 : 124),
                   child: _SelectedPoiCard(
-                    item: selectedPoi!,
+                    item: selectedPoi,
                     distanceLabel:
-                        _routeExplorer.formatDistance(selectedPoi!.distanceMeters),
-                    icon: _poiIcon(selectedPoi!.category),
+                        _routeExplorer.formatDistance(selectedPoi.distanceMeters),
+                    icon: _poiIcon(selectedPoi.category),
                     compact: compactHud,
                     onClose: () => setState(() => _selectedPoiId = null),
-                    onDetails: () => unawaited(_showPoiDetails(selectedPoi!)),
-                    onNavigate: () => _navigateToPoi(selectedPoi!),
+                    onDetails: () => unawaited(_showPoiDetails(selectedPoi)),
+                    onNavigate: () => _navigateToPoi(selectedPoi),
                   ),
                 ),
               if (navigationTarget != null)

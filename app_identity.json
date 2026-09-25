@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.134 adiciona rota viária real para bicicleta ao selecionar um destino no mapa, com distância, duração, geometria sobre as vias e fallback seguro para direção direta.",
-  "version": "1.0.134",
-  "build": 134
+  "notes": "A 1.0.135 corrige o Android-APK-102 removendo cinco assertions nulas redundantes no card de POI selecionado, restaurando o flutter analyze sem alterar a rota ciclável da 1.0.134.",
+  "version": "1.0.135",
+  "build": 135
 }

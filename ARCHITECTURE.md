@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.134+134
+# Arquitetura — Vigia IA 1.0.135+135
+
+## Buildfix 1.0.135 — promoção de nulabilidade no card de POI
+
+- `MapMonitoringScreen` mantém `selectedPoi` como valor local promovido a não nulo quando `showSelectedPoiCard` é verdadeiro.
+- O card usa essa promoção diretamente, sem `!` redundante; isso elimina cinco avisos `unnecessary_non_null_assertion` do analyzer.
+- Nenhuma regra de roteamento, navegação, POI ou persistência foi alterada neste buildfix.
 
 
 ## Roteamento ciclável 1.0.134

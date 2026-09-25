@@ -2,11 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.134+134`
+> **Versão atual:** `1.0.135+135`
 
 ## Estado atual
 
-A `1.0.134+134` adiciona rota viária real para bicicleta ao escolher um destino no mapa, mantendo fallback para direção direta quando o roteamento online não estiver disponível. Mantém as funções concluídas nas versões 1.0.125–1.0.132, mas reduz poluição visual e melhora leitura durante pedal/viagem.
+A `1.0.135+135` é um buildfix do Android-APK-102: remove cinco assertions nulas redundantes detectadas pelo `flutter analyze` no card do POI selecionado, sem alterar a rota ciclável introduzida na 1.0.134.
 
 ### Refinamento 1.0.133 — mapa mais limpo em uso real
 

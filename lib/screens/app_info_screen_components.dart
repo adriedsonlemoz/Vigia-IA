@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.134',
+          version: '1.0.135',
           current: true,
+          changes: [
+            'Corrige o Android-APK-102, que parava no flutter analyze antes dos testes e do build Android.',
+            'Remove cinco assertions nulas redundantes no card do POI selecionado, eliminando os avisos unnecessary_non_null_assertion.',
+            'Mantém inalterados a rota ciclável, o HUD de navegação e o fallback por direção direta da 1.0.134.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.134',
           changes: [
             'Mapa calcula rota viária real para bicicleta ao escolher um destino, desenhando o trajeto sobre as vias.',
             'HUD da navegação mostra distância e duração estimadas da rota ciclável.',
@@ -1239,8 +1248,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.134',
+          version: '1.0.135',
           current: true,
+          changes: [
+            'Corrige o Android-APK-102, que parava no flutter analyze antes dos testes e do build Android.',
+            'Remove cinco assertions nulas redundantes no card do POI selecionado, eliminando os avisos unnecessary_non_null_assertion.',
+            'Mantém inalterados a rota ciclável, o HUD de navegação e o fallback por direção direta da 1.0.134.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.134',
           changes: [
             'Mapa calcula rota viária real para bicicleta ao escolher um destino, desenhando o trajeto sobre as vias.',
             'HUD da navegação mostra distância e duração estimadas da rota ciclável.',
