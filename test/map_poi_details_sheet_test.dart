@@ -41,6 +41,9 @@ void main() {
     expect(find.text('Informações do local'), findsOneWidget);
     expect(find.text('Estrada da Serra, 10'), findsOneWidget);
     expect(find.text('+55 31 99999-0000'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pumpAndSettle();
     expect(find.text('Água potável'), findsOneWidget);
     expect(find.text('Ir até lá'), findsOneWidget);
 

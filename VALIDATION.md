@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.140+140
+# Validação Vigia IA 1.0.141+141
+
+
+## 1.0.141+141 — buildfix Android-APK-106
+
+- O log Android-APK-106 registrou `flutter analyze` com **No issues found**.
+- A suíte chegou a 249 testes aprovados e falhou apenas em `map_poi_details_sheet_test.dart`, ao procurar `Água potável` antes de rolar o `ListView`.
+- Confirmar que o teste executa uma rolagem antes da asserção da comodidade e continua acionando `Ir até lá`.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter test` e build Android no GitHub Actions.
 
 ## PiPs de câmera sobre o mapa
 

@@ -1,3 +1,10 @@
+## 1.0.141+141 — 2026-09-25
+
+- Corrigido o Android-APK-106, que passou no `flutter analyze` mas falhou em um único teste de widget.
+- `map_poi_details_sheet_test.dart` agora rola o `ListView` antes de validar `Água potável`, pois a comodidade fica fora da área inicialmente construída pelo scroll lazy.
+- O painel de POI e o PiP 1.0.140 permanecem funcionalmente inalterados.
+- User-Agents, metadados e versionamento sincronizados em `1.0.141+141`.
+
 ## 1.0.140+140 — 2026-09-25
 
 - Estado global de exibição dos PiPs passa a ser persistido em `map_camera_overlay_settings.json` com schema 2 e leitura retrocompatível do schema anterior.

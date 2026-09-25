@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.140 aprimora os PiPs de câmera no mapa com visibilidade persistente, restauração rápida, compactação durante navegação e encaixe sem sobreposição.",
-  "version": "1.0.140",
-  "build": 140
+  "notes": "A 1.0.141 corrige o Android-APK-106 ajustando o teste do painel de POI para validar conteúdo fora da área inicialmente visível.",
+  "version": "1.0.141",
+  "build": 141
 }

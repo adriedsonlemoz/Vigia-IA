@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.140',
+          version: '1.0.141',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-106: o teste do painel de POI agora rola a lista antes de validar comodidades fora da área inicial.',
+            'A correção não altera o painel nem o PiP em produção; apenas torna o teste compatível com a construção lazy do ListView.',
+            'flutter analyze já havia passado sem avisos no build 106; a falha estava isolada em um único teste de widget.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.140',
           changes: [
             'PiPs lembram a visibilidade global e ganham atalho Mostrar câmera quando todas as janelas estiverem ocultas.',
             'Durante a navegação, câmeras grandes reduzem temporariamente para preservar rota e instruções sem perder o tamanho salvo.',
@@ -1293,8 +1302,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.140',
+          version: '1.0.141',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-106: o teste do painel de POI agora rola a lista antes de validar comodidades fora da área inicial.',
+            'A correção não altera o painel nem o PiP em produção; apenas torna o teste compatível com a construção lazy do ListView.',
+            'flutter analyze já havia passado sem avisos no build 106; a falha estava isolada em um único teste de widget.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.140',
           changes: [
             'PiPs lembram a visibilidade global e ganham atalho Mostrar câmera quando todas as janelas estiverem ocultas.',
             'Durante a navegação, câmeras grandes reduzem temporariamente para preservar rota e instruções sem perder o tamanho salvo.',

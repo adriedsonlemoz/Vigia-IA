@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.140+140
+# Arquitetura — Vigia IA 1.0.141+141
+
+## Buildfix de testes 1.0.141
+
+- O Android-APK-106 confirmou que a análise estática está limpa e isolou a falha em `map_poi_details_sheet_test.dart`.
+- `MapPoiDetailsSheet` usa `ListView`, portanto itens abaixo da dobra podem não existir na árvore até ocorrer rolagem.
+- O teste de widget passa a rolar explicitamente a lista antes de validar comodidades, sem alterar a arquitetura ou comportamento de produção.
 
 ## PiP de câmera no mapa 1.0.140
 

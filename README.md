@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.140+140`
+> **Versão atual:** `1.0.141+141`
 
 ## Estado atual
 
-A `1.0.140+140` aprimora os PiPs de câmera sobre o mapa, priorizando visão da rota, recuperação rápida e organização automática das câmeras.
+A `1.0.141+141` é um buildfix do Android-APK-106: corrige o teste do painel de POI que tentava localizar uma comodidade ainda não construída pelo `ListView` fora da área visível.
+
+### Buildfix 1.0.141 — Android-APK-106
+
+- `flutter analyze` do build 106 passou sem avisos; a falha ficou isolada em `map_poi_details_sheet_test.dart`.
+- O teste agora rola o `ListView` antes de validar a comodidade `Água potável`, respeitando a construção lazy de conteúdo fora da dobra.
+- Nenhuma lógica de produção do painel de POI ou dos PiPs foi alterada neste buildfix.
 
 ### Evolução 1.0.140 — PiP de câmera mais inteligente
 
