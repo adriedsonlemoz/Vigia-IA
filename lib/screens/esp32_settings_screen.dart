@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/audio_slot.dart';
-import '../models/camera_endpoint.dart';
 import '../models/bike_mode_config.dart';
+import '../models/esp32_module.dart';
 import '../services/app_settings_service.dart';
-import '../services/camera_registry_service.dart';
 import '../services/bike_mode_service.dart';
+import '../services/esp32_module_service.dart';
 import '../services/native_platform_service.dart';
 
 class Esp32SettingsScreen extends StatefulWidget {
@@ -18,14 +18,12 @@ class Esp32SettingsScreen extends StatefulWidget {
 }
 
 class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
-  final CameraRegistryService _registry = CameraRegistryService.instance;
-  final Map<String, CameraProbeResult> _statuses = <String, CameraProbeResult>{};
+  final Esp32ModuleService _registry = Esp32ModuleService.instance;
+  final Map<String, Esp32ProbeResult> _statuses = <String, Esp32ProbeResult>{};
   bool _loading = true;
   String? _busyId;
 
-  List<CameraEndpoint> get _devices => _registry.items
-      .where((item) => item.type == CameraEndpointType.esp32)
-      .toList(growable: false);
+  List<Esp32Module> get _devices => _registry.modules;
 
   @override
   void initState() {
@@ -39,7 +37,6 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
     setState(() => _loading = false);
     await _refreshAll();
   }
-
 
   Future<void> _openTools() async {
     final selected = await showModalBottomSheet<String>(
@@ -84,35 +81,38 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
     if (mounted) setState(() => _statuses.addAll(results));
   }
 
-  Future<void> _edit([CameraEndpoint? existing]) async {
-    final endpoint = await _showEditor(existing);
-    if (endpoint == null) return;
-    await _registry.save(endpoint);
+  Future<void> _edit([Esp32Module? existing]) async {
+    final module = await _showEditor(existing);
+    if (module == null) return;
+    await _registry.save(module);
     if (!mounted) return;
-    setState(() => _busyId = endpoint.id);
-    final probe = await _registry.probe(endpoint);
+    setState(() => _busyId = module.id);
+    final probe = await _registry.probe(module);
     if (!mounted) return;
     setState(() {
-      _statuses[endpoint.id] = probe;
+      _statuses[module.id] = probe;
       _busyId = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           probe.online
-              ? '${endpoint.name} salvo e conectado.'
-              : '${endpoint.name} foi salvo. ${probe.message ?? 'O módulo ainda não respondeu.'}',
+              ? '${module.name} salvo e conectado.'
+              : '${module.name} foi salvo. ${probe.message ?? 'O módulo ainda não respondeu.'}',
         ),
       ),
     );
   }
 
-  Future<CameraEndpoint?> _showEditor(CameraEndpoint? existing) async {
+  Future<Esp32Module?> _showEditor(Esp32Module? existing) async {
     final name = TextEditingController(text: existing?.name ?? 'ESP32 Bike');
     final address = TextEditingController(
       text: existing?.address ?? 'http://192.168.4.1',
     );
     final key = TextEditingController(text: existing?.accessKey ?? '');
+    final customPosition = TextEditingController(
+      text: existing?.customPositionLabel ?? '',
+    );
     final circumference = TextEditingController(
       text: (existing?.wheelCircumferenceMm ?? 2100).toStringAsFixed(0),
     );
@@ -126,14 +126,15 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
       text: (existing?.maximumTemperatureC ?? 65).toStringAsFixed(1),
     );
     var enabled = existing?.enabled ?? true;
-    var camera = existing?.esp32CameraEnabled ?? false;
+    var position = existing?.position ?? Esp32ModulePosition.unspecified;
+    var camera = existing?.cameraEnabled ?? false;
     var temperatureSensor = existing?.temperatureSensorEnabled ?? true;
     var hall = existing?.hallSensorEnabled ?? true;
     var tires = existing?.tirePressureEnabled ?? true;
     var interval = existing?.telemetryIntervalMs ?? 1000;
     String? error;
 
-    final result = await showDialog<CameraEndpoint>(
+    final result = await showDialog<Esp32Module>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -146,7 +147,7 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Informe o endereço HTTP do módulo na rede local. A chave é opcional, mas recomendada.',
+                    'O ESP32 agora é cadastrado como módulo independente. Câmera e sensores são capacidades do módulo, permitindo adicionar novos hardwares sem remodelar o app.',
                   ),
                   const SizedBox(height: 14),
                   TextField(
@@ -156,6 +157,35 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                       prefixIcon: Icon(Icons.memory_rounded),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<Esp32ModulePosition>(
+                    initialValue: position,
+                    decoration: const InputDecoration(
+                      labelText: 'Posição/função',
+                      prefixIcon: Icon(Icons.place_outlined),
+                    ),
+                    items: Esp32ModulePosition.values
+                        .map(
+                          (item) => DropdownMenuItem(
+                            value: item,
+                            child: Text(item.label),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => position = value);
+                    },
+                  ),
+                  if (position == Esp32ModulePosition.custom) ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: customPosition,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome da posição',
+                        hintText: 'Ex.: garfo, bolsa lateral, rack...',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   TextField(
                     controller: address,
@@ -185,7 +215,7 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                     value: enabled,
                     onChanged: (value) => setDialogState(() => enabled = value),
                     title: const Text('Módulo ativo'),
-                    subtitle: const Text('Recebe telemetria de sensores deste ESP32.'),
+                    subtitle: const Text('Habilita comunicação e telemetria deste ESP32.'),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -193,12 +223,12 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                     onChanged: (value) => setDialogState(() => camera = value),
                     title: const Text('Câmera ESP32 instalada'),
                     subtitle: const Text(
-                      'Exibe o módulo como fonte de vídeo no Monitor e na página Câmeras.',
+                      'A câmera só é registrada como fonte de vídeo quando esta capacidade estiver ativa.',
                     ),
                   ),
                   const Divider(height: 24),
                   const Text(
-                    'Sensores',
+                    'Sensores instalados',
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   SwitchListTile(
@@ -211,7 +241,8 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                   if (temperatureSensor)
                     TextField(
                       controller: temperature,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'Alerta máximo (°C)',
                       ),
@@ -255,7 +286,8 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                   if (tires)
                     TextField(
                       controller: pressure,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'Alerta mínimo (PSI)',
                       ),
@@ -276,6 +308,11 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                       if (value != null) setDialogState(() => interval = value);
                     },
                   ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'A estrutura de capacidades já aceita mmWave, térmico, ToF, ultrassom, ambiente, GPS, luz e atuadores. A interface desses recursos será liberada conforme os módulos físicos forem adicionados.',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   if (error != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -295,43 +332,61 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
             FilledButton.icon(
               onPressed: () {
                 final uri = Uri.tryParse(address.text.trim());
-                final wheel = double.tryParse(circumference.text.replaceAll(',', '.'));
+                final wheel =
+                    double.tryParse(circumference.text.replaceAll(',', '.'));
                 final magnetCount = int.tryParse(magnets.text);
                 final minimumPressure =
                     double.tryParse(pressure.text.replaceAll(',', '.'));
                 final maximumTemperature =
                     double.tryParse(temperature.text.replaceAll(',', '.'));
+                final customLabel = customPosition.text.trim();
                 if (uri == null ||
                     !(uri.scheme == 'http' || uri.scheme == 'https') ||
                     uri.host.isEmpty ||
-                    wheel == null || wheel < 500 || wheel > 4000 ||
-                    magnetCount == null || magnetCount < 1 || magnetCount > 32 ||
-                    minimumPressure == null || minimumPressure < 1 ||
-                    maximumTemperature == null || maximumTemperature < 1) {
+                    wheel == null ||
+                    wheel < 500 ||
+                    wheel > 4000 ||
+                    magnetCount == null ||
+                    magnetCount < 1 ||
+                    magnetCount > 32 ||
+                    minimumPressure == null ||
+                    minimumPressure < 1 ||
+                    maximumTemperature == null ||
+                    maximumTemperature < 1 ||
+                    (position == Esp32ModulePosition.custom &&
+                        customLabel.isEmpty)) {
                   setDialogState(() {
-                    error = 'Revise endereço, roda (500–4000 mm), ímãs (1–32) e limites.';
+                    error =
+                        'Revise endereço, posição, roda (500–4000 mm), ímãs (1–32) e limites.';
                   });
                   return;
                 }
+                final capabilities = <Esp32Capability>{Esp32Capability.battery};
+                if (camera) capabilities.add(Esp32Capability.camera);
+                if (temperatureSensor) {
+                  capabilities.add(Esp32Capability.temperature);
+                }
+                if (hall) capabilities.add(Esp32Capability.hallSpeed);
+                if (tires) capabilities.add(Esp32Capability.tirePressure);
                 Navigator.pop(
                   dialogContext,
-                  CameraEndpoint(
+                  Esp32Module(
                     id: existing?.id ??
                         'esp32_${DateTime.now().microsecondsSinceEpoch}',
                     name: name.text.trim().isEmpty ? 'ESP32' : name.text.trim(),
-                    type: CameraEndpointType.esp32,
                     address: address.text.trim(),
                     accessKey: key.text.trim().isEmpty ? null : key.text.trim(),
                     enabled: enabled,
-                    esp32CameraEnabled: camera,
-                    temperatureSensorEnabled: temperatureSensor,
-                    hallSensorEnabled: hall,
-                    tirePressureEnabled: tires,
+                    position: position,
+                    customPositionLabel:
+                        position == Esp32ModulePosition.custom ? customLabel : null,
+                    capabilities: Set<Esp32Capability>.unmodifiable(capabilities),
                     wheelCircumferenceMm: wheel,
                     hallMagnets: magnetCount,
                     minimumTirePressurePsi: minimumPressure,
                     maximumTemperatureC: maximumTemperature,
                     telemetryIntervalMs: interval,
+                    protocolVersion: existing?.protocolVersion ?? 1,
                   ),
                 );
               },
@@ -347,6 +402,7 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
       name,
       address,
       key,
+      customPosition,
       circumference,
       magnets,
       pressure,
@@ -357,12 +413,12 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
     return result;
   }
 
-  Future<void> _apply(CameraEndpoint endpoint) async {
-    setState(() => _busyId = endpoint.id);
-    final result = await _registry.applyEsp32Configuration(endpoint);
+  Future<void> _apply(Esp32Module module) async {
+    setState(() => _busyId = module.id);
+    final result = await _registry.applyConfiguration(module);
     if (!mounted) return;
     setState(() {
-      _statuses[endpoint.id] = result;
+      _statuses[module.id] = result;
       _busyId = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -370,11 +426,11 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
     );
   }
 
-  Future<void> _delete(CameraEndpoint endpoint) async {
+  Future<void> _delete(Esp32Module module) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Remover ${endpoint.name}?'),
+        title: Text('Remover ${module.name}?'),
         content: const Text(
           'O cadastro e a chave local serão removidos. O firmware do ESP32 não será apagado.',
         ),
@@ -391,8 +447,8 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
       ),
     );
     if (confirmed != true) return;
-    await _registry.delete(endpoint.id);
-    if (mounted) setState(() => _statuses.remove(endpoint.id));
+    await _registry.delete(module.id);
+    if (mounted) setState(() => _statuses.remove(module.id));
   }
 
   @override
@@ -403,7 +459,7 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('ESP32'),
-            Text('Módulo, sensores e câmera', style: TextStyle(fontSize: 12)),
+            Text('Módulos e capacidades', style: TextStyle(fontSize: 12)),
           ],
         ),
         actions: [
@@ -462,11 +518,11 @@ class _Esp32Intro extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.memory_rounded, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.hub_outlined, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  'O ESP32 envia velocidade Hall, temperatura, pressão dos pneus e bateria. Se uma câmera estiver instalada, ele também aparece como fonte; a IA continua sendo processada neste celular.',
+                  'Cada ESP32 agora é um módulo independente. Ele pode ter sensores, câmera ou futuras capacidades como mmWave, térmico e ToF; só módulos com câmera aparecem como fonte de vídeo.',
                 ),
               ),
             ],
@@ -485,8 +541,8 @@ class _Esp32Card extends StatelessWidget {
     required this.onDelete,
   });
 
-  final CameraEndpoint device;
-  final CameraProbeResult? status;
+  final Esp32Module device;
+  final Esp32ProbeResult? status;
   final bool busy;
   final VoidCallback onEdit;
   final VoidCallback onApply;
@@ -496,6 +552,8 @@ class _Esp32Card extends StatelessWidget {
   Widget build(BuildContext context) {
     final online = status?.online == true;
     final latency = status?.latency;
+    final firmware = status?.firmwareVersion;
+    final protocol = status?.protocolVersion;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -504,16 +562,22 @@ class _Esp32Card extends StatelessWidget {
           children: [
             Row(
               children: [
-                CircleAvatar(child: Icon(device.esp32CameraEnabled
-                    ? Icons.camera_alt_outlined
-                    : Icons.memory_rounded)),
+                CircleAvatar(
+                  child: Icon(
+                    device.cameraEnabled
+                        ? Icons.camera_alt_outlined
+                        : Icons.memory_rounded,
+                  ),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(device.name,
-                          style: const TextStyle(fontWeight: FontWeight.w900)),
+                      Text(
+                        device.name,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
                       Text(
                         online
                             ? 'Online${latency == null ? '' : ' · ${latency.inMilliseconds} ms'}'
@@ -522,27 +586,43 @@ class _Esp32Card extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (firmware != null || protocol != null)
+                        Text(
+                          '${firmware == null ? '' : 'Firmware $firmware'}${firmware != null && protocol != null ? ' · ' : ''}${protocol == null ? '' : 'Protocolo v$protocol'}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),
                 Icon(
-                  online ? Icons.check_circle_rounded : Icons.error_outline_rounded,
-                  color: online ? const Color(0xFF4ADE80) : Theme.of(context).colorScheme.outline,
+                  online
+                      ? Icons.check_circle_rounded
+                      : Icons.error_outline_rounded,
+                  color: online
+                      ? const Color(0xFF4ADE80)
+                      : Theme.of(context).colorScheme.outline,
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            Text(device.address ?? '', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              '${device.positionLabel} · ${device.address ?? ''}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 7,
               runSpacing: 7,
               children: [
-                if (device.hallSensorEnabled) const Chip(label: Text('Hall')),
-                if (device.temperatureSensorEnabled) const Chip(label: Text('Temperatura')),
-                if (device.tirePressureEnabled) const Chip(label: Text('Pneus')),
-                Chip(label: Text(device.esp32CameraEnabled ? 'Câmera ativa' : 'Sem câmera')),
+                ...device.capabilities.map(
+                  (capability) => Chip(label: Text(capability.label)),
+                ),
               ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Telemetria: ${device.telemetryIntervalMs} ms · offline após ${(device.staleAfter.inMilliseconds / 1000).toStringAsFixed(0)} s sem dados',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -589,8 +669,11 @@ class _EmptyEsp32 extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.memory_rounded,
-                  size: 54, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.hub_outlined,
+                size: 54,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Nenhum ESP32 conectado',
@@ -598,7 +681,7 @@ class _EmptyEsp32 extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Cadastre o endereço do módulo para receber sensores e preparar a futura câmera.',
+                'Cadastre um módulo e informe suas capacidades. Câmera é opcional e novos tipos de sensor poderão usar o mesmo cadastro.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
@@ -612,7 +695,6 @@ class _EmptyEsp32 extends StatelessWidget {
         ),
       );
 }
-
 
 class _Esp32SensorEmulatorScreen extends StatefulWidget {
   const _Esp32SensorEmulatorScreen();

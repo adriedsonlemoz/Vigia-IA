@@ -2,12 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.119+119`
+> **Versão atual:** `1.0.120+120`
 
 ## Estado atual
 
-A `1.0.119+119` aplica os novos ícones transparentes aos modos da Home, corrige os filtros do Histórico e compacta o gerenciamento de câmeras com Monitorar ao lado do nome.
+A `1.0.120+120` cria a fundação modular do ESP32: módulo e câmera deixam de ser a mesma entidade, cadastros antigos são migrados, capacidades passam a ser extensíveis e os limites de telemetria do módulo controlam o HUD.
 
+
+### Evolução 1.0.120 — fundação modular do ESP32
+
+- `Esp32Module` passa a ser a fonte de verdade para identidade, posição, capacidades, limites e intervalo de telemetria do hardware.
+- `Esp32ModuleService` persiste os módulos separadamente, protege endereço/chave, migra cadastros ESP32 antigos e só publica uma `CameraEndpoint` derivada quando o módulo realmente possui câmera.
+- O catálogo de capacidades já reconhece câmera, temperatura, Hall, pneus, bateria, mmWave, térmico, ToF, ultrassom, ambiente, GPS, luz e atuadores.
+- Cada módulo pode ser identificado por posição/função, como dianteiro, traseiro, guidão, caixa, capacete, reboque ou posição personalizada.
+- `BikeSensorService` passa a manter telemetria por `moduleId`, preparando múltiplos ESP32, e o timeout de perda de dados acompanha o intervalo configurado (`max(6 s, 3× intervalo)`).
+- Pressão mínima e temperatura máxima configuradas no módulo passam a participar de fato da classificação de saúde/alertas do snapshot.
+- Firmware antigo continua compatível: os cadastros baseados em `CameraEndpoint` são migrados automaticamente na primeira abertura.
 
 ### Evolução 1.0.119 — ícones reais na Home e telas compactadas
 

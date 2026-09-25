@@ -1,3 +1,15 @@
+## 1.0.120+120 — 2026-09-24
+
+- Criado `Esp32Module` como entidade própria, separando módulo/sensores da `CameraEndpoint`; câmera passa a ser uma capacidade opcional do ESP32.
+- Criado `Esp32ModuleService` com persistência protegida, migração automática dos cadastros ESP32 antigos, sincronização da câmera derivada e suporte a múltiplos módulos.
+- Capacidades do módulo passam a ser extensíveis e já reservam mmWave, térmico, ToF, ultrassom, ambiente, GPS, luz e atuadores além de câmera/temperatura/Hall/pneus/bateria.
+- Tela ESP32 permite definir posição/função do módulo e mostra capacidades, protocolo/firmware quando informados pelo `/status` e timeout efetivo da telemetria.
+- `BikeSensorService` passa a manter snapshots por `moduleId`; o timeout deixa de ser fixo em 6 s e passa a usar `max(6 s, 3× intervalo de telemetria)`.
+- `BikeSensorSnapshot` passa a respeitar pressão mínima e temperatura máxima configuradas no módulo, incluindo aviso/criticidade de temperatura.
+- Home continua listando somente ESP32 com câmera como fonte de vídeo, mas reconhece módulos sem câmera no gerenciamento.
+- Adicionados testes do novo modelo modular, migração legada, capacidades futuras, timeout e limites de sensores.
+- Versionamento, AppMetadata, identidade, Mudanças, README, arquitetura e verificadores sincronizados em `1.0.120+120`.
+
 ## 1.0.119+119 — 2026-09-24
 
 - Os quatro cards da Home passam a usar os novos assets transparentes de **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**, preservando os ícones Material como fallback sem duplicar navegação.

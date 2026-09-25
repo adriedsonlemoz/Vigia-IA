@@ -41,14 +41,14 @@ class BikeRideHud extends StatelessWidget {
         label: 'Pneu dianteiro',
         value: snapshot.connected ? snapshot.frontTirePsi.toStringAsFixed(0) : '--',
         unit: 'PSI',
-        alert: snapshot.connected && snapshot.frontTirePsi < 34,
+        alert: snapshot.connected && snapshot.frontTirePsi < snapshot.minimumTirePressurePsi,
       ),
       _BikeMetricData(
         icon: Icons.tire_repair_rounded,
         label: 'Pneu traseiro',
         value: snapshot.connected ? snapshot.rearTirePsi.toStringAsFixed(0) : '--',
         unit: 'PSI',
-        alert: snapshot.connected && snapshot.rearTirePsi < 34,
+        alert: snapshot.connected && snapshot.rearTirePsi < snapshot.minimumTirePressurePsi,
       ),
       _BikeMetricData(
         icon: Icons.sensors_rounded,

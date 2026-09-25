@@ -83,4 +83,33 @@ void main() {
     expect(data.sensorBatteryPercent, 100);
     expect(data.tripDistanceKm, 0);
   });
+
+
+  test('limites configurados pelo modulo controlam pressao e temperatura', () {
+    final pressureWarning = BikeSensorSnapshot.fromEsp32Json(
+      <String, dynamic>{
+        'frontTirePsi': 36,
+        'rearTirePsi': 42,
+        'batteryPercent': 80,
+        'temperatureC': 30,
+      },
+      minimumTirePressurePsi: 38,
+      maximumTemperatureC: 60,
+    );
+    expect(pressureWarning.health, BikeSensorHealth.warning);
+    expect(pressureWarning.primaryWarning, contains('pneu dianteiro'));
+
+    final temperatureWarning = BikeSensorSnapshot.fromEsp32Json(
+      <String, dynamic>{
+        'frontTirePsi': 42,
+        'rearTirePsi': 45,
+        'batteryPercent': 80,
+        'temperatureC': 62,
+      },
+      minimumTirePressurePsi: 30,
+      maximumTemperatureC: 60,
+    );
+    expect(temperatureWarning.health, BikeSensorHealth.warning);
+    expect(temperatureWarning.primaryWarning, contains('Temperatura alta'));
+  });
 }

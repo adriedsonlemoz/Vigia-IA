@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.119',
+          version: '1.0.120',
           current: true,
+          changes: [
+            'ESP32 passa a ser cadastrado como módulo independente; câmera vira uma capacidade opcional e continua aparecendo normalmente como fonte quando instalada.',
+            'Cadastros antigos são migrados automaticamente e cada módulo pode guardar posição, capacidades, calibração, limites e intervalo de telemetria.',
+            'A base já reconhece múltiplos moduleId e capacidades futuras como mmWave, térmico, ToF, ultrassom, GPS e atuadores.',
+            'Timeout da telemetria acompanha o intervalo configurado e os limites de pressão/temperatura passam a controlar os alertas do HUD.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.119',
           changes: [
             'A Home passa a usar os novos ícones transparentes de Ao vivo, Transmissão, Remoto e ESP32 diretamente nos cards.',
             'Os filtros do Histórico foram refeitos para manter ícones e rótulos Todos, Pessoas, Veículos e Animais alinhados sem check duplicado.',
@@ -1092,8 +1102,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.119',
+          version: '1.0.120',
           current: true,
+          changes: [
+            'ESP32 passa a ser cadastrado como módulo independente; câmera vira uma capacidade opcional e continua aparecendo normalmente como fonte quando instalada.',
+            'Cadastros antigos são migrados automaticamente e cada módulo pode guardar posição, capacidades, calibração, limites e intervalo de telemetria.',
+            'A base já reconhece múltiplos moduleId e capacidades futuras como mmWave, térmico, ToF, ultrassom, GPS e atuadores.',
+            'Timeout da telemetria acompanha o intervalo configurado e os limites de pressão/temperatura passam a controlar os alertas do HUD.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.119',
           changes: [
             'A Home passa a usar os novos ícones transparentes de Ao vivo, Transmissão, Remoto e ESP32 diretamente nos cards.',
             'Os filtros do Histórico foram refeitos para manter ícones e rótulos Todos, Pessoas, Veículos e Animais alinhados sem check duplicado.',

@@ -1,4 +1,16 @@
-# Validação — Vigia IA 1.0.119+119
+# Validação — Vigia IA 1.0.120+120
+
+## 1.0.120+120 — fundação modular ESP32
+
+- Atualizar uma instalação com ESP32 já cadastrado e confirmar migração automática para `esp32_modules.json`, preservando nome, endereço/chave, sensores, calibração e câmera.
+- Confirmar que um módulo sem câmera permanece em **ESP32** mas não aparece como fonte em **Ao vivo/Câmeras**.
+- Confirmar que um módulo com **Câmera ESP32 instalada** continua aparecendo como fonte com o mesmo `id`, endereço e chave.
+- Configurar posições diferentes (dianteiro/traseiro/personalizada) e confirmar persistência após reabrir a tela.
+- Configurar telemetria em 5 s e confirmar que o timeout exibido é 15 s, evitando falso offline em 6 s.
+- Validar pressão mínima e temperatura máxima customizadas nos testes do `BikeSensorSnapshot`.
+- Confirmar que `/status` textual legado continua marcando o módulo online e que JSON novo pode informar protocolo, firmware e capacidades.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
 
 ## 1.0.119+119 — Home com assets, Histórico e Câmeras compactos
 

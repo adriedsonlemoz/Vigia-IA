@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 enum BikeSensorSource { simulator, esp32 }
 
 enum BikeSensorHealth { normal, warning, critical, disconnected }
@@ -13,6 +15,9 @@ class BikeSensorSnapshot {
     required this.sensorBatteryPercent,
     required this.tripDistanceKm,
     this.ambientTemperatureC,
+    this.moduleId,
+    this.minimumTirePressurePsi = 30,
+    this.maximumTemperatureC = 65,
   });
 
   final DateTime capturedAt;
@@ -24,6 +29,14 @@ class BikeSensorSnapshot {
   final int sensorBatteryPercent;
   final double tripDistanceKm;
   final double? ambientTemperatureC;
+  final String? moduleId;
+  final double minimumTirePressurePsi;
+  final double maximumTemperatureC;
+
+  double get criticalTirePressurePsi =>
+      math.max(1, minimumTirePressurePsi - 6).toDouble();
+
+  double get criticalTemperatureC => maximumTemperatureC + 10;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'capturedAt': capturedAt.toUtc().toIso8601String(),
@@ -35,11 +48,17 @@ class BikeSensorSnapshot {
         'batteryPercent': sensorBatteryPercent,
         'tripDistanceKm': tripDistanceKm,
         'temperatureC': ambientTemperatureC,
+        'moduleId': moduleId,
+        'minimumTirePressurePsi': minimumTirePressurePsi,
+        'maximumTemperatureC': maximumTemperatureC,
       };
 
   factory BikeSensorSnapshot.fromEsp32Json(
     Map<String, dynamic> json, {
     DateTime? receivedAt,
+    String? moduleId,
+    double minimumTirePressurePsi = 30,
+    double maximumTemperatureC = 65,
   }) {
     double number(String key, [double fallback = 0]) =>
         (json[key] as num?)?.toDouble() ?? fallback;
@@ -64,6 +83,9 @@ class BikeSensorSnapshot {
       ambientTemperatureC: json['temperatureC'] is num
           ? (json['temperatureC'] as num).toDouble().clamp(-40, 125).toDouble()
           : null,
+      moduleId: moduleId ?? json['moduleId'] as String?,
+      minimumTirePressurePsi: minimumTirePressurePsi.clamp(1, 150).toDouble(),
+      maximumTemperatureC: maximumTemperatureC.clamp(-40, 125).toDouble(),
     );
   }
 
@@ -71,10 +93,17 @@ class BikeSensorSnapshot {
 
   BikeSensorHealth get health {
     if (!connected) return BikeSensorHealth.disconnected;
-    if (frontTirePsi < 28 || rearTirePsi < 28 || sensorBatteryPercent <= 5) {
+    final temperature = ambientTemperatureC;
+    if (frontTirePsi <= criticalTirePressurePsi ||
+        rearTirePsi <= criticalTirePressurePsi ||
+        sensorBatteryPercent <= 5 ||
+        (temperature != null && temperature >= criticalTemperatureC)) {
       return BikeSensorHealth.critical;
     }
-    if (frontTirePsi < 34 || rearTirePsi < 34 || sensorBatteryPercent <= 15) {
+    if (frontTirePsi < minimumTirePressurePsi ||
+        rearTirePsi < minimumTirePressurePsi ||
+        sensorBatteryPercent <= 15 ||
+        (temperature != null && temperature >= maximumTemperatureC)) {
       return BikeSensorHealth.warning;
     }
     return BikeSensorHealth.normal;
@@ -82,16 +111,16 @@ class BikeSensorSnapshot {
 
   String? get primaryWarning {
     if (!connected) return 'Sensores da bike sem conexão';
-    if (frontTirePsi < 28) {
+    if (frontTirePsi <= criticalTirePressurePsi) {
       return 'PRESSÃO DIANTEIRA BAIXA • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (rearTirePsi < 28) {
+    if (rearTirePsi <= criticalTirePressurePsi) {
       return 'PRESSÃO TRASEIRA BAIXA • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (frontTirePsi < 34) {
+    if (frontTirePsi < minimumTirePressurePsi) {
       return 'Atenção no pneu dianteiro • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (rearTirePsi < 34) {
+    if (rearTirePsi < minimumTirePressurePsi) {
       return 'Atenção no pneu traseiro • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
     if (sensorBatteryPercent <= 5) {
@@ -99,6 +128,13 @@ class BikeSensorSnapshot {
     }
     if (sensorBatteryPercent <= 15) {
       return 'Bateria dos sensores baixa • $sensorBatteryPercent%';
+    }
+    final temperature = ambientTemperatureC;
+    if (temperature != null && temperature >= criticalTemperatureC) {
+      return 'TEMPERATURA CRÍTICA • ${temperature.toStringAsFixed(0)} °C';
+    }
+    if (temperature != null && temperature >= maximumTemperatureC) {
+      return 'Temperatura alta • ${temperature.toStringAsFixed(0)} °C';
     }
     return null;
   }

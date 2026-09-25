@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.119 incorpora os novos ícones visuais na Home, corrige os filtros do Histórico e compacta o cartão de câmera com Monitorar ao lado do nome.",
-  "version": "1.0.119",
-  "build": 119
+  "notes": "A 1.0.120 separa o ESP32 da câmera, cria registro próprio de módulos/capacidades e prepara múltiplos módulos e sensores futuros sem quebrar as fontes de vídeo existentes.",
+  "version": "1.0.120",
+  "build": 120
 }

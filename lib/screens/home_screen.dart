@@ -10,6 +10,7 @@ import '../models/smart_alert_rules.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
+import '../services/esp32_module_service.dart';
 import '../services/background_monitor_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
@@ -47,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final AppSettingsService _settingsService = AppSettingsService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
+  final Esp32ModuleService _esp32ModuleRegistry = Esp32ModuleService.instance;
   VideoSourceType _sourceType = VideoSourceType.localCamera;
   final _rtspController = TextEditingController();
   final _remoteUrlController = TextEditingController();
@@ -106,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadSettings() async {
     await _cameraRegistry.initialize();
+    await _esp32ModuleRegistry.initialize();
     final profile = await _settingsService.initialize();
     if (!mounted) return;
     final source = profile.source;

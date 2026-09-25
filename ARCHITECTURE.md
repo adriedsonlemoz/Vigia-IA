@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.119+119
+# Arquitetura — Vigia IA 1.0.120+120
+
+## Evolução 1.0.120 — módulos ESP32 independentes e extensíveis
+
+- `Esp32Module` passa a modelar o hardware ESP32 independentemente da câmera. Identidade, posição, capacidades, calibração e limites pertencem ao módulo; `CameraEndpoint` permanece como projeção de vídeo para compatibilidade com o pipeline existente.
+- `Esp32ModuleService` é o registro persistente dos módulos. Na primeira inicialização ele migra qualquer `CameraEndpointType.esp32` legado e sincroniza no `CameraRegistryService` somente os módulos com `Esp32Capability.camera`.
+- O protocolo de configuração ganha `protocolVersion`, `moduleId`, `position` e `capabilities`, mantendo os blocos legados `camera`, `temperature`, `hall` e `tirePressure` para firmware existente.
+- O probe de `/status` aceita resposta textual antiga ou JSON novo com `protocolVersion`, `firmwareVersion` e `capabilities`, sem exigir que o firmware novo já exista.
+- `BikeSensorService` mantém `moduleSnapshots` por `moduleId` e um snapshot primário compatível com o HUD atual. A etapa seguinte poderá agregar ou selecionar módulos sem alterar widgets consumidores.
+- O stale timeout é derivado do cadastro do módulo (`max(6000 ms, telemetryIntervalMs × 3)`), evitando falsos offline com telemetria lenta.
+- `BikeSensorSnapshot` carrega os limites de pressão/temperatura usados na saúde; os antigos valores fixos deixam de decidir os alertas.
+- Capacidades reservadas no modelo: câmera, temperatura, Hall, pneus, bateria, mmWave, térmico, ToF, ultrassom, sensores ambientais, GPS, luz e atuadores.
 
 ## Evolução 1.0.119 — assets de modos e compactação de Histórico/Câmeras
 

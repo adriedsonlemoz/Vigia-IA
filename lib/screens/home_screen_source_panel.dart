@@ -168,7 +168,9 @@ extension _HomeSourcePanel on _HomeScreenState {
                       },
                       icon: const Icon(Icons.tune_rounded),
                       label: Text(
-                        modules.isEmpty ? 'Conectar ESP32' : 'Gerenciar ESP32',
+                        _esp32ModuleRegistry.modules.isEmpty
+                            ? 'Conectar ESP32'
+                            : 'Gerenciar ESP32',
                       ),
                     ),
                   ],
