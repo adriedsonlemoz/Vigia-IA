@@ -1,3 +1,16 @@
+## 1.0.123+123 — energia, bateria e solar no ESP32
+
+- Criar módulo com capacidade **Energia**, alimentação **Power bank USB** e **Sem bateria monitorada**; confirmar que o wizard conclui sem exigir bateria física.
+- Repetir com **Tomada / fonte USB** para validar uso em bancada.
+- Configurar bateria **Chumbo-ácido 12 V / 7 Ah** com INA226 e entrada solar; salvar/reabrir e confirmar persistência.
+- Configurar **LiFePO₄ 12,8 V** e confirmar que o perfil não usa a mesma química/limites sugeridos do chumbo.
+- Confirmar que **Bateria do módulo** e **Energia** aparecem como capacidades distintas e que uma leitura da bateria principal não alimenta o alerta legado da bateria do ESP32.
+- Injetar payload `power.battery` com percent/voltage/current/temperature e `power.solar` com V/A/W; confirmar exibição no card e exportação no diagnóstico.
+- Confirmar compatibilidade com payload legado `power.batteryPercent`/`voltageV` sem `power.battery`.
+- Confirmar que `/config` envia `energy.enabled`, `moduleSupply`, `monitor`, `battery` e `solar` apenas como extensão compatível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 ## 1.0.122+122 — wizard ESP32 e buildfix Android-APK-90
 
 - Abrir **ESP32** sem módulos e confirmar que existe apenas um botão para iniciar o cadastro.

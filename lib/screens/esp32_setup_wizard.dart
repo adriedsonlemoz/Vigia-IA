@@ -30,6 +30,10 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
   late final TextEditingController _magnets;
   late final TextEditingController _pressure;
   late final TextEditingController _temperature;
+  late final TextEditingController _batteryVoltage;
+  late final TextEditingController _batteryCapacity;
+  late final TextEditingController _lowBattery;
+  late final TextEditingController _criticalBattery;
 
   int _step = 0;
   bool _enabled = true;
@@ -39,6 +43,10 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
   Set<Esp32Capability> _capabilities = <Esp32Capability>{};
   int _interval = 1000;
   int _protocolVersion = 1;
+  Esp32PowerSupplyType _powerSupply = Esp32PowerSupplyType.auto;
+  Esp32BatteryChemistry _batteryChemistry = Esp32BatteryChemistry.none;
+  Esp32PowerMonitorType _powerMonitor = Esp32PowerMonitorType.automatic;
+  bool _monitorSolarInput = false;
   Esp32ProbeResult? _probe;
   String? _inlineError;
 
@@ -69,11 +77,29 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
     _temperature = TextEditingController(
       text: (existing?.maximumTemperatureC ?? 65).toStringAsFixed(1),
     );
+    _batteryVoltage = TextEditingController(
+      text: (existing?.batteryNominalVoltageV ?? 12).toStringAsFixed(1),
+    );
+    _batteryCapacity = TextEditingController(
+      text: (existing?.batteryCapacityAh ?? 7).toStringAsFixed(1),
+    );
+    _lowBattery = TextEditingController(
+      text: (existing?.lowBatteryPercent ?? 25).toString(),
+    );
+    _criticalBattery = TextEditingController(
+      text: (existing?.criticalBatteryPercent ?? 10).toString(),
+    );
     _enabled = existing?.enabled ?? true;
     _position = existing?.position ?? Esp32ModulePosition.unspecified;
     _capabilities = <Esp32Capability>{...?existing?.capabilities};
     _interval = existing?.telemetryIntervalMs ?? 1000;
     _protocolVersion = existing?.protocolVersion ?? 1;
+    _powerSupply = existing?.powerSupplyType ?? Esp32PowerSupplyType.auto;
+    _batteryChemistry =
+        existing?.batteryChemistry ?? Esp32BatteryChemistry.none;
+    _powerMonitor =
+        existing?.powerMonitorType ?? Esp32PowerMonitorType.automatic;
+    _monitorSolarInput = existing?.monitorSolarInput ?? false;
     _showManualConnection = existing != null;
   }
 
@@ -89,6 +115,10 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
       _magnets,
       _pressure,
       _temperature,
+      _batteryVoltage,
+      _batteryCapacity,
+      _lowBattery,
+      _criticalBattery,
     ]) {
       controller.dispose();
     }
@@ -166,6 +196,12 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
     final maximumTemperature =
         double.tryParse(_temperature.text.replaceAll(',', '.')) ?? 65;
     final customLabel = _customPosition.text.trim();
+    final nominalVoltage =
+        double.tryParse(_batteryVoltage.text.replaceAll(',', '.')) ?? 12;
+    final capacityAh =
+        double.tryParse(_batteryCapacity.text.replaceAll(',', '.')) ?? 7;
+    final lowBattery = int.tryParse(_lowBattery.text) ?? 25;
+    final criticalBattery = int.tryParse(_criticalBattery.text) ?? 10;
     return Esp32Module(
       id: _existing?.id ?? 'esp32_${DateTime.now().microsecondsSinceEpoch}',
       name: _name.text.trim().isEmpty ? 'ESP32' : _name.text.trim(),
@@ -180,9 +216,33 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
       hallMagnets: magnetCount,
       minimumTirePressurePsi: minimumPressure,
       maximumTemperatureC: maximumTemperature,
+      powerSupplyType: _powerSupply,
+      batteryChemistry: _batteryChemistry,
+      powerMonitorType: _powerMonitor,
+      batteryNominalVoltageV: nominalVoltage,
+      batteryCapacityAh: capacityAh,
+      lowBatteryPercent: lowBattery.clamp(1, 99).toInt(),
+      criticalBatteryPercent: criticalBattery.clamp(1, 99).toInt(),
+      monitorSolarInput: _monitorSolarInput,
       telemetryIntervalMs: _interval,
       protocolVersion: _protocolVersion,
     );
+  }
+
+  void _selectBatteryChemistry(Esp32BatteryChemistry value) {
+    final previous = _batteryChemistry;
+    setState(() {
+      _batteryChemistry = value;
+      if (value == Esp32BatteryChemistry.leadAcid &&
+          (previous == Esp32BatteryChemistry.none ||
+              _batteryVoltage.text.trim() == '12.8')) {
+        _batteryVoltage.text = '12.0';
+      } else if (value == Esp32BatteryChemistry.lifepo4 &&
+          (previous == Esp32BatteryChemistry.none ||
+              _batteryVoltage.text.trim() == '12.0')) {
+        _batteryVoltage.text = '12.8';
+      }
+    });
   }
 
   bool _validateCurrentStep() {
@@ -236,6 +296,25 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
               double.tryParse(_temperature.text.replaceAll(',', '.'));
           if (maximumTemperature == null || maximumTemperature <= 0) {
             error = 'Informe um limite de temperatura maior que zero.';
+          }
+        }
+        if (error == null &&
+            _capabilities.contains(Esp32Capability.energy) &&
+            _batteryChemistry != Esp32BatteryChemistry.none) {
+          final voltage =
+              double.tryParse(_batteryVoltage.text.replaceAll(',', '.'));
+          final capacity =
+              double.tryParse(_batteryCapacity.text.replaceAll(',', '.'));
+          final low = int.tryParse(_lowBattery.text);
+          final critical = int.tryParse(_criticalBattery.text);
+          if (voltage == null || voltage <= 0 || voltage > 60) {
+            error = 'Informe uma tensão nominal válida para a bateria.';
+          } else if (capacity == null || capacity <= 0 || capacity > 1000) {
+            error = 'Informe a capacidade da bateria em Ah.';
+          } else if (low == null || low < 1 || low > 99) {
+            error = 'O alerta de bateria baixa deve ficar entre 1% e 99%.';
+          } else if (critical == null || critical < 1 || critical >= low) {
+            error = 'O nível crítico deve ser menor que o alerta de bateria baixa.';
           }
         }
         break;
@@ -543,6 +622,7 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
       Esp32Capability.hallSpeed,
       Esp32Capability.tirePressure,
       Esp32Capability.battery,
+      Esp32Capability.energy,
     ];
     const future = <Esp32Capability>[
       Esp32Capability.mmWave,
@@ -595,6 +675,7 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
     final hasHall = _capabilities.contains(Esp32Capability.hallSpeed);
     final hasTires = _capabilities.contains(Esp32Capability.tirePressure);
     final hasCamera = _capabilities.contains(Esp32Capability.camera);
+    final hasEnergy = _capabilities.contains(Esp32Capability.energy);
     return _stepScroll(
       context,
       icon: Icons.tune_rounded,
@@ -667,7 +748,138 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
           ),
           const SizedBox(height: 18),
         ],
-        if (!hasTemperature && !hasHall && !hasTires && !hasCamera)
+        if (hasEnergy) ...[
+          _sectionTitle(context, 'Energia', Icons.electrical_services_rounded),
+          const _InfoNote(
+            icon: Icons.info_outline_rounded,
+            text:
+                'O ESP32 pode funcionar por power bank ou tomada e, ao mesmo tempo, monitorar separadamente uma bateria chumbo-ácido/LiFePO₄ e a entrada solar.',
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<Esp32PowerSupplyType>(
+            initialValue: _powerSupply,
+            decoration: const InputDecoration(
+              labelText: 'Como o ESP32 será alimentado?',
+              helperText: 'Para testes, use Power bank USB ou Tomada / fonte USB.',
+            ),
+            items: Esp32PowerSupplyType.values
+                .map((item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(item.label),
+                    ))
+                .toList(growable: false),
+            onChanged: (value) {
+              if (value != null) setState(() => _powerSupply = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<Esp32PowerMonitorType>(
+            initialValue: _powerMonitor,
+            decoration: const InputDecoration(
+              labelText: 'Medição de energia',
+              helperText: 'INA226 é a opção recomendada para uma instalação definitiva.',
+            ),
+            items: Esp32PowerMonitorType.values
+                .map((item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(item.label),
+                    ))
+                .toList(growable: false),
+            onChanged: (value) {
+              if (value != null) setState(() => _powerMonitor = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<Esp32BatteryChemistry>(
+            initialValue: _batteryChemistry,
+            decoration: const InputDecoration(
+              labelText: 'Bateria principal monitorada',
+              helperText: 'Escolha “Sem bateria” para testar apenas com USB.',
+            ),
+            items: Esp32BatteryChemistry.values
+                .map((item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(item.label),
+                    ))
+                .toList(growable: false),
+            onChanged: (value) {
+              if (value != null) _selectBatteryChemistry(value);
+            },
+          ),
+          if (_batteryChemistry != Esp32BatteryChemistry.none) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _batteryVoltage,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Tensão nominal (V)',
+                      hintText: '12.0 / 12.8',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _batteryCapacity,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Capacidade (Ah)',
+                      hintText: '7',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _lowBattery,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Alerta baixo (%)',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _criticalBattery,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Crítico (%)',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _InfoNote(
+              icon: Icons.battery_5_bar_rounded,
+              text: _batteryChemistry == Esp32BatteryChemistry.lifepo4
+                  ? 'LiFePO₄ mantém a tensão quase plana por boa parte da descarga; para porcentagem confiável prefira BMS ou medição de corrente/carga, não apenas tensão.'
+                  : 'A tensão ajuda a estimar o estado da bateria, mas varia com carga e carregamento. Corrente + capacidade em Ah melhora a estimativa.',
+            ),
+          ],
+          const SizedBox(height: 6),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _monitorSolarInput,
+            onChanged: (value) => setState(() => _monitorSolarInput = value),
+            title: const Text('Monitorar entrada solar'),
+            subtitle: const Text(
+              'Reserva telemetria para tensão, corrente e potência do painel/controlador.',
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        if (!hasTemperature && !hasHall && !hasTires && !hasCamera && !hasEnergy)
           const _InfoNote(
             icon: Icons.check_circle_outline_rounded,
             text:
@@ -765,6 +977,12 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
                   '${module.telemetryIntervalMs / 1000 == 0.5 ? '0,5' : (module.telemetryIntervalMs / 1000).toStringAsFixed(0)} s',
                 ),
                 _reviewRow('Estado', module.enabled ? 'Ativo' : 'Desativado'),
+                if (module.energyMonitoringEnabled) ...[
+                  _reviewRow('Energia', module.energyProfileLabel),
+                  _reviewRow('Medição', module.powerMonitorType.label),
+                  if (module.monitorSolarInput)
+                    _reviewRow('Solar', 'Monitoramento habilitado'),
+                ],
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 7,
@@ -999,6 +1217,7 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
         Esp32Capability.hallSpeed => Icons.speed_rounded,
         Esp32Capability.tirePressure => Icons.circle_outlined,
         Esp32Capability.battery => Icons.battery_std_rounded,
+        Esp32Capability.energy => Icons.electrical_services_rounded,
         Esp32Capability.mmWave => Icons.radar_rounded,
         Esp32Capability.thermal => Icons.thermostat_rounded,
         Esp32Capability.tof => Icons.straighten_rounded,
@@ -1014,7 +1233,8 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
         Esp32Capability.temperature => 'Temperatura do módulo, caixa ou ambiente.',
         Esp32Capability.hallSpeed => 'Velocidade e distância pela rotação da roda.',
         Esp32Capability.tirePressure => 'Pressão dos pneus dianteiro e traseiro.',
-        Esp32Capability.battery => 'Nível, tensão e alimentação do módulo.',
+        Esp32Capability.battery => 'Nível e alimentação do próprio ESP32/power bank, quando o firmware disponibilizar.',
+        Esp32Capability.energy => 'Monitora bateria principal, corrente, potência e entrada solar sem exigir que o ESP32 seja alimentado por essa bateria.',
         Esp32Capability.mmWave => 'Presença, movimento e distância por radar mmWave.',
         Esp32Capability.thermal => 'Temperatura por matriz ou sensor térmico.',
         Esp32Capability.tof => 'Distância curta e precisa por Time-of-Flight.',

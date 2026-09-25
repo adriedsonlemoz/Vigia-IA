@@ -12,6 +12,79 @@ extension Esp32ConnectionStateLabel on Esp32ConnectionState {
       };
 }
 
+class Esp32EnergyTelemetry {
+  const Esp32EnergyTelemetry({
+    this.sourceType,
+    this.batteryPresent,
+    this.batteryChemistry,
+    this.monitorType,
+    this.batteryPercent,
+    this.voltageV,
+    this.currentA,
+    this.powerW,
+    this.charging,
+    this.externalPower,
+    this.batteryTemperatureC,
+    this.solarVoltageV,
+    this.solarCurrentA,
+    this.solarPowerW,
+    this.energyInWh,
+    this.energyOutWh,
+  });
+
+  final String? sourceType;
+  final bool? batteryPresent;
+  final String? batteryChemistry;
+  final String? monitorType;
+  final int? batteryPercent;
+  final double? voltageV;
+  final double? currentA;
+  final double? powerW;
+  final bool? charging;
+  final bool? externalPower;
+  final double? batteryTemperatureC;
+  final double? solarVoltageV;
+  final double? solarCurrentA;
+  final double? solarPowerW;
+  final double? energyInWh;
+  final double? energyOutWh;
+
+  bool get hasValues =>
+      sourceType != null ||
+      batteryPresent != null ||
+      batteryPercent != null ||
+      voltageV != null ||
+      currentA != null ||
+      powerW != null ||
+      charging != null ||
+      externalPower != null ||
+      batteryTemperatureC != null ||
+      solarVoltageV != null ||
+      solarCurrentA != null ||
+      solarPowerW != null ||
+      energyInWh != null ||
+      energyOutWh != null;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'sourceType': sourceType,
+        'batteryPresent': batteryPresent,
+        'batteryChemistry': batteryChemistry,
+        'monitorType': monitorType,
+        'batteryPercent': batteryPercent,
+        'voltageV': voltageV,
+        'currentA': currentA,
+        'powerW': powerW,
+        'charging': charging,
+        'externalPower': externalPower,
+        'batteryTemperatureC': batteryTemperatureC,
+        'solarVoltageV': solarVoltageV,
+        'solarCurrentA': solarCurrentA,
+        'solarPowerW': solarPowerW,
+        'energyInWh': energyInWh,
+        'energyOutWh': energyOutWh,
+      };
+}
+
 class Esp32TelemetryPacket {
   const Esp32TelemetryPacket({
     required this.moduleId,
@@ -25,6 +98,7 @@ class Esp32TelemetryPacket {
     this.batteryPercent,
     this.batteryVoltage,
     this.charging,
+    this.energy,
     this.protocolVersion,
     this.firmwareVersion,
     this.reportedCapabilities = const <Esp32Capability>{},
@@ -40,6 +114,7 @@ class Esp32TelemetryPacket {
   final int? batteryPercent;
   final double? batteryVoltage;
   final bool? charging;
+  final Esp32EnergyTelemetry? energy;
   final int? protocolVersion;
   final String? firmwareVersion;
   final Set<Esp32Capability> reportedCapabilities;
@@ -77,6 +152,7 @@ class Esp32TelemetryPacket {
         'batteryPercent': batteryPercent,
         'batteryVoltage': batteryVoltage,
         'charging': charging,
+        'energy': energy?.toJson(),
         'protocolVersion': protocolVersion,
         'firmwareVersion': firmwareVersion,
         'capabilities': reportedCapabilities.map((item) => item.name).toList()
@@ -105,6 +181,16 @@ class Esp32TelemetryPacket {
     final power = _stringMap(telemetry['power']) ??
         _stringMap(json['power']) ??
         const <String, dynamic>{};
+    final battery = _stringMap(power['battery']) ??
+        _stringMap(telemetry['battery']) ??
+        _stringMap(json['battery']) ??
+        const <String, dynamic>{};
+    final solar = _stringMap(power['solar']) ??
+        _stringMap(telemetry['solar']) ??
+        _stringMap(json['solar']) ??
+        const <String, dynamic>{};
+    final supply = _stringMap(power['supply']) ?? const <String, dynamic>{};
+    final monitor = _stringMap(power['monitor']) ?? const <String, dynamic>{};
     final wifi = _stringMap(telemetry['wifi']) ??
         _stringMap(json['wifi']) ??
         const <String, dynamic>{};
@@ -166,8 +252,9 @@ class Esp32TelemetryPacket {
         _firstNumber(<Object?>[
           telemetry['batteryPercent'],
           sensors['batteryPercent'],
-          power['batteryPercent'],
-          power['percent'],
+          power['moduleBatteryPercent'],
+          if (battery.isEmpty) power['batteryPercent'],
+          if (battery.isEmpty) power['percent'],
         ]),
       );
       _putNumber(
@@ -218,12 +305,123 @@ class Esp32TelemetryPacket {
       telemetry['uptime'],
       json['uptime'],
     ]);
-    final batteryPercent = _firstNumber(<Object?>[
+    final moduleBatteryPercentNumber = _firstNumber(<Object?>[
       telemetry['batteryPercent'],
-      power['batteryPercent'],
-      power['percent'],
+      power['moduleBatteryPercent'],
+      if (battery.isEmpty) power['batteryPercent'],
+      if (battery.isEmpty) power['percent'],
       bike['batteryPercent'],
     ]);
+    final moduleBatteryVoltage = _firstNumber(<Object?>[
+      telemetry['batteryVoltage'],
+      power['moduleBatteryVoltage'],
+      if (battery.isEmpty) power['batteryVoltage'],
+      if (battery.isEmpty) power['voltageV'],
+      if (battery.isEmpty) power['voltage'],
+    ])?.toDouble();
+    final energyBatteryPercentNumber = _firstNumber(<Object?>[
+      battery['percent'],
+      battery['batteryPercent'],
+      power['systemBatteryPercent'],
+    ]);
+    final voltage = _firstNumber(<Object?>[
+      battery['voltageV'],
+      battery['voltage'],
+      power['systemBatteryVoltageV'],
+    ])?.toDouble();
+    final current = _firstNumber(<Object?>[
+      battery['currentA'],
+      battery['current'],
+      power['systemBatteryCurrentA'],
+    ])?.toDouble();
+    final explicitPower = _firstNumber(<Object?>[
+      battery['powerW'],
+      power['batteryPowerW'],
+      power['powerW'],
+      power['watts'],
+    ])?.toDouble();
+    final charging = _firstBool(<Object?>[
+      telemetry['charging'],
+      power['moduleCharging'],
+      if (battery.isEmpty) power['charging'],
+      power['externalPower'],
+    ]);
+    final energyCharging = _firstBool(<Object?>[
+      battery['charging'],
+      power['systemBatteryCharging'],
+    ]);
+    final externalPower = _firstBool(<Object?>[
+      power['externalPower'],
+      supply['externalPower'],
+      telemetry['externalPower'],
+    ]);
+    final modulePercent =
+        moduleBatteryPercentNumber?.toInt().clamp(0, 100).toInt();
+    final energyPercent =
+        energyBatteryPercentNumber?.toInt().clamp(0, 100).toInt();
+    final solarVoltage = _firstNumber(<Object?>[
+      solar['voltageV'],
+      solar['voltage'],
+      power['solarVoltageV'],
+    ])?.toDouble();
+    final solarCurrent = _firstNumber(<Object?>[
+      solar['currentA'],
+      solar['current'],
+      power['solarCurrentA'],
+    ])?.toDouble();
+    final solarPower = _firstNumber(<Object?>[
+      solar['powerW'],
+      solar['watts'],
+      power['solarPowerW'],
+    ])?.toDouble();
+    final energy = Esp32EnergyTelemetry(
+      sourceType: _firstString(<Object?>[
+        supply['type'],
+        supply['source'],
+        power['sourceType'],
+        power['source'],
+      ]),
+      batteryPresent: _firstBool(<Object?>[
+            battery['present'],
+            power['batteryPresent'],
+          ]) ??
+          (voltage != null || energyPercent != null ? true : null),
+      batteryChemistry: _firstString(<Object?>[
+        battery['chemistry'],
+        power['batteryChemistry'],
+      ]),
+      monitorType: _firstString(<Object?>[
+        monitor['type'],
+        monitor['model'],
+        power['monitorType'],
+        power['sensorModel'],
+      ]),
+      batteryPercent: energyPercent,
+      voltageV: voltage,
+      currentA: current,
+      powerW: explicitPower ??
+          (voltage != null && current != null ? voltage * current : null),
+      charging: energyCharging,
+      externalPower: externalPower,
+      batteryTemperatureC: _firstNumber(<Object?>[
+        battery['temperatureC'],
+        power['batteryTemperatureC'],
+      ])?.toDouble(),
+      solarVoltageV: solarVoltage,
+      solarCurrentA: solarCurrent,
+      solarPowerW: solarPower ??
+          (solarVoltage != null && solarCurrent != null
+              ? solarVoltage * solarCurrent
+              : null),
+      energyInWh: _firstNumber(<Object?>[
+        power['energyInWh'],
+        battery['energyInWh'],
+      ])?.toDouble(),
+      energyOutWh: _firstNumber(<Object?>[
+        power['energyOutWh'],
+        battery['energyOutWh'],
+      ])?.toDouble(),
+    );
     final moduleId = (telemetry['moduleId'] ?? json['moduleId'])?.toString();
 
     return Esp32TelemetryPacket(
@@ -260,19 +458,10 @@ class Esp32TelemetryPacket {
         wifi['rssiDbm'],
         wifi['rssi'],
       ])?.toInt(),
-      batteryPercent: batteryPercent?.toInt().clamp(0, 100).toInt(),
-      batteryVoltage: _firstNumber(<Object?>[
-        telemetry['batteryVoltage'],
-        telemetry['voltageV'],
-        power['batteryVoltage'],
-        power['voltageV'],
-        power['voltage'],
-      ])?.toDouble(),
-      charging: _firstBool(<Object?>[
-        telemetry['charging'],
-        power['charging'],
-        power['externalPower'],
-      ]),
+      batteryPercent: modulePercent,
+      batteryVoltage: moduleBatteryVoltage,
+      charging: charging,
+      energy: energy.hasValues ? energy : null,
       protocolVersion: _firstNumber(<Object?>[
         telemetry['protocolVersion'],
         json['protocolVersion'],
@@ -341,6 +530,14 @@ num? _firstNumber(List<Object?> values) {
       final parsed = num.tryParse(value.replaceAll(',', '.'));
       if (parsed != null) return parsed;
     }
+  }
+  return null;
+}
+
+String? _firstString(List<Object?> values) {
+  for (final value in values) {
+    final text = value?.toString().trim();
+    if (text != null && text.isNotEmpty) return text;
   }
   return null;
 }

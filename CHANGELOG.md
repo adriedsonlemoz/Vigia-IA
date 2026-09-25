@@ -1,3 +1,16 @@
+## 1.0.123+123 — 2026-09-25
+
+- Criada a capacidade `Esp32Capability.energy`, separada de `battery`, para distinguir a bateria principal/solar da alimentação do próprio módulo ESP32.
+- Adicionados perfis de alimentação do ESP32: automático, power bank USB, tomada/fonte USB, bateria do sistema e outra fonte.
+- Adicionada configuração de bateria principal com química chumbo-ácido, LiFePO₄ ou outra, tensão nominal, capacidade em Ah e níveis de aviso/crítico; o modo sem bateria continua válido para testes.
+- Preparados monitores de energia por firmware, divisor resistivo, INA219, INA226 ou BMS com telemetria, além da opção de entrada solar.
+- `/config` passa a incluir o bloco `energy` opcional com monitor, bateria e solar sem quebrar firmwares anteriores.
+- `Esp32TelemetryPacket` passa a normalizar bateria principal, tensão, corrente, potência, temperatura, energia acumulada, fonte de alimentação, monitor e produção solar.
+- O card do ESP32 diferencia bateria do módulo de bateria principal e mostra corrente/potência/solar quando disponíveis.
+- Diagnóstico ESP32 inclui a configuração de energia e a telemetria normalizada correspondente.
+- Adicionados testes de regressão para chumbo com ESP32 em power bank, bancada sem bateria e payload estruturado de bateria/solar.
+- Versionamento, identidade, Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.123+123`.
+
 ## 1.0.122+122 — 2026-09-24
 
 - Substituído o formulário único de ESP32 por `Esp32SetupWizard`, em 5 etapas: conexão, identificação, capacidades, configuração e revisão.

@@ -102,4 +102,66 @@ void main() {
     expect(packet.uptime, const Duration(seconds: 42));
   });
 
+
+test('parser extrai bateria principal corrente e entrada solar', () {
+  final packet = Esp32TelemetryPacket.fromJson(
+    <String, dynamic>{
+      'moduleId': 'energy-pack',
+      'capabilities': <String>['energy'],
+      'power': <String, dynamic>{
+        'source': 'usbPowerBank',
+        'monitor': <String, dynamic>{'model': 'INA226'},
+        'battery': <String, dynamic>{
+          'present': true,
+          'chemistry': 'leadAcid',
+          'percent': 74,
+          'voltageV': 12.62,
+          'currentA': -1.35,
+          'temperatureC': 28.4,
+        },
+        'solar': <String, dynamic>{
+          'voltageV': 18.2,
+          'currentA': 0.42,
+          'powerW': 7.64,
+        },
+      },
+    },
+    fallbackModuleId: 'fallback',
+  );
+
+  expect(packet.reportedCapabilities, contains(Esp32Capability.energy));
+  expect(packet.energy, isNotNull);
+  expect(packet.energy!.sourceType, 'usbPowerBank');
+  expect(packet.energy!.monitorType, 'INA226');
+  expect(packet.energy!.batteryChemistry, 'leadAcid');
+  expect(packet.energy!.voltageV, 12.62);
+  expect(packet.energy!.currentA, -1.35);
+  expect(packet.energy!.powerW, closeTo(-17.037, 0.001));
+  expect(packet.energy!.solarPowerW, 7.64);
+  expect(packet.energy!.batteryTemperatureC, 28.4);
+});
+
+  test('bateria principal nao sobrescreve bateria do modulo', () {
+    final packet = Esp32TelemetryPacket.fromJson(
+      <String, dynamic>{
+        'batteryPercent': 88,
+        'batteryVoltage': 4.07,
+        'power': <String, dynamic>{
+          'battery': <String, dynamic>{
+            'percent': 31,
+            'voltageV': 12.18,
+            'currentA': -0.8,
+          },
+        },
+      },
+      fallbackModuleId: 'separate-power',
+    );
+
+    expect(packet.batteryPercent, 88);
+    expect(packet.batteryVoltage, 4.07);
+    expect(packet.energy!.batteryPercent, 31);
+    expect(packet.energy!.voltageV, 12.18);
+    expect(packet.bikePayload['batteryPercent'], 88);
+  });
+
 }

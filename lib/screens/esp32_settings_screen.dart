@@ -289,6 +289,15 @@ class _Esp32Card extends StatelessWidget {
     final frontPsi = bike?['frontTirePsi'] as num?;
     final rearPsi = bike?['rearTirePsi'] as num?;
     final temperature = bike?['temperatureC'] as num?;
+    final energy = packet?.energy;
+    final energyPercent = energy?.batteryPercent;
+    final energyAlert = energyPercent == null
+        ? null
+        : energyPercent <= device.criticalBatteryPercent
+            ? 'Bateria principal crítica'
+            : energyPercent <= device.lowBatteryPercent
+                ? 'Bateria principal baixa'
+                : null;
     final stateColor = switch (runtimeState?.connectionState) {
       Esp32ConnectionState.online => const Color(0xFF4ADE80),
       Esp32ConnectionState.connecting || Esp32ConnectionState.degraded =>
@@ -374,6 +383,11 @@ class _Esp32Card extends StatelessWidget {
               'Telemetria: ${device.telemetryIntervalMs} ms · offline após ${(device.staleAfter.inMilliseconds / 1000).toStringAsFixed(0)} s sem dados',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            if (device.energyMonitoringEnabled)
+              Text(
+                'Energia: ${device.energyProfileLabel} · ${device.powerMonitorType.label}${device.monitorSolarInput ? ' · solar' : ''}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             if (runtimeState != null) ...[
               const SizedBox(height: 8),
               Container(
@@ -419,16 +433,71 @@ class _Esp32Card extends StatelessWidget {
                                 Icons.battery_std_rounded,
                                 size: 16,
                               ),
-                              label: Text('${packet.batteryPercent}%'),
+                              label: Text('Módulo ${packet.batteryPercent}%'),
                             ),
                           if (packet.batteryVoltage != null)
                             Chip(
                               label: Text(
-                                '${packet.batteryVoltage!.toStringAsFixed(2)} V',
+                                'Módulo ${packet.batteryVoltage!.toStringAsFixed(2)} V',
                               ),
                             ),
                           if (packet.charging == true)
                             const Chip(label: Text('Alimentação externa')),
+                          if (energy?.batteryPercent != null)
+                            Chip(
+                              avatar: const Icon(Icons.battery_charging_full_rounded, size: 16),
+                              label: Text('Bateria ${energy!.batteryPercent}%'),
+                            ),
+                          if (energyAlert != null)
+                            Chip(
+                              avatar: const Icon(Icons.warning_amber_rounded, size: 16),
+                              label: Text(energyAlert),
+                            ),
+                          if (energy?.voltageV != null)
+                            Chip(
+                              label: Text(
+                                '${energy!.voltageV!.toStringAsFixed(2)} V',
+                              ),
+                            ),
+                          if (energy?.charging == true)
+                            const Chip(label: Text('Bateria carregando')),
+                          if (energy?.currentA != null)
+                            Chip(
+                              label: Text(
+                                '${energy!.currentA!.toStringAsFixed(2)} A',
+                              ),
+                            ),
+                          if (energy?.powerW != null)
+                            Chip(
+                              label: Text(
+                                '${energy!.powerW!.toStringAsFixed(1)} W',
+                              ),
+                            ),
+                          if (energy?.solarPowerW != null)
+                            Chip(
+                              avatar: const Icon(Icons.light_mode_outlined, size: 16),
+                              label: Text(
+                                'Solar ${energy!.solarPowerW!.toStringAsFixed(1)} W',
+                              ),
+                            ),
+                          if (energy?.energyInWh != null)
+                            Chip(
+                              label: Text(
+                                'Entrada ${energy!.energyInWh!.toStringAsFixed(1)} Wh',
+                              ),
+                            ),
+                          if (energy?.energyOutWh != null)
+                            Chip(
+                              label: Text(
+                                'Saída ${energy!.energyOutWh!.toStringAsFixed(1)} Wh',
+                              ),
+                            ),
+                          if (energy?.batteryTemperatureC != null)
+                            Chip(
+                              label: Text(
+                                'Bat. ${energy!.batteryTemperatureC!.toStringAsFixed(1)} °C',
+                              ),
+                            ),
                           if (speed != null)
                             Chip(label: Text('${speed.toStringAsFixed(1)} km/h')),
                           if (frontPsi != null)
@@ -443,6 +512,20 @@ class _Esp32Card extends StatelessWidget {
                             ),
                         ],
                       ),
+                      if (energy != null &&
+                          (energy.sourceType != null ||
+                              energy.monitorType != null ||
+                              energy.batteryChemistry != null)) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Energia reportada: ${[
+                            energy.sourceType,
+                            energy.batteryChemistry,
+                            energy.monitorType,
+                          ].whereType<String>().map(_energyValueLabel).join(' · ')}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                       if (packet.reportedCapabilities.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
@@ -487,6 +570,21 @@ class _Esp32Card extends StatelessWidget {
       ),
     );
   }
+
+  String _energyValueLabel(String raw) => switch (raw) {
+        'usbPowerBank' => 'Power bank USB',
+        'usbAdapter' => 'Tomada / fonte USB',
+        'systemBattery' => 'Bateria do sistema',
+        'leadAcid' => 'Chumbo-ácido',
+        'lifepo4' => 'LiFePO₄',
+        'ina219' => 'INA219',
+        'INA219' => 'INA219',
+        'ina226' => 'INA226',
+        'INA226' => 'INA226',
+        'voltageDivider' => 'Divisor de tensão',
+        'smartBms' => 'BMS',
+        _ => raw,
+      };
 }
 
 class _EmptyEsp32 extends StatelessWidget {

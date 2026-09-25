@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.122 substitui o formulário técnico do ESP32 por um assistente em 5 etapas, remove o botão duplicado, melhora descoberta/teste e corrige o warning que interrompeu o Android-APK-90.",
-  "version": "1.0.122",
-  "build": 122
+  "notes": "A 1.0.123 eleva o ESP32 com perfil de energia independente: testes por power bank/tomada, monitoramento de chumbo-ácido ou LiFePO4, INA219/INA226/divisor/BMS e telemetria solar preparada.",
+  "version": "1.0.123",
+  "build": 123
 }

@@ -2,11 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.122+122`
+> **Versão atual:** `1.0.123+123`
 
 ## Estado atual
 
-A `1.0.122+122` transforma a configuração do ESP32 em um assistente guiado: conexão, identificação, capacidades, ajustes e revisão, mantendo telemetria e múltiplos módulos da 1.0.121.
+A `1.0.123+123` adiciona um perfil de energia independente ao ESP32: o módulo pode funcionar por power bank/tomada durante testes e monitorar separadamente uma bateria chumbo-ácido ou LiFePO₄, corrente/potência e entrada solar.
+
+### Evolução 1.0.123 — energia, bateria e solar no ESP32
+
+- Nova capacidade **Energia** separa a alimentação do próprio ESP32 da bateria principal monitorada.
+- O wizard permite escolher alimentação do módulo por detecção automática, power bank USB, tomada/fonte USB, bateria do sistema ou outra fonte.
+- A bateria principal pode ser **Chumbo-ácido**, **LiFePO₄**, outra química ou simplesmente inexistente durante testes de bancada.
+- O cadastro prepara medição por firmware, divisor de tensão, **INA219**, **INA226** ou BMS com telemetria; INA226 fica indicado como opção recomendada para instalação definitiva.
+- Tensão nominal, capacidade em Ah, níveis de aviso/crítico e monitoramento da entrada solar passam a fazer parte do perfil persistente do módulo.
+- O protocolo `/config` passa a enviar o bloco `energy`, enquanto a telemetria aceita bateria principal, corrente, potência, temperatura da bateria, fonte de alimentação, modelo do monitor e dados solares.
+- A tela ESP32 diferencia **bateria do módulo** de **bateria principal** e mostra A/W/solar quando o firmware fornecer esses dados.
+- O diagnóstico exportado inclui configuração e runtime de energia sem exigir que uma bateria física esteja conectada.
+- A integração é compatível com módulos antigos: os novos campos são opcionais e não alteram câmera, Hall, pneus ou temperatura.
 
 ### Evolução 1.0.122 — wizard de configuração ESP32
 

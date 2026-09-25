@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.122+122
+# Arquitetura — Vigia IA 1.0.123+123
+
+## Evolução 1.0.123 — subsistema de energia do ESP32
+
+- `Esp32Module` passa a persistir um perfil de energia independente da capacidade `battery` legada. `battery` continua descrevendo a alimentação do próprio módulo; `energy` descreve a bateria/sistema elétrico externo monitorado.
+- O perfil separa `Esp32PowerSupplyType` (como o ESP32 é alimentado), `Esp32BatteryChemistry` (química da bateria externa) e `Esp32PowerMonitorType` (como tensão/corrente são medidas). Isso permite alimentar o ESP32 por USB e monitorar uma bateria de 12 V sem acoplar os dois circuitos no modelo de dados.
+- `toConfigurationJson()` envia um bloco opcional `energy` com alimentação do módulo, monitor, bateria, limites e entrada solar. Firmwares antigos podem ignorar o bloco sem quebrar o cadastro.
+- `Esp32TelemetryPacket` normaliza um bloco `power.battery` separado da bateria do módulo e aceita corrente, potência, temperatura, energia acumulada e `power.solar`.
+- A compatibilidade legada é preservada: payloads antigos que só enviam `power.batteryPercent`/`voltageV` continuam sendo tratados como alimentação do módulo, enquanto o contrato novo usa `power.battery` para a bateria principal.
+- O wizard só exibe os ajustes elétricos quando `Esp32Capability.energy` está selecionada; `batteryChemistry = none` é um estado válido para bancada/power bank/tomada.
+- Diagnóstico e card do módulo expõem os dois domínios separadamente para evitar que uma bateria principal baixa seja confundida com bateria do ESP32.
 
 ## Evolução 1.0.122 — onboarding guiado do ESP32
 

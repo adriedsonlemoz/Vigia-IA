@@ -91,4 +91,57 @@ void main() {
     );
     expect(restored.capabilities, isEmpty);
   });
+
+// Energia externa fica separada da alimentação do próprio ESP32.
+test('perfil de energia suporta chumbo com ESP32 em power bank', () {
+  const module = Esp32Module(
+    id: 'energy-pack',
+    name: 'ESP32 energia',
+    capabilities: <Esp32Capability>{Esp32Capability.energy},
+    powerSupplyType: Esp32PowerSupplyType.usbPowerBank,
+    batteryChemistry: Esp32BatteryChemistry.leadAcid,
+    powerMonitorType: Esp32PowerMonitorType.ina226,
+    batteryNominalVoltageV: 12,
+    batteryCapacityAh: 7,
+    monitorSolarInput: true,
+  );
+
+  final config = module.toConfigurationJson();
+  final energy = Map<String, Object?>.from(config['energy']! as Map);
+  final battery = Map<String, Object?>.from(energy['battery']! as Map);
+  expect(module.energyMonitoringEnabled, isTrue);
+  expect(module.powerSupplyType, Esp32PowerSupplyType.usbPowerBank);
+  expect(battery['chemistry'], 'leadAcid');
+  expect(energy['monitor'], 'ina226');
+  expect((energy['solar']! as Map)['enabled'], isTrue);
+});
+
+test('perfil de energia funciona sem bateria para teste em tomada', () {
+  const module = Esp32Module(
+    id: 'bench',
+    name: 'ESP32 bancada',
+    capabilities: <Esp32Capability>{Esp32Capability.energy},
+    powerSupplyType: Esp32PowerSupplyType.usbAdapter,
+    batteryChemistry: Esp32BatteryChemistry.none,
+  );
+
+  expect(module.externalBatteryConfigured, isFalse);
+  expect(module.energyProfileLabel, contains('Tomada'));
+  final restored = Esp32Module.fromJson(
+    Map<String, dynamic>.from(module.toJson()),
+  );
+  expect(restored.powerSupplyType, Esp32PowerSupplyType.usbAdapter);
+  expect(restored.batteryChemistry, Esp32BatteryChemistry.none);
+});
+
+  test('config antigo nao recebe bloco energy quando capacidade nao existe', () {
+    const module = Esp32Module(
+      id: 'legacy-compatible',
+      name: 'ESP32 legado',
+      capabilities: <Esp32Capability>{Esp32Capability.hallSpeed},
+    );
+
+    expect(module.toConfigurationJson().containsKey('energy'), isFalse);
+  });
+
 }

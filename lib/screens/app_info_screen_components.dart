@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.122',
+          version: '1.0.123',
           current: true,
+          changes: [
+            'ESP32 ganha capacidade Energia separada da bateria do próprio módulo, permitindo monitorar a bateria principal sem acoplar as duas alimentações.',
+            'Wizard aceita testes por power bank/tomada sem bateria e perfis de chumbo-ácido ou LiFePO₄ para a instalação definitiva.',
+            'Preparados divisor de tensão, INA219, INA226, BMS e entrada solar; /config e telemetria ganham bloco de energia opcional.',
+            'Card e diagnóstico passam a mostrar bateria principal, corrente, potência e solar sem confundir esses dados com a bateria do ESP32.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.122',
           changes: [
             'A configuração do ESP32 passa para um assistente em 5 etapas: conexão, identificação, capacidades, ajustes e revisão.',
             'A busca inicial tenta o endereço informado e os candidatos 192.168.4.1/esp32.local, mantendo endereço e chave manual como opção.',
@@ -1122,8 +1132,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.122',
+          version: '1.0.123',
           current: true,
+          changes: [
+            'Nova capacidade Energia separa alimentação do módulo e bateria principal monitorada.',
+            'Power bank/tomada funcionam sem bateria física; chumbo-ácido e LiFePO₄ ganham perfil próprio.',
+            'INA219/INA226/divisor/BMS e entrada solar ficam preparados no wizard e no contrato de telemetria.',
+            'Tela ESP32 diferencia bateria do módulo, bateria principal, corrente, potência e solar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.122',
           changes: [
             'Novo assistente ESP32 em 5 etapas separa conexão, identificação, capacidades, ajustes e revisão.',
             'Busca guiada tenta 192.168.4.1/esp32.local e mantém endereço/chave manual somente quando necessário.',

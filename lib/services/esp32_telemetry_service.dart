@@ -51,6 +51,17 @@ class Esp32TelemetryService extends ChangeNotifier with WidgetsBindingObserver {
           'configuredCapabilities':
               module.capabilities.map((item) => item.name).toList()..sort(),
           'telemetryIntervalMs': module.telemetryIntervalMs,
+          if (module.energyMonitoringEnabled)
+            'energyConfiguration': <String, Object?>{
+              'moduleSupply': module.powerSupplyType.name,
+              'monitor': module.powerMonitorType.name,
+              'batteryChemistry': module.batteryChemistry.name,
+              'batteryNominalVoltageV': module.batteryNominalVoltageV,
+              'batteryCapacityAh': module.batteryCapacityAh,
+              'warningPercent': module.lowBatteryPercent,
+              'criticalPercent': module.criticalBatteryPercent,
+              'solar': module.monitorSolarInput,
+            },
           'runtime': _states[module.id]?.toDiagnosticJson(),
         },
       )
