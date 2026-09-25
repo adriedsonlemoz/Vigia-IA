@@ -1,3 +1,16 @@
+## 1.0.122+122 — 2026-09-24
+
+- Substituído o formulário único de ESP32 por `Esp32SetupWizard`, em 5 etapas: conexão, identificação, capacidades, configuração e revisão.
+- Busca/teste inicial tenta o endereço informado, `http://192.168.4.1` e `http://esp32.local`, mantendo endereço e chave manual em painel opcional.
+- Capacidades reportadas pelo firmware são aproveitadas automaticamente e o catálogo futuro (mmWave, térmico, ToF, ultrassom, ambiente, GPS, luz e atuadores) permanece selecionável.
+- Configurações de Hall, temperatura e pneus aparecem apenas quando o sensor correspondente foi selecionado; intervalo de telemetria e ativação ficam em opções avançadas.
+- A tela sem módulos deixa de mostrar dois botões para a mesma ação: o botão central abre o wizard e o FAB aparece apenas quando já existe ao menos um ESP32.
+- Ao concluir o wizard, o app salva, testa a conexão e tenta aplicar a configuração quando o firmware estiver online.
+- Corrigida a falha do Android-APK-90 em `flutter analyze`: removido import redundante de `package:flutter/foundation.dart` em `esp32_telemetry_service.dart`.
+- Corrigida a desserialização de módulos com `capabilities: []`, evitando reativar sensores padrão após reiniciar.
+- Adicionados testes de regressão do wizard e de capacidades vazias.
+- Versionamento, identidade, Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.122+122`.
+
 ## 1.0.121+121 — 2026-09-24
 
 - Criados `Esp32TelemetryPacket`, `Esp32RuntimeState` e `Esp32TelemetryService` para leitura contínua da telemetria de todos os módulos ESP32 habilitados.

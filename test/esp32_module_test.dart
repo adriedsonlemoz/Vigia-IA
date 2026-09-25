@@ -78,4 +78,17 @@ void main() {
     expect(restored.supports(Esp32Capability.thermal), isTrue);
     expect(restored.supports(Esp32Capability.tof), isTrue);
   });
+
+  test('lista vazia de capacidades permanece vazia apos recarregar', () {
+    const original = Esp32Module(
+      id: 'empty-pack',
+      name: 'ESP32 sem sensores',
+      capabilities: <Esp32Capability>{},
+    );
+
+    final restored = Esp32Module.fromJson(
+      Map<String, dynamic>.from(original.toJson()),
+    );
+    expect(restored.capabilities, isEmpty);
+  });
 }

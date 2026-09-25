@@ -11,6 +11,7 @@ import '../services/bike_mode_service.dart';
 import '../services/esp32_module_service.dart';
 import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
+import 'esp32_setup_wizard.dart';
 
 class Esp32SettingsScreen extends StatefulWidget {
   const Esp32SettingsScreen({super.key});
@@ -100,335 +101,35 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
   }
 
   Future<void> _edit([Esp32Module? existing]) async {
-    final module = await _showEditor(existing);
-    if (module == null) return;
-    await _registry.save(module);
-    if (!mounted) return;
+    final module = await Navigator.of(context).push<Esp32Module>(
+      MaterialPageRoute<Esp32Module>(
+        fullscreenDialog: true,
+        builder: (_) => Esp32SetupWizard(existing: existing),
+      ),
+    );
+    if (module == null || !mounted) return;
+
     setState(() => _busyId = module.id);
+    await _registry.save(module);
     final probe = await _registry.probe(module);
+    Esp32ProbeResult? applied;
+    if (probe.online && module.enabled) {
+      applied = await _registry.applyConfiguration(module);
+    }
     if (!mounted) return;
     setState(() {
       _statuses[module.id] = probe;
       _busyId = null;
     });
+
+    final message = !probe.online
+        ? '${module.name} foi salvo. ${probe.message ?? 'O módulo ainda não respondeu.'}'
+        : applied?.online == true
+            ? '${module.name} conectado e configurado.'
+            : '${module.name} conectado. ${applied?.message ?? 'Configuração salva no Vigia IA.'}';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          probe.online
-              ? '${module.name} salvo e conectado.'
-              : '${module.name} foi salvo. ${probe.message ?? 'O módulo ainda não respondeu.'}',
-        ),
-      ),
+      SnackBar(content: Text(message)),
     );
-  }
-
-  Future<Esp32Module?> _showEditor(Esp32Module? existing) async {
-    final name = TextEditingController(text: existing?.name ?? 'ESP32 Bike');
-    final address = TextEditingController(
-      text: existing?.address ?? 'http://192.168.4.1',
-    );
-    final key = TextEditingController(text: existing?.accessKey ?? '');
-    final customPosition = TextEditingController(
-      text: existing?.customPositionLabel ?? '',
-    );
-    final circumference = TextEditingController(
-      text: (existing?.wheelCircumferenceMm ?? 2100).toStringAsFixed(0),
-    );
-    final magnets = TextEditingController(
-      text: (existing?.hallMagnets ?? 1).toString(),
-    );
-    final pressure = TextEditingController(
-      text: (existing?.minimumTirePressurePsi ?? 30).toStringAsFixed(1),
-    );
-    final temperature = TextEditingController(
-      text: (existing?.maximumTemperatureC ?? 65).toStringAsFixed(1),
-    );
-    var enabled = existing?.enabled ?? true;
-    var position = existing?.position ?? Esp32ModulePosition.unspecified;
-    var camera = existing?.cameraEnabled ?? false;
-    var temperatureSensor = existing?.temperatureSensorEnabled ?? true;
-    var hall = existing?.hallSensorEnabled ?? true;
-    var tires = existing?.tirePressureEnabled ?? true;
-    var interval = existing?.telemetryIntervalMs ?? 1000;
-    String? error;
-
-    final result = await showDialog<Esp32Module>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Conectar ESP32' : 'Configurar ESP32'),
-          content: SizedBox(
-            width: 560,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'O ESP32 agora é cadastrado como módulo independente. Câmera e sensores são capacidades do módulo, permitindo adicionar novos hardwares sem remodelar o app.',
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome do módulo',
-                      prefixIcon: Icon(Icons.memory_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<Esp32ModulePosition>(
-                    initialValue: position,
-                    decoration: const InputDecoration(
-                      labelText: 'Posição/função',
-                      prefixIcon: Icon(Icons.place_outlined),
-                    ),
-                    items: Esp32ModulePosition.values
-                        .map(
-                          (item) => DropdownMenuItem(
-                            value: item,
-                            child: Text(item.label),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onChanged: (value) {
-                      if (value != null) setDialogState(() => position = value);
-                    },
-                  ),
-                  if (position == Esp32ModulePosition.custom) ...[
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: customPosition,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome da posição',
-                        hintText: 'Ex.: garfo, bolsa lateral, rack...',
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: address,
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Endereço local',
-                      hintText: 'http://192.168.4.1',
-                      prefixIcon: Icon(Icons.wifi_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: key,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Chave do módulo (opcional)',
-                      prefixIcon: Icon(Icons.key_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: enabled,
-                    onChanged: (value) => setDialogState(() => enabled = value),
-                    title: const Text('Módulo ativo'),
-                    subtitle: const Text('Habilita comunicação e telemetria deste ESP32.'),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: camera,
-                    onChanged: (value) => setDialogState(() => camera = value),
-                    title: const Text('Câmera ESP32 instalada'),
-                    subtitle: const Text(
-                      'A câmera só é registrada como fonte de vídeo quando esta capacidade estiver ativa.',
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  const Text(
-                    'Sensores instalados',
-                    style: TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: temperatureSensor,
-                    onChanged: (value) =>
-                        setDialogState(() => temperatureSensor = value),
-                    title: const Text('Temperatura'),
-                  ),
-                  if (temperatureSensor)
-                    TextField(
-                      controller: temperature,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Alerta máximo (°C)',
-                      ),
-                    ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: hall,
-                    onChanged: (value) => setDialogState(() => hall = value),
-                    title: const Text('Velocidade por sensor Hall'),
-                  ),
-                  if (hall)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: circumference,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Roda (mm)',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: magnets,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Ímãs',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: tires,
-                    onChanged: (value) => setDialogState(() => tires = value),
-                    title: const Text('Pressão dos pneus'),
-                  ),
-                  if (tires)
-                    TextField(
-                      controller: pressure,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Alerta mínimo (PSI)',
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    initialValue: interval,
-                    decoration: const InputDecoration(
-                      labelText: 'Intervalo da telemetria',
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 500, child: Text('0,5 segundo')),
-                      DropdownMenuItem(value: 1000, child: Text('1 segundo')),
-                      DropdownMenuItem(value: 2000, child: Text('2 segundos')),
-                      DropdownMenuItem(value: 5000, child: Text('5 segundos')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) setDialogState(() => interval = value);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'A estrutura de capacidades já aceita mmWave, térmico, ToF, ultrassom, ambiente, GPS, luz e atuadores. A interface desses recursos será liberada conforme os módulos físicos forem adicionados.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                final uri = Uri.tryParse(address.text.trim());
-                final wheel =
-                    double.tryParse(circumference.text.replaceAll(',', '.'));
-                final magnetCount = int.tryParse(magnets.text);
-                final minimumPressure =
-                    double.tryParse(pressure.text.replaceAll(',', '.'));
-                final maximumTemperature =
-                    double.tryParse(temperature.text.replaceAll(',', '.'));
-                final customLabel = customPosition.text.trim();
-                if (uri == null ||
-                    !(uri.scheme == 'http' || uri.scheme == 'https') ||
-                    uri.host.isEmpty ||
-                    wheel == null ||
-                    wheel < 500 ||
-                    wheel > 4000 ||
-                    magnetCount == null ||
-                    magnetCount < 1 ||
-                    magnetCount > 32 ||
-                    minimumPressure == null ||
-                    minimumPressure < 1 ||
-                    maximumTemperature == null ||
-                    maximumTemperature < 1 ||
-                    (position == Esp32ModulePosition.custom &&
-                        customLabel.isEmpty)) {
-                  setDialogState(() {
-                    error =
-                        'Revise endereço, posição, roda (500–4000 mm), ímãs (1–32) e limites.';
-                  });
-                  return;
-                }
-                final capabilities = <Esp32Capability>{Esp32Capability.battery};
-                if (camera) capabilities.add(Esp32Capability.camera);
-                if (temperatureSensor) {
-                  capabilities.add(Esp32Capability.temperature);
-                }
-                if (hall) capabilities.add(Esp32Capability.hallSpeed);
-                if (tires) capabilities.add(Esp32Capability.tirePressure);
-                Navigator.pop(
-                  dialogContext,
-                  Esp32Module(
-                    id: existing?.id ??
-                        'esp32_${DateTime.now().microsecondsSinceEpoch}',
-                    name: name.text.trim().isEmpty ? 'ESP32' : name.text.trim(),
-                    address: address.text.trim(),
-                    accessKey: key.text.trim().isEmpty ? null : key.text.trim(),
-                    enabled: enabled,
-                    position: position,
-                    customPositionLabel:
-                        position == Esp32ModulePosition.custom ? customLabel : null,
-                    capabilities: Set<Esp32Capability>.unmodifiable(capabilities),
-                    wheelCircumferenceMm: wheel,
-                    hallMagnets: magnetCount,
-                    minimumTirePressurePsi: minimumPressure,
-                    maximumTemperatureC: maximumTemperature,
-                    telemetryIntervalMs: interval,
-                    protocolVersion: existing?.protocolVersion ?? 1,
-                  ),
-                );
-              },
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Salvar e testar'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    for (final controller in <TextEditingController>[
-      name,
-      address,
-      key,
-      customPosition,
-      circumference,
-      magnets,
-      pressure,
-      temperature,
-    ]) {
-      controller.dispose();
-    }
-    return result;
   }
 
   Future<void> _apply(Esp32Module module) async {
@@ -493,11 +194,13 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _loading ? null : () => unawaited(_edit()),
-        icon: const Icon(Icons.add_link_rounded),
-        label: const Text('Conectar ESP32'),
-      ),
+      floatingActionButton: !_loading && _devices.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () => unawaited(_edit()),
+              icon: const Icon(Icons.add_link_rounded),
+              label: const Text('Adicionar ESP32'),
+            )
+          : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _devices.isEmpty
@@ -809,14 +512,14 @@ class _EmptyEsp32 extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Cadastre um módulo e informe suas capacidades. Câmera é opcional e novos tipos de sensor poderão usar o mesmo cadastro.',
+                'O assistente procura o módulo, identifica onde ele ficará e mostra apenas as configurações dos sensores selecionados.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
               FilledButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_link_rounded),
-                label: const Text('Conectar ESP32'),
+                label: const Text('Configurar primeiro ESP32'),
               ),
             ],
           ),

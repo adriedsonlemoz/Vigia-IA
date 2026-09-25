@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.121+121
+# Arquitetura — Vigia IA 1.0.122+122
+
+## Evolução 1.0.122 — onboarding guiado do ESP32
+
+- `Esp32SetupWizard` concentra somente a camada de UX; identidade/persistência continuam em `Esp32ModuleService` e a leitura contínua continua em `Esp32TelemetryService`.
+- O wizard é dividido em conexão, identidade, capacidades, ajustes específicos e revisão, evitando que endereço, Hall, pneus, temperatura e recursos futuros apareçam juntos sem contexto.
+- A descoberta inicial reutiliza `Esp32ModuleService.probe()` e tenta apenas o endereço informado e candidatos conhecidos (`192.168.4.1`/`esp32.local`), sem criar scanner de rede paralelo.
+- Capacidades reportadas pelo firmware são incorporadas ao rascunho, mas o usuário continua podendo preparar manualmente módulos futuros no catálogo único de `Esp32Capability`.
+- Ajustes específicos só são renderizados para capacidades selecionadas; opções de comunicação permanecem em uma seção avançada.
+- O wizard retorna um `Esp32Module` normal; a tela de módulos continua responsável por persistir, testar e aplicar `/config`, preservando separação entre UI e transporte.
+- Uma lista `capabilities` presente e vazia é agora tratada como estado válido; somente cadastros realmente legados, sem a chave `capabilities`, recebem o conjunto padrão de migração.
+
 
 ## Evolução 1.0.121 — transporte e telemetria ESP32
 

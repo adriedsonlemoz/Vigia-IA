@@ -223,8 +223,11 @@ class Esp32Module {
           if (capability.name == name) parsedCapabilities.add(capability);
         }
       }
-    }
-    if (parsedCapabilities.isEmpty) {
+    } else {
+      // Cadastro anterior à 1.0.120 não tinha a lista de capacidades.
+      // Uma lista explicitamente vazia, porém, é válida para módulos que ainda
+      // não tiveram sensores instalados e não deve ser convertida em sensores
+      // padrão ao reiniciar o aplicativo.
       parsedCapabilities.addAll(const <Esp32Capability>{
         Esp32Capability.temperature,
         Esp32Capability.hallSpeed,

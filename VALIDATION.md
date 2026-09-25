@@ -1,3 +1,16 @@
+## 1.0.122+122 — wizard ESP32 e buildfix Android-APK-90
+
+- Abrir **ESP32** sem módulos e confirmar que existe apenas um botão para iniciar o cadastro.
+- Confirmar que o wizard mostra **Etapa 1 de 5** e segue por Conexão → Identificação → Capacidades → Configuração → Revisão.
+- Testar busca automática com ESP32 em `192.168.4.1` ou `esp32.local` e confirmar fallback para endereço/chave manual quando offline.
+- Confirmar que capacidades informadas pelo firmware aparecem como detectadas e que mmWave/térmico/ToF/ultrassom/ambiente/GPS/luz/atuadores podem ser cadastrados sem câmera.
+- Selecionar apenas Hall e confirmar que a etapa seguinte não mostra pressão ou temperatura; repetir com sensores diferentes.
+- Salvar um módulo offline e confirmar que o cadastro permanece disponível; salvar online e confirmar tentativa de aplicação da configuração.
+- Salvar `capabilities: []`, reiniciar e confirmar que sensores padrão não reaparecem.
+- Confirmar ausência de `package:flutter/foundation.dart` em `lib/services/esp32_telemetry_service.dart`, corrigindo o issue que encerrou o Android-APK-90.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 # Validação — Vigia IA 1.0.121+121
 
 ## 1.0.121+121 — telemetria contínua ESP32

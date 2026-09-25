@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.121',
+          version: '1.0.122',
           current: true,
+          changes: [
+            'A configuração do ESP32 passa para um assistente em 5 etapas: conexão, identificação, capacidades, ajustes e revisão.',
+            'A busca inicial tenta o endereço informado e os candidatos 192.168.4.1/esp32.local, mantendo endereço e chave manual como opção.',
+            'Sensores mostram apenas os ajustes relevantes; capacidades futuras continuam no mesmo cadastro e as detectadas pelo firmware são aproveitadas.',
+            'Corrigido o Android-APK-90 removendo o import redundante apontado pelo flutter analyze e eliminado o botão duplicado de conexão.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.121',
           changes: [
             'Telemetria ESP32 passa a ser lida continuamente pelo app, com descoberta automática de endpoints novos e compatibilidade com /status legado.',
             'Cada módulo mantém estado próprio de conexão, latência, RSSI, firmware, protocolo, bateria, falhas e próxima tentativa de reconexão.',
@@ -1112,8 +1122,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.121',
+          version: '1.0.122',
           current: true,
+          changes: [
+            'Novo assistente ESP32 em 5 etapas separa conexão, identificação, capacidades, ajustes e revisão.',
+            'Busca guiada tenta 192.168.4.1/esp32.local e mantém endereço/chave manual somente quando necessário.',
+            'Ajustes aparecem de acordo com os sensores escolhidos, e a tela vazia deixa de mostrar dois botões de conexão.',
+            'Android-APK-90 corrigido com a remoção do import redundante apontado pelo flutter analyze.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.121',
           changes: [
             'Telemetria ESP32 passa a ser lida continuamente pelo app, com descoberta automática de endpoints novos e compatibilidade com /status legado.',
             'Cada módulo mantém estado próprio de conexão, latência, RSSI, firmware, protocolo, bateria, falhas e próxima tentativa de reconexão.',

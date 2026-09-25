@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.121 conecta a fundação modular do ESP32 à telemetria contínua, descoberta de endpoints, reconexão automática, agregação de vários módulos e diagnóstico em tempo real.",
-  "version": "1.0.121",
-  "build": 121
+  "notes": "A 1.0.122 substitui o formulário técnico do ESP32 por um assistente em 5 etapas, remove o botão duplicado, melhora descoberta/teste e corrige o warning que interrompeu o Android-APK-90.",
+  "version": "1.0.122",
+  "build": 122
 }

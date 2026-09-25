@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.121+121`
+> **Versão atual:** `1.0.122+122`
 
 ## Estado atual
 
-A `1.0.121+121` liga a fundação modular do ESP32 à telemetria real: leitura contínua, descoberta de endpoints, reconexão automática, estado por módulo, agregação segura de sensores e diagnóstico em tempo real.
+A `1.0.122+122` transforma a configuração do ESP32 em um assistente guiado: conexão, identificação, capacidades, ajustes e revisão, mantendo telemetria e múltiplos módulos da 1.0.121.
+
+### Evolução 1.0.122 — wizard de configuração ESP32
+
+- A configuração deixa o diálogo técnico único e passa para um wizard de 5 etapas em tela inteira.
+- A primeira etapa testa o endereço atual e tenta `192.168.4.1`/`esp32.local`, mantendo endereço/chave manual como opção avançada.
+- Nome e posição ficam separados da conexão; capacidades detectadas pelo firmware são pré-selecionadas e sensores futuros continuam disponíveis no mesmo cadastro.
+- A etapa de ajustes só mostra temperatura, Hall, pneus e câmera quando essas capacidades foram escolhidas; telemetria e ativação ficam em opções avançadas.
+- A revisão final permite testar novamente antes de salvar, e o cadastro continua permitido mesmo com o hardware desligado.
+- A tela vazia mantém apenas um CTA; o FAB aparece somente quando já há módulos cadastrados.
+- Corrigido o Android-APK-90 removendo o import desnecessário de `foundation.dart` em `esp32_telemetry_service.dart`.
+- Uma lista de capacidades explicitamente vazia agora permanece vazia após reiniciar, sem reativar sensores padrão indevidamente.
 
 
 ### Evolução 1.0.121 — telemetria contínua e reconexão ESP32
