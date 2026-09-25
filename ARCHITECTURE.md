@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.128+128
+# Arquitetura — Vigia IA 1.0.129+129
+
+## Evolução 1.0.129 — camadas do mapa e pacotes offline de POIs
+
+- `MapViewSettingsService` sobe seu schema visual para 2 e persiste `MapStylePreset` (`standard`, `bikeTravel`, `terrain`, `topographic`, `satellite`) junto da orientação e do preset Perto/Região.
+- A camada online é resolvida pela `MapMonitoringScreen`: OSM padrão, Stadia Outdoors para Bike/Viagem quando há chave, Stamen Terrain e Alidade Satellite via Stadia quando autorizados e OpenTopoMap para topografia. A camada MBTiles existente continua independente e tem precedência no modo offline.
+- O seletor de camadas não exige provedor pago: Padrão, Bike/Viagem com fallback OSM e Topográfico funcionam sem chave; Terreno/Satélite são habilitados somente quando a chave Stadia já suportada pelo módulo offline existe.
+- `OfflinePoiPackage` separa os pontos offline em regiões independentes e persiste `id`, nome, origem, bounds, raio, datas e itens. `RouteExplorerService` mantém pacote ativo, seleção automática por cobertura/proximidade e migração da antiga `offlineResults` global.
+- A busca automática deixa de depender de `recording/tracking`: o serviço usa distância desde a última busca, janela temporal somente em movimento, mudança relevante de heading e aproximação da borda da área pesquisada, preservando o bloqueio contra consultas concorrentes.
+- A seleção de POI no mapa passa a ser estado visual persistente enquanto a tela está aberta e alimenta um card compacto de ações sem esconder o mapa.
+
 
 ## Correção 1.0.128 — compatibilidade de Material Icons
 

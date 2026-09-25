@@ -6,6 +6,40 @@ import 'package:path_provider/path_provider.dart';
 
 import 'map_view_policy.dart';
 
+enum MapStylePreset {
+  standard,
+  bikeTravel,
+  terrain,
+  topographic,
+  satellite,
+}
+
+extension MapStylePresetX on MapStylePreset {
+  String get label => switch (this) {
+        MapStylePreset.standard => 'Padrão',
+        MapStylePreset.bikeTravel => 'Bike/Viagem',
+        MapStylePreset.terrain => 'Terreno',
+        MapStylePreset.topographic => 'Topográfico',
+        MapStylePreset.satellite => 'Satélite',
+      };
+
+  String get description => switch (this) {
+        MapStylePreset.standard =>
+          'Mapa geral leve, com ruas, cidades e pontos básicos.',
+        MapStylePreset.bikeTravel =>
+          'Prioriza leitura de estradas, natureza e contexto de viagem.',
+        MapStylePreset.terrain =>
+          'Relevo e hillshade para leitura de serras e variação do terreno.',
+        MapStylePreset.topographic =>
+          'Topografia, relevo, água e elementos naturais com maior contraste.',
+        MapStylePreset.satellite =>
+          'Imagem aérea/satélite com referências e rótulos.',
+      };
+
+  bool get needsStadiaKey =>
+      this == MapStylePreset.terrain || this == MapStylePreset.satellite;
+}
+
 class MapViewSettingsService extends ChangeNotifier {
   MapViewSettingsService._();
 
@@ -13,12 +47,14 @@ class MapViewSettingsService extends ChangeNotifier {
 
   MapOrientationMode _orientationMode = MapOrientationMode.northUp;
   MapFollowViewPreset _followViewPreset = MapFollowViewPreset.near;
+  MapStylePreset _stylePreset = MapStylePreset.standard;
   bool _initialized = false;
   File? _file;
 
   bool get initialized => _initialized;
   MapOrientationMode get orientationMode => _orientationMode;
   MapFollowViewPreset get followViewPreset => _followViewPreset;
+  MapStylePreset get stylePreset => _stylePreset;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -32,6 +68,7 @@ class MapViewSettingsService extends ChangeNotifier {
           final map = decoded.cast<String, dynamic>();
           final orientationName = map['orientationMode'] as String?;
           final presetName = map['followViewPreset'] as String?;
+          final styleName = map['stylePreset'] as String?;
           _orientationMode = MapOrientationMode.values.firstWhere(
             (value) => value.name == orientationName,
             orElse: () => MapOrientationMode.northUp,
@@ -40,10 +77,15 @@ class MapViewSettingsService extends ChangeNotifier {
             (value) => value.name == presetName,
             orElse: () => MapFollowViewPreset.near,
           );
+          _stylePreset = MapStylePreset.values.firstWhere(
+            (value) => value.name == styleName,
+            orElse: () => MapStylePreset.standard,
+          );
         }
       } catch (_) {
         _orientationMode = MapOrientationMode.northUp;
         _followViewPreset = MapFollowViewPreset.near;
+        _stylePreset = MapStylePreset.standard;
       }
     }
     _initialized = true;
@@ -65,14 +107,23 @@ class MapViewSettingsService extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setStylePreset(MapStylePreset value) async {
+    if (!_initialized) await initialize();
+    if (_stylePreset == value) return;
+    _stylePreset = value;
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> _persist() async {
     final file = _file!;
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 1,
+        'version': 2,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
+        'stylePreset': _stylePreset.name,
       }),
       flush: true,
     );

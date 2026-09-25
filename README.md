@@ -2,9 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.128+128`
+> **Versão atual:** `1.0.129+129`
 
 ## Estado atual
+
+A `1.0.129+129` fecha dois blocos do redesign do mapa: camadas/tipos de mapa com controles reorganizados e Próximos pontos com pacotes offline regionais, card compacto de seleção e atualização automática durante o deslocamento.
+
+### Evolução 1.0.129 — camadas + POIs offline por região
+
+- modos **Padrão**, **Bike/Viagem**, **Terreno**, **Topográfico** e **Satélite**; OSM continua sendo a base gratuita, Bike usa Outdoors quando a chave Stadia já existente está disponível e Topográfico usa OpenTopoMap com atribuição;
+- Terreno e Satélite usam a infraestrutura configurável da Stadia e ficam indisponíveis sem chave, sem criar dependência paga obrigatória;
+- controles permanentes foram reduzidos e funções secundárias passaram ao menu **Opções**;
+- Próximos pontos ganhou card compacto persistente no mapa, destaque do marcador, detalhes e **Navegar até**;
+- dados offline de POI agora são pacotes independentes com nome, área coberta, data, raio e quantidade de pontos; o formato legado de lista única migra automaticamente para **Lista offline antiga**;
+- atualização automática de POIs deixa de depender da gravação de percurso e considera deslocamento, tempo em movimento, mudança relevante de direção e aproximação da borda da região pesquisada;
+- adicionados testes para modos de mapa e serialização/bounds dos pacotes de POI offline.
 
 A `1.0.128+128` é um buildfix do mapa para o workflow Android: corrige o Material Icon inválido identificado pelo `flutter analyze` do Android-APK-95, sem alterar o comportamento funcional da visão à frente introduzida na 1.0.127.
 

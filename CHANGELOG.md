@@ -1,3 +1,13 @@
+## 1.0.129+129 — 2026-09-25
+
+- Adicionadas camadas/tipos de mapa Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, com seleção persistente e provedores configuráveis sem serviço pago obrigatório.
+- OSM permanece como base gratuita; Bike/Viagem usa Stadia Outdoors quando há chave e mantém fallback OSM; Topográfico usa OpenTopoMap; Terreno/Satélite usam a chave Stadia já suportada pelo app.
+- Controles do mapa reorganizados para manter zoom, seguir GPS, orientação, camadas, câmera e Opções como ações principais, movendo funções secundárias para um painel compacto.
+- Próximos pontos passa a manter o marcador selecionado e mostrar card compacto com categoria, distância, origem, detalhes e ação Navegar até.
+- Offline de POIs evoluído de lista global para pacotes regionais com nome, bounds, raio, data e quantidade de pontos; estado legado migra automaticamente.
+- Busca automática passa a funcionar durante deslocamento mesmo sem gravação, com gatilhos por distância, tempo em movimento, mudança de direção e borda da área pesquisada.
+- Testes adicionados para MapStylePreset e OfflinePoiPackage; metadados e documentação sincronizados em `1.0.129+129`.
+
 ## 1.0.128+128 — 2026-09-25
 
 - Corrigido o Android-APK-95, que falhava no `flutter analyze` em `lib/screens/map_monitoring_screen.dart` por referência a `Icons.offline_map_rounded`, getter inexistente no Flutter 3.44.9.

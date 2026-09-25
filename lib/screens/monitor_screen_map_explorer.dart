@@ -403,7 +403,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                                       Icons.download_for_offline_rounded,
                                       size: 18,
                                     ),
-                                    label: const Text('Baixar pontos'),
+                                    label: const Text('Salvar pacote'),
                                   ),
                                 ),
                                 SizedBox(
@@ -450,7 +450,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                                       Icons.delete_outline_rounded,
                                       size: 18,
                                     ),
-                                    label: const Text('Excluir'),
+                                    label: const Text('Excluir pacotes'),
                                   ),
                                 ),
                                 SizedBox(
@@ -620,7 +620,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
   }
 
   Future<void> _confirmDeleteOfflinePoints(BuildContext context) async {
-    final confirmed = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('Excluir dados offline?'), content: const Text('A lista de pontos salva será removida. Os mapas offline não serão apagados.'), actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Excluir'))])) ?? false;
+    final confirmed = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('Excluir pacotes de pontos?'), content: const Text('Todos os pacotes de pontos offline serão removidos. Os mapas MBTiles não serão apagados.'), actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Excluir'))])) ?? false;
     if (!confirmed) return;
     await _routeExplorer.clearOfflineResults();
   }
@@ -628,13 +628,13 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
   Future<void> _runMapExplorerSearch(BuildContext context, {required bool saveAsOffline}) async {
     await _routeExplorer.searchNow(requestPermission: true, saveAsOffline: saveAsOffline);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_routeExplorer.error ?? (saveAsOffline ? 'Busca concluída e lista salva offline.' : (_routeExplorer.statusMessage ?? 'Busca concluída.')))));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_routeExplorer.error ?? (saveAsOffline ? 'Busca concluída e pacote offline salvo.' : (_routeExplorer.statusMessage ?? 'Busca concluída.')))));
   }
 
   Future<void> _runSaveOfflineResults(BuildContext context) async {
-    await _routeExplorer.saveCurrentResultsOffline();
+    await _routeExplorer.updateActiveOfflinePackage();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_routeExplorer.error ?? _routeExplorer.statusMessage ?? 'Lista offline atualizada.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_routeExplorer.error ?? _routeExplorer.statusMessage ?? 'Pacote offline salvo.')));
   }
 
   Future<void> _openOfflineMapManager(BuildContext context) async {

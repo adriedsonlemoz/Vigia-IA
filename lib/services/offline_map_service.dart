@@ -100,6 +100,17 @@ class OfflineMapService extends ChangeNotifier {
   bool get downloadPaused => _downloadPaused;
   bool get canPauseDownload => _busy && _downloadTilesTotal > 0;
   bool get hasStadiaApiKey => _stadiaApiKey?.trim().isNotEmpty ?? false;
+
+  String? stadiaRasterTileTemplate(
+    String styleId, {
+    String extension = 'png',
+  }) {
+    final key = _stadiaApiKey?.trim();
+    if (key == null || key.isEmpty) return null;
+    final encodedKey = Uri.encodeQueryComponent(key);
+    return 'https://tiles.stadiamaps.com/tiles/$styleId/'
+        '{z}/{x}/{y}.$extension?api_key=$encodedKey';
+  }
   int get stadiaCreditsUsedThisMonth => _stadiaCreditsUsedThisMonth;
   int get stadiaMonthlyCreditLimit => _stadiaMonthlyCreditLimit;
   int get stadiaCreditsRemainingThisMonth =>

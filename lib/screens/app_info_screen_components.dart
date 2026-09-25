@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.128',
+          version: '1.0.129',
           current: true,
+          changes: [
+            'Mapa ganha camadas Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, preservando OSM como opção gratuita e usando a chave Stadia existente apenas quando necessária.',
+            'Controles são reorganizados: funções secundárias passam para Opções, reduzindo a coluna permanente sem esconder Próximos pontos, offline e configurações.',
+            'Próximos pontos passa a usar pacotes offline regionais com nome, área, data e quantidade de locais, incluindo migração da antiga lista única.',
+            'POI selecionado permanece destacado com card compacto e ações; atualização automática passa a considerar movimento, tempo, direção e borda da área mesmo sem gravar percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.128',
           changes: [
             'Corrigido o Android-APK-95 que parava no flutter analyze por usar Icons.offline_map_rounded, inexistente no Flutter 3.44.9.',
             'O botão Mapas offline passa a usar download_for_offline_outlined, já compatível com a versão estável usada no workflow.',
@@ -1181,8 +1191,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.128',
+          version: '1.0.129',
           current: true,
+          changes: [
+            'Mapa ganha camadas Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, preservando OSM como opção gratuita e usando a chave Stadia existente apenas quando necessária.',
+            'Controles são reorganizados: funções secundárias passam para Opções, reduzindo a coluna permanente sem esconder Próximos pontos, offline e configurações.',
+            'Próximos pontos passa a usar pacotes offline regionais com nome, área, data e quantidade de locais, incluindo migração da antiga lista única.',
+            'POI selecionado permanece destacado com card compacto e ações; atualização automática passa a considerar movimento, tempo, direção e borda da área mesmo sem gravar percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.128',
           changes: [
             'Corrigido o Android-APK-95 que parava no flutter analyze por usar Icons.offline_map_rounded, inexistente no Flutter 3.44.9.',
             'O botão Mapas offline passa a usar download_for_offline_outlined, já compatível com a versão estável usada no workflow.',

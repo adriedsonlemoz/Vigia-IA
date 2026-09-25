@@ -544,6 +544,396 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     _mapController.move(LatLng(item.latitude, item.longitude), 16);
   }
 
+  RouteExplorerResult? get _selectedPoi {
+    final id = _selectedPoiId;
+    if (id == null) return null;
+    for (final item in _routeExplorer.results) {
+      if (item.id == id) return item;
+    }
+    for (final item in _routeExplorer.offlineResults) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  IconData _mapStyleIcon(MapStylePreset style) => switch (style) {
+        MapStylePreset.standard => Icons.map_outlined,
+        MapStylePreset.bikeTravel => Icons.directions_bike_rounded,
+        MapStylePreset.terrain => Icons.terrain_rounded,
+        MapStylePreset.topographic => Icons.landscape_rounded,
+        MapStylePreset.satellite => Icons.satellite_alt_rounded,
+      };
+
+  _OnlineMapLayerSpec get _onlineMapLayerSpec {
+    final selected = _mapViewSettings.stylePreset;
+    switch (selected) {
+      case MapStylePreset.standard:
+        return const _OnlineMapLayerSpec(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 19,
+          attribution: '© OpenStreetMap contributors',
+        );
+      case MapStylePreset.bikeTravel:
+        final stadia = _offlineMaps.stadiaRasterTileTemplate('outdoors');
+        if (stadia != null) {
+          return _OnlineMapLayerSpec(
+            urlTemplate: stadia,
+            maxNativeZoom: 20,
+            attribution: '© Stadia Maps · OpenMapTiles · OpenStreetMap',
+          );
+        }
+        return const _OnlineMapLayerSpec(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 19,
+          attribution: 'Bike/Viagem · © OpenStreetMap contributors',
+        );
+      case MapStylePreset.terrain:
+        final stadia = _offlineMaps.stadiaRasterTileTemplate('stamen_terrain');
+        if (stadia != null) {
+          return _OnlineMapLayerSpec(
+            urlTemplate: stadia,
+            maxNativeZoom: 20,
+            attribution:
+                '© Stadia Maps · Stamen Design · OpenMapTiles · OpenStreetMap',
+          );
+        }
+        return const _OnlineMapLayerSpec(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 19,
+          attribution: 'Terreno indisponível · © OpenStreetMap contributors',
+        );
+      case MapStylePreset.topographic:
+        return const _OnlineMapLayerSpec(
+          urlTemplate: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 17,
+          subdomains: <String>['a', 'b', 'c'],
+          attribution:
+              '© OpenStreetMap contributors, SRTM · © OpenTopoMap (CC-BY-SA)',
+        );
+      case MapStylePreset.satellite:
+        final stadia = _offlineMaps.stadiaRasterTileTemplate(
+          'alidade_satellite',
+          extension: 'jpg',
+        );
+        if (stadia != null) {
+          return _OnlineMapLayerSpec(
+            urlTemplate: stadia,
+            maxNativeZoom: 20,
+            attribution:
+                '© Stadia Maps · imagery providers · OpenMapTiles · OpenStreetMap',
+          );
+        }
+        return const _OnlineMapLayerSpec(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 19,
+          attribution: 'Satélite indisponível · © OpenStreetMap contributors',
+        );
+    }
+  }
+
+  Future<void> _showLayerPicker() async {
+    await _offlineMaps.initialize();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final selected = _mapViewSettings.stylePreset;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Camadas e tipo do mapa',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                for (final style in MapStylePreset.values)
+                  ListTile(
+                    leading: Icon(_mapStyleIcon(style)),
+                    title: Text(style.label),
+                    subtitle: Text(
+                      style == MapStylePreset.bikeTravel &&
+                              !_offlineMaps.hasStadiaApiKey
+                          ? '${style.description} Usando OSM até configurar Stadia.'
+                          : style.description,
+                    ),
+                    trailing: style.needsStadiaKey &&
+                            !_offlineMaps.hasStadiaApiKey
+                        ? const Icon(Icons.lock_outline_rounded)
+                        : selected == style
+                            ? const Icon(Icons.check_circle_rounded)
+                            : null,
+                    selected: selected == style,
+                    enabled: !style.needsStadiaKey ||
+                        _offlineMaps.hasStadiaApiKey,
+                    onTap: !style.needsStadiaKey ||
+                            _offlineMaps.hasStadiaApiKey
+                        ? () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(_selectMapStyle(style));
+                          }
+                        : null,
+                  ),
+                if (!_offlineMaps.hasStadiaApiKey)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_openOfflineMaps());
+                      },
+                      icon: const Icon(Icons.key_rounded),
+                      label: const Text('Configurar Stadia para Terreno/Satélite'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _selectMapStyle(MapStylePreset style) async {
+    if (style.needsStadiaKey && !_offlineMaps.hasStadiaApiKey) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${style.label} precisa da chave Stadia configurada.')),
+      );
+      return;
+    }
+    await _mapViewSettings.setStylePreset(style);
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Future<void> _showMapOptions() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.place_rounded),
+                title: const Text('Próximos pontos'),
+                subtitle: const Text('Postos, comida, saúde, água e outros.'),
+                trailing: _routeExplorer.results.isEmpty
+                    ? null
+                    : Text('${_routeExplorer.results.length}'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showNearbyPoints());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.inventory_2_outlined),
+                title: const Text('Pacotes de pontos offline'),
+                subtitle: Text(
+                  _routeExplorer.offlinePackages.isEmpty
+                      ? 'Nenhuma região salva.'
+                      : '${_routeExplorer.offlinePackages.length} região(ões) salva(s).',
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showOfflinePoiPackages());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.download_for_offline_outlined),
+                title: const Text('Mapas offline'),
+                subtitle: const Text('Gerenciar MBTiles e downloads de mapa.'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_openOfflineMaps());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_rounded),
+                title: const Text('Configurações'),
+                subtitle: const Text('Busca, categorias e alertas.'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showMapSettings());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _promptSaveOfflinePoiPackage() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Salvar região offline'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 48,
+          decoration: const InputDecoration(
+            labelText: 'Nome do pacote',
+            hintText: 'Ex.: Serra do Cipó ou BH → Ouro Preto',
+          ),
+          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null) return;
+    await _routeExplorer.saveCurrentResultsOffline(name: name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_routeExplorer.statusMessage ?? 'Pacote salvo.')),
+    );
+  }
+
+  String _formatOfflinePackageDate(DateTime value) {
+    final local = value.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(local.day)}/${two(local.month)} ${two(local.hour)}:${two(local.minute)}';
+  }
+
+  Future<void> _showOfflinePoiPackages() async {
+    await _routeExplorer.initialize();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: FractionallySizedBox(
+          heightFactor: 0.72,
+          child: ListenableBuilder(
+            listenable: _routeExplorer,
+            builder: (context, _) {
+              final packages = _routeExplorer.offlinePackages;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Pacotes de pontos offline',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: _routeExplorer.results.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.of(sheetContext).pop();
+                                  unawaited(_promptSaveOfflinePoiPackage());
+                                },
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Salvar atual'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: packages.isEmpty
+                        ? const _MapEmptyState(
+                            message:
+                                'Nenhuma região offline salva. Faça uma busca em Próximos pontos e salve um pacote.',
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
+                            itemCount: packages.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: 6),
+                            itemBuilder: (context, index) {
+                              final package = packages[index];
+                              final active = package.id ==
+                                  _routeExplorer.activeOfflinePackageId;
+                              return Card(
+                                margin: EdgeInsets.zero,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Icon(
+                                      active
+                                          ? Icons.offline_pin_rounded
+                                          : Icons.inventory_2_outlined,
+                                    ),
+                                  ),
+                                  title: Text(package.name),
+                                  subtitle: Text(
+                                    '${package.itemCount} pontos · raio ${package.searchRadiusKm} km · ${_formatOfflinePackageDate(package.updatedAt)}',
+                                  ),
+                                  trailing: PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      if (value == 'activate') {
+                                        unawaited(
+                                          _routeExplorer.activateOfflinePackage(package.id),
+                                        );
+                                      } else if (value == 'update') {
+                                        unawaited(() async {
+                                          await _routeExplorer.activateOfflinePackage(package.id);
+                                          await _routeExplorer.updateActiveOfflinePackage();
+                                        }());
+                                      } else if (value == 'delete') {
+                                        unawaited(
+                                          _routeExplorer.removeOfflinePackage(package.id),
+                                        );
+                                      }
+                                    },
+                                    itemBuilder: (_) => [
+                                      const PopupMenuItem(
+                                        value: 'activate',
+                                        child: Text('Usar este pacote'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'update',
+                                        child: Text('Atualizar com resultados atuais'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Excluir'),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () => unawaited(
+                                    _routeExplorer.activateOfflinePackage(package.id),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showPoiDetails(RouteExplorerResult item) async {
     _focusPoi(item);
     await showModalBottomSheet<void>(
@@ -746,13 +1136,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: service.loading
+                              onPressed: service.loading || service.results.isEmpty
                                   ? null
-                                  : () => unawaited(
-                                        _refreshNearby(saveAsOffline: true),
-                                      ),
-                              icon: const Icon(Icons.download_for_offline_rounded),
-                              label: const Text('Salvar offline'),
+                                  : () {
+                                      Navigator.of(sheetContext).pop();
+                                      unawaited(_promptSaveOfflinePoiPackage());
+                                    },
+                              icon: const Icon(Icons.inventory_2_outlined),
+                              label: const Text('Salvar pacote'),
                             ),
                           ),
                         ],
@@ -974,7 +1365,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Durante a gravação de um percurso, a busca “No caminho” se atualiza automaticamente após deslocamento relevante ou alguns minutos, usando a lista offline se a rede falhar.',
+                    'A busca “No caminho” pode se atualizar durante o deslocamento mesmo sem gravar percurso: considera distância, tempo em movimento, mudança de direção e saída da área pesquisada. Se a rede falhar, usa o pacote offline mais adequado.',
                     style: Theme.of(sheetContext).textTheme.bodySmall,
                   ),
                 ],
@@ -1012,6 +1403,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
         .where((segment) => segment.length >= 2)
         .toList(growable: false);
     final visiblePois = _visiblePois;
+    final selectedPoi = _selectedPoi;
+    final onlineLayer = _onlineMapLayerSpec;
     final activeOffline = _offlineMaps.activePackage;
     final outsideOfflineArea = activeOffline != null &&
         current != null &&
@@ -1096,10 +1489,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                     ),
                   if (useOnline)
                     TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      key: ValueKey<String>(
+                        'online-${_mapViewSettings.stylePreset.name}',
+                      ),
+                      urlTemplate: onlineLayer.urlTemplate,
                       userAgentPackageName: 'com.vigiaia.app',
-                      maxNativeZoom: 19,
+                      maxNativeZoom: onlineLayer.maxNativeZoom,
+                      subdomains: onlineLayer.subdomains,
                     ),
                   if (routeSegments.isNotEmpty)
                     PolylineLayer(
@@ -1126,7 +1522,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                             label:
                                 '${item.title}, ${_routeExplorer.formatDistance(item.distanceMeters)}',
                             child: GestureDetector(
-                              onTap: () => unawaited(_showPoiDetails(item)),
+                              onTap: () => _focusPoi(item),
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -1274,7 +1670,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   mode: mode,
                   activePackage: activeOffline,
                   error: _offlineTileError,
-                  onTap: () => unawaited(_openOfflineMaps()),
+                  styleLabel: _mapViewSettings.stylePreset.label,
+                  onTap: () => unawaited(_showLayerPicker()),
                 ),
               ),
               Positioned(
@@ -1362,13 +1759,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: 'Próximos pontos',
-                      icon: Icons.place_rounded,
-                      badge: _routeExplorer.results.isEmpty
-                          ? null
-                          : '${_routeExplorer.results.length}',
-                      active: _poiFilter != _MapPoiQuickFilter.all,
-                      onPressed: () => unawaited(_showNearbyPoints()),
+                      tooltip: 'Camadas e tipo do mapa',
+                      icon: _mapStyleIcon(_mapViewSettings.stylePreset),
+                      active: _mapViewSettings.stylePreset != MapStylePreset.standard,
+                      onPressed: () => unawaited(_showLayerPicker()),
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
@@ -1389,18 +1783,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: 'Mapas offline',
-                      icon: offlineProvider == null
-                          ? Icons.download_for_offline_outlined
-                          : Icons.offline_pin_rounded,
-                      active: offlineProvider != null,
-                      onPressed: () => unawaited(_openOfflineMaps()),
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
-                      tooltip: 'Configurações do mapa',
-                      icon: Icons.settings_rounded,
-                      onPressed: () => unawaited(_showMapSettings()),
+                      tooltip: 'Opções do mapa',
+                      icon: Icons.more_horiz_rounded,
+                      badge: _routeExplorer.results.isEmpty
+                          ? null
+                          : '${_routeExplorer.results.length}',
+                      active: offlineProvider != null ||
+                          _routeExplorer.offlinePackages.isNotEmpty,
+                      onPressed: () => unawaited(_showMapOptions()),
                     ),
                   ],
                 ),
@@ -1409,14 +1799,28 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                 left: 8,
                 bottom: bottomInset + 58,
                 child: _MapAttribution(
-                  text: mode != OfflineMapMode.online &&
-                          activeOffline?.providerId == 'stadia-alidade-smooth'
-                      ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
-                      : mode == OfflineMapMode.offline
-                          ? 'Mapa offline · licença do pacote'
-                          : '© OpenStreetMap contributors',
+                  text: mode == OfflineMapMode.offline
+                      ? (activeOffline?.providerId == 'stadia-alidade-smooth'
+                          ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
+                          : 'Mapa offline · licença do pacote')
+                      : onlineLayer.attribution,
                 ),
               ),
+              if (selectedPoi != null)
+                Positioned(
+                  left: 10,
+                  right: 10,
+                  bottom: bottomInset + (navigationTarget == null ? 62 : 124),
+                  child: _SelectedPoiCard(
+                    item: selectedPoi,
+                    distanceLabel:
+                        _routeExplorer.formatDistance(selectedPoi.distanceMeters),
+                    icon: _poiIcon(selectedPoi.category),
+                    onClose: () => setState(() => _selectedPoiId = null),
+                    onDetails: () => unawaited(_showPoiDetails(selectedPoi)),
+                    onNavigate: () => _navigateToPoi(selectedPoi),
+                  ),
+                ),
               if (navigationTarget != null)
                 Positioned(
                   left: 10,
@@ -1946,17 +2350,113 @@ class _MapSettingsTitle extends StatelessWidget {
   }
 }
 
+class _OnlineMapLayerSpec {
+  const _OnlineMapLayerSpec({
+    required this.urlTemplate,
+    required this.maxNativeZoom,
+    required this.attribution,
+    this.subdomains = const <String>[],
+  });
+
+  final String urlTemplate;
+  final int maxNativeZoom;
+  final String attribution;
+  final List<String> subdomains;
+}
+
+class _SelectedPoiCard extends StatelessWidget {
+  const _SelectedPoiCard({
+    required this.item,
+    required this.distanceLabel,
+    required this.icon,
+    required this.onClose,
+    required this.onDetails,
+    required this.onNavigate,
+  });
+
+  final RouteExplorerResult item;
+  final String distanceLabel;
+  final IconData icon;
+  final VoidCallback onClose;
+  final VoidCallback onDetails;
+  final VoidCallback onNavigate;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 8,
+      color: scheme.surface.withValues(alpha: 0.96),
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: scheme.primaryContainer,
+              child: Icon(icon, size: 19, color: scheme.onPrimaryContainer),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    '${item.category.label} · $distanceLabel · '
+                    '${item.source == 'offline' ? 'Offline' : 'Online'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Detalhes',
+              visualDensity: VisualDensity.compact,
+              onPressed: onDetails,
+              icon: const Icon(Icons.info_outline_rounded),
+            ),
+            IconButton(
+              tooltip: 'Navegar até',
+              visualDensity: VisualDensity.compact,
+              onPressed: onNavigate,
+              icon: const Icon(Icons.navigation_rounded),
+            ),
+            IconButton(
+              tooltip: 'Fechar',
+              visualDensity: VisualDensity.compact,
+              onPressed: onClose,
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MapSourceChip extends StatelessWidget {
   const _MapSourceChip({
     required this.mode,
     required this.activePackage,
     required this.error,
+    required this.styleLabel,
     required this.onTap,
   });
 
   final OfflineMapMode mode;
   final OfflineMapPackage? activePackage;
   final String? error;
+  final String styleLabel;
   final VoidCallback onTap;
 
   @override
@@ -1966,8 +2466,9 @@ class _MapSourceChip extends StatelessWidget {
     final label = error != null
         ? 'Offline com erro'
         : switch (mode) {
-            OfflineMapMode.automatic => hasOffline ? 'Mapa local' : 'Online',
-            OfflineMapMode.online => 'Online',
+            OfflineMapMode.automatic =>
+              hasOffline ? '$styleLabel · Auto' : styleLabel,
+            OfflineMapMode.online => styleLabel,
             OfflineMapMode.offline => hasOffline ? 'Offline' : 'Offline indisponível',
           };
     final icon = switch (mode) {

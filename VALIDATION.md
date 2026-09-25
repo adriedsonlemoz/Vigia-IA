@@ -1,3 +1,10 @@
+## 1.0.129+129 — camadas + pacotes offline de POIs
+
+- `python3 tool/check_version_sync.py`: deve confirmar `1.0.129+129` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.
+- `bash tool/verify_project.sh`: cobre os cinco `MapStylePreset`, seletor de camadas, card compacto de POI, `OfflinePoiPackage`, migração de `offlinePackages`, atualização automática sem dependência de gravação e ausência do ícone inválido do Android-APK-95.
+- Testes Dart adicionados: `test/map_style_preset_test.dart` e `test/offline_poi_package_test.dart`.
+- `flutter analyze`, `flutter test` e build Android continuam condicionados à disponibilidade do Flutter/Android SDK no ambiente de validação.
+
 ## 1.0.128+128 — buildfix Android-APK-95
 
 - `flutter analyze` do workflow com Flutter 3.44.9 apontou exatamente dois erros, ambos originados pela referência inexistente `Icons.offline_map_rounded` em `map_monitoring_screen.dart`.

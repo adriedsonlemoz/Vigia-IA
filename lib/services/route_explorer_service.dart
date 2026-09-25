@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/alert_preferences.dart';
 import '../models/map_route_point.dart';
+import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import 'alert_delivery_service.dart';
 import 'location_tracking_service.dart';
@@ -20,6 +21,8 @@ class RouteExplorerService extends ChangeNotifier {
   static const int maximumResults = 36;
   static const Duration automaticRefreshInterval = Duration(minutes: 5);
   static const double automaticRefreshDistanceMeters = 1500;
+  static const double automaticRefreshHeadingChangeDegrees = 50;
+  static const double automaticRefreshMinimumSpeedKmh = 2.0;
 
   static final RouteExplorerService instance = RouteExplorerService._();
 
@@ -38,11 +41,14 @@ class RouteExplorerService extends ChangeNotifier {
   RouteExplorerSettings _settings = const RouteExplorerSettings();
   List<RouteExplorerResult> _results = const <RouteExplorerResult>[];
   List<RouteExplorerResult> _offlineResults = const <RouteExplorerResult>[];
+  final List<OfflinePoiPackage> _offlinePackages = <OfflinePoiPackage>[];
+  String? _activeOfflinePackageId;
   DateTime? _resultsUpdatedAt;
   DateTime? _offlineUpdatedAt;
   final Map<String, Set<int>> _deliveredThresholds = <String, Set<int>>{};
   MapRoutePoint? _lastSearchOrigin;
   DateTime? _lastAutomaticSearchAt;
+  double? _lastSearchHeadingDegrees;
   bool _automaticRefreshScheduled = false;
 
   bool get initialized => _initialized;
@@ -54,9 +60,20 @@ class RouteExplorerService extends ChangeNotifier {
   List<RouteExplorerResult> get results => List<RouteExplorerResult>.unmodifiable(_results);
   List<RouteExplorerResult> get offlineResults =>
       List<RouteExplorerResult>.unmodifiable(_offlineResults);
+  List<OfflinePoiPackage> get offlinePackages =>
+      List<OfflinePoiPackage>.unmodifiable(_offlinePackages);
+  String? get activeOfflinePackageId => _activeOfflinePackageId;
+  OfflinePoiPackage? get activeOfflinePackage {
+    final id = _activeOfflinePackageId;
+    if (id == null) return null;
+    for (final package in _offlinePackages) {
+      if (package.id == id) return package;
+    }
+    return null;
+  }
   DateTime? get resultsUpdatedAt => _resultsUpdatedAt;
   DateTime? get offlineUpdatedAt => _offlineUpdatedAt;
-  bool get hasOfflineData => _offlineResults.isNotEmpty;
+  bool get hasOfflineData => _offlinePackages.isNotEmpty;
 
   Future<void> initialize() {
     final pending = _initializing;
@@ -160,6 +177,8 @@ class RouteExplorerService extends ChangeNotifier {
 
   Future<void> clearOfflineResults() async {
     await initialize();
+    _offlinePackages.clear();
+    _activeOfflinePackageId = null;
     _offlineResults = const <RouteExplorerResult>[];
     _offlineUpdatedAt = null;
     if (_lastSource == 'offline') {
@@ -167,7 +186,62 @@ class RouteExplorerService extends ChangeNotifier {
       _lastSource = 'none';
       _resultsUpdatedAt = null;
     }
-    _statusMessage = 'Lista offline excluída.';
+    _statusMessage = 'Pacotes de pontos offline excluídos.';
+    notifyListeners();
+    await _persistNow();
+  }
+
+  Future<void> activateOfflinePackage(String packageId) async {
+    await initialize();
+    OfflinePoiPackage? selected;
+    for (final package in _offlinePackages) {
+      if (package.id == packageId) {
+        selected = package;
+        break;
+      }
+    }
+    if (selected == null) return;
+    _activeOfflinePackageId = selected.id;
+    _offlineResults = selected.items;
+    _offlineUpdatedAt = selected.updatedAt;
+    final current = _routeState.current;
+    if (current != null) {
+      _results = _recalculateDistances(
+        selected.items,
+        current,
+        source: 'offline',
+      );
+      _lastSource = 'offline';
+      _resultsUpdatedAt = DateTime.now();
+    }
+    _statusMessage = 'Pacote offline “${selected.name}” ativado.';
+    notifyListeners();
+    await _persistNow();
+  }
+
+  Future<void> removeOfflinePackage(String packageId) async {
+    await initialize();
+    _offlinePackages.removeWhere((item) => item.id == packageId);
+    if (_activeOfflinePackageId == packageId) {
+      _activeOfflinePackageId =
+          _offlinePackages.isEmpty ? null : _offlinePackages.first.id;
+      _syncActiveOfflineCache();
+      if (_lastSource == 'offline') {
+        final current = _routeState.current;
+        if (current == null || _offlineResults.isEmpty) {
+          _results = const <RouteExplorerResult>[];
+          _lastSource = 'none';
+          _resultsUpdatedAt = null;
+        } else {
+          _results = _recalculateDistances(
+            _offlineResults,
+            current,
+            source: 'offline',
+          );
+        }
+      }
+    }
+    _statusMessage = 'Pacote offline removido.';
     notifyListeners();
     await _persistNow();
   }
@@ -195,22 +269,29 @@ class RouteExplorerService extends ChangeNotifier {
       _resultsUpdatedAt = DateTime.now();
       _lastSearchOrigin = current;
       _lastAutomaticSearchAt = _resultsUpdatedAt;
+      _lastSearchHeadingDegrees = current.headingDegrees;
       _lastSource = 'online';
       _statusMessage = onlineResults.isEmpty
           ? 'Nenhum local compatível encontrado neste raio.'
           : 'Busca online concluída.';
       _deliveredThresholds.clear();
       if (saveAsOffline) {
-        _offlineResults = onlineResults
-            .map((item) => item.copyWith(source: 'offline'))
-            .toList(growable: false);
-        _offlineUpdatedAt = DateTime.now();
+        await _saveOfflinePackageFromResults(
+          onlineResults,
+          current: current,
+          name: _defaultPackageName(),
+          notify: false,
+          persist: false,
+        );
       }
       _evaluateAlerts(current);
       await _persistNow();
       return _results;
     } catch (error) {
       final current = _routeState.current;
+      if (current != null) {
+        _selectBestOfflinePackage(current);
+      }
       if (_offlineResults.isNotEmpty && current != null) {
         _results = _recalculateDistances(
           _offlineResults,
@@ -220,9 +301,11 @@ class RouteExplorerService extends ChangeNotifier {
         _resultsUpdatedAt = DateTime.now();
         _lastSearchOrigin = current;
         _lastAutomaticSearchAt = _resultsUpdatedAt;
+        _lastSearchHeadingDegrees = current.headingDegrees;
         _lastSource = 'offline';
-        _statusMessage =
-            'Sem internet no momento. Usando a lista offline salva.';
+        _statusMessage = activeOfflinePackage == null
+            ? 'Sem internet no momento. Usando pontos offline.'
+            : 'Sem internet. Usando o pacote “${activeOfflinePackage!.name}”.';
         _error = null;
         _evaluateAlerts(current);
         await _persistNow();
@@ -237,19 +320,116 @@ class RouteExplorerService extends ChangeNotifier {
     }
   }
 
-  Future<void> saveCurrentResultsOffline() async {
+  Future<void> saveCurrentResultsOffline({String? name}) async {
     await initialize();
     if (_results.isEmpty) {
-      await searchNow(requestPermission: true, saveAsOffline: true);
+      await searchNow(requestPermission: true);
+      if (_results.isEmpty) return;
+    }
+    final current = _routeState.current;
+    if (current == null) {
+      _error = 'Localização indisponível para criar o pacote offline.';
+      notifyListeners();
       return;
     }
-    _offlineResults = _results
-        .map((item) => item.copyWith(source: 'offline'))
-        .toList(growable: false);
-    _offlineUpdatedAt = DateTime.now();
-    _statusMessage = 'Lista salva para uso offline.';
+    await _saveOfflinePackageFromResults(
+      _results,
+      current: current,
+      name: (name == null || name.trim().isEmpty)
+          ? _defaultPackageName()
+          : name.trim(),
+    );
+  }
+
+  Future<void> updateActiveOfflinePackage() async {
+    await initialize();
+    final active = activeOfflinePackage;
+    if (active == null) {
+      await saveCurrentResultsOffline();
+      return;
+    }
+    if (_results.isEmpty) {
+      await searchNow(requestPermission: true);
+      if (_results.isEmpty) return;
+    }
+    final current = _routeState.current;
+    if (current == null) {
+      _error = 'Localização indisponível para atualizar o pacote offline.';
+      notifyListeners();
+      return;
+    }
+    final now = DateTime.now();
+    final fresh = OfflinePoiPackage.fromResults(
+      id: active.id,
+      name: active.name,
+      now: now,
+      originLatitude: current.latitude,
+      originLongitude: current.longitude,
+      searchRadiusKm: _settings.radiusKm,
+      items: _results
+          .map((item) => item.copyWith(source: 'offline'))
+          .toList(growable: false),
+    );
+    final updated = OfflinePoiPackage(
+      id: active.id,
+      name: active.name,
+      createdAt: active.createdAt,
+      updatedAt: now,
+      west: fresh.west,
+      south: fresh.south,
+      east: fresh.east,
+      north: fresh.north,
+      originLatitude: fresh.originLatitude,
+      originLongitude: fresh.originLongitude,
+      searchRadiusKm: fresh.searchRadiusKm,
+      items: fresh.items,
+    );
+    final index = _offlinePackages.indexWhere((item) => item.id == active.id);
+    if (index >= 0) _offlinePackages[index] = updated;
+    _activeOfflinePackageId = updated.id;
+    _offlineResults = updated.items;
+    _offlineUpdatedAt = updated.updatedAt;
+    _statusMessage =
+        'Pacote “${updated.name}” atualizado com ${updated.itemCount} pontos.';
     notifyListeners();
     await _persistNow();
+  }
+
+  Future<void> _saveOfflinePackageFromResults(
+    List<RouteExplorerResult> source, {
+    required MapRoutePoint current,
+    required String name,
+    bool notify = true,
+    bool persist = true,
+  }) async {
+    final now = DateTime.now();
+    final offlineItems = source
+        .map((item) => item.copyWith(source: 'offline'))
+        .toList(growable: false);
+    final package = OfflinePoiPackage.fromResults(
+      id: now.microsecondsSinceEpoch.toString(),
+      name: name,
+      now: now,
+      originLatitude: current.latitude,
+      originLongitude: current.longitude,
+      searchRadiusKm: _settings.radiusKm,
+      items: offlineItems,
+    );
+    _offlinePackages.insert(0, package);
+    _activeOfflinePackageId = package.id;
+    _offlineResults = package.items;
+    _offlineUpdatedAt = package.updatedAt;
+    _statusMessage =
+        'Pacote “${package.name}” salvo com ${package.itemCount} pontos.';
+    if (notify) notifyListeners();
+    if (persist) await _persistNow();
+  }
+
+  String _defaultPackageName() {
+    final now = DateTime.now().toLocal();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return 'Região ${two(now.day)}/${two(now.month)} '
+        '${two(now.hour)}:${two(now.minute)}';
   }
 
   void _handleRouteChanged() {
@@ -262,23 +442,23 @@ class RouteExplorerService extends ChangeNotifier {
         source: _lastSource == 'offline' ? 'offline' : 'online',
       );
       notifyListeners();
-    } else if (_offlineResults.isNotEmpty) {
-      _results = _recalculateDistances(
-        _offlineResults,
-        point,
-        source: 'offline',
-      );
-      notifyListeners();
+    } else {
+      _selectBestOfflinePackage(point);
+      if (_offlineResults.isNotEmpty) {
+        _results = _recalculateDistances(
+          _offlineResults,
+          point,
+          source: 'offline',
+        );
+        notifyListeners();
+      }
     }
     _evaluateAlerts(point);
     _maybeRefreshAutomatically(point);
   }
 
   void _maybeRefreshAutomatically(MapRoutePoint current) {
-    if (!_settings.searchAheadWhenMoving ||
-        !_routeState.tracking ||
-        _loading ||
-        _automaticRefreshScheduled) {
+    if (!_settings.searchAheadWhenMoving || _loading || _automaticRefreshScheduled) {
       return;
     }
 
@@ -287,13 +467,31 @@ class RouteExplorerService extends ChangeNotifier {
     final lastOrigin = _lastSearchOrigin;
     final stale = lastAt == null ||
         now.difference(lastAt) >= automaticRefreshInterval;
-    final moved = lastOrigin == null ||
-        LocationTrackingService.distanceMeters(lastOrigin, current) >=
-            automaticRefreshDistanceMeters;
-    if (!stale && !moved) return;
+    final movedMeters = lastOrigin == null
+        ? double.infinity
+        : LocationTrackingService.distanceMeters(lastOrigin, current);
+    final moved = movedMeters >= automaticRefreshDistanceMeters;
+    final coverageEdge = lastOrigin == null ||
+        movedMeters >= (_settings.radiusKm * 1000 * 0.60);
+    final headingChanged = _headingChangedSignificantly(
+      _lastSearchHeadingDegrees,
+      current.headingDegrees,
+    );
+    final moving = current.speedKilometersPerHour >=
+        automaticRefreshMinimumSpeedKmh;
+    if (!moved && !coverageEdge && !(stale && moving) && !(headingChanged && moving)) {
+      return;
+    }
 
     _automaticRefreshScheduled = true;
     unawaited(_runAutomaticRefresh());
+  }
+
+  bool _headingChangedSignificantly(double? previous, double? current) {
+    if (previous == null || current == null) return false;
+    var delta = (current - previous).abs() % 360;
+    if (delta > 180) delta = 360 - delta;
+    return delta >= automaticRefreshHeadingChangeDegrees;
   }
 
   Future<void> _runAutomaticRefresh() async {
@@ -317,7 +515,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.128');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.129');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -700,22 +898,58 @@ class RouteExplorerService extends ChangeNotifier {
             ),
           )
           .toList(growable: false);
-      _offlineResults = ((decoded['offlineResults'] as List?) ?? const <Object>[])
-          .whereType<Map>()
-          .map(
-            (item) => RouteExplorerResult.fromJson(
-              item.map((key, value) => MapEntry(key.toString(), value)),
-            ),
-          )
-          .toList(growable: false);
+      _offlinePackages.clear();
+      final rawPackages = (decoded['offlinePackages'] as List?) ?? const <Object>[];
+      for (final raw in rawPackages.whereType<Map>()) {
+        final package = OfflinePoiPackage.fromJson(
+          raw.map((key, value) => MapEntry(key.toString(), value)),
+        );
+        if (package.id.isNotEmpty && package.items.isNotEmpty) {
+          _offlinePackages.add(package);
+        }
+      }
+      _activeOfflinePackageId = decoded['activeOfflinePackageId'] as String?;
+
+      // Migração transparente do formato legado: uma única lista global.
+      if (_offlinePackages.isEmpty) {
+        final legacyItems = ((decoded['offlineResults'] as List?) ?? const <Object>[])
+            .whereType<Map>()
+            .map(
+              (item) => RouteExplorerResult.fromJson(
+                item.map((key, value) => MapEntry(key.toString(), value)),
+              ),
+            )
+            .toList(growable: false);
+        if (legacyItems.isNotEmpty) {
+          final updatedAt = DateTime.tryParse(
+                decoded['offlineUpdatedAt'] as String? ?? '',
+              ) ??
+              DateTime.now();
+          final originLat = legacyItems.first.latitude;
+          final originLon = legacyItems.first.longitude;
+          final migrated = OfflinePoiPackage.fromResults(
+            id: 'legacy-${updatedAt.millisecondsSinceEpoch}',
+            name: 'Lista offline antiga',
+            now: updatedAt,
+            originLatitude: originLat,
+            originLongitude: originLon,
+            searchRadiusKm: _settings.radiusKm,
+            items: legacyItems
+                .map((item) => item.copyWith(source: 'offline'))
+                .toList(growable: false),
+          );
+          _offlinePackages.add(migrated);
+          _activeOfflinePackageId = migrated.id;
+        }
+      }
+      _syncActiveOfflineCache();
       final resultsUpdatedAt = decoded['resultsUpdatedAt'] as String?;
       final offlineUpdatedAt = decoded['offlineUpdatedAt'] as String?;
       _resultsUpdatedAt = resultsUpdatedAt == null
           ? null
           : DateTime.tryParse(resultsUpdatedAt);
-      _offlineUpdatedAt = offlineUpdatedAt == null
-          ? null
-          : DateTime.tryParse(offlineUpdatedAt);
+      _offlineUpdatedAt = activeOfflinePackage?.updatedAt ??
+          (offlineUpdatedAt == null ? null : DateTime.tryParse(offlineUpdatedAt));
       _lastSource = decoded['lastSource'] as String? ?? 'none';
       _statusMessage = decoded['statusMessage'] as String?;
     } catch (_) {
@@ -723,13 +957,73 @@ class RouteExplorerService extends ChangeNotifier {
     }
   }
 
+  void _syncActiveOfflineCache() {
+    OfflinePoiPackage? selected = activeOfflinePackage;
+    if (selected == null && _offlinePackages.isNotEmpty) {
+      selected = _offlinePackages.first;
+      _activeOfflinePackageId = selected.id;
+    }
+    _offlineResults = selected?.items ?? const <RouteExplorerResult>[];
+    _offlineUpdatedAt = selected?.updatedAt;
+  }
+
+  OfflinePoiPackage? _selectBestOfflinePackage(MapRoutePoint current) {
+    if (_offlinePackages.isEmpty) {
+      _activeOfflinePackageId = null;
+      _offlineResults = const <RouteExplorerResult>[];
+      _offlineUpdatedAt = null;
+      return null;
+    }
+    OfflinePoiPackage? best;
+    for (final package in _offlinePackages) {
+      if (package.contains(
+        latitude: current.latitude,
+        longitude: current.longitude,
+      )) {
+        if (best == null || package.updatedAt.isAfter(best.updatedAt)) {
+          best = package;
+        }
+      }
+    }
+    best ??= _nearestOfflinePackage(current);
+    if (best != null && best.id != _activeOfflinePackageId) {
+      _activeOfflinePackageId = best.id;
+      _offlineResults = best.items;
+      _offlineUpdatedAt = best.updatedAt;
+    }
+    return best;
+  }
+
+  OfflinePoiPackage? _nearestOfflinePackage(MapRoutePoint current) {
+    OfflinePoiPackage? best;
+    double bestMeters = double.infinity;
+    final origin = LatLng(current.latitude, current.longitude);
+    for (final package in _offlinePackages) {
+      final meters = _distance.as(
+        LengthUnit.Meter,
+        origin,
+        LatLng(package.originLatitude, package.originLongitude),
+      );
+      if (meters < bestMeters) {
+        bestMeters = meters;
+        best = package;
+      }
+    }
+    return best;
+  }
+
   Future<void> _persistNow() async {
     final file = _file;
     if (file == null) return;
     final temporary = File('${file.path}.tmp');
     final payload = <String, Object?>{
+      'version': 2,
       'settings': _settings.toJson(),
       'results': _results.map((item) => item.toJson()).toList(growable: false),
+      'offlinePackages':
+          _offlinePackages.map((item) => item.toJson()).toList(growable: false),
+      'activeOfflinePackageId': _activeOfflinePackageId,
+      // Compatibilidade de leitura com versões anteriores durante rollback.
       'offlineResults':
           _offlineResults.map((item) => item.toJson()).toList(growable: false),
       'resultsUpdatedAt': _resultsUpdatedAt?.toIso8601String(),
