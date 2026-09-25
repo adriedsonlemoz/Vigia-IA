@@ -13,7 +13,9 @@ import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import 'alert_delivery_service.dart';
 import 'location_tracking_service.dart';
+import 'map_connectivity_service.dart';
 import 'map_route_service.dart';
+import 'route_explorer_alert_policy.dart';
 import 'route_explorer_poi_catalog.dart';
 
 class RouteExplorerService extends ChangeNotifier {
@@ -29,6 +31,8 @@ class RouteExplorerService extends ChangeNotifier {
 
   final MapRouteService _routeState = MapRouteService.instance;
   final AlertDeliveryService _alerts = AlertDeliveryService();
+  final MapConnectivityService _connectivity = MapConnectivityService.instance;
+  final RouteExplorerAlertPolicy _alertPolicy = const RouteExplorerAlertPolicy();
   final Distance _distance = const Distance();
 
   File? _file;
@@ -47,6 +51,7 @@ class RouteExplorerService extends ChangeNotifier {
   DateTime? _resultsUpdatedAt;
   DateTime? _offlineUpdatedAt;
   final Map<String, Set<int>> _deliveredThresholds = <String, Set<int>>{};
+  DateTime? _lastAlertDeliveredAt;
   MapRoutePoint? _lastSearchOrigin;
   DateTime? _lastAutomaticSearchAt;
   double? _lastSearchHeadingDegrees;
@@ -173,6 +178,7 @@ class RouteExplorerService extends ChangeNotifier {
     if (_settings.alertDistanceMeters == value) return;
     _settings = _settings.copyWith(alertDistanceMeters: value);
     _deliveredThresholds.clear();
+    _lastAlertDeliveredAt = null;
     notifyListeners();
     await _persistNow();
   }
@@ -266,6 +272,20 @@ class RouteExplorerService extends ChangeNotifier {
         throw StateError('Localização indisponível para explorar a região.');
       }
 
+      if (_connectivity.isOffline && !saveAsOffline) {
+        final offline = _activateOfflineForPosition(
+          current,
+          explicitOfflineMode: false,
+        );
+        if (offline.isEmpty) {
+          _statusMessage = _results.isEmpty
+              ? 'Sem internet e sem pacote de pontos offline para esta região.'
+              : 'Sem internet. Mantendo os últimos pontos carregados.';
+        }
+        await _persistNow();
+        return _results;
+      }
+
       final onlineResults = await _fetchOnline(current);
       _results = onlineResults;
       _resultsUpdatedAt = DateTime.now();
@@ -276,7 +296,7 @@ class RouteExplorerService extends ChangeNotifier {
       _statusMessage = onlineResults.isEmpty
           ? 'Nenhum local compatível encontrado neste raio.'
           : 'Busca online concluída.';
-      _deliveredThresholds.clear();
+      _pruneDeliveredAlerts(onlineResults);
       if (saveAsOffline) {
         await _saveOfflinePackageFromResults(
           onlineResults,
@@ -292,26 +312,14 @@ class RouteExplorerService extends ChangeNotifier {
     } catch (error) {
       final current = _routeState.current;
       if (current != null) {
-        _selectBestOfflinePackage(current);
-      }
-      if (_offlineResults.isNotEmpty && current != null) {
-        _results = _recalculateDistances(
-          _offlineResults,
+        final offline = _activateOfflineForPosition(
           current,
-          source: 'offline',
+          explicitOfflineMode: false,
         );
-        _resultsUpdatedAt = DateTime.now();
-        _lastSearchOrigin = current;
-        _lastAutomaticSearchAt = _resultsUpdatedAt;
-        _lastSearchHeadingDegrees = current.headingDegrees;
-        _lastSource = 'offline';
-        _statusMessage = activeOfflinePackage == null
-            ? 'Sem internet no momento. Usando pontos offline.'
-            : 'Sem internet. Usando o pacote “${activeOfflinePackage!.name}”.';
-        _error = null;
-        _evaluateAlerts(current);
-        await _persistNow();
-        return _results;
+        if (offline.isNotEmpty) {
+          await _persistNow();
+          return offline;
+        }
       }
       _error = error.toString().replaceFirst('Exception: ', '');
       _statusMessage = null;
@@ -321,6 +329,66 @@ class RouteExplorerService extends ChangeNotifier {
       notifyListeners();
       _routeState.releaseLocationIfIdle();
     }
+  }
+
+  Future<List<RouteExplorerResult>> useOfflineForCurrentLocation({
+    bool requestPermission = false,
+    bool explicitOfflineMode = false,
+  }) async {
+    await initialize();
+    _error = null;
+    await _routeState.initialize(requestPermission: requestPermission);
+    await _routeState.ensureLocation(requestPermission: requestPermission);
+    final current = _routeState.current;
+    if (current == null) {
+      _statusMessage = 'Localização indisponível para consultar os pontos offline.';
+      notifyListeners();
+      return _results;
+    }
+    final result = _activateOfflineForPosition(
+      current,
+      explicitOfflineMode: explicitOfflineMode,
+    );
+    if (result.isEmpty) {
+      _statusMessage = _results.isEmpty
+          ? 'Sem pacote de pontos offline para esta região.'
+          : 'Sem pacote offline nesta região. Mantendo os últimos pontos carregados.';
+    }
+    notifyListeners();
+    await _persistNow();
+    return _results;
+  }
+
+  List<RouteExplorerResult> _activateOfflineForPosition(
+    MapRoutePoint current, {
+    required bool explicitOfflineMode,
+  }) {
+    _selectBestOfflinePackage(current);
+    if (_offlineResults.isEmpty) return const <RouteExplorerResult>[];
+    _results = _recalculateDistances(
+      _offlineResults,
+      current,
+      source: 'offline',
+    );
+    _resultsUpdatedAt = DateTime.now();
+    _lastSearchOrigin = current;
+    _lastAutomaticSearchAt = _resultsUpdatedAt;
+    _lastSearchHeadingDegrees = current.headingDegrees;
+    _lastSource = 'offline';
+    final package = activeOfflinePackage;
+    if (explicitOfflineMode) {
+      _statusMessage = package == null
+          ? 'Modo offline ativo. Usando pontos salvos.'
+          : 'Modo offline ativo · ${package.name}.';
+    } else {
+      _statusMessage = package == null
+          ? 'Sem internet no momento. Usando pontos offline.'
+          : 'Sem internet. Usando o pacote “${package.name}”.';
+    }
+    _error = null;
+    _evaluateAlerts(current);
+    notifyListeners();
+    return _results;
   }
 
   Future<void> saveCurrentResultsOffline({String? name}) async {
@@ -551,7 +619,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.143');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.146');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -744,37 +812,40 @@ class RouteExplorerService extends ChangeNotifier {
     return List<RouteExplorerResult>.unmodifiable(selected);
   }
 
-  void _evaluateAlerts(MapRoutePoint current) {
-    if (!_settings.alertsEnabled) return;
-    final activeResults = _results.isNotEmpty ? _results : _offlineResults;
-    if (activeResults.isEmpty) return;
+  void _pruneDeliveredAlerts(List<RouteExplorerResult> results) {
+    final activeIds = results.map((item) => item.id).toSet();
+    _deliveredThresholds.removeWhere((id, _) => !activeIds.contains(id));
+  }
 
-    for (final item in activeResults) {
-      final distanceMeters = _distance.as(
-        LengthUnit.Meter,
-        LatLng(current.latitude, current.longitude),
-        LatLng(item.latitude, item.longitude),
-      );
-      if (_settings.searchAheadWhenMoving &&
-          !_isAheadOrNearby(current, LatLng(item.latitude, item.longitude))) {
-        continue;
-      }
-      final thresholds = <int>{_settings.alertDistanceMeters, 1000}.toList()
-        ..sort((a, b) => b.compareTo(a));
-      final delivered = _deliveredThresholds.putIfAbsent(item.id, () => <int>{});
-      for (final threshold in thresholds) {
-        if (distanceMeters <= threshold && !delivered.contains(threshold)) {
-          delivered.add(threshold);
-          unawaited(
-            _alerts.deliver(
-              _buildAlertMessage(item, distanceMeters),
-              title: 'Mapa e percurso',
-            ),
-          );
-          break;
-        }
-      }
-    }
+  void _evaluateAlerts(MapRoutePoint current) {
+    final activeResults = _results.isNotEmpty ? _results : _offlineResults;
+    final decision = _alertPolicy.select(
+      results: activeResults,
+      settings: _settings,
+      deliveredThresholds: _deliveredThresholds,
+      now: DateTime.now(),
+      lastDeliveredAt: _lastAlertDeliveredAt,
+      directionFilter: _settings.searchAheadWhenMoving
+          ? (item) => _isAheadOrNearby(
+                current,
+                LatLng(item.latitude, item.longitude),
+              )
+          : null,
+    );
+    if (decision == null) return;
+
+    final delivered = _deliveredThresholds.putIfAbsent(
+      decision.item.id,
+      () => <int>{},
+    );
+    delivered.addAll(decision.consumedThresholds);
+    _lastAlertDeliveredAt = DateTime.now();
+    unawaited(
+      _alerts.deliver(
+        _buildAlertMessage(decision.item, decision.item.distanceMeters),
+        title: 'Mapa e percurso',
+      ),
+    );
   }
 
   String _buildAlertMessage(RouteExplorerResult item, double distanceMeters) {
@@ -782,9 +853,9 @@ class RouteExplorerService extends ChangeNotifier {
       RouteExplorerCategory.fuel => 'Próximo posto',
       RouteExplorerCategory.restaurant => 'Próximo restaurante',
       RouteExplorerCategory.stop => 'Próxima parada',
-      RouteExplorerCategory.workshop => 'Próxima oficina',
+      RouteExplorerCategory.workshop => 'Oficina de bicicleta',
       RouteExplorerCategory.health => 'Próximo ponto de saúde',
-      RouteExplorerCategory.water => 'Próximo ponto de água ou banheiro',
+      RouteExplorerCategory.water => 'Água ou banheiro',
       RouteExplorerCategory.camping => 'Próximo camping',
       RouteExplorerCategory.viewpoint => 'Próximo mirante',
       RouteExplorerCategory.waterfall => 'Próxima cachoeira',

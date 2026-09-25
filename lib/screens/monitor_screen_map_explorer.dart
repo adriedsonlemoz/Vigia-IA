@@ -16,6 +16,9 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
       secondaryCameraListenable: secondary,
       secondaryCameraAspectRatioProvider:
           secondary == null ? null : () => secondary.previewAspectRatio,
+      cameraAiStatusProvider: () => _controller.aiPipStatus,
+      secondaryCameraAiStatusProvider:
+          secondary == null ? null : () => secondary.aiPipStatus,
       bikeApproachStatusProvider: () => _controller.bikeApproachStatus,
       bikeApproachEnabledProvider: () =>
           _controller.bikeModeConfig.enabled &&
@@ -69,7 +72,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                     ),
                     if (service.loading) const LinearProgressIndicator(minHeight: 2),
                     SizedBox(
-                      height: 44,
+                      height: 40,
                       child: ListView(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         scrollDirection: Axis.horizontal,
@@ -78,6 +81,12 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                             ChoiceChip(
                               label: Text(_quickFilterLabel(item)),
                               selected: filter == item,
+                              visualDensity: const VisualDensity(
+                                horizontal: -2,
+                                vertical: -3,
+                              ),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                               onSelected: (_) => setSheetState(() => filter = item),
                             ),
                             const SizedBox(width: 6),

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/remote_phone_status.dart';
+import '../models/monitor_ai_pip_status.dart';
 import '../models/video_source_config.dart';
+import '../services/monitor_ai_status_resolver.dart';
 import '../sources/front_camera_preview_source.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
@@ -26,6 +28,17 @@ class SecondaryCameraController extends ChangeNotifier {
   VideoSourceStatus get status => _status;
   bool get initializing => _initializing;
   String? get error => _error;
+  MonitorAiPipStatus get aiPipStatus => MonitorAiStatusResolver.resolve(
+        aiEnabled: false,
+        detectorReady: false,
+        initializing: _initializing,
+        processing: false,
+        sourceState: _status.state,
+        networkSource: sourceConfig.type != VideoSourceType.localCamera,
+        lastFrameAt: remoteStatus?.lastFrameAt,
+        expectedFrameInterval: sourceConfig.analysisInterval,
+        detail: _error ?? _status.message,
+      );
   String get displayName => sourceConfig.displayName?.trim().isNotEmpty == true
       ? sourceConfig.displayName!.trim()
       : switch (sourceConfig.type) {

@@ -7,6 +7,33 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.146', build: 146),
+      changes: <String>[
+        '📴 Navegação agora entra em fallback offline sem apagar a última rota conhecida.',
+        '🔄 Quando a conexão volta, POIs e rota viária tentam se recuperar automaticamente.',
+        '🗺️ O mapa indica claramente o estado offline e usa mapas/POIs salvos sem depender da internet.',
+        '✨ HUD, zoom, filtros, banner de navegação e PiPs foram compactados para liberar mais área do mapa.',
+      ],
+    ),
+    UpdateRelease(
+      version: AppBuildVersion(version: '1.0.145', build: 145),
+      changes: <String>[
+        '📍 Avisos de POIs relevantes respeitam categorias, distância configurada e dados offline.',
+        '🔕 Um cooldown global evita sequências excessivas de alertas durante o percurso.',
+        '🗣️ Navegação por voz anuncia próximas manobras, distância, saída da rota, recálculo e chegada.',
+        '🔊 POIs e navegação reutilizam o sistema global de áudio/TTS e suas preferências.',
+      ],
+    ),
+    UpdateRelease(
+      version: AppBuildVersion(version: '1.0.144', build: 144),
+      changes: <String>[
+        '🧠 Estados da IA agora aparecem claramente nos PiPs do mapa.',
+        '🎞️ A interface diferencia IA ativa, analisando, aguardando frames e sem frames.',
+        '📷 Falhas de câmera e conexão perdida ficam visíveis sem fingir que a IA está analisando.',
+        '⚠️ Possíveis erros da IA ganham um estado próprio e compacto.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.143', build: 143),
       changes: <String>[
         '🚗 Aproximação de veículos integrada ao PiP da câmera analisada no mapa.',

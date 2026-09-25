@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.143 integra o estimador de aproximação do Modo Bike ao PiP traseiro do mapa e adiciona o sistema global de Novidades da atualização por versão.",
-  "version": "1.0.143",
-  "build": 143
+  "notes": "A 1.0.146 combina offline aprimorado com revisão visual do mapa: fallback seguro durante navegação, recuperação automática da rede, POIs offline imediatos e HUD/PiPs mais compactos.",
+  "version": "1.0.146",
+  "build": 146
 }

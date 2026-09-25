@@ -11,9 +11,9 @@ class MapCameraSnapPoint {
 class MapUxPolicy {
   const MapUxPolicy._();
 
-  static const double controlEdge = 8;
-  static const double controlSize = 44;
-  static const double controlGap = 6;
+  static const double controlEdge = 6;
+  static const double controlSize = 40;
+  static const double controlGap = 5;
 
   static bool compactLandscape({
     required double width,
@@ -31,16 +31,16 @@ class MapUxPolicy {
     required double safeTop,
     required bool compactLandscape,
   }) =>
-      safeTop + (compactLandscape ? 150 : 142);
+      safeTop + (compactLandscape ? 122 : 130);
 
   static double cameraBottomReserve({
     required double safeBottom,
     required bool hasSelectedPoi,
     required bool hasNavigation,
   }) {
-    var reserve = safeBottom + 56;
-    if (hasNavigation) reserve += 82;
-    if (hasSelectedPoi) reserve += 60;
+    var reserve = safeBottom + 50;
+    if (hasNavigation) reserve += 74;
+    if (hasSelectedPoi) reserve += 54;
     return reserve;
   }
 
@@ -51,7 +51,7 @@ class MapUxPolicy {
   }) {
     final normalized = savedScale.clamp(0.72, 1.35).toDouble();
     if (!hasNavigation) return normalized;
-    final ceiling = compactHud ? 0.82 : 1.0;
+    final ceiling = compactHud ? 0.76 : 0.92;
     return normalized.clamp(0.72, ceiling).toDouble();
   }
 
@@ -103,9 +103,9 @@ class MapUxPolicy {
     required bool hasSelectedPoi,
     required bool hasNavigation,
   }) {
-    var offset = safeBottom + 50;
-    if (hasNavigation) offset += 82;
-    if (hasSelectedPoi) offset += 60;
+    var offset = safeBottom + 44;
+    if (hasNavigation) offset += 74;
+    if (hasSelectedPoi) offset += 54;
     return offset;
   }
 }

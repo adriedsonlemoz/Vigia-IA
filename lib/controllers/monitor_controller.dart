@@ -9,6 +9,7 @@ import '../models/bike_mode_config.dart';
 import '../models/detection.dart';
 import '../models/device_telemetry.dart';
 import '../models/monitor_event.dart';
+import '../models/monitor_ai_pip_status.dart';
 import '../models/monitor_schedule.dart';
 import '../models/monitoring_zone.dart';
 import '../models/object_appearance.dart';
@@ -39,6 +40,7 @@ import '../services/motion_detection_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/monitoring_zone_service.dart';
 import '../services/monitor_lan_stream_service.dart';
+import '../services/monitor_ai_status_resolver.dart';
 import '../services/object_appearance_service.dart';
 import '../services/object_detection_service.dart';
 import '../services/object_filter_policy.dart';
@@ -253,7 +255,6 @@ class MonitorController extends ChangeNotifier {
 
   Widget buildPreview() =>
       _source?.buildPreview() ?? const SizedBox.expand();
-
   void _syncLanHealth() {
     _health.updateLan(
       active: _lanStream.running,
@@ -271,7 +272,6 @@ class MonitorController extends ChangeNotifier {
   void _onLanStreamChanged() => _notify();
 
   void _onRemotePhoneStatusChanged() => _notify();
-
   void _onBikeModeChanged() {
     if (_disposed || _bikePolicyChangeInProgress) return;
     unawaited(_applyBikeModeChange());

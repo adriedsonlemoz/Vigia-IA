@@ -1,6 +1,33 @@
 part of 'monitor_controller.dart';
 
-extension _MonitorControllerStateSupport on MonitorController {
+extension MonitorControllerStateSupport on MonitorController {
+  MonitorAiPipStatus get aiPipStatus {
+    final errorText = _error?.trim();
+    final normalizedError = errorText?.toLowerCase() ?? '';
+    final possibleAiError =
+        (errorText?.isNotEmpty == true &&
+            (!_baseReady ||
+                normalizedError.contains('ia') ||
+                normalizedError.contains('detec'))) ||
+        (_baseReady && !_detector.isReady);
+    final aiEnabled = _baseReady &&
+        _scheduleActive &&
+        (!_suspended || _backgroundMonitoringEnabled) &&
+        _source != null;
+    return MonitorAiStatusResolver.resolve(
+      aiEnabled: aiEnabled,
+      detectorReady: _detector.isReady,
+      initializing: _initializing,
+      processing: _processing,
+      sourceState: _sourceStatus.state,
+      networkSource: sourceConfig.type != VideoSourceType.localCamera,
+      lastFrameAt: _lastFrameReceivedAt,
+      expectedFrameInterval: effectiveAnalysisInterval,
+      possibleAiError: possibleAiError,
+      detail: errorText ?? _sourceStatus.message,
+    );
+  }
+
   void _resetTemporalForSourceStopImpl() {
     _cadence.reset();
     _detectionFilter.reset();

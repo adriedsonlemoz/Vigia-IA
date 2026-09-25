@@ -1,4 +1,57 @@
-# Validação Vigia IA 1.0.143+143
+# Validação Vigia IA 1.0.146+146
+
+
+## 1.0.146+146 — offline aprimorado + revisão visual do mapa
+
+- Iniciar uma navegação com rota viária carregada, cortar a internet e confirmar que a geometria atual permanece no mapa, com indicação `Offline automático`/`Sem internet` e sem apagar o destino.
+- Sair do trajeto ainda sem rede e confirmar que o app não entra em recálculo contínuo nem substitui a rota por uma linha tratada como rota viária; o banner deve informar que mantém a última rota conhecida.
+- Iniciar navegação já offline e sem rota carregada e confirmar mensagem explícita de direção ao destino, sem fingir possuir instruções viárias.
+- Com pacote MBTiles ativo, confirmar fallback visual automático ao perder a internet mesmo se o usuário estava no modo Online; durante navegação a rota e o destino devem permanecer visíveis e, fora da área do pacote, manter o aviso de cobertura.
+- Com pacote de POIs salvo, cortar a rede e confirmar seleção automática da região mais adequada, recálculo local de distância e continuidade dos alertas configurados.
+- Restaurar internet e confirmar atualização automática dos POIs e nova tentativa de rota; a navegação não deve precisar ser encerrada/reaberta.
+- Em retrato e paisagem, revisar controles de voltar/camadas/GPS, telemetria, atalhos Perto/Região/Rota, zoom, opções, card de POI, banner de navegação e PiPs sem sobreposição importante.
+- Confirmar que PiPs grandes reduzem temporariamente mais durante navegação e retornam ao tamanho salvo ao encerrar.
+- Executar `test/map_connectivity_service_test.dart`, `test/map_offline_navigation_policy_test.dart` e `test/map_ux_policy_test.dart`, além da suíte completa quando Flutter estiver disponível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow quando o SDK Flutter estiver disponível.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- `.github/workflows/android-apk.yml` permanece byte a byte igual ao da 1.0.145; nenhum APK/AAB está presente no fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android não puderam ser executados localmente.
+
+
+## 1.0.145+145 — avisos de POIs + navegação por voz
+
+- Com alertas ativos, confirmar mensagens de posto/água/camping/oficina usando a distância configurada e somente categorias selecionadas.
+- Confirmar que resultados de pacote offline geram os mesmos avisos sem depender de internet.
+- Colocar vários POIs próximos e validar no máximo um novo aviso por minuto; se um local for descoberto já dentro de 1 km, não deve surgir depois um aviso atrasado de 3/5/10 km para o mesmo POI.
+- Desmarcar uma categoria mantendo resultados antigos carregados e confirmar que ela deixa de gerar alerta imediatamente.
+- Iniciar navegação e validar fala da próxima manobra em marcos de aproximadamente 1 km, 500 m, 200 m e 80 m, sem repetir o mesmo marco a cada atualização GPS.
+- Confirmar que 80 m pode ter prioridade mesmo após um aviso recente, preservando a manobra iminente.
+- Sair da rota por duas amostras válidas e confirmar “Você saiu da rota. Recalculando o caminho.”; após sucesso confirmar “Rota recalculada.”.
+- Chegar ao destino e confirmar anúncio único de chegada.
+- Desativar a voz global ou o TTS dinâmico nas preferências de áudio e confirmar que instruções variáveis não são faladas; notificações de POI seguem a preferência própria.
+- Executar `test/route_explorer_alert_policy_test.dart` e `test/map_navigation_voice_policy_test.dart`, além da suíte completa quando Flutter estiver disponível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow quando o SDK Flutter estiver disponível.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- `.github/workflows/android-apk.yml` permanece byte a byte igual ao da 1.0.144; nenhum APK/AAB está presente no fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android não foram executados localmente.
+
+
+## 1.0.144+144 — estados da IA nos PiPs
+
+- Confirmar `IA ativa` com fonte recebendo frames recentes e detector pronto.
+- Confirmar `Analisando` apenas durante processamento real e nunca quando a IA estiver desligada.
+- Confirmar `Aguardando frames` na conexão/inicialização antes do primeiro quadro e `Sem frames` após expirar a janela de 4–8 segundos.
+- Forçar falha da câmera local e validar `Câmera indisponível`; em RTSP/celular remoto/ESP32 validar `Conexão perdida` durante erro/reconexão.
+- Confirmar `Possível erro da IA` quando o detector falhar sem uma falha de fonte mais específica.
+- Abrir câmera apenas pelo mapa/segunda câmera e confirmar `IA desligada`, sem criar outro pipeline de análise.
+- Com aproximação de veículo ativa, confirmar que status de IA e TTC/risco continuam legíveis dentro do PiP sem cobrir HUD ou navegação.
+- Executar `test/monitor_ai_status_resolver_test.dart` e `test/map_ai_status_overlay_test.dart`, além da suíte completa quando Flutter estiver disponível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow quando o SDK Flutter estiver disponível.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android não foram executados localmente.
 
 
 ## 1.0.143+143 — aproximação de veículos + novidades da atualização

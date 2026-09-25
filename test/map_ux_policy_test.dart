@@ -12,11 +12,11 @@ void main() {
   test('reserva PiP abaixo do HUD e acima dos paineis inferiores', () {
     expect(
       MapUxPolicy.cameraMinY(safeTop: 24, compactLandscape: false),
-      166,
+      154,
     );
     expect(
       MapUxPolicy.cameraMinY(safeTop: 24, compactLandscape: true),
-      174,
+      146,
     );
     expect(
       MapUxPolicy.cameraBottomReserve(
@@ -24,7 +24,7 @@ void main() {
         hasSelectedPoi: true,
         hasNavigation: true,
       ),
-      218,
+      198,
     );
   });
 
@@ -35,7 +35,7 @@ void main() {
         hasNavigation: true,
         compactHud: false,
       ),
-      1.0,
+      0.92,
     );
     expect(
       MapUxPolicy.cameraEffectiveScale(
@@ -43,7 +43,7 @@ void main() {
         hasNavigation: true,
         compactHud: true,
       ),
-      0.82,
+      0.76,
     );
     expect(
       MapUxPolicy.cameraEffectiveScale(

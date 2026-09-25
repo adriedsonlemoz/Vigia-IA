@@ -11,7 +11,9 @@ import 'package:latlong2/latlong.dart';
 import '../controllers/secondary_camera_controller.dart';
 import '../models/bike_approach_status.dart';
 import '../models/camera_endpoint.dart';
+import '../models/map_connectivity_status.dart';
 import '../models/map_navigation_target.dart';
+import '../models/monitor_ai_pip_status.dart';
 import '../models/map_cycling_route.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
@@ -21,9 +23,12 @@ import '../models/video_source_config.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
+import '../services/map_connectivity_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_navigation_guidance.dart';
+import '../services/map_navigation_voice_service.dart';
+import '../services/map_offline_navigation_policy.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
 import '../services/map_ux_policy.dart';
@@ -36,6 +41,9 @@ import '../services/system_ui_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/map_poi_details_sheet.dart';
 import '../widgets/map_bike_approach_overlay.dart';
+import '../widgets/map_ai_status_overlay.dart';
+
+part 'map_monitoring_offline_support.dart';
 
 enum _MapPoiQuickFilter { all, fuel, food, health, water, nature, travel, other }
 
@@ -54,6 +62,8 @@ class MapMonitoringScreen extends StatefulWidget {
     this.secondaryCameraPreviewBuilder,
     this.secondaryCameraListenable,
     this.secondaryCameraAspectRatioProvider,
+    this.cameraAiStatusProvider,
+    this.secondaryCameraAiStatusProvider,
     this.bikeApproachStatusProvider,
     this.bikeApproachEnabledProvider,
     this.initialPointOfInterest,
@@ -67,6 +77,8 @@ class MapMonitoringScreen extends StatefulWidget {
   final WidgetBuilder? secondaryCameraPreviewBuilder;
   final Listenable? secondaryCameraListenable;
   final double? Function()? secondaryCameraAspectRatioProvider;
+  final MonitorAiPipStatus Function()? cameraAiStatusProvider;
+  final MonitorAiPipStatus Function()? secondaryCameraAiStatusProvider;
   final BikeApproachStatus Function()? bikeApproachStatusProvider;
   final bool Function()? bikeApproachEnabledProvider;
   final RouteExplorerResult? initialPointOfInterest;
@@ -83,6 +95,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final MapRouteService _routeState = MapRouteService.instance;
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
   final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
+  final MapNavigationVoiceService _navigationVoice = MapNavigationVoiceService();
   MapCyclingRoute? _cyclingRoute;
   List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
   int _selectedCyclingRouteIndex = 0;
@@ -94,6 +107,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   DateTime? _lastNavigationProgressPointAt;
   final NativePlatformService _native = NativePlatformService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
+  final MapConnectivityService _connectivity = MapConnectivityService.instance;
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final MapCameraOverlaySettingsService _cameraOverlaySettings =
@@ -122,6 +136,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _mapReady = false;
   Size _mapViewportSize = Size.zero;
   bool _compactLandscape = false;
+  MapConnectivityState _lastConnectivityState = MapConnectivityState.unknown;
+  MapRouteFallbackDecision? _routeFallback;
+  Timer? _routeRecoveryTimer;
+  bool _routeRecoveryBusy = false;
   _MapQuickView? _quickView = _MapQuickView.near;
   double? _customFollowZoom;
   DateTime? _lastFollowCameraPointAt;
@@ -138,10 +156,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _offlineMaps.addListener(_onOfflineMapsChanged);
     _routeState.addListener(_onRouteStateChanged);
     _routeExplorer.addListener(_onRouteExplorerChanged);
+    _connectivity.addListener(_onMapConnectivityChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     unawaited(_initializeOfflineMaps());
     unawaited(_initializeCameraOverlays());
+    unawaited(_connectivity.acquire(this));
     unawaited(_initialize());
   }
 
@@ -154,7 +174,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _offlineMaps.removeListener(_onOfflineMapsChanged);
     _routeState.removeListener(_onRouteStateChanged);
     _routeExplorer.removeListener(_onRouteExplorerChanged);
+    _connectivity.removeListener(_onMapConnectivityChanged);
+    _connectivity.release(this);
+    _routeRecoveryTimer?.cancel();
     _offlineTileProvider?.dispose();
+    _navigationVoice.resetRoute();
     _mapController.dispose();
     super.dispose();
   }
@@ -180,6 +204,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _appActive = active;
     if (active) {
       unawaited(_resumeVisibleInternalCameras());
+      unawaited(_connectivity.checkNow(force: true));
       return;
     }
     if (state == AppLifecycleState.inactive ||
@@ -799,7 +824,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       this,
       requestPermission: true,
     );
-    await _routeExplorer.initialize();
+    await Future.wait<void>([
+      _routeExplorer.initialize(),
+      _navigationVoice.initialize(),
+    ]);
     if (!mounted) return;
     setState(() {});
     if (_routeState.availability == LocationTrackingAvailability.ready &&
@@ -831,6 +859,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted) return;
     final current = _routeState.current;
     _navigationProgress = _evaluateNavigationProgress(current);
+    unawaited(_navigationVoice.handleProgress(_navigationProgress));
     setState(() {});
     if (_followPosition &&
         current != null &&
@@ -875,6 +904,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
     _offRouteSamples = 0;
     _lastRouteRecalculatedAt = DateTime.now();
+    if (_connectivity.isOffline) {
+      _markRouteUnavailable(
+        recalculation: true,
+        announceFailure: false,
+      );
+      return;
+    }
+    unawaited(_navigationVoice.announceOffRouteAndRecalculation());
     await _requestCyclingRoute(
       origin: LatLng(current.latitude, current.longitude),
       target: target,
@@ -994,6 +1031,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<void> _navigateToPoi(RouteExplorerResult item) async {
     final current = _routeState.current;
+    _navigationVoice.resetRoute();
     final target = MapNavigationTarget(
       latitude: item.latitude,
       longitude: item.longitude,
@@ -1037,6 +1075,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (mounted) {
       setState(() => _cyclingRouteLoading = true);
     }
+    if (_connectivity.isOffline) {
+      _markRouteUnavailable(
+        recalculation: recalculation,
+        announceFailure: announceFailure,
+      );
+      if (mounted && requestSerial == _cyclingRouteRequestSerial) {
+        setState(() => _cyclingRouteLoading = false);
+      }
+      return;
+    }
     try {
       final routes = await _cyclingRoutes.fetchAlternatives(
         origin: origin,
@@ -1052,25 +1100,30 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _cyclingRouteAlternatives = routes;
         _selectedCyclingRouteIndex = 0;
         _cyclingRoute = route;
+        _routeFallback = null;
         _navigationProgress = current == null
             ? null
             : _navigationGuidance.evaluate(route: route, position: current);
       });
+      _cancelRouteRecovery();
       if (fitRoute) _fitCyclingRoutes(routes);
-      if (recalculation && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rota recalculada a partir da posição atual.')),
-        );
+      if (recalculation) {
+        unawaited(_navigationVoice.announceRecalculated(_navigationProgress));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rota recalculada a partir da posição atual.')),
+          );
+        }
+      } else {
+        unawaited(_navigationVoice.handleProgress(_navigationProgress));
       }
     } catch (_) {
       if (!mounted || requestSerial != _cyclingRouteRequestSerial) return;
-      if (announceFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rota viária indisponível. Usando direção direta.'),
-          ),
-        );
-      }
+      _markRouteUnavailable(
+        recalculation: recalculation,
+        announceFailure: announceFailure,
+      );
+      unawaited(_connectivity.checkNow(force: true));
     } finally {
       if (mounted && requestSerial == _cyclingRouteRequestSerial) {
         setState(() => _cyclingRouteLoading = false);
@@ -1092,6 +1145,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _offRouteSamples = 0;
       _lastNavigationProgressPointAt = null;
     });
+    _navigationVoice.resetRoute();
+    unawaited(_navigationVoice.handleProgress(_navigationProgress));
     if (!_followPosition) _fitCyclingRoute(route.points);
   }
 
@@ -1130,7 +1185,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   void _stopNavigation() {
+    _cancelRouteRecovery();
+    _routeFallback = null;
     _cyclingRouteRequestSerial += 1;
+    _navigationVoice.resetRoute();
     setState(() {
       _cyclingRoute = null;
       _cyclingRouteAlternatives = const <MapCyclingRoute>[];
@@ -1288,6 +1346,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final status = widget.bikeApproachStatusProvider?.call();
     if (status == null || status.updatedAt.millisecondsSinceEpoch <= 0) return null;
     return status;
+  }
+
+  MonitorAiPipStatus? _aiStatusForPip(bool secondary) {
+    if (secondary) {
+      if (_secondaryUsesExternal) {
+        return widget.secondaryCameraAiStatusProvider?.call();
+      }
+      return _secondaryMapCamera?.aiPipStatus;
+    }
+    if (_primaryUsesExternal) return widget.cameraAiStatusProvider?.call();
+    return _primaryMapCamera?.aiPipStatus;
   }
 
   List<RouteExplorerResult> get _visiblePois => _routeExplorer.results
@@ -2106,7 +2175,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     if (service.loading)
                       const LinearProgressIndicator(minHeight: 2),
                     SizedBox(
-                      height: 43,
+                      height: 40,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -2115,6 +2184,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             ChoiceChip(
                               label: Text(_poiFilterLabel(item)),
                               selected: filter == item,
+                              visualDensity: const VisualDensity(
+                                horizontal: -2,
+                                vertical: -3,
+                              ),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                               onSelected: (_) {
                                 setSheetState(() => filter = item);
                                 setState(() => _poiFilter = item);
@@ -2428,9 +2503,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
     final offlineProvider = _offlineTileProvider;
     final mode = _offlineMaps.mode;
-    final useOnline = mode != OfflineMapMode.offline;
-    final topInset = safePadding.top + 8;
-    final bottomInset = safePadding.bottom + 8;
+    final networkOffline = _connectivity.isOffline;
+    final useOnline = mode != OfflineMapMode.offline && !networkOffline;
+    final useOfflineLayer = offlineProvider != null &&
+        (mode != OfflineMapMode.online || networkOffline);
+    final topInset = safePadding.top + MapUxPolicy.controlEdge;
+    final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiService.mapOverlayStyle,
@@ -2448,9 +2526,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
-          final telemetryTop = topInset + 46;
-          final quickViewTop = topInset + (compactHud ? 82 : 87);
-          final controlDockTop = topInset + (compactHud ? 90 : 132);
+          final telemetryTop = topInset + 42;
+          final quickViewTop = topInset + (compactHud ? 72 : 78);
+          final controlDockTop = topInset + (compactHud ? 78 : 116);
           final attributionBottom = MapUxPolicy.attributionBottom(
             safeBottom: safePadding.bottom,
             hasSelectedPoi: showSelectedPoiCard,
@@ -2512,15 +2590,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   },
                 ),
                 children: [
-                  if (offlineProvider != null)
+                  if (useOfflineLayer)
                     TileLayer(
                       key: ValueKey<String>(
                         'offline-${_offlineTilePackageId ?? 'active'}',
                       ),
-                      tileProvider: offlineProvider,
-                      tileDisplay: TileDisplay.instantaneous(
-                        opacity: mode == OfflineMapMode.online ? 0 : 1,
-                      ),
+                      tileProvider: offlineProvider!,
+                      tileDisplay: TileDisplay.instantaneous(opacity: 1),
                       minNativeZoom: _offlineMinNativeZoom,
                       maxNativeZoom: _offlineMaxNativeZoom,
                     ),
@@ -2774,7 +2850,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               // respeitam notch/status/navigation bar para evitar faixas vazias.
               Positioned(
                 top: topInset,
-                left: 8,
+                left: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
                   tooltip: 'Voltar',
                   icon: Icons.arrow_back_rounded,
@@ -2783,13 +2859,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               Positioned(
                 top: topInset,
-                left: 58,
-                right: compactHud ? 86 : null,
+                left: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
+                right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: (compactHud
-                            ? math.max(96.0, constraints.maxWidth - 124)
-                            : math.min(220.0, constraints.maxWidth - 180))
+                    maxWidth: math.max(96.0, constraints.maxWidth - 108)
+                        .clamp(96.0, compactHud ? 200.0 : 240.0)
                         .toDouble(),
                   ),
                   child: _MapSourceChip(
@@ -2797,6 +2872,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     activePackage: activeOffline,
                     error: _offlineTileError,
                     styleLabel: _mapViewSettings.stylePreset.label,
+                    networkOffline: networkOffline,
+                    recovering: _routeRecoveryBusy,
                     compact: compactHud,
                     onTap: () => unawaited(_showLayerPicker()),
                   ),
@@ -2804,13 +2881,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               Positioned(
                 top: topInset,
-                right: 8,
+                right: MapUxPolicy.controlEdge,
                 child: _GpsChip(point: current, compact: compactHud),
               ),
               Positioned(
                 top: telemetryTop,
-                left: 8,
-                right: 58,
+                left: MapUxPolicy.controlEdge,
+                right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                 child: _MapTelemetryStrip(
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   altitudeMeters: current?.altitudeMeters,
@@ -2820,7 +2897,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               Positioned(
                 top: quickViewTop,
-                left: 8,
+                left: MapUxPolicy.controlEdge,
                 child: _MapQuickViewBar(
                   selected: _quickView,
                   routeAvailable:
@@ -2831,16 +2908,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
-                  top: quickViewTop + (compactHud ? 39 : 41),
-                  left: 8,
+                  top: quickViewTop + (compactHud ? 35 : 37),
+                  left: MapUxPolicy.controlEdge,
                   child: _OfflineAreaWarning(
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
               Positioned(
                 top: horizontalControls ? null : controlDockTop,
-                right: 8,
-                bottom: horizontalControls ? bottomInset + 58 : null,
+                right: MapUxPolicy.controlEdge,
+                bottom: horizontalControls ? bottomInset + 52 : null,
                 child: Flex(
                   direction:
                       horizontalControls ? Axis.horizontal : Axis.vertical,
@@ -2880,17 +2957,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   (!_camerasVisible || _allCameraSlotsHidden))
                 Positioned(
                   top: quickViewTop,
-                  right: horizontalControls ? 8 : 58,
+                  right: horizontalControls
+                      ? MapUxPolicy.controlEdge
+                      : MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                   child: _MapCameraRestoreChip(
                     compact: compactHud,
                     onPressed: () => unawaited(_showCameraOverlayQuickly()),
                   ),
                 ),
               Positioned(
-                left: 8,
+                left: MapUxPolicy.controlEdge,
                 bottom: attributionBottom,
                 child: _MapAttribution(
-                  text: mode == OfflineMapMode.offline
+                  text: (mode == OfflineMapMode.offline ||
+                          (networkOffline && useOfflineLayer))
                       ? (activeOffline?.providerId == 'stadia-alidade-smooth'
                           ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
                           : 'Mapa offline · licença do pacote')
@@ -2899,9 +2979,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               if (showSelectedPoiCard)
                 Positioned(
-                  left: 10,
-                  right: 10,
-                  bottom: bottomInset + (navigationTarget == null ? 62 : 150),
+                  left: 8,
+                  right: 8,
+                  bottom: bottomInset + (navigationTarget == null ? 56 : 138),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -2915,9 +2995,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 ),
               if (navigationTarget != null)
                 Positioned(
-                  left: 10,
-                  right: 10,
-                  bottom: bottomInset + 62,
+                  left: 8,
+                  right: 8,
+                  bottom: bottomInset + 56,
                   child: _NavigationBanner(
                     target: navigationTarget,
                     distanceMeters: _routeState.navigationDistanceMeters,
@@ -2927,6 +3007,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     selectedRouteIndex: _selectedCyclingRouteIndex,
                     guidance: _navigationProgress,
                     loadingRoadRoute: _cyclingRouteLoading,
+                    fallbackMessage: _routeFallback?.message,
+                    networkOffline: networkOffline,
+                    compact: compactHud,
                     onRouteSelected: _selectCyclingRoute,
                     onStop: _stopNavigation,
                   ),
@@ -3030,7 +3113,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       }
 
       final safePadding = MediaQuery.paddingOf(context);
-      const minX = 8.0;
+      const minX = MapUxPolicy.controlEdge;
       final minY = MapUxPolicy.cameraMinY(
         safeTop: safePadding.top,
         compactLandscape: _compactLandscape,
@@ -3050,7 +3133,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         height = availableHeight;
         width = math.min(width, height * aspectRatio).toDouble();
       }
-      final rightReserve = _compactLandscape ? 8.0 : 58.0;
+      final rightReserve = _compactLandscape
+          ? MapUxPolicy.controlEdge
+          : MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6;
       final maxX = math
           .max(
             minX,
@@ -3084,6 +3169,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       );
       final label = _activeCameraLabel(secondary);
       final bikeApproach = _bikeApproachForPip(secondary);
+      final aiStatus = _aiStatusForPip(secondary);
 
       Future<void> snapAndPersist() async {
         final current = secondary
@@ -3225,6 +3311,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ),
                         ),
                       ),
+                      if (aiStatus != null)
+                        Positioned(
+                          left: 4,
+                          right: 4,
+                          top: bikeApproach != null ? 29 : null,
+                          bottom: bikeApproach == null ? 4 : null,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: MapAiStatusOverlay(status: aiStatus),
+                          ),
+                        ),
                       if (bikeApproach != null)
                         Positioned(
                           left: 4,
@@ -3429,9 +3526,9 @@ class _MapQuickViewBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      elevation: 3,
-      color: scheme.surface.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(18),
+      elevation: 2,
+      color: scheme.surface.withValues(alpha: 0.91),
+      borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3495,8 +3592,8 @@ class _MapQuickViewButton extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8 : 9,
-            vertical: 7,
+            horizontal: compact ? 7 : 8,
+            vertical: 6,
           ),
           color: active ? scheme.primaryContainer : Colors.transparent,
           child: Row(
@@ -3529,8 +3626,8 @@ class _MapControlGap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: horizontal ? 6 : 0,
-        height: horizontal ? 0 : 6,
+        width: horizontal ? MapUxPolicy.controlGap : 0,
+        height: horizontal ? 0 : MapUxPolicy.controlGap,
       );
 }
 
@@ -3621,7 +3718,7 @@ class _MapCameraRestoreChip extends StatelessWidget {
     return Material(
       elevation: 4,
       color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
@@ -3755,12 +3852,12 @@ class _MapControlButton extends StatelessWidget {
           onTap: onPressed,
           customBorder: const CircleBorder(),
           child: SizedBox(
-            width: 44,
-            height: 44,
+            width: MapUxPolicy.controlSize,
+            height: MapUxPolicy.controlSize,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(icon, color: foreground, size: 21),
+                Icon(icon, color: foreground, size: 20),
                 if (badge != null)
                   Positioned(
                     right: 2,
@@ -3975,6 +4072,8 @@ class _MapSourceChip extends StatelessWidget {
     required this.activePackage,
     required this.error,
     required this.styleLabel,
+    required this.networkOffline,
+    required this.recovering,
     required this.onTap,
     this.compact = false,
   });
@@ -3983,6 +4082,8 @@ class _MapSourceChip extends StatelessWidget {
   final OfflineMapPackage? activePackage;
   final String? error;
   final String styleLabel;
+  final bool networkOffline;
+  final bool recovering;
   final VoidCallback onTap;
   final bool compact;
 
@@ -3992,17 +4093,33 @@ class _MapSourceChip extends StatelessWidget {
     final hasOffline = activePackage != null && error == null;
     final label = error != null
         ? 'Offline com erro'
-        : switch (mode) {
-            OfflineMapMode.automatic =>
-              hasOffline ? '$styleLabel · Auto' : styleLabel,
-            OfflineMapMode.online => styleLabel,
-            OfflineMapMode.offline => hasOffline ? 'Offline' : 'Offline indisponível',
-          };
-    final icon = switch (mode) {
-      OfflineMapMode.automatic => Icons.swap_calls_rounded,
-      OfflineMapMode.online => Icons.cloud_outlined,
-      OfflineMapMode.offline => Icons.offline_pin_outlined,
-    };
+        : recovering
+            ? 'Reconectando rota'
+            : networkOffline
+                ? hasOffline
+                    ? 'Offline automático'
+                    : 'Sem internet'
+                : switch (mode) {
+                    OfflineMapMode.automatic =>
+                      hasOffline ? '$styleLabel · Auto' : styleLabel,
+                    OfflineMapMode.online => styleLabel,
+                    OfflineMapMode.offline =>
+                      hasOffline ? 'Offline' : 'Offline indisponível',
+                  };
+    final icon = recovering
+        ? Icons.sync_rounded
+        : networkOffline
+            ? Icons.wifi_off_rounded
+            : switch (mode) {
+                OfflineMapMode.automatic => Icons.swap_calls_rounded,
+                OfflineMapMode.online => Icons.cloud_outlined,
+                OfflineMapMode.offline => Icons.offline_pin_outlined,
+              };
+    final iconColor = error != null || (networkOffline && !hasOffline)
+        ? scheme.error
+        : networkOffline
+            ? scheme.tertiary
+            : scheme.primary;
     final displayLabel = compact
         ? label
             .replaceFirst('Bike/Viagem', 'Bike')
@@ -4010,7 +4127,9 @@ class _MapSourceChip extends StatelessWidget {
             .replaceFirst(' · Auto', '')
         : label;
     return Tooltip(
-      message: 'Camadas e tipo do mapa',
+      message: networkOffline
+          ? 'Sem internet · toque para ver camadas e mapas offline'
+          : 'Camadas e tipo do mapa',
       child: Material(
         color: scheme.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(18),
@@ -4019,8 +4138,8 @@ class _MapSourceChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 8 : 11,
-              vertical: 7,
+              horizontal: compact ? 7 : 9,
+              vertical: 6,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -4028,7 +4147,7 @@ class _MapSourceChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 17,
-                  color: error == null ? scheme.primary : scheme.error,
+                  color: iconColor,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -4233,6 +4352,9 @@ class _NavigationBanner extends StatelessWidget {
     required this.selectedRouteIndex,
     required this.guidance,
     required this.loadingRoadRoute,
+    required this.fallbackMessage,
+    required this.networkOffline,
+    required this.compact,
     required this.onRouteSelected,
     required this.onStop,
   });
@@ -4245,6 +4367,9 @@ class _NavigationBanner extends StatelessWidget {
   final int selectedRouteIndex;
   final MapNavigationProgress? guidance;
   final bool loadingRoadRoute;
+  final String? fallbackMessage;
+  final bool networkOffline;
+  final bool compact;
   final ValueChanged<int> onRouteSelected;
   final VoidCallback onStop;
 
@@ -4282,6 +4407,8 @@ class _NavigationBanner extends StatelessWidget {
     late final String nextLine;
     if (progress?.arrived == true) {
       nextLine = 'Você chegou ao destino.';
+    } else if (fallbackMessage != null) {
+      nextLine = fallbackMessage!;
     } else if (loadingRoadRoute && route != null) {
       nextLine = 'Recalculando rota…';
     } else if (route != null &&
@@ -4315,22 +4442,36 @@ class _NavigationBanner extends StatelessWidget {
       summaryLine = 'Destino: ${target.label}';
     }
 
+    final warning = fallbackMessage != null || networkOffline;
+    final background = warning
+        ? scheme.secondaryContainer.withValues(alpha: 0.96)
+        : scheme.tertiaryContainer.withValues(alpha: 0.95);
+    final foreground = warning
+        ? scheme.onSecondaryContainer
+        : scheme.onTertiaryContainer;
     return Center(
       child: Material(
-        elevation: 7,
-        color: scheme.tertiaryContainer.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(18),
+        elevation: 6,
+        color: background,
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 9 : 11,
+            compact ? 6 : 7,
+            4,
+            compact ? 6 : 7,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                progress?.offRoute == true
-                    ? Icons.alt_route_rounded
-                    : Icons.navigation_rounded,
-                size: 20,
-                color: scheme.onTertiaryContainer,
+                networkOffline
+                    ? Icons.wifi_off_rounded
+                    : progress?.offRoute == true
+                        ? Icons.alt_route_rounded
+                        : Icons.navigation_rounded,
+                size: compact ? 18 : 20,
+                color: foreground,
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -4343,7 +4484,8 @@ class _NavigationBanner extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: scheme.onTertiaryContainer,
+                        color: foreground,
+                        fontSize: compact ? 12 : 14,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -4352,8 +4494,8 @@ class _NavigationBanner extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: scheme.onTertiaryContainer,
-                        fontSize: 11,
+                        color: foreground,
+                        fontSize: compact ? 10 : 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -4362,8 +4504,8 @@ class _NavigationBanner extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: scheme.onTertiaryContainer.withValues(alpha: 0.82),
-                        fontSize: 10,
+                        color: foreground.withValues(alpha: 0.82),
+                        fontSize: compact ? 9 : 10,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -4441,7 +4583,7 @@ class _RouteButtonBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+      minimum: const EdgeInsets.fromLTRB(8, 0, 8, 5),
       child: Center(
         child: Material(
           elevation: 7,
@@ -4458,7 +4600,7 @@ class _RouteButtonBar extends StatelessWidget {
                         tooltip: paused ? 'Continuar percurso' : 'Pausar percurso',
                         onPressed: onTogglePause,
                         visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
                         icon: Icon(
                           paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                           size: 20,
@@ -4510,7 +4652,7 @@ class _RouteButtonBar extends StatelessWidget {
                         tooltip: 'Exportar GPX',
                         onPressed: onExport,
                         visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
                         icon: const Icon(Icons.file_upload_outlined, size: 19),
                       ),
                   ],

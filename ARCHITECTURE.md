@@ -1,4 +1,36 @@
-# Arquitetura — Vigia IA 1.0.143+143
+# Arquitetura — Vigia IA 1.0.146+146
+
+## Offline aprimorado + revisão visual do mapa 1.0.146
+
+- `MapConnectivityService` é um singleton observável com aquisição/liberação por consumidor. Ele sonda os hosts usados pelo mapa em intervalo controlado, exige falhas consecutivas antes de derrubar uma conexão já confirmada e recupera o estado com a primeira resposta positiva.
+- `MapMonitoringScreen` observa esse estado somente enquanto está montado. Em offline, remove a camada online, aciona POIs locais e mantém a navegação existente; ao voltar online, solicita novamente POIs e rota viária.
+- `MapOfflineNavigationPolicy` centraliza o fallback: rota conhecida é preservada; quando não existe geometria viária, a UI assume explicitamente `direção do destino` em vez de simular caminho por ruas.
+- Uma tentativa de recuperação é reagendada em intervalo moderado enquanto houver fallback ativo, evitando laço de recálculo agressivo e permitindo recuperar também indisponibilidade temporária do serviço de rotas.
+- `RouteExplorerService.useOfflineForCurrentLocation` reaproveita o seletor de melhor pacote já existente e recalcula distâncias/alertas com os mesmos modelos usados online.
+- O estado de conectividade foi incorporado ao chip de camada, evitando mais um overlay. `MapUxPolicy` passa a concentrar dimensões menores de controles, reservas inferiores e escala temporária dos PiPs durante navegação.
+- A revisão visual mantém mapa full-bleed, zoom fixo, filtros compactos e controles acessíveis tanto em retrato quanto em paisagem.
+
+
+## Alertas de POIs e navegação por voz 1.0.145
+
+- `RouteExplorerService` continua sendo a fonte única de POIs online/offline. A decisão de alerta foi isolada em `RouteExplorerAlertPolicy`, que filtra categorias atuais, escolhe apenas um candidato por ciclo, aplica cooldown global e impede marcos atrasados.
+- `MapVoiceService` é a ponte de voz compartilhada pelos recursos do mapa. Ele reutiliza `AlertVoiceService` e consulta `AppSettingsService` antes de cada fala, respeitando voz global e `VoiceAlertPreferences` sem duplicar TTS.
+- `AlertDeliveryService` mantém a responsabilidade por saída de POIs, mas delega voz ao `MapVoiceService`; notificação Android permanece no mesmo serviço.
+- `MapNavigationVoicePolicy` contém somente regras de deduplicação e marcos de distância, sem acesso a Flutter TTS, rede ou UI. Isso permite testes determinísticos.
+- `MapNavigationVoiceService` converte as decisões da política em fala e coordena eventos de desvio/recálculo. `MapMonitoringScreen` apenas encaminha o `MapNavigationProgress` já calculado por `MapNavigationGuidance`.
+- A lógica de rota, recálculo e POIs não foi duplicada: voz e alertas observam os estados existentes.
+
+
+## Estados da IA no PiP 1.0.144
+
+- `MonitorAiPipStatus` define um vocabulário único para estado operacional da IA/fonte sem acoplar apresentação à lógica.
+- `MonitorAiStatusResolver` recebe apenas fatos do runtime — IA habilitada, detector pronto, processamento, estado da fonte, tipo de conexão e idade do último frame — e resolve uma prioridade determinística.
+- Erros/reconexão da fonte têm precedência sobre estados normais; falhas locais viram `cameraUnavailable` e fontes de rede viram `connectionLost`.
+- `processing` só pode produzir `analyzing` depois de confirmar IA habilitada e detector pronto, impedindo estado visual falso.
+- `MonitorController.aiPipStatus` reutiliza o pipeline principal. `SecondaryCameraController.aiPipStatus` representa fontes somente visuais sem ativar detector adicional.
+- `MapMonitoringScreen` recebe providers de estado para fontes externas e consulta o controller leve para fontes internas. `MapAiStatusOverlay` cuida apenas da apresentação compacta.
+- A expiração de frames usa quatro vezes o intervalo esperado, limitada entre 4 e 8 segundos, alinhada à proteção de saúde já usada pelo Monitor.
+
 
 ## Aproximação de veículos no PiP + novidades 1.0.143
 

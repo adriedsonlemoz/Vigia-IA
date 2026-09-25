@@ -2,11 +2,38 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.143+143`
+> **Versão atual:** `1.0.146+146`
 
 ## Estado atual
 
-A `1.0.143+143` inicia o bloco de aproximação de veículos no mapa: o PiP que reutiliza a câmera analisada pelo Monitor passa a exibir o estado do estimador TTC já existente no Modo Bike. A mesma versão inaugura o sistema global de Novidades da atualização, mostrado somente uma vez por versão instalada.
+A `1.0.146+146` reúne **offline aprimorado + revisão visual do mapa**. Durante navegação, a queda da internet preserva a última rota viária conhecida, ativa POIs/mapa offline quando disponíveis e tenta recuperar rota/POIs automaticamente quando a conexão volta. O HUD, controles, filtros, banner e PiPs também ficaram mais compactos para liberar área útil.
+
+### Evolução 1.0.146 — offline aprimorado + revisão visual do mapa
+
+- `MapConnectivityService` acompanha a conectividade somente enquanto o mapa está em uso e diferencia online/offline sem depender de um booleano da interface.
+- Ao perder a rede durante uma navegação, a geometria viária já carregada é preservada; se nunca houve rota viária, o app informa claramente que está mostrando apenas a direção ao destino.
+- A recuperação é automática: ao detectar internet novamente, o Vigia IA atualiza POIs online e tenta obter/recalcular a rota sem exigir reiniciar a navegação.
+- `RouteExplorerService` seleciona imediatamente o melhor pacote offline para a posição atual, recalcula distâncias localmente e evita insistir em consultas online quando a conexão já está marcada como indisponível.
+- O seletor de camada passa a mostrar `Sem internet`, `Offline automático` ou `Reconectando rota`, sem criar uma barra adicional cobrindo o mapa.
+- Controles laterais, margens, zoom, filtros rápidos, banner de navegação e barra de percurso foram compactados; PiPs recebem limite menor durante navegação, com reservas ajustadas em retrato e paisagem.
+
+### Evolução 1.0.145 — POIs + navegação por voz
+
+- Alertas de POIs respeitam as categorias selecionadas no momento do aviso, a distância configurada e a direção do deslocamento.
+- O mesmo fluxo funciona para resultados online e pacotes offline; um intervalo global de 1 minuto impede rajadas de alertas quando vários locais estão próximos.
+- Quando um POI só é descoberto já perto, marcos maiores já ultrapassados são consumidos para evitar avisos atrasados/repetidos.
+- `MapNavigationVoicePolicy` anuncia a próxima manobra nos marcos de 1 km, 500 m, 200 m e 80 m, com distância arredondada para fala natural.
+- Saída confirmada da rota, recálculo, rota recalculada e chegada têm anúncios próprios; chegada é falada uma única vez.
+- `MapVoiceService` reutiliza `AlertVoiceService` e as preferências globais de voz/TTS, e também coordena os avisos falados de POIs para não criar outro sistema paralelo.
+
+### Evolução 1.0.144 — estados da IA nos PiPs
+
+- `MonitorAiStatusResolver` centraliza a prioridade dos estados e impede `Analisando` quando a IA não está habilitada.
+- O PiP que reutiliza o Monitor lê detector, processamento, fonte e último frame do `MonitorController`; nenhum detector adicional é instanciado.
+- `IA ativa`, `IA desligada`, `Aguardando frames`, `Sem frames`, `Analisando` e `Possível erro da IA` ficam explícitos em um chip compacto.
+- Falha de câmera local aparece como `Câmera indisponível`; RTSP, celular remoto e ESP32 distinguem `Conexão perdida`.
+- Câmeras secundárias e fontes abertas apenas pelo mapa permanecem somente visuais e exibem `IA desligada` quando a fonte está normal.
+- O estado da IA convive com o indicador de aproximação/TTC dentro do PiP sem ocupar a área do mapa.
 
 ### Evolução 1.0.143 — aproximação de veículos + novidades da atualização
 

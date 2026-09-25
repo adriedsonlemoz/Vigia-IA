@@ -1,3 +1,33 @@
+## 1.0.146+146 — 2026-09-25
+
+- Offline aprimorado no mapa com `MapConnectivityService`, sondagem leve enquanto a tela está ativa e recuperação automática após retorno da conexão.
+- Queda de internet durante navegação preserva a última rota viária conhecida; sem rota prévia, a interface deixa explícito que há apenas direção ao destino, sem inventar geometria de rua.
+- Recálculos falhos entram em fallback seguro e são tentados novamente em intervalo controlado; ao recuperar rede, rota e POIs online são atualizados automaticamente.
+- `RouteExplorerService` ganhou caminho offline explícito, selecionando o pacote mais adequado e recalculando distâncias/alertas localmente sem insistir em rede já indisponível.
+- Camada online deixa de ser requisitada enquanto a conexão está marcada como offline; um MBTiles ativo pode assumir automaticamente o fundo mesmo se o modo estava forçado como Online, sem alterar a preferência salva.
+- Revisão visual reduz margens, tamanho dos controles/zoom, densidade dos filtros, banner de navegação e barra de percurso; reservas dos PiPs foram recalibradas para retrato e paisagem.
+- O seletor de camada exibe `Sem internet`, `Offline automático` e `Reconectando rota`, concentrando o estado de conectividade sem adicionar novo painel sobre o mapa.
+- Adicionados testes de conectividade, política de fallback offline e ajustes da política visual; Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION e metadados sincronizados em `1.0.146+146`.
+
+## 1.0.145+145 — 2026-09-25
+
+- Avisos de proximidade de POIs passam por política dedicada: respeitam categorias ativas, distância configurada, direção e dados online/offline.
+- Adicionado cooldown global de 1 minuto e consumo dos marcos já ultrapassados para reduzir repetição quando vários POIs estão próximos ou são descobertos tarde.
+- Navegação por voz adicionada para próxima manobra, distância até a manobra, saída da rota, recálculo, confirmação de rota recalculada e chegada ao destino.
+- `MapVoiceService` centraliza a voz do mapa sobre `AlertVoiceService`, respeitando a configuração global de voz e `VoiceAlertPreferences`/TTS dinâmico.
+- Avisos falados de POIs também usam a mesma coordenação de voz do mapa; notificações Android continuam independentes conforme a preferência do explorador.
+- Adicionados testes para política de POIs e deduplicação/marcos da navegação falada; Novidades da atualização e metadados sincronizados para `1.0.145+145`.
+
+## 1.0.144+144 — 2026-09-25
+
+- PiPs do mapa passam a mostrar estados explícitos da IA: ativa, desligada, aguardando frames, sem frames, analisando e possível erro.
+- Falha de câmera local é separada de perda de conexão em RTSP, celular remoto e ESP32.
+- Novo `MonitorAiStatusResolver` centraliza a prioridade dos estados e garante que `Analisando` nunca apareça com IA desligada.
+- `MonitorController` fornece o estado real da IA sem criar outro pipeline; câmeras apenas visuais permanecem com IA desligada explícita.
+- `MapAiStatusOverlay` foi criado como widget compacto e compatível com o PiP/TTC existente.
+- Adicionados testes do resolvedor e do overlay; catálogo de Novidades atualizado para `1.0.144+144`.
+- Versão, metadados, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION e User-Agents sincronizados.
+
 ## 1.0.143+143 — 2026-09-25
 
 - Integrado ao PiP da câmera analisada no mapa o mesmo `BikeApproachEstimator` já usado pelo Modo Bike; não foi criado pipeline paralelo de TTC ou detecção.

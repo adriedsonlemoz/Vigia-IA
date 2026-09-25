@@ -65,8 +65,38 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.143',
+          version: '1.0.146',
           current: true,
+          changes: [
+            'Navegação preserva a última rota viária conhecida quando a internet cai e deixa claro quando só há direção ao destino.',
+            'POIs offline entram imediatamente durante perda de conexão e a busca online volta automaticamente após recuperação.',
+            'O seletor de camada mostra Sem internet/Offline automático sem adicionar outra barra sobre o mapa.',
+            'Controles, filtros, banner de navegação e PiPs foram compactados em retrato e paisagem para ampliar a área útil.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.145',
+          changes: [
+            'Avisos de POIs respeitam categorias escolhidas, distância configurada, direção do deslocamento e pacotes offline.',
+            'Cooldown global e consumo de marcos já ultrapassados evitam sequências repetitivas de avisos próximos.',
+            'Navegação por voz anuncia próxima manobra e distância em marcos progressivos, com prioridade perto da conversão.',
+            'Saída da rota, recálculo, rota recalculada e chegada recebem avisos falados usando as preferências globais de áudio/TTS.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.144',
+          changes: [
+            'PiPs mostram IA ativa, IA desligada, aguardando frames, sem frames, analisando e possível erro da IA.',
+            'Falhas da câmera local aparecem como Câmera indisponível; fontes de rede distinguem Conexão perdida.',
+            'O estado Analisando só é permitido quando a IA está realmente habilitada e o detector está pronto.',
+            'Câmeras abertas apenas para visualização deixam IA desligada explícita sem criar outro pipeline de análise.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.143',
           changes: [
             'PiP da câmera analisada no mapa passa a mostrar aproximação de veículos usando o mesmo estimador TTC do Modo Bike.',
             'O indicador diferencia veículo sem aproximação, atenção, risco alto e risco crítico sem bloquear informações da navegação.',
@@ -1321,8 +1351,38 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.143',
+          version: '1.0.146',
           current: true,
+          changes: [
+            'Navegação preserva a última rota viária conhecida quando a internet cai e deixa claro quando só há direção ao destino.',
+            'POIs offline entram imediatamente durante perda de conexão e a busca online volta automaticamente após recuperação.',
+            'O seletor de camada mostra Sem internet/Offline automático sem adicionar outra barra sobre o mapa.',
+            'Controles, filtros, banner de navegação e PiPs foram compactados em retrato e paisagem para ampliar a área útil.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.145',
+          changes: [
+            'Avisos de POIs respeitam categorias escolhidas, distância configurada, direção do deslocamento e pacotes offline.',
+            'Cooldown global e consumo de marcos já ultrapassados evitam sequências repetitivas de avisos próximos.',
+            'Navegação por voz anuncia próxima manobra e distância em marcos progressivos, com prioridade perto da conversão.',
+            'Saída da rota, recálculo, rota recalculada e chegada recebem avisos falados usando as preferências globais de áudio/TTS.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.144',
+          changes: [
+            'PiPs mostram IA ativa, IA desligada, aguardando frames, sem frames, analisando e possível erro da IA.',
+            'Falhas da câmera local aparecem como Câmera indisponível; fontes de rede distinguem Conexão perdida.',
+            'O estado Analisando só é permitido quando a IA está realmente habilitada e o detector está pronto.',
+            'Câmeras abertas apenas para visualização deixam IA desligada explícita sem criar outro pipeline de análise.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.143',
           changes: [
             'PiP da câmera analisada no mapa passa a mostrar aproximação de veículos usando o mesmo estimador TTC do Modo Bike.',
             'O indicador diferencia veículo sem aproximação, atenção, risco alto e risco crítico sem bloquear informações da navegação.',
