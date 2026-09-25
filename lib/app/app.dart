@@ -8,6 +8,7 @@ import '../screens/launch_mode_screen.dart';
 import '../screens/monitor_connect_screen.dart';
 import '../services/appearance_settings_service.dart';
 import '../services/app_launch_mode_service.dart';
+import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
 
 class VigiaIaApp extends StatelessWidget {
@@ -57,6 +58,9 @@ class _StartupGateState extends State<_StartupGate> {
     final launchMode = completed
         ? await AppLaunchModeService.instance.initialize()
         : null;
+    if (completed) {
+      await Esp32TelemetryService.instance.initialize();
+    }
     if (!mounted) return;
     setState(() {
       _onboardingCompleted = completed;

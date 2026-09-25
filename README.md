@@ -2,12 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.120+120`
+> **Versão atual:** `1.0.121+121`
 
 ## Estado atual
 
-A `1.0.120+120` cria a fundação modular do ESP32: módulo e câmera deixam de ser a mesma entidade, cadastros antigos são migrados, capacidades passam a ser extensíveis e os limites de telemetria do módulo controlam o HUD.
+A `1.0.121+121` liga a fundação modular do ESP32 à telemetria real: leitura contínua, descoberta de endpoints, reconexão automática, estado por módulo, agregação segura de sensores e diagnóstico em tempo real.
 
+
+### Evolução 1.0.121 — telemetria contínua e reconexão ESP32
+
+- `Esp32TelemetryService` acompanha todos os módulos habilitados enquanto o app está em primeiro plano e pausa o polling em segundo plano para economizar energia.
+- A descoberta aceita `/api/v1/telemetry`, `/telemetry`, `/api/v1/status` e `/status`, memorizando o endpoint que respondeu sem abandonar firmware legado.
+- Cada módulo mantém estado de conexão, latência, última leitura, próxima tentativa, falhas consecutivas, RSSI, bateria/alimentação, firmware, protocolo e capacidades reportadas.
+- A reconexão é automática e usa backoff até 30 s; leituras ainda dentro do `staleAfter` ficam como conexão instável antes de serem declaradas offline.
+- `BikeSensorService` agrega vários ESP32 sem alternar aleatoriamente o HUD: velocidade, pneus, bateria e temperatura podem vir de módulos diferentes.
+- Sensores ausentes são marcados como indisponíveis em vez de assumirem valor zero, evitando falsos alertas de pneu, bateria ou temperatura.
+- O relatório de Diagnóstico passa a incluir o estado detalhado de cada módulo ESP32.
 
 ### Evolução 1.0.120 — fundação modular do ESP32
 

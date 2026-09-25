@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.120 separa o ESP32 da câmera, cria registro próprio de módulos/capacidades e prepara múltiplos módulos e sensores futuros sem quebrar as fontes de vídeo existentes.",
-  "version": "1.0.120",
-  "build": 120
+  "notes": "A 1.0.121 conecta a fundação modular do ESP32 à telemetria contínua, descoberta de endpoints, reconexão automática, agregação de vários módulos e diagnóstico em tempo real.",
+  "version": "1.0.121",
+  "build": 121
 }

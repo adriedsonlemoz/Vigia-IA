@@ -1,3 +1,15 @@
+## 1.0.121+121 — 2026-09-24
+
+- Criados `Esp32TelemetryPacket`, `Esp32RuntimeState` e `Esp32TelemetryService` para leitura contínua da telemetria de todos os módulos ESP32 habilitados.
+- Descoberta automática de `/api/v1/telemetry`, `/telemetry`, `/api/v1/status` e `/status`, com preferência pelo endpoint funcional e compatibilidade com payloads estruturados ou legados.
+- Reconexão automática com backoff progressivo, estado degradado durante a janela válida e marcação offline somente após o timeout real do módulo.
+- `BikeSensorService` passa a combinar múltiplos módulos por disponibilidade de sensor, evitando troca aleatória de fonte e falsos zeros para sensores ausentes.
+- Tela ESP32 exibe conexão em tempo real, latência, endpoint, última leitura, tentativas, RSSI, bateria/tensão, alimentação externa e telemetria Bike disponível.
+- Sondas/configuração ESP32 passam a tentar também endpoints versionados `/api/v1/status`, `/api/v1/info` e `/api/v1/config` sem quebrar firmware antigo.
+- Diagnóstico exportado inclui o estado detalhado dos módulos ESP32 e sua última telemetria.
+- Adicionados testes de parsing da telemetria nova/legada, qualidade de RSSI e regressões para sensores parciais.
+- Versionamento, identidade, Mudanças, README, arquitetura, validação e verificadores sincronizados em `1.0.121+121`.
+
 ## 1.0.120+120 — 2026-09-24
 
 - Criado `Esp32Module` como entidade própria, separando módulo/sensores da `CameraEndpoint`; câmera passa a ser uma capacidade opcional do ESP32.

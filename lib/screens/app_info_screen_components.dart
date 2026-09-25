@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.120',
+          version: '1.0.121',
           current: true,
+          changes: [
+            'Telemetria ESP32 passa a ser lida continuamente pelo app, com descoberta automática de endpoints novos e compatibilidade com /status legado.',
+            'Cada módulo mantém estado próprio de conexão, latência, RSSI, firmware, protocolo, bateria, falhas e próxima tentativa de reconexão.',
+            'Vários ESP32 podem contribuir para o HUD ao mesmo tempo sem alternar a fonte; sensores ausentes deixam de gerar alertas falsos.',
+            'Reconexão automática usa backoff e o diagnóstico/exportação passa a incluir o estado detalhado dos módulos ESP32.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.120',
           changes: [
             'ESP32 passa a ser cadastrado como módulo independente; câmera vira uma capacidade opcional e continua aparecendo normalmente como fonte quando instalada.',
             'Cadastros antigos são migrados automaticamente e cada módulo pode guardar posição, capacidades, calibração, limites e intervalo de telemetria.',
@@ -1102,8 +1112,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.120',
+          version: '1.0.121',
           current: true,
+          changes: [
+            'Telemetria ESP32 passa a ser lida continuamente pelo app, com descoberta automática de endpoints novos e compatibilidade com /status legado.',
+            'Cada módulo mantém estado próprio de conexão, latência, RSSI, firmware, protocolo, bateria, falhas e próxima tentativa de reconexão.',
+            'Vários ESP32 podem contribuir para o HUD ao mesmo tempo sem alternar a fonte; sensores ausentes deixam de gerar alertas falsos.',
+            'Reconexão automática usa backoff e o diagnóstico/exportação passa a incluir o estado detalhado dos módulos ESP32.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.120',
           changes: [
             'ESP32 passa a ser cadastrado como módulo independente; câmera vira uma capacidade opcional e continua aparecendo normalmente como fonte quando instalada.',
             'Cadastros antigos são migrados automaticamente e cada módulo pode guardar posição, capacidades, calibração, limites e intervalo de telemetria.',

@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import '../models/audio_slot.dart';
 import '../models/bike_mode_config.dart';
 import '../models/esp32_module.dart';
+import '../models/esp32_telemetry.dart';
 import '../services/app_settings_service.dart';
 import '../services/bike_mode_service.dart';
 import '../services/esp32_module_service.dart';
+import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
 
 class Esp32SettingsScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class Esp32SettingsScreen extends StatefulWidget {
 
 class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
   final Esp32ModuleService _registry = Esp32ModuleService.instance;
+  final Esp32TelemetryService _telemetry = Esp32TelemetryService.instance;
   final Map<String, Esp32ProbeResult> _statuses = <String, Esp32ProbeResult>{};
   bool _loading = true;
   String? _busyId;
@@ -28,11 +31,23 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _telemetry.addListener(_onTelemetryChanged);
     unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    _telemetry.removeListener(_onTelemetryChanged);
+    super.dispose();
+  }
+
+  void _onTelemetryChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
     await _registry.initialize();
+    await _telemetry.initialize();
     if (!mounted) return;
     setState(() => _loading = false);
     await _refreshAll();
@@ -77,7 +92,10 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
   Future<void> _refreshAll() async {
     final devices = _devices;
     if (devices.isEmpty) return;
-    final results = await _registry.probeAll(devices);
+    final resultsFuture = _registry.probeAll(devices);
+    final telemetryFuture = _telemetry.refreshNow();
+    final results = await resultsFuture;
+    await telemetryFuture;
     if (mounted) setState(() => _statuses.addAll(results));
   }
 
@@ -495,6 +513,7 @@ class _Esp32SettingsScreenState extends State<Esp32SettingsScreen> {
                         child: _Esp32Card(
                           device: device,
                           status: _statuses[device.id],
+                          runtime: _telemetry.stateFor(device.id),
                           busy: _busyId == device.id,
                           onEdit: () => unawaited(_edit(device)),
                           onApply: () => unawaited(_apply(device)),
@@ -535,6 +554,7 @@ class _Esp32Card extends StatelessWidget {
   const _Esp32Card({
     required this.device,
     required this.status,
+    required this.runtime,
     required this.busy,
     required this.onEdit,
     required this.onApply,
@@ -543,6 +563,7 @@ class _Esp32Card extends StatelessWidget {
 
   final Esp32Module device;
   final Esp32ProbeResult? status;
+  final Esp32RuntimeState? runtime;
   final bool busy;
   final VoidCallback onEdit;
   final VoidCallback onApply;
@@ -550,10 +571,27 @@ class _Esp32Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final online = status?.online == true;
-    final latency = status?.latency;
-    final firmware = status?.firmwareVersion;
-    final protocol = status?.protocolVersion;
+    final runtimeState = runtime;
+    final packet = runtimeState?.packet;
+    final telemetryOnline =
+        runtimeState?.connectionState == Esp32ConnectionState.online;
+    final online = telemetryOnline || status?.online == true;
+    final latency = runtimeState?.latency ?? status?.latency;
+    final runtimeError = runtimeState?.error;
+    final lastSuccessAt = runtimeState?.lastSuccessAt;
+    final firmware = packet?.firmwareVersion ?? status?.firmwareVersion;
+    final protocol = packet?.protocolVersion ?? status?.protocolVersion;
+    final bike = packet?.bikePayload;
+    final speed = bike?['speedKmh'] as num?;
+    final frontPsi = bike?['frontTirePsi'] as num?;
+    final rearPsi = bike?['rearTirePsi'] as num?;
+    final temperature = bike?['temperatureC'] as num?;
+    final stateColor = switch (runtimeState?.connectionState) {
+      Esp32ConnectionState.online => const Color(0xFF4ADE80),
+      Esp32ConnectionState.connecting || Esp32ConnectionState.degraded =>
+        const Color(0xFFFBBF24),
+      _ => Theme.of(context).colorScheme.outline,
+    };
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -579,13 +617,22 @@ class _Esp32Card extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                       Text(
-                        online
-                            ? 'Online${latency == null ? '' : ' · ${latency.inMilliseconds} ms'}'
-                            : status?.message ?? 'Ainda não testado',
+                        runtimeState != null
+                            ? '${runtimeState.connectionState.label}${latency == null ? '' : ' · ${latency.inMilliseconds} ms'}'
+                            : online
+                                ? 'Online${latency == null ? '' : ' · ${latency.inMilliseconds} ms'}'
+                                : status?.message ?? 'Ainda não testado',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (runtimeError != null && !telemetryOnline)
+                        Text(
+                          runtimeError,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       if (firmware != null || protocol != null)
                         Text(
                           '${firmware == null ? '' : 'Firmware $firmware'}${firmware != null && protocol != null ? ' · ' : ''}${protocol == null ? '' : 'Protocolo v$protocol'}',
@@ -595,12 +642,12 @@ class _Esp32Card extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  online
-                      ? Icons.check_circle_rounded
-                      : Icons.error_outline_rounded,
-                  color: online
-                      ? const Color(0xFF4ADE80)
-                      : Theme.of(context).colorScheme.outline,
+                  telemetryOnline
+                      ? Icons.sensors_rounded
+                      : online
+                          ? Icons.check_circle_rounded
+                          : Icons.error_outline_rounded,
+                  color: telemetryOnline ? stateColor : online ? const Color(0xFF4ADE80) : stateColor,
                 ),
               ],
             ),
@@ -624,6 +671,87 @@ class _Esp32Card extends StatelessWidget {
               'Telemetria: ${device.telemetryIntervalMs} ms · offline após ${(device.staleAfter.inMilliseconds / 1000).toStringAsFixed(0)} s sem dados',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            if (runtimeState != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${runtimeState.connectionState.label}${runtimeState.endpointPath == null ? '' : ' · ${runtimeState.endpointPath}'}',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    if (lastSuccessAt != null)
+                      Text(
+                        'Última leitura: ${lastSuccessAt.hour.toString().padLeft(2, '0')}:${lastSuccessAt.minute.toString().padLeft(2, '0')}:${lastSuccessAt.second.toString().padLeft(2, '0')}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (runtimeState.consecutiveFailures > 0)
+                      Text(
+                        'Reconexão automática · tentativa ${runtimeState.consecutiveFailures}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (packet != null) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: [
+                          if (packet.rssiDbm != null)
+                            Chip(
+                              avatar: const Icon(Icons.wifi_rounded, size: 16),
+                              label: Text('${packet.wifiQualityLabel} · ${packet.rssiDbm} dBm'),
+                            ),
+                          if (packet.batteryPercent != null)
+                            Chip(
+                              avatar: const Icon(
+                                Icons.battery_std_rounded,
+                                size: 16,
+                              ),
+                              label: Text('${packet.batteryPercent}%'),
+                            ),
+                          if (packet.batteryVoltage != null)
+                            Chip(
+                              label: Text(
+                                '${packet.batteryVoltage!.toStringAsFixed(2)} V',
+                              ),
+                            ),
+                          if (packet.charging == true)
+                            const Chip(label: Text('Alimentação externa')),
+                          if (speed != null)
+                            Chip(label: Text('${speed.toStringAsFixed(1)} km/h')),
+                          if (frontPsi != null)
+                            Chip(label: Text('D ${frontPsi.toStringAsFixed(0)} PSI')),
+                          if (rearPsi != null)
+                            Chip(label: Text('T ${rearPsi.toStringAsFixed(0)} PSI')),
+                          if (temperature != null)
+                            Chip(
+                              label: Text(
+                                '${temperature.toStringAsFixed(1)} °C',
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (packet.reportedCapabilities.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Reportado pelo módulo: ${packet.reportedCapabilities.map((item) => item.label).join(', ')}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,

@@ -1,4 +1,16 @@
-# Validação — Vigia IA 1.0.120+120
+# Validação — Vigia IA 1.0.121+121
+
+## 1.0.121+121 — telemetria contínua ESP32
+
+- Com módulo online, confirmar descoberta de `/api/v1/telemetry` ou `/telemetry`; com firmware legado, confirmar fallback para `/api/v1/status`/`/status`.
+- Confirmar atualização contínua de estado, latência, endpoint, RSSI, bateria/tensão, firmware e sensores no card do ESP32.
+- Desligar a rede/módulo e confirmar estado **Conexão instável** durante a janela válida, depois **Offline**, com reconexão automática e backoff sem travar a UI.
+- Conectar dois módulos com sensores diferentes e confirmar que o HUD combina os valores sem ficar alternando a fonte e sem gerar alerta por sensor inexistente.
+- Confirmar que módulo com apenas Hall não gera pneu/bateria/temperatura críticos e que pressão dianteira sem traseira não gera alerta falso no pneu traseiro.
+- Confirmar que o Diagnóstico exportado contém a seção **MÓDULOS ESP32** com runtime e última telemetria.
+- Colocar o app em segundo plano e confirmar que o polling é suspenso; ao retornar, confirmar retomada imediata.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
 
 ## 1.0.120+120 — fundação modular ESP32
 

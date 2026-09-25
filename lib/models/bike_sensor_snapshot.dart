@@ -18,6 +18,12 @@ class BikeSensorSnapshot {
     this.moduleId,
     this.minimumTirePressurePsi = 30,
     this.maximumTemperatureC = 65,
+    this.speedAvailable = true,
+    this.tirePressureAvailable = true,
+    this.frontTirePressureAvailable = true,
+    this.rearTirePressureAvailable = true,
+    this.batteryAvailable = true,
+    this.temperatureAvailable = true,
   });
 
   final DateTime capturedAt;
@@ -32,6 +38,12 @@ class BikeSensorSnapshot {
   final String? moduleId;
   final double minimumTirePressurePsi;
   final double maximumTemperatureC;
+  final bool speedAvailable;
+  final bool tirePressureAvailable;
+  final bool frontTirePressureAvailable;
+  final bool rearTirePressureAvailable;
+  final bool batteryAvailable;
+  final bool temperatureAvailable;
 
   double get criticalTirePressurePsi =>
       math.max(1, minimumTirePressurePsi - 6).toDouble();
@@ -51,6 +63,12 @@ class BikeSensorSnapshot {
         'moduleId': moduleId,
         'minimumTirePressurePsi': minimumTirePressurePsi,
         'maximumTemperatureC': maximumTemperatureC,
+        'speedAvailable': speedAvailable,
+        'tirePressureAvailable': tirePressureAvailable,
+        'frontTirePressureAvailable': frontTirePressureAvailable,
+        'rearTirePressureAvailable': rearTirePressureAvailable,
+        'batteryAvailable': batteryAvailable,
+        'temperatureAvailable': temperatureAvailable,
       };
 
   factory BikeSensorSnapshot.fromEsp32Json(
@@ -86,6 +104,13 @@ class BikeSensorSnapshot {
       moduleId: moduleId ?? json['moduleId'] as String?,
       minimumTirePressurePsi: minimumTirePressurePsi.clamp(1, 150).toDouble(),
       maximumTemperatureC: maximumTemperatureC.clamp(-40, 125).toDouble(),
+      speedAvailable: json['speedKmh'] is num,
+      tirePressureAvailable:
+          json['frontTirePsi'] is num || json['rearTirePsi'] is num,
+      frontTirePressureAvailable: json['frontTirePsi'] is num,
+      rearTirePressureAvailable: json['rearTirePsi'] is num,
+      batteryAvailable: json['batteryPercent'] is num,
+      temperatureAvailable: json['temperatureC'] is num,
     );
   }
 
@@ -94,16 +119,24 @@ class BikeSensorSnapshot {
   BikeSensorHealth get health {
     if (!connected) return BikeSensorHealth.disconnected;
     final temperature = ambientTemperatureC;
-    if (frontTirePsi <= criticalTirePressurePsi ||
-        rearTirePsi <= criticalTirePressurePsi ||
-        sensorBatteryPercent <= 5 ||
-        (temperature != null && temperature >= criticalTemperatureC)) {
+    if ((frontTirePressureAvailable &&
+            frontTirePsi <= criticalTirePressurePsi) ||
+        (rearTirePressureAvailable &&
+            rearTirePsi <= criticalTirePressurePsi) ||
+        (batteryAvailable && sensorBatteryPercent <= 5) ||
+        (temperatureAvailable &&
+            temperature != null &&
+            temperature >= criticalTemperatureC)) {
       return BikeSensorHealth.critical;
     }
-    if (frontTirePsi < minimumTirePressurePsi ||
-        rearTirePsi < minimumTirePressurePsi ||
-        sensorBatteryPercent <= 15 ||
-        (temperature != null && temperature >= maximumTemperatureC)) {
+    if ((frontTirePressureAvailable &&
+            frontTirePsi < minimumTirePressurePsi) ||
+        (rearTirePressureAvailable &&
+            rearTirePsi < minimumTirePressurePsi) ||
+        (batteryAvailable && sensorBatteryPercent <= 15) ||
+        (temperatureAvailable &&
+            temperature != null &&
+            temperature >= maximumTemperatureC)) {
       return BikeSensorHealth.warning;
     }
     return BikeSensorHealth.normal;
@@ -111,29 +144,37 @@ class BikeSensorSnapshot {
 
   String? get primaryWarning {
     if (!connected) return 'Sensores da bike sem conexão';
-    if (frontTirePsi <= criticalTirePressurePsi) {
+    if (frontTirePressureAvailable &&
+        frontTirePsi <= criticalTirePressurePsi) {
       return 'PRESSÃO DIANTEIRA BAIXA • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (rearTirePsi <= criticalTirePressurePsi) {
+    if (rearTirePressureAvailable &&
+        rearTirePsi <= criticalTirePressurePsi) {
       return 'PRESSÃO TRASEIRA BAIXA • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (frontTirePsi < minimumTirePressurePsi) {
+    if (frontTirePressureAvailable &&
+        frontTirePsi < minimumTirePressurePsi) {
       return 'Atenção no pneu dianteiro • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (rearTirePsi < minimumTirePressurePsi) {
+    if (rearTirePressureAvailable &&
+        rearTirePsi < minimumTirePressurePsi) {
       return 'Atenção no pneu traseiro • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
-    if (sensorBatteryPercent <= 5) {
+    if (batteryAvailable && sensorBatteryPercent <= 5) {
       return 'Bateria dos sensores crítica • $sensorBatteryPercent%';
     }
-    if (sensorBatteryPercent <= 15) {
+    if (batteryAvailable && sensorBatteryPercent <= 15) {
       return 'Bateria dos sensores baixa • $sensorBatteryPercent%';
     }
     final temperature = ambientTemperatureC;
-    if (temperature != null && temperature >= criticalTemperatureC) {
+    if (temperatureAvailable &&
+        temperature != null &&
+        temperature >= criticalTemperatureC) {
       return 'TEMPERATURA CRÍTICA • ${temperature.toStringAsFixed(0)} °C';
     }
-    if (temperature != null && temperature >= maximumTemperatureC) {
+    if (temperatureAvailable &&
+        temperature != null &&
+        temperature >= maximumTemperatureC) {
       return 'Temperatura alta • ${temperature.toStringAsFixed(0)} °C';
     }
     return null;

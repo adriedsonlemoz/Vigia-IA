@@ -112,4 +112,30 @@ void main() {
     expect(temperatureWarning.health, BikeSensorHealth.warning);
     expect(temperatureWarning.primaryWarning, contains('Temperatura alta'));
   });
+
+
+  test('campos ausentes nao viram falso alerta de sensor', () {
+    final data = BikeSensorSnapshot.fromEsp32Json(<String, dynamic>{
+      'speedKmh': 18.5,
+    });
+
+    expect(data.speedAvailable, isTrue);
+    expect(data.tirePressureAvailable, isFalse);
+    expect(data.batteryAvailable, isFalse);
+    expect(data.temperatureAvailable, isFalse);
+    expect(data.health, BikeSensorHealth.normal);
+    expect(data.primaryWarning, isNull);
+  });
+
+
+  test('um unico sensor de pneu nao gera alerta falso no outro pneu', () {
+    final data = BikeSensorSnapshot.fromEsp32Json(<String, dynamic>{
+      'frontTirePsi': 41,
+    });
+
+    expect(data.frontTirePressureAvailable, isTrue);
+    expect(data.rearTirePressureAvailable, isFalse);
+    expect(data.health, BikeSensorHealth.normal);
+    expect(data.primaryWarning, isNull);
+  });
 }

@@ -6,6 +6,7 @@ import '../core/app_metadata.dart';
 import '../models/system_health.dart';
 import '../utils/storage_size_formatter.dart';
 import 'error_log_service.dart';
+import 'esp32_telemetry_service.dart';
 import 'native_platform_service.dart';
 import 'performance_telemetry_service.dart';
 import 'system_health_service.dart';
@@ -16,6 +17,7 @@ class DiagnosticReport {
     required this.health,
     this.audioDiagnostics = const {},
     this.alertEvents = const [],
+    this.esp32Modules = const [],
     required List<ErrorLogEntry> entries,
   }) : entries = List<ErrorLogEntry>.unmodifiable(entries);
 
@@ -23,6 +25,7 @@ class DiagnosticReport {
   final SystemHealthSnapshot health;
   final Map<String, Object?> audioDiagnostics;
   final List<Map<String, Object?>> alertEvents;
+  final List<Map<String, Object?>> esp32Modules;
   final List<ErrorLogEntry> entries;
 
   int get problemCount => entries
@@ -100,6 +103,17 @@ class DiagnosticReport {
 
     buffer
       ..writeln()
+      ..writeln('=== MÓDULOS ESP32 (${esp32Modules.length}) ===');
+    if (esp32Modules.isEmpty) {
+      buffer.writeln('Nenhum módulo ESP32 cadastrado.');
+    } else {
+      for (final module in esp32Modules) {
+        buffer.writeln(jsonEncode(module));
+      }
+    }
+
+    buffer
+      ..writeln()
       ..writeln('=== REGISTROS TÉCNICOS (${entries.length}) ===');
     if (entries.isEmpty) {
       buffer.writeln('Nenhum registro técnico armazenado.');
@@ -161,12 +175,14 @@ class DiagnosticReportService {
 
   Future<DiagnosticReport> capture() async {
     await _logs.initialize();
+    await Esp32TelemetryService.instance.initialize();
     final health = await _health.collect();
     return DiagnosticReport(
       generatedAt: health.createdAt,
       health: health,
       audioDiagnostics: await _native.audioDiagnostics(),
       alertEvents: PerformanceTelemetryService.instance.createReport().alertEvents,
+      esp32Modules: Esp32TelemetryService.instance.diagnostics,
       entries: List<ErrorLogEntry>.of(_logs.entries),
     );
   }

@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.120+120
+# Arquitetura — Vigia IA 1.0.121+121
+
+## Evolução 1.0.121 — transporte e telemetria ESP32
+
+- `Esp32TelemetryService` é a camada de transporte/runtime entre `Esp32ModuleService` e os consumidores de sensores. O registro continua responsável por configuração/persistência; a telemetria não altera a identidade do módulo.
+- A descoberta HTTP começa pelos contratos versionados (`/api/v1/telemetry`, `/api/v1/status`) e mantém fallback para `/telemetry` e `/status`, permitindo atualizar firmware gradualmente.
+- Cada `moduleId` possui `Esp32RuntimeState` independente com estado, falhas, latência, endpoint preferido, última leitura e próxima reconexão. O polling é suspenso quando o app sai do primeiro plano.
+- `Esp32TelemetryPacket` normaliza payloads novos e legados e converte somente sensores presentes; ausência deixa de ser equivalente a zero.
+- `BikeSensorService` permanece a fonte única do HUD Bike, mas agrega snapshots de vários módulos por capacidade/recência. Isso permite, por exemplo, Hall no ESP32 dianteiro e pressão/temperatura em outro módulo.
+- O backoff de falha é limitado a 30 s e respeita `staleAfter`, preservando a última leitura como degradada antes do offline.
+- `DiagnosticReportService` coleta o runtime ESP32 para exportação sem criar uma segunda estrutura de diagnóstico.
 
 ## Evolução 1.0.120 — módulos ESP32 independentes e extensíveis
 

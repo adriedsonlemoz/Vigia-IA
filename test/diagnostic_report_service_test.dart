@@ -41,6 +41,13 @@ DiagnosticReport buildReport() {
       'mediaVolume': 6,
       'mediaMaxVolume': 15,
     },
+    esp32Modules: const [
+      <String, Object?>{
+        'id': 'esp32-rear',
+        'name': 'ESP32 traseiro',
+        'runtime': <String, Object?>{'state': 'online', 'rssiDbm': -61},
+      },
+    ],
     entries: [
       ErrorLogEntry(
         id: '1',
@@ -67,6 +74,9 @@ void main() {
     expect(text, contains('Frames congelados'));
     expect(text, contains('Erro: MEDIA_ERROR_UNSUPPORTED'));
     expect(text, contains('Etapa: prepare_async'));
+    expect(text, contains('=== MÓDULOS ESP32 (1) ==='));
+    expect(text, contains('esp32-rear'));
+    expect(text, contains('online'));
   });
 
   test('exportacao grava exatamente o texto do diagnostico', () async {
