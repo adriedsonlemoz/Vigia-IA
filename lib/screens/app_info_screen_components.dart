@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.141',
+          version: '1.0.142',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-107: o teste do painel de POI agora rola até a comodidade realmente ficar visível.',
+            'A rolagem usa scrollUntilVisible e não depende mais de um deslocamento fixo que podia apenas expandir o painel.',
+            'Nenhum comportamento de produção do mapa, painel de POI ou PiPs foi alterado neste buildfix.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.141',
           changes: [
             'Corrigido o Android-APK-106: o teste do painel de POI agora rola a lista antes de validar comodidades fora da área inicial.',
             'A correção não altera o painel nem o PiP em produção; apenas torna o teste compatível com a construção lazy do ListView.',
@@ -1302,8 +1311,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.141',
+          version: '1.0.142',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-107: o teste do painel de POI agora rola até a comodidade realmente ficar visível.',
+            'A rolagem usa scrollUntilVisible e não depende mais de um deslocamento fixo que podia apenas expandir o painel.',
+            'Nenhum comportamento de produção do mapa, painel de POI ou PiPs foi alterado neste buildfix.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.141',
           changes: [
             'Corrigido o Android-APK-106: o teste do painel de POI agora rola a lista antes de validar comodidades fora da área inicial.',
             'A correção não altera o painel nem o PiP em produção; apenas torna o teste compatível com a construção lazy do ListView.',

@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.141+141`
+> **Versão atual:** `1.0.142+142`
 
 ## Estado atual
 
-A `1.0.141+141` é um buildfix do Android-APK-106: corrige o teste do painel de POI que tentava localizar uma comodidade ainda não construída pelo `ListView` fora da área visível.
+A `1.0.142+142` é um buildfix do Android-APK-107: torna determinística a rolagem do teste do painel de POI até uma comodidade criada de forma lazy fora da dobra.
+
+### Buildfix 1.0.142 — Android-APK-107
+
+- `flutter analyze` voltou a passar sem avisos e o workflow chegou à suíte de testes.
+- A falha permaneceu isolada em `map_poi_details_sheet_test.dart`: uma rolagem fixa podia apenas expandir o `DraggableScrollableSheet`, sem alcançar a seção de comodidades.
+- O teste agora usa `scrollUntilVisible` no `Scrollable` do painel e continua até `Água potável` realmente entrar na árvore renderizada.
+- Nenhuma lógica de produção do mapa, painel de POI ou PiPs foi alterada neste buildfix.
 
 ### Buildfix 1.0.141 — Android-APK-106
 

@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.141+141
+# Arquitetura — Vigia IA 1.0.142+142
+
+## Buildfix de testes 1.0.142
+
+- O Android-APK-107 confirmou que `flutter analyze` está limpo e isolou a falha em um teste de widget.
+- A rolagem de teste agora procura o conteúdo de destino com `scrollUntilVisible`, em vez de assumir que um deslocamento fixo já venceu a expansão do `DraggableScrollableSheet`.
+- A correção é exclusivamente de teste/versionamento; não muda responsabilidades ou comportamento da arquitetura de produção.
+
 
 ## Buildfix de testes 1.0.141
 

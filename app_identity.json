@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.141 corrige o Android-APK-106 ajustando o teste do painel de POI para validar conteúdo fora da área inicialmente visível.",
-  "version": "1.0.141",
-  "build": 141
+  "notes": "A 1.0.142 corrige o Android-APK-107 tornando robusta a rolagem do teste do painel de POI até conteúdo lazy fora da dobra.",
+  "version": "1.0.142",
+  "build": 142
 }

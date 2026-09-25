@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.141+141
+# Validação Vigia IA 1.0.142+142
+
+
+## 1.0.142+142 — buildfix Android-APK-107
+
+- Confirmar que `flutter analyze` permanece sem avisos.
+- Executar `test/map_poi_details_sheet_test.dart` e validar que `scrollUntilVisible` alcança `Água potável` mesmo quando o `DraggableScrollableSheet` primeiro precisa expandir.
+- Confirmar que o teste ainda aciona `Ir até lá` e incrementa o callback de navegação.
+- Executar a suíte completa; no build 107 os demais 249 testes passaram e a única falha estava nesse teste de widget.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar build Android no GitHub Actions.
 
 
 ## 1.0.141+141 — buildfix Android-APK-106

@@ -1,3 +1,10 @@
+## 1.0.142+142 — 2026-09-25
+
+- Corrigido o Android-APK-107: o teste do painel de POI deixa de depender de uma única rolagem fixa.
+- `map_poi_details_sheet_test.dart` passa a usar `scrollUntilVisible` no `Scrollable`, acompanhando tanto a expansão do `DraggableScrollableSheet` quanto a criação lazy dos itens abaixo da dobra.
+- O código de produção do mapa, painel de POI e PiPs permanece inalterado.
+- User-Agents, metadados e versionamento sincronizados em `1.0.142+142`.
+
 ## 1.0.141+141 — 2026-09-25
 
 - Corrigido o Android-APK-106, que passou no `flutter analyze` mas falhou em um único teste de widget.

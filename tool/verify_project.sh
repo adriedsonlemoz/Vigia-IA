@@ -11,15 +11,15 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.141+141' pubspec.yaml || fail 'Versao esperada 1.0.141+141 nao encontrada.'
+grep -Fxq 'version: 1.0.142+142' pubspec.yaml || fail 'Versao esperada 1.0.142+142 nao encontrada.'
 grep -q 'class Esp32CapabilityObservation' lib/models/esp32_capability_status.dart || fail 'Modelo de estado por sensor ESP32 1.0.124 ausente.'
 grep -q 'Esp32CapabilityActivity.live' lib/screens/esp32_settings_screen.dart || fail 'Tela ESP32 nao renderiza estado de leitura ativa 1.0.124.'
 grep -q 'Detectado · não configurado' lib/models/esp32_capability_status.dart || fail 'Estado de sensor novo ESP32 1.0.124 ausente.'
 grep -q 'firmware legado' test/esp32_capability_status_test.dart || fail 'Teste de inferencia ESP32 legado 1.0.124 ausente.'
-grep -Fq '## 1.0.141+141' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.141.'
-[[ -f RELEASE-1.0.141.md ]] || fail 'Notas da entrega 1.0.141 ausentes.'
-grep -q "version: '1.0.141'" lib/screens/app_info_screen_components.dart || fail 'Tela Mudancas nao marca a versao 1.0.141.'
-grep -q "tester.drag(find.byType(ListView), const Offset(0, -400))" test/map_poi_details_sheet_test.dart || fail 'Buildfix Android-APK-106 nao rola o painel antes de validar comodidades.'
+grep -Fq '## 1.0.142+142' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.142.'
+[[ -f RELEASE-1.0.142.md ]] || fail 'Notas da entrega 1.0.142 ausentes.'
+grep -q "version: '1.0.142'" lib/screens/app_info_screen_components.dart || fail 'Tela Mudancas nao marca a versao 1.0.142.'
+grep -q 'tester.scrollUntilVisible' test/map_poi_details_sheet_test.dart || fail 'Buildfix Android-APK-107 nao rola ate o conteudo lazy do painel.'
 
 grep -Fq '## 1.0.140+140' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.140.'
 [[ -f RELEASE-1.0.140.md ]] || fail 'Notas da entrega 1.0.140 ausentes.'
@@ -99,7 +99,7 @@ grep -q 'recalculationCooldown = Duration(seconds: 45)' lib/services/map_navigat
 grep -q '_maybeRecalculateCyclingRoute' lib/screens/map_monitoring_screen.dart || fail 'Recalculo automatico 1.0.136 nao esta ligado ao GPS.'
 grep -q 'Rota recalculada a partir da posição atual' lib/screens/map_monitoring_screen.dart || fail 'Feedback de recalculo 1.0.136 ausente.'
 grep -q 'guidance: _navigationProgress' lib/screens/map_monitoring_screen.dart || fail 'HUD de navegacao 1.0.136 nao recebe progresso.'
-grep -q 'VigiaIA/1.0.141' lib/services/map_cycling_route_service.dart || fail 'User-Agent do roteamento ciclavel nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.142' lib/services/map_cycling_route_service.dart || fail 'User-Agent do roteamento ciclavel nao acompanha a versao atual.'
 
 grep -q 'extendBody: true' lib/screens/map_monitoring_screen.dart || fail 'Mapa 1.0.125 nao usa superficie edge-to-edge.'
 grep -q "tooltip: 'Aumentar zoom'" lib/screens/map_monitoring_screen.dart || fail 'Controle flutuante de zoom 1.0.125 ausente.'
@@ -529,9 +529,9 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.141';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.141.'
-grep -q 'static const int build = 141;' lib/core/app_metadata.dart \
+grep -q "static const String version = '1.0.142';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.142.'
+grep -q 'static const int build = 142;' lib/core/app_metadata.dart \
   || fail 'Build de AppMetadata nao esta em 141.'
 grep -q "version: '1.0.123'" lib/screens/app_info_screen*.dart \
   || fail 'Tela Mudancas nao marca a versao 1.0.123.'
@@ -700,18 +700,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.141+141' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.141+141.'
+grep -Fq 'version: 1.0.142+142' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.142+142.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.141"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.141.'
-grep -q '"build": 141' app_identity.json \
-  || fail 'app_identity.json nao esta no build 141.'
+grep -q '"version": "1.0.142"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.142.'
+grep -q '"build": 142' app_identity.json \
+  || fail 'app_identity.json nao esta no build 142.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -1028,7 +1028,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.141+141' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.141+141.'
+grep -Fq 'Vigia IA 1.0.142+142' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.142+142.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2555,7 +2555,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.141' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.142' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 
@@ -2612,3 +2612,9 @@ grep -q "label: 'Ajustes'" lib/widgets/main_navigation_bar.dart || fail 'Navegac
 grep -q "'costing': 'bicycle'" lib/services/map_cycling_route_service.dart || fail 'Roteamento 1.0.134 nao usa perfil bicycle.'
 grep -q '_cyclingRoutes.fetch' lib/screens/map_monitoring_screen.dart || fail 'Mapa nao solicita rota ciclavel 1.0.134.'
 grep -q '_cyclingRoute!.points' lib/screens/map_monitoring_screen.dart || fail 'Mapa nao desenha geometria da rota ciclavel.'
+
+# Android-APK-107: o teste precisa rolar ate o conteudo lazy, sem depender de delta fixo unico.
+grep -q 'tester.scrollUntilVisible' test/map_poi_details_sheet_test.dart \
+  || fail 'Teste do painel de POI nao usa scrollUntilVisible.'
+grep -q "find.text('Água potável')" test/map_poi_details_sheet_test.dart \
+  || fail 'Teste do painel de POI nao valida a comodidade esperada.'
