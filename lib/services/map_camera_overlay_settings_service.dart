@@ -65,12 +65,14 @@ class MapCameraOverlaySettingsService {
 
   File? _file;
   bool _initialized = false;
+  bool _visible = true;
   MapCameraSlotLayout _primary = const MapCameraSlotLayout(yFraction: 0.08);
   MapCameraSlotLayout _secondary = const MapCameraSlotLayout(
     xFraction: 0,
     yFraction: 0.78,
   );
 
+  bool get visible => _visible;
   MapCameraSlotLayout get primary => _primary;
   MapCameraSlotLayout get secondary => _secondary;
 
@@ -88,6 +90,7 @@ class MapCameraOverlaySettingsService {
           final map = decoded.map(
             (key, value) => MapEntry(key.toString(), value),
           );
+          _visible = map['visible'] as bool? ?? true;
           final primary = map['primary'];
           final secondary = map['secondary'];
           if (primary is Map) {
@@ -108,6 +111,12 @@ class MapCameraOverlaySettingsService {
     _initialized = true;
   }
 
+  Future<void> saveVisible(bool value) async {
+    await initialize();
+    _visible = value;
+    await _persist();
+  }
+
   Future<void> savePrimary(MapCameraSlotLayout value) async {
     await initialize();
     _primary = value;
@@ -122,6 +131,7 @@ class MapCameraOverlaySettingsService {
 
   Future<void> resetLayout() async {
     await initialize();
+    _visible = true;
     _primary = const MapCameraSlotLayout(yFraction: 0.08);
     _secondary = const MapCameraSlotLayout(
       xFraction: 0,
@@ -136,7 +146,8 @@ class MapCameraOverlaySettingsService {
     await file.parent.create(recursive: true);
     await file.writeAsString(
       const JsonEncoder.withIndent('  ').convert(<String, Object?>{
-        'schema': 1,
+        'schema': 2,
+        'visible': _visible,
         'primary': _primary.toJson(),
         'secondary': _secondary.toJson(),
       }),

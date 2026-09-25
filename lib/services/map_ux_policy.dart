@@ -1,3 +1,13 @@
+class MapCameraSnapPoint {
+  const MapCameraSnapPoint({
+    required this.xFraction,
+    required this.yFraction,
+  });
+
+  final double xFraction;
+  final double yFraction;
+}
+
 class MapUxPolicy {
   const MapUxPolicy._();
 
@@ -32,6 +42,42 @@ class MapUxPolicy {
     if (hasNavigation) reserve += 82;
     if (hasSelectedPoi) reserve += 60;
     return reserve;
+  }
+
+  static double cameraEffectiveScale({
+    required double savedScale,
+    required bool hasNavigation,
+    required bool compactHud,
+  }) {
+    final normalized = savedScale.clamp(0.72, 1.35).toDouble();
+    if (!hasNavigation) return normalized;
+    final ceiling = compactHud ? 0.82 : 1.0;
+    return normalized.clamp(0.72, ceiling).toDouble();
+  }
+
+  static MapCameraSnapPoint cameraSnapPoint({
+    required double xFraction,
+    required double yFraction,
+    required bool compactLandscape,
+    double? otherXFraction,
+    double? otherYFraction,
+  }) {
+    var x = xFraction < 0.5 ? 0.0 : 1.0;
+    var y = yFraction < 0.5 ? 0.0 : 1.0;
+    if (otherXFraction == null || otherYFraction == null) {
+      return MapCameraSnapPoint(xFraction: x, yFraction: y);
+    }
+
+    final otherX = otherXFraction < 0.5 ? 0.0 : 1.0;
+    final otherY = otherYFraction < 0.5 ? 0.0 : 1.0;
+    if (x == otherX && y == otherY) {
+      if (compactLandscape) {
+        x = x == 0 ? 1 : 0;
+      } else {
+        y = y == 0 ? 1 : 0;
+      }
+    }
+    return MapCameraSnapPoint(xFraction: x, yFraction: y);
   }
 
   static double fractionForPosition({

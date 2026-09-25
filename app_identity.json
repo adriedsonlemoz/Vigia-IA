@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.139 adiciona um painel completo e modular de detalhes do local, com informações úteis, cópia rápida e ação Ir até lá.",
-  "version": "1.0.139",
-  "build": 139
+  "notes": "A 1.0.140 aprimora os PiPs de câmera no mapa com visibilidade persistente, restauração rápida, compactação durante navegação e encaixe sem sobreposição.",
+  "version": "1.0.140",
+  "build": 140
 }

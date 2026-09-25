@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.139',
+          version: '1.0.140',
           current: true,
+          changes: [
+            'PiPs lembram a visibilidade global e ganham atalho Mostrar câmera quando todas as janelas estiverem ocultas.',
+            'Durante a navegação, câmeras grandes reduzem temporariamente para preservar rota e instruções sem perder o tamanho salvo.',
+            'Encaixe automático evita duas câmeras no mesmo canto e mantém organização adequada em retrato e paisagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.139',
           changes: [
             'POI selecionado ganha painel completo com categoria, distância, origem, endereço, horário, telefone, site, operador e comodidades.',
             'Endereço, telefone, site e coordenadas podem ser copiados rapidamente sem sair do mapa.',
@@ -1284,8 +1293,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.139',
+          version: '1.0.140',
           current: true,
+          changes: [
+            'PiPs lembram a visibilidade global e ganham atalho Mostrar câmera quando todas as janelas estiverem ocultas.',
+            'Durante a navegação, câmeras grandes reduzem temporariamente para preservar rota e instruções sem perder o tamanho salvo.',
+            'Encaixe automático evita duas câmeras no mesmo canto e mantém organização adequada em retrato e paisagem.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.139',
           changes: [
             'POI selecionado ganha painel completo com categoria, distância, origem, endereço, horário, telefone, site, operador e comodidades.',
             'Endereço, telefone, site e coordenadas podem ser copiados rapidamente sem sair do mapa.',

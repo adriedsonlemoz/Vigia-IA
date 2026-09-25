@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.139+139`
+> **Versão atual:** `1.0.140+140`
 
 ## Estado atual
 
-A `1.0.139+139` transforma o POI selecionado em um painel completo de consulta rápida, mantendo a navegação e o mapa como ações centrais.
+A `1.0.140+140` aprimora os PiPs de câmera sobre o mapa, priorizando visão da rota, recuperação rápida e organização automática das câmeras.
+
+### Evolução 1.0.140 — PiP de câmera mais inteligente
+
+- O estado global de exibição das câmeras sobre o mapa passa a ser persistido junto do layout dos PiPs.
+- Quando todas as câmeras estiverem ocultas, o mapa mostra um atalho compacto **Mostrar câmera** sem exigir abrir o menu de opções.
+- Durante navegação ativa, PiPs grandes recebem redução temporária de escala para preservar instruções, rota e área útil do mapa; o tamanho salvo volta automaticamente ao encerrar a navegação.
+- Ao arrastar e soltar um PiP, o encaixe considera a outra câmera e evita deixar as duas no mesmo canto; em retrato separa verticalmente e em paisagem separa lateralmente.
+- O gerenciador continua permitindo trocar fonte, minimizar, ocultar, alterar tamanho e restaurar o layout, agora sincronizando também a visibilidade global.
 
 ### Evolução 1.0.139 — painel completo do local
 

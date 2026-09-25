@@ -1,3 +1,13 @@
+## 1.0.140+140 — 2026-09-25
+
+- Estado global de exibição dos PiPs passa a ser persistido em `map_camera_overlay_settings.json` com schema 2 e leitura retrocompatível do schema anterior.
+- Mapa exibe atalho **Mostrar câmera** quando há fonte configurada mas todas as janelas estão ocultas ou a exibição global foi desativada.
+- Durante navegação ativa, o tamanho efetivo do PiP é limitado temporariamente para preservar a área útil do mapa e o banner de instruções, sem alterar o tamanho salvo pelo usuário.
+- Encaixe após arrastar evita duas câmeras no mesmo canto; em retrato separa verticalmente e em paisagem separa lateralmente.
+- Restauração de layout volta a sincronizar posição, tamanho e visibilidade global e retoma apenas as fontes internas realmente visíveis.
+- `MapUxPolicy` recebe testes para escala adaptativa e resolução de colisão de cantos.
+- User-Agents dos serviços de rota/POI e versionamento sincronizados em `1.0.140+140`.
+
 ## 1.0.139+139 — 2026-09-25
 
 - Tocar em um marcador de POI individual abre diretamente um painel completo com nome, categoria, distância, origem online/offline e informações estruturadas do local.

@@ -1,3 +1,24 @@
+# Validação Vigia IA 1.0.140+140
+
+## PiPs de câmera sobre o mapa
+
+- abrir o mapa com uma câmera configurada, ocultar todos os PiPs e confirmar que aparece o atalho **Mostrar câmera**;
+- fechar/reabrir o mapa após desativar **Mostrar PiPs no mapa** e confirmar que a preferência global é restaurada;
+- tocar em **Mostrar câmera** e confirmar que a câmera principal volta expandida e que uma fonte interna suspensa retoma os frames;
+- iniciar uma navegação com PiP em tamanho grande e confirmar redução visual temporária sem alterar o tamanho escolhido no gerenciador;
+- encerrar a navegação e confirmar que o PiP volta ao tamanho salvo;
+- com duas câmeras, arrastar uma para o canto ocupado pela outra e confirmar separação vertical em retrato e lateral em paisagem;
+- confirmar que PiPs continuam respeitando HUD superior, banner de navegação, card de POI e barra inferior;
+- executar `flutter analyze`, `flutter test` e o build Android no workflow.
+
+## Verificação local disponível
+
+- `python3 tool/check_version_sync.py`: aprovado;
+- `bash tool/verify_project.sh`: aprovado;
+- Flutter/Dart não estão instalados neste ambiente, portanto analyze/test/build dependem do workflow.
+
+---
+
 ## 1.0.138+138 — POIs enriquecidos + natureza/cicloviagem
 
 - Confirmar categorias Camping, Mirantes, Cachoeiras e Mercados nas configurações e nos marcadores/listas quando houver dados na região.

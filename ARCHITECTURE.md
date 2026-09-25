@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.139+139
+# Arquitetura — Vigia IA 1.0.140+140
+
+## PiP de câmera no mapa 1.0.140
+
+- `MapCameraOverlaySettingsService` sobe o schema de persistência para 2 e guarda, além dos dois `MapCameraSlotLayout`, o estado global `visible`; arquivos antigos permanecem compatíveis porque a ausência do campo assume `true`.
+- `MapUxPolicy.cameraEffectiveScale()` aplica somente uma escala visual temporária durante navegação, sem alterar o tamanho escolhido e persistido pelo usuário.
+- `MapUxPolicy.cameraSnapPoint()` centraliza o encaixe em cantos e resolve colisão lógica entre os dois PiPs, mantendo o comportamento determinístico em retrato e paisagem.
+- `MapMonitoringScreen` continua responsável por ciclo de vida/suspensão das fontes e ganha restauração rápida quando todos os PiPs estiverem ocultos; fontes internas permanecem suspensas quando não são visíveis.
+- O cálculo de reserva inferior para navegação/POI permanece independente do layout salvo, evitando que banners e cards sejam cobertos mesmo após rotação ou mudança de tamanho.
 
 ## Painel completo do local 1.0.139
 

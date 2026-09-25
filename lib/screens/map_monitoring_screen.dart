@@ -162,6 +162,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     ]);
     if (!mounted) return;
     setState(() {
+      _camerasVisible = _cameraOverlaySettings.visible;
       _primaryCameraLayout = _cameraOverlaySettings.primary;
       _secondaryCameraLayout = _cameraOverlaySettings.secondary;
     });
@@ -696,6 +697,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onChanged: (value) async {
                       setState(() => _camerasVisible = value);
                       setSheetState(() {});
+                      await _cameraOverlaySettings.saveVisible(value);
                       if (value) {
                         await _resumeVisibleInternalCameras();
                       } else {
@@ -721,6 +723,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       await _cameraOverlaySettings.resetLayout();
                       if (!mounted) return;
                       setState(() {
+                        _camerasVisible = _cameraOverlaySettings.visible;
                         _primaryCameraLayout = _cameraOverlaySettings.primary;
                         _secondaryCameraLayout = _cameraOverlaySettings.secondary;
                         _primaryCameraOffset = null;
@@ -1201,6 +1204,39 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   bool get _hasCameraOverlay => _slotHasCamera(false) || _slotHasCamera(true);
+
+  bool get _allCameraSlotsHidden {
+    final primaryHidden = !_slotHasCamera(false) || _primaryCameraLayout.hidden;
+    final secondaryHidden = !_slotHasCamera(true) || _secondaryCameraLayout.hidden;
+    return primaryHidden && secondaryHidden;
+  }
+
+  Future<void> _showCameraOverlayQuickly() async {
+    if (!_hasCameraOverlay) {
+      await _showCameraManager();
+      return;
+    }
+
+    _camerasVisible = true;
+    await _cameraOverlaySettings.saveVisible(true);
+    if (_allCameraSlotsHidden) {
+      if (_slotHasCamera(false)) {
+        _primaryCameraLayout = _primaryCameraLayout.copyWith(
+          hidden: false,
+          minimized: false,
+        );
+        await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
+      } else if (_slotHasCamera(true)) {
+        _secondaryCameraLayout = _secondaryCameraLayout.copyWith(
+          hidden: false,
+          minimized: false,
+        );
+        await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
+      }
+    }
+    if (mounted) setState(() {});
+    await _resumeVisibleInternalCameras();
+  }
 
   WidgetBuilder? _cameraPreviewBuilderFor(bool secondary) {
     if (secondary) {
@@ -2824,6 +2860,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ],
                 ),
               ),
+              if (_hasCameraOverlay &&
+                  (!_camerasVisible || _allCameraSlotsHidden))
+                Positioned(
+                  top: quickViewTop,
+                  right: horizontalControls ? 8 : 58,
+                  child: _MapCameraRestoreChip(
+                    compact: compactHud,
+                    onPressed: () => unawaited(_showCameraOverlayQuickly()),
+                  ),
+                ),
               Positioned(
                 left: 8,
                 bottom: attributionBottom,
@@ -2937,6 +2983,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           aspectRatioProvider?.call() ?? fallbackAspectRatio ?? (16 / 9);
       final aspectRatio = requestedRatio.clamp(0.50, 2.20).toDouble();
       final minimized = layout.minimized;
+      final navigationTarget = _routeState.navigationTarget;
+      final effectiveScale = MapUxPolicy.cameraEffectiveScale(
+        savedScale: layout.sizeScale,
+        hasNavigation: navigationTarget != null,
+        compactHud: MapUxPolicy.compactHud(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+        ),
+      );
       late double width;
       late double height;
       if (minimized) {
@@ -2945,14 +3000,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       } else if (aspectRatio >= 1) {
         final baseWidth =
             (constraints.maxWidth * 0.29).clamp(126.0, 190.0).toDouble();
-        width = (baseWidth * layout.sizeScale)
+        width = (baseWidth * effectiveScale)
             .clamp(104.0, math.min(238.0, constraints.maxWidth * 0.52))
             .toDouble();
         height = (width / aspectRatio).clamp(70.0, 166.0).toDouble();
       } else {
         final baseHeight =
             (constraints.maxHeight * 0.22).clamp(118.0, 188.0).toDouble();
-        height = (baseHeight * layout.sizeScale)
+        height = (baseHeight * effectiveScale)
             .clamp(94.0, math.min(228.0, constraints.maxHeight * 0.42))
             .toDouble();
         width = (height * aspectRatio).clamp(76.0, 164.0).toDouble();
@@ -2965,7 +3020,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         compactLandscape: _compactLandscape,
       );
       final selectedPoi = _selectedPoi;
-      final navigationTarget = _routeState.navigationTarget;
       final bottomReserve = MapUxPolicy.cameraBottomReserve(
         safeBottom: safePadding.bottom,
         hasSelectedPoi: selectedPoi != null &&
@@ -2993,8 +3047,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             constraints.maxHeight - height - bottomReserve,
           )
           .toDouble();
-      final spanX = math.max(0.0, maxX - minX).toDouble();
-      final spanY = math.max(0.0, maxY - minY).toDouble();
       final storedPosition = Offset(
         MapUxPolicy.positionForFraction(
           fraction: layout.xFraction,
@@ -3020,9 +3072,36 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         final current = secondary
             ? (_secondaryCameraOffset ?? position)
             : (_primaryCameraOffset ?? position);
+        final otherLayout = secondary ? _primaryCameraLayout : _secondaryCameraLayout;
+        final otherVisible = _camerasVisible &&
+            _slotHasCamera(!secondary) &&
+            !otherLayout.hidden;
+        final snap = MapUxPolicy.cameraSnapPoint(
+          xFraction: MapUxPolicy.fractionForPosition(
+            position: current.dx,
+            min: minX,
+            max: maxX,
+          ),
+          yFraction: MapUxPolicy.fractionForPosition(
+            position: current.dy,
+            min: minY,
+            max: maxY,
+          ),
+          compactLandscape: _compactLandscape,
+          otherXFraction: otherVisible ? otherLayout.xFraction : null,
+          otherYFraction: otherVisible ? otherLayout.yFraction : null,
+        );
         final snapped = Offset(
-          current.dx <= minX + spanX / 2 ? minX : maxX,
-          current.dy <= minY + spanY / 2 ? minY : maxY,
+          MapUxPolicy.positionForFraction(
+            fraction: snap.xFraction,
+            min: minX,
+            max: maxX,
+          ),
+          MapUxPolicy.positionForFraction(
+            fraction: snap.yFraction,
+            min: minY,
+            max: maxY,
+          ),
         );
         if (mounted) {
           setState(() {
@@ -3501,6 +3580,49 @@ class _MapZoomAction extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _MapCameraRestoreChip extends StatelessWidget {
+  const _MapCameraRestoreChip({
+    required this.compact,
+    required this.onPressed,
+  });
+
+  final bool compact;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 4,
+      color: scheme.surface.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 10 : 12,
+            vertical: 9,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.videocam_rounded, size: 20, color: scheme.primary),
+              if (!compact) ...[
+                const SizedBox(width: 6),
+                const Text(
+                  'Mostrar câmera',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CameraPipMenuButton extends StatelessWidget {
