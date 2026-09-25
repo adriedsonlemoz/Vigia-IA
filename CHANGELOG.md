@@ -1,3 +1,38 @@
+## 1.0.126+126 — 2026-09-25
+
+- Criado `MapGpsFilter` para rejeitar coordenadas inválidas, precisão >60 m, leituras fora de ordem, velocidade >70 m/s e deslocamentos incompatíveis com o tempo transcorrido.
+- Gravação do percurso agora aceita somente pontos com precisão de até 35 m e usa limiar de movimento proporcional ao ruído para reduzir distância falsa causada por jitter.
+- Posição e rumo são suavizados; lacunas >30 s reiniciam a suavização para não misturar locais antigos e atuais.
+- `MapRouteService` ganha API explícita de gravação (`startRecording`, pausa, retomada e encerramento), mantendo wrappers antigos para compatibilidade.
+- Corrigido encerramento do percurso para usar o último ponto realmente gravado como fim.
+- Corrigida restauração após morte/recriação do processo: tempo sem coleta é descontado como interrupção e o próximo ponto inicia novo segmento.
+- Adicionado `MapNavigationTarget`: um POI pode ser escolhido em **Navegar até**, persistindo destino, distância e rumo direto sem se misturar ao percurso gravado.
+- Interface renomeada para **Gravar percurso**, **Pausar/Continuar percurso** e **Encerrar percurso**; exportação passa a usar `VigiaIA-percurso-...gpx`.
+- Persistência de mapa/percurso sobe para schema 3 com migração do campo legado `tracking`.
+- Adicionados testes para filtro de GPS, velocidade/deslocamento plausíveis, limiar contra jitter, suavização circular de heading e persistência do destino.
+- Versão, identidade, README, arquitetura, validação, Mudanças e verificadores sincronizados em `1.0.126+126`.
+
+## 1.0.125+125 — 2026-09-25
+
+### Mapa em tela cheia
+- Remove a AppBar fixa do mapa completo e faz o mapa ocupar praticamente todo o viewport, mantendo controles sobrepostos dentro da área segura.
+- Adiciona controles flutuantes para voltar, zoom, seguir GPS, Próximos pontos, câmeras, mapas offline e configurações, com adaptação para paisagem curta.
+- Reduz o zoom de acompanhamento padrão para 15 para mostrar mais contexto geográfico.
+
+### Próximos pontos e viagem
+- Integra `RouteExplorerService` ao mapa completo e renderiza pontos úteis como marcadores clicáveis filtráveis.
+- Adiciona lista de Próximos pontos dentro do mapa com atualizar, salvar offline e acesso às configurações.
+- Corrige o toque em um ponto da lista do Monitor para abrir o mapa já focado no local escolhido.
+- Amplia a janela de resultados de 12 para 36 itens e passa a renovar automaticamente a busca em rota ativa após 1,5 km ou 5 minutos.
+
+### GPS, percurso e câmeras
+- Corrige saltos de GPS acima de 250 m criando um novo segmento em vez de desenhar uma linha artificial e somar distância inválida.
+- Compacta os controles de gravação de rota, mantendo pausa/continuação, encerramento e exportação GPX.
+- Reposiciona os PiPs de câmera para não nascerem sobre os controles; em paisagem, duas câmeras começam lado a lado.
+
+### Projeto
+- Versão e build sincronizados em `1.0.125+125`; README, CHANGELOG, RELEASE, arquitetura, validação, tela Mudanças e testes atualizados.
+
 ## 1.0.124+124 — 2026-09-25
 
 - Criado `Esp32CapabilityObservation` para representar separadamente capacidade configurada, anunciada pelo firmware e leitura realmente disponível.

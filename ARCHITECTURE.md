@@ -1,4 +1,25 @@
-# Arquitetura — Vigia IA 1.0.124+124
+# Arquitetura — Vigia IA 1.0.126+126
+
+## Evolução 1.0.126 — pipeline de GPS e separação gravação/navegação
+
+- `MapGpsFilter` vira a fronteira de qualidade entre `LocationTrackingService` e `MapRouteService`: leituras inválidas, imprecisas, fora de ordem ou fisicamente implausíveis são rejeitadas antes de alterar `current`.
+- O filtro mantém dois níveis de confiança: até 60 m para posição de mapa e até 35 m para pontos elegíveis à gravação, reduzindo falsos deslocamentos sem bloquear a UI cedo demais.
+- Suavização é reiniciada após lacunas longas; durante fluxo contínuo usa peso adaptativo por precisão/velocidade e interpolação circular de heading.
+- `MapRouteService` preserva `_tracking` no payload por migração, mas a API pública nova fala em `recording`; o schema 3 também persiste `savedAt` e `navigationTarget`.
+- Recriação do processo durante gravação soma o intervalo sem coleta a `pausedDuration` e força novo segmento na próxima leitura válida.
+- `MapNavigationTarget` representa destino separado do histórico gravado. Distância e bearing diretos são derivados do GPS filtrado e apresentados como referência, sem motor de rotas curva-a-curva nesta versão.
+- A UI do mapa passa a usar **Gravar percurso / Pausar percurso / Encerrar percurso**, enquanto **Navegar até** fica associado ao ponto escolhido e pode ser encerrado sem afetar a gravação.
+- Wrappers `startRoute/pauseRoute/resumeRoute/finishRoute` permanecem temporariamente para compatibilidade com código antigo durante a migração.
+
+## Evolução 1.0.125 — mapa como superfície principal
+
+- `MapMonitoringScreen` passa a ser uma superfície edge-to-edge: `FlutterMap` ocupa o viewport e a área segura é aplicada apenas aos overlays.
+- `RouteExplorerService` é compartilhado entre Monitor e mapa completo; seus resultados persistidos alimentam simultaneamente lista, marcadores, alertas e fallback offline.
+- O mapa completo aceita `initialPointOfInterest`, permitindo que a seleção feita em **Próximos pontos** atravesse a navegação sem criar um segundo estado de POI.
+- A busca automática do `RouteExplorerService` é limitada por movimento (1,5 km) ou tempo (5 min) durante uma rota ativa, reutilizando a mesma rotina `searchNow` e o fallback offline existente.
+- `MapRouteService` mantém segmentos explícitos também para saltos de GPS >250 m; o salto não entra na distância e não produz uma polilinha enganosa entre posições desconectadas.
+- Os controles do mapa são overlays pequenos e adaptativos; em telas baixas mudam para eixo horizontal. PiPs de câmera continuam arrastáveis e evitam a faixa de controles na posição inicial.
+- `OfflineMapService` e o gerenciador MBTiles/Stadia não foram duplicados: o mapa usa o pacote ativo, o modo Online/Offline/Automático e o fluxo de planejamento já existentes.
 
 ## Evolução 1.0.124 — observabilidade por capacidade ESP32
 

@@ -11,13 +11,31 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.124+124' pubspec.yaml || fail 'Versao esperada 1.0.124+124 nao encontrada.'
+grep -Fxq 'version: 1.0.126+126' pubspec.yaml || fail 'Versao esperada 1.0.126+126 nao encontrada.'
 grep -q 'class Esp32CapabilityObservation' lib/models/esp32_capability_status.dart || fail 'Modelo de estado por sensor ESP32 1.0.124 ausente.'
 grep -q 'Esp32CapabilityActivity.live' lib/screens/esp32_settings_screen.dart || fail 'Tela ESP32 nao renderiza estado de leitura ativa 1.0.124.'
 grep -q 'Detectado · não configurado' lib/models/esp32_capability_status.dart || fail 'Estado de sensor novo ESP32 1.0.124 ausente.'
 grep -q 'firmware legado' test/esp32_capability_status_test.dart || fail 'Teste de inferencia ESP32 legado 1.0.124 ausente.'
-grep -Fq '## 1.0.124+124' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.124.'
-[[ -f RELEASE-1.0.124.md ]] || fail 'Notas da entrega 1.0.124 ausentes.'
+grep -Fq '## 1.0.126+126' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.126.'
+[[ -f RELEASE-1.0.126.md ]] || fail 'Notas da entrega 1.0.126 ausentes.'
+grep -q 'extendBody: true' lib/screens/map_monitoring_screen.dart || fail 'Mapa 1.0.125 nao usa superficie edge-to-edge.'
+grep -q "tooltip: 'Aumentar zoom'" lib/screens/map_monitoring_screen.dart || fail 'Controle flutuante de zoom 1.0.125 ausente.'
+grep -q "tooltip: 'Próximos pontos'" lib/screens/map_monitoring_screen.dart || fail 'Controle de Proximos pontos 1.0.125 ausente.'
+grep -q 'initialPointOfInterest' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart || fail 'Foco de POI entre lista e mapa 1.0.125 ausente.'
+grep -q 'automaticRefreshDistanceMeters = 1500' lib/services/route_explorer_service.dart || fail 'Atualizacao automatica por deslocamento 1.0.125 ausente.'
+grep -q 'automaticRefreshInterval = Duration(minutes: 5)' lib/services/route_explorer_service.dart || fail 'Atualizacao automatica temporal 1.0.125 ausente.'
+grep -q 'maximumContinuousStepMeters = 250' lib/services/map_route_service.dart || fail 'Protecao contra salto de GPS 1.0.125 ausente.'
+[[ -f test/map_navigation_policy_test.dart ]] || fail 'Testes de politica do mapa 1.0.125 ausentes.'
+[[ -f lib/services/map_gps_filter.dart ]] || fail 'Filtro de GPS 1.0.126 ausente.'
+grep -q 'maximumAcceptedAccuracyMeters = 60' lib/services/map_gps_filter.dart || fail 'Limite de precisao do mapa 1.0.126 ausente.'
+grep -q 'maximumRecordingAccuracyMeters = 35' lib/services/map_gps_filter.dart || fail 'Limite de precisao da gravacao 1.0.126 ausente.'
+grep -q 'maximumPlausibleSpeedMetersPerSecond = 70' lib/services/map_gps_filter.dart || fail 'Filtro de velocidade plausivel 1.0.126 ausente.'
+grep -q 'Future<bool> startRecording()' lib/services/map_route_service.dart || fail 'API Gravar percurso 1.0.126 ausente.'
+grep -q 'MapNavigationTarget' lib/services/map_route_service.dart lib/screens/map_monitoring_screen.dart || fail 'Destino separado da gravacao 1.0.126 ausente.'
+grep -q "label: Text(recording ? 'Encerrar percurso' : 'Gravar percurso')" lib/screens/map_monitoring_screen.dart || fail 'Nomenclatura Gravar percurso 1.0.126 ausente.'
+grep -q "label: const Text('Navegar até')" lib/screens/map_monitoring_screen.dart || fail 'Acao Navegar ate 1.0.126 ausente.'
+[[ -f test/map_gps_filter_test.dart ]] || fail 'Testes do filtro GPS 1.0.126 ausentes.'
+[[ -f test/map_navigation_target_test.dart ]] || fail 'Teste do destino de navegacao 1.0.126 ausente.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -372,10 +390,10 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.124';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.124.'
-grep -q 'static const int build = 124;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 124.'
+grep -q "static const String version = '1.0.126';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.126.'
+grep -q 'static const int build = 126;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 126.'
 grep -q "version: '1.0.123'" lib/screens/app_info_screen*.dart \
   || fail 'Tela Mudancas nao marca a versao 1.0.123.'
 
@@ -543,18 +561,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.124+124' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.124+124.'
+grep -Fq 'version: 1.0.126+126' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.126+126.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.124"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.124.'
-grep -q '"build": 124' app_identity.json \
-  || fail 'app_identity.json nao esta no build 124.'
+grep -q '"version": "1.0.126"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.126.'
+grep -q '"build": 126' app_identity.json \
+  || fail 'app_identity.json nao esta no build 126.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -871,7 +889,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.124+124' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.124+124.'
+grep -Fq 'Vigia IA 1.0.126+126' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.126+126.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -1883,7 +1901,7 @@ grep -q 'cameraAspectRatioProvider' lib/screens/map_monitoring_screen.dart lib/s
   || fail 'PiP principal nao recebe proporcao dinamica da transmissao.'
 grep -q 'secondaryCameraAspectRatioProvider' lib/screens/map_monitoring_screen.dart lib/screens/monitor_screen.dart \
   || fail 'PiP secundario nao recebe proporcao dinamica quando disponivel.'
-grep -q "tooltip: _camerasVisible ? 'Ocultar câmeras' : 'Mostrar câmeras'" lib/screens/map_monitoring_screen.dart \
+grep -q "Ocultar câmeras sobre o mapa" lib/screens/map_monitoring_screen.dart \
   || fail 'Mapa completo nao permite mostrar/ocultar os PiPs.'
 if grep -q 'widget.cameraLabel' lib/screens/map_monitoring_screen.dart; then
   fail 'Faixa textual Local/label reapareceu no PiP do mapa.'
@@ -2055,10 +2073,10 @@ grep -q "ValueKey<String>" lib/screens/map_monitoring_screen.dart \
   || fail 'Camada MBTiles nao protege a troca de pacote com chave propria.'
 grep -q "TileDisplay.instantaneous" lib/screens/map_monitoring_screen.dart \
   || fail 'Camada MBTiles nao preserva o provider ao alternar Online/Offline.'
-grep -q 'constraints.maxWidth - width - 8' lib/screens/map_monitoring_screen.dart \
-  || fail 'Camera flutuante nao pode percorrer toda a largura util do mapa.'
-grep -q 'constraints.maxHeight - height - 74' lib/screens/map_monitoring_screen.dart \
-  || fail 'Camera flutuante nao preserva somente a barra essencial da rota ao usar a altura do mapa.'
+grep -q 'constraints.maxWidth - width - 58' lib/screens/map_monitoring_screen.dart \
+  || fail 'Camera flutuante nao preserva a faixa dos controles do mapa.'
+grep -q 'constraints.maxHeight - height - safePadding.bottom - 66' lib/screens/map_monitoring_screen.dart \
+  || fail 'Camera flutuante nao preserva a barra de rota e a navegacao do sistema.'
 grep -q "rasterFormats = <String>{'png', 'jpg', 'jpeg', 'webp'}" lib/services/offline_map_service.dart \
   || fail 'Downloader nao valida se o MBTiles contem tiles raster compativeis.'
 grep -q 'metadata.maxZoom' lib/screens/map_monitoring_screen.dart \
@@ -2400,7 +2418,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.124' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.126' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 

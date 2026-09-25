@@ -2,11 +2,39 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.124+124`
+> **Versão atual:** `1.0.126+126`
 
 ## Estado atual
 
-A `1.0.124+124` refina a tela ESP32 para mostrar, por módulo, quais sensores estão configurados, detectados pelo firmware e realmente enviando leitura em tempo real.
+A `1.0.126+126` fortalece a base do mapa para uso real em movimento: GPS filtrado e suavizado, gravação de percurso confiável e navegação até destino separada da gravação.
+
+### Evolução 1.0.126 — GPS confiável, percurso e destino separados
+
+- Novo `MapGpsFilter` valida coordenadas, precisão, ordem temporal, velocidade reportada e deslocamento plausível antes de atualizar a posição usada pelo mapa.
+- Leituras com precisão pior que 60 m são descartadas; a gravação do percurso exige até 35 m, evitando que GPS fraco infle a distância.
+- Posição, velocidade baixa e rumo recebem suavização; rumo cruza 0/360 pelo caminho curto e, quando necessário, pode ser derivado do deslocamento aceito.
+- Jitter pequeno deixa de entrar no percurso: o limiar mínimo cresce conforme a incerteza das duas leituras, além da proteção já existente para saltos >250 m.
+- `MapRouteService` passa a expor **gravação** explicitamente (`startRecording`, pausar/retomar/encerrar), mantendo wrappers antigos para compatibilidade.
+- A interface troca **Iniciar rota** por **Gravar percurso** e diferencia a sessão registrada da nova ação **Navegar até**.
+- POIs podem virar um `MapNavigationTarget` persistente; o mapa mostra destino, distância e rumo direto sem fingir que isso é navegação curva-a-curva.
+- Ao encerrar, o fim do percurso usa o último ponto realmente gravado, e não uma posição atual possivelmente inadequada para a trilha.
+- Se o processo for recriado durante uma gravação, o tempo sem coleta é tratado como interrupção e o próximo ponto abre novo segmento, evitando tempo/distância artificiais.
+- Persistência sobe para schema 3 mantendo leitura de `tracking` legado, e novos testes cobrem filtros, limiares, suavização de rumo e serialização do destino.
+
+### Evolução 1.0.125 — mapa em tela cheia e percurso integrado
+
+- O mapa completo ocupa praticamente toda a tela, sem AppBar fixa; o conteúdo continua atrás das áreas do sistema e somente os controles respeitam notch/status/navigation bar.
+- Voltar, zoom +/−, seguir GPS, Próximos pontos, câmeras, mapas offline e configurações viram controles flutuantes; em paisagem a coluna se transforma em uma faixa horizontal para não perder botões.
+- A visualização padrão abre um pouco mais ampla (zoom 15) e mantém zoom manual fixo, navegação livre e retorno rápido ao acompanhamento da posição.
+- **Próximos pontos** é integrado ao mapa: resultados Online/Offline aparecem como marcadores clicáveis, com filtros Todos/Postos/Comida/Saúde/Água/Outros, distância e detalhes.
+- Tocar em um ponto na lista do Monitor agora abre o mapa completo já centralizado naquele local.
+- A busca inicial é executada ao abrir o mapa e, em rota ativa com modo **No caminho**, é renovada automaticamente após 1,5 km ou 5 minutos; se a rede falhar, a lista offline permanece como fallback.
+- O limite visual da busca foi ampliado de 12 para 36 resultados para dar mais contexto em viagem sem transformar a tela em catálogo infinito.
+- A barra de percurso foi compactada e mantém iniciar/encerrar, pausar/continuar e exportar GPX sem roubar a largura inteira do mapa.
+- Saltos de GPS acima de 250 m passam a iniciar um novo segmento, evitando linhas artificiais atravessando o mapa e sem somar o salto na distância.
+- Uma ou duas câmeras continuam móveis sobre o mapa; a posição inicial deixa livre a coluna de controles e se adapta a retrato/paisagem.
+- Configurações de raio, categorias, busca no caminho, voz/notificação, distância de alerta, mapas offline e exportação GPX ficam acessíveis sem sair do mapa.
+- Foram adicionadas verificações/testes de regressão para política de rota e atualização automática de pontos.
 
 ### Evolução 1.0.124 — estado individual dos sensores ESP32
 

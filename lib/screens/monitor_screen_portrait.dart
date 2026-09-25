@@ -698,7 +698,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              'No automático, aparece com Bike, rota ativa ou deslocamento detectado pelo GPS.',
+              'No automático, aparece com Bike, gravação de percurso ativa ou deslocamento detectado pelo GPS.',
               style: TextStyle(fontSize: 11),
             ),
           ),

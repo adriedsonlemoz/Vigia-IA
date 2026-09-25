@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.124 refina o painel ESP32 com estado individual por sensor/recurso: lendo agora, detectado, aguardando, offline e detectado ainda não configurado, inclusive com inferência para firmware legado.",
-  "version": "1.0.124",
-  "build": 124
+  "notes": "A 1.0.126 fortalece GPS e percurso: filtra leituras ruins, suaviza posição/rumo, separa gravação de percurso de navegação até destino e preserva migração do estado anterior.",
+  "version": "1.0.126",
+  "build": 126
 }

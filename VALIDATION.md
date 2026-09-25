@@ -1,3 +1,31 @@
+## 1.0.126+126 — GPS filtrado, percurso e navegação separados
+
+- Com GPS bom (≤35 m), tocar **Gravar percurso**, caminhar/pedalar, pausar, retomar e encerrar; confirmar distância crescente sem saltos e exportação `VigiaIA-percurso-*.gpx`.
+- Forçar/usar leituras com precisão entre 36–60 m e confirmar que a posição pode continuar utilizável no mapa, mas não entra no percurso gravado.
+- Simular precisão >60 m, velocidade >70 m/s, timestamp fora de ordem e salto incompatível com o intervalo; confirmar que essas leituras não movem `current`.
+- Simular jitter de poucos metros com precisão ruim/moderada e confirmar que não aumenta artificialmente a distância.
+- Simular perda de GPS >30 s e retorno em outro ponto plausível; confirmar reinício da suavização e novo segmento quando o salto do percurso exceder 250 m.
+- Encerrar com uma leitura atual não elegível à gravação e confirmar que o marcador **Fim** corresponde ao último ponto efetivamente gravado.
+- Matar/recriar o processo com gravação ativa; confirmar que o intervalo sem coleta não conta como tempo ativo e que a retomada abre novo segmento.
+- Abrir **Próximos pontos**, tocar em um local e escolher **Navegar até**; confirmar marcador de destino, distância/rumo direto e botão **Parar navegação**, sem iniciar/parar a gravação do percurso.
+- Reiniciar o app durante uma navegação e confirmar restauração do destino pelo schema 3; estado legado com `tracking` deve continuar migrando.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
+## 1.0.125+125 — mapa em tela cheia, pontos e percurso
+
+- Abrir **Mapa** pela Home e confirmar ausência de AppBar/faixa preta; o mapa deve ocupar a tela e continuar visível atrás das áreas do sistema.
+- Confirmar controles flutuantes para voltar, zoom +/−, seguir GPS, Próximos pontos, câmera, offline e configurações; girar para paisagem curta e conferir que os controles migram para faixa horizontal.
+- Permitir GPS e confirmar posição, precisão, velocidade, distância, tempo, altitude/direção e alternância entre **Seguindo** e **Mapa livre**.
+- Abrir **Próximos pontos**, testar filtros Todos/Postos/Comida/Saúde/Água/Outros, Atualizar e Salvar offline; confirmar marcadores correspondentes no mapa.
+- Tocar em um marcador e confirmar detalhe/distância/origem Online ou Offline; tocar em um ponto da lista do Monitor e confirmar que o mapa abre centralizado nele.
+- Iniciar rota, pausar/continuar, encerrar e exportar GPX. Simular um salto >250 m entre posições e confirmar novo segmento sem linha reta artificial e sem somar o salto.
+- Durante rota ativa com **No caminho**, deslocar ~1,5 km (ou aguardar 5 min) e confirmar atualização automática dos pontos; sem rede, confirmar fallback da lista offline.
+- Com uma câmera, confirmar PiP móvel; com duas, confirmar duas janelas e disposição inicial lado a lado em paisagem. Ocultar/mostrar pelo controle de câmera.
+- Ativar mapa MBTiles/Stadia e confirmar alternância Online/Offline/Automático, aviso fora da área e atribuição compacta sem cobrir a rota.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 ## 1.0.124+124 — refinamento dos sensores ESP32
 
 - Com temperatura configurada e valor chegando, confirmar status **Lendo agora** e valor em °C na própria linha.

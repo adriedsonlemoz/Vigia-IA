@@ -107,7 +107,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                                         trailing: Text(service.formatDistance(item.distanceMeters), style: const TextStyle(fontWeight: FontWeight.w900)),
                                         onTap: () {
                                           Navigator.of(sheetContext).pop();
-                                          unawaited(_openFullMap());
+                                          unawaited(_openFullMap(focus: item));
                                         },
                                       ),
                                     );
@@ -522,7 +522,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                         if (mapMode == MonitorMapVisibilityMode.automatic) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Automático mostra o mapa com Bike, rota ativa ou deslocamento pelo GPS.',
+                            'Automático mostra o mapa com Bike, gravação de percurso ativa ou deslocamento pelo GPS.',
                             style: Theme.of(settingsContext)
                                 .textTheme
                                 .bodySmall

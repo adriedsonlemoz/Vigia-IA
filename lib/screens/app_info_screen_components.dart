@@ -65,8 +65,28 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.124',
+          version: '1.0.126',
           current: true,
+          changes: [
+            'GPS passa por filtro de precisão, ordem temporal, velocidade e deslocamento plausível antes de mover a posição do mapa.',
+            'Gravação de percurso usa precisão mais rigorosa, suavização de posição/rumo e limiar contra jitter para evitar distância artificial.',
+            'Gravar percurso fica separado de Navegar até: POIs podem virar destino persistente com distância e rumo direto.',
+            'Persistência sobe para schema 3, preserva migração do estado anterior e corrige retomada após recriação do processo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.125',
+          changes: [
+            'Mapa completo passa a usar praticamente toda a tela, sem AppBar fixa, com controles flutuantes que respeitam notch e navegação.',
+            'Próximos pontos agora aparece também no mapa como marcadores filtráveis, com lista, foco do ponto tocado, atualização e cache offline.',
+            'Zoom, seguir GPS, câmeras, mapas offline, configurações e gravação de rota ficam acessíveis sobre o mapa em retrato e paisagem.',
+            'Percursos quebram o segmento após saltos grandes de GPS e a busca no caminho se renova automaticamente durante rotas ativas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.124',
           changes: [
             'Sensores e recursos passam a mostrar separadamente leitura ativa, detecção do firmware, espera por leitura e estado offline.',
             'Sensor novo informado pelo ESP32 aparece como detectado e não configurado, com atalho para revisar o wizard.',
@@ -1142,8 +1162,28 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.124',
+          version: '1.0.126',
           current: true,
+          changes: [
+            'GPS passa por filtro de precisão, ordem temporal, velocidade e deslocamento plausível antes de mover a posição do mapa.',
+            'Gravação de percurso usa precisão mais rigorosa, suavização de posição/rumo e limiar contra jitter para evitar distância artificial.',
+            'Gravar percurso fica separado de Navegar até: POIs podem virar destino persistente com distância e rumo direto.',
+            'Persistência sobe para schema 3, preserva migração do estado anterior e corrige retomada após recriação do processo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.125',
+          changes: [
+            'Mapa completo passa a usar praticamente toda a tela, sem AppBar fixa, com controles flutuantes que respeitam notch e navegação.',
+            'Próximos pontos agora aparece também no mapa como marcadores filtráveis, com lista, foco do ponto tocado, atualização e cache offline.',
+            'Zoom, seguir GPS, câmeras, mapas offline, configurações e gravação de rota ficam acessíveis sobre o mapa em retrato e paisagem.',
+            'Percursos quebram o segmento após saltos grandes de GPS e a busca no caminho se renova automaticamente durante rotas ativas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.124',
           changes: [
             'Sensores e recursos passam a mostrar separadamente leitura ativa, detecção do firmware, espera por leitura e estado offline.',
             'Sensor novo informado pelo ESP32 aparece como detectado e não configurado, com atalho para revisar o wizard.',

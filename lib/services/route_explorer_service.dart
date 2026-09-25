@@ -11,10 +11,15 @@ import '../models/alert_preferences.dart';
 import '../models/map_route_point.dart';
 import '../models/route_explorer_models.dart';
 import 'alert_delivery_service.dart';
+import 'location_tracking_service.dart';
 import 'map_route_service.dart';
 
 class RouteExplorerService extends ChangeNotifier {
   RouteExplorerService._();
+
+  static const int maximumResults = 36;
+  static const Duration automaticRefreshInterval = Duration(minutes: 5);
+  static const double automaticRefreshDistanceMeters = 1500;
 
   static final RouteExplorerService instance = RouteExplorerService._();
 
@@ -36,6 +41,9 @@ class RouteExplorerService extends ChangeNotifier {
   DateTime? _resultsUpdatedAt;
   DateTime? _offlineUpdatedAt;
   final Map<String, Set<int>> _deliveredThresholds = <String, Set<int>>{};
+  MapRoutePoint? _lastSearchOrigin;
+  DateTime? _lastAutomaticSearchAt;
+  bool _automaticRefreshScheduled = false;
 
   bool get initialized => _initialized;
   bool get loading => _loading;
@@ -185,6 +193,8 @@ class RouteExplorerService extends ChangeNotifier {
       final onlineResults = await _fetchOnline(current);
       _results = onlineResults;
       _resultsUpdatedAt = DateTime.now();
+      _lastSearchOrigin = current;
+      _lastAutomaticSearchAt = _resultsUpdatedAt;
       _lastSource = 'online';
       _statusMessage = onlineResults.isEmpty
           ? 'Nenhum local compatível encontrado neste raio.'
@@ -208,6 +218,8 @@ class RouteExplorerService extends ChangeNotifier {
           source: 'offline',
         );
         _resultsUpdatedAt = DateTime.now();
+        _lastSearchOrigin = current;
+        _lastAutomaticSearchAt = _resultsUpdatedAt;
         _lastSource = 'offline';
         _statusMessage =
             'Sem internet no momento. Usando a lista offline salva.';
@@ -259,6 +271,37 @@ class RouteExplorerService extends ChangeNotifier {
       notifyListeners();
     }
     _evaluateAlerts(point);
+    _maybeRefreshAutomatically(point);
+  }
+
+  void _maybeRefreshAutomatically(MapRoutePoint current) {
+    if (!_settings.searchAheadWhenMoving ||
+        !_routeState.tracking ||
+        _loading ||
+        _automaticRefreshScheduled) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final lastAt = _lastAutomaticSearchAt ?? _resultsUpdatedAt;
+    final lastOrigin = _lastSearchOrigin;
+    final stale = lastAt == null ||
+        now.difference(lastAt) >= automaticRefreshInterval;
+    final moved = lastOrigin == null ||
+        LocationTrackingService.distanceMeters(lastOrigin, current) >=
+            automaticRefreshDistanceMeters;
+    if (!stale && !moved) return;
+
+    _automaticRefreshScheduled = true;
+    unawaited(_runAutomaticRefresh());
+  }
+
+  Future<void> _runAutomaticRefresh() async {
+    try {
+      await searchNow(requestPermission: false);
+    } finally {
+      _automaticRefreshScheduled = false;
+    }
   }
 
   Future<List<RouteExplorerResult>> _fetchOnline(MapRoutePoint current) async {
@@ -274,7 +317,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.124');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.126');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -331,7 +374,7 @@ class RouteExplorerService extends ChangeNotifier {
       results.sort(
         (a, b) => a.distanceMeters.compareTo(b.distanceMeters),
       );
-      return results.take(12).toList(growable: false);
+      return results.take(maximumResults).toList(growable: false);
     } finally {
       client.close(force: true);
     }
@@ -356,7 +399,7 @@ class RouteExplorerService extends ChangeNotifier {
         )
         .toList(growable: false)
       ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
-    return items.take(12).toList(growable: false);
+    return items.take(maximumResults).toList(growable: false);
   }
 
   LatLng? _readCoordinates(Map<String, dynamic> raw) {

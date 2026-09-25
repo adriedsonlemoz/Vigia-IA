@@ -47,8 +47,8 @@ extension _MonitorLandscapeDashboard on _MonitorScreenState {
     );
   }
 
-  Future<void> _openFullMap() async {
-    await _openStandardScreen(_mapMonitoringScreen());
+  Future<void> _openFullMap({RouteExplorerResult? focus}) async {
+    await _openStandardScreen(_mapMonitoringScreen(focus: focus));
   }
 
 

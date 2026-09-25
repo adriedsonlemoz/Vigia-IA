@@ -5,17 +5,23 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/map_navigation_target.dart';
 import '../models/map_route_point.dart';
 import 'location_tracking_service.dart';
+import 'map_gps_filter.dart';
 
 enum MonitorMapVisibilityMode { automatic, always, hidden }
 
 class MapRouteService extends ChangeNotifier {
   MapRouteService._();
 
+  static const double maximumContinuousStepMeters = 250;
+  static const int persistenceSchema = 3;
+
   static final MapRouteService instance = MapRouteService._();
 
   final LocationTrackingService _location = LocationTrackingService.instance;
+  final MapGpsFilter _gpsFilter = MapGpsFilter();
   final List<MapRoutePoint> _route = <MapRoutePoint>[];
   final List<int> _segmentStarts = <int>[];
 
@@ -30,6 +36,7 @@ class MapRouteService extends ChangeNotifier {
   MapRoutePoint? _current;
   MapRoutePoint? _start;
   MapRoutePoint? _end;
+  MapNavigationTarget? _navigationTarget;
   DateTime? _routeStartedAt;
   DateTime? _routeEndedAt;
   DateTime? _pauseStartedAt;
@@ -38,6 +45,9 @@ class MapRouteService extends ChangeNotifier {
   bool _startNewSegmentOnNextPoint = false;
   Duration _pausedDuration = Duration.zero;
   double _distanceMeters = 0;
+  int _rejectedGpsPoints = 0;
+  MapGpsRejectionReason? _lastGpsRejectionReason;
+  DateTime? _lastGpsRejectedAt;
   MonitorMapVisibilityMode _monitorVisibility =
       MonitorMapVisibilityMode.automatic;
 
@@ -47,7 +57,13 @@ class MapRouteService extends ChangeNotifier {
   MapRoutePoint? get current => _current;
   MapRoutePoint? get start => _start;
   MapRoutePoint? get end => _end;
+  MapNavigationTarget? get navigationTarget => _navigationTarget;
+  bool get navigating => _navigationTarget != null;
+  bool get recording => _tracking;
   bool get tracking => _tracking;
+  int get rejectedGpsPoints => _rejectedGpsPoints;
+  MapGpsRejectionReason? get lastGpsRejectionReason => _lastGpsRejectionReason;
+  DateTime? get lastGpsRejectedAt => _lastGpsRejectedAt;
   bool get paused => _paused;
   double get distanceMeters => _distanceMeters;
   DateTime? get routeStartedAt => _routeStartedAt;
@@ -156,10 +172,12 @@ class MapRouteService extends ChangeNotifier {
     await _persistNow();
   }
 
-  Future<void> startRoute() async {
+  Future<bool> startRecording() async {
     await initialize(requestPermission: true);
     final currentPoint = _current;
-    if (currentPoint == null) return;
+    if (currentPoint == null || !MapGpsFilter.isSuitableForRecording(currentPoint)) {
+      return false;
+    }
     _route
       ..clear()
       ..add(currentPoint);
@@ -179,9 +197,10 @@ class MapRouteService extends ChangeNotifier {
     _startElapsedTicker();
     notifyListeners();
     await _persistNow();
+    return true;
   }
 
-  Future<void> pauseRoute() async {
+  Future<void> pauseRecording() async {
     if (!_tracking || _paused) return;
     _paused = true;
     _pauseStartedAt = DateTime.now();
@@ -189,7 +208,7 @@ class MapRouteService extends ChangeNotifier {
     await _persistNow();
   }
 
-  Future<void> resumeRoute() async {
+  Future<void> resumeRecording() async {
     if (!_tracking || !_paused) return;
     final pausedAt = _pauseStartedAt;
     if (pausedAt != null) {
@@ -202,7 +221,7 @@ class MapRouteService extends ChangeNotifier {
     await _persistNow();
   }
 
-  Future<void> finishRoute() async {
+  Future<void> finishRecording() async {
     if (!_tracking) return;
     if (_paused && _pauseStartedAt != null) {
       _pausedDuration += DateTime.now().difference(_pauseStartedAt!);
@@ -211,12 +230,70 @@ class MapRouteService extends ChangeNotifier {
     _paused = false;
     _startNewSegmentOnNextPoint = false;
     _tracking = false;
-    _end = _current;
+    _end = _route.isNotEmpty ? _route.last : _current;
     _routeEndedAt = DateTime.now();
     _elapsedTimer?.cancel();
     _elapsedTimer = null;
     notifyListeners();
     await _persistNow();
+  }
+
+  /// Compatibilidade com chamadas antigas. Novas telas devem usar a
+  /// nomenclatura de gravação de percurso, separada da navegação até destino.
+  Future<void> startRoute() async {
+    await startRecording();
+  }
+
+  Future<void> pauseRoute() => pauseRecording();
+
+  Future<void> resumeRoute() => resumeRecording();
+
+  Future<void> finishRoute() => finishRecording();
+
+  Future<void> navigateTo(MapNavigationTarget target) async {
+    await initialize(requestPermission: true);
+    _navigationTarget = target;
+    notifyListeners();
+    await _persistNow();
+  }
+
+  Future<void> stopNavigation() async {
+    if (_navigationTarget == null) return;
+    _navigationTarget = null;
+    notifyListeners();
+    await _persistNow();
+  }
+
+  double? get navigationDistanceMeters {
+    final currentPoint = _current;
+    final target = _navigationTarget;
+    if (currentPoint == null || target == null) return null;
+    return MapGpsFilter.distanceMeters(
+      currentPoint,
+      MapRoutePoint(
+        latitude: target.latitude,
+        longitude: target.longitude,
+        recordedAt: currentPoint.recordedAt,
+        accuracyMeters: 1,
+        speedMetersPerSecond: 0,
+      ),
+    );
+  }
+
+  double? get navigationBearingDegrees {
+    final currentPoint = _current;
+    final target = _navigationTarget;
+    if (currentPoint == null || target == null) return null;
+    return MapGpsFilter.bearingDegrees(
+      currentPoint,
+      MapRoutePoint(
+        latitude: target.latitude,
+        longitude: target.longitude,
+        recordedAt: currentPoint.recordedAt,
+        accuracyMeters: 1,
+        speedMetersPerSecond: 0,
+      ),
+    );
   }
 
   Future<void> clearRoute() async {
@@ -238,7 +315,7 @@ class MapRouteService extends ChangeNotifier {
     await _persistNow();
   }
 
-  String buildGpx({String name = 'Rota Vigia IA'}) {
+  String buildGpx({String name = 'Percurso Vigia IA'}) {
     if (_route.isEmpty) {
       throw StateError('Não há trajeto para exportar.');
     }
@@ -293,23 +370,47 @@ class MapRouteService extends ChangeNotifier {
     };
   }
 
-  void _acceptPosition(MapRoutePoint point) {
+  void _acceptPosition(MapRoutePoint rawPoint) {
+    final filtered = _gpsFilter.evaluate(rawPoint);
+    final point = filtered.point;
+    if (point == null) {
+      _rejectedGpsPoints += 1;
+      _lastGpsRejectionReason = filtered.rejectionReason;
+      _lastGpsRejectedAt = DateTime.now();
+      return;
+    }
+
     _current = point;
-    if (_tracking && !_paused) {
+    if (_tracking &&
+        !_paused &&
+        MapGpsFilter.isSuitableForRecording(point)) {
       if (_startNewSegmentOnNextPoint) {
         if (_route.isNotEmpty) _segmentStarts.add(_route.length);
         _route.add(point);
         _startNewSegmentOnNextPoint = false;
         _schedulePersist();
       } else {
-        final step = _route.isEmpty
+        final previous = _route.isEmpty ? null : _route.last;
+        final step = previous == null
             ? double.infinity
-            : LocationTrackingService.distanceMeters(_route.last, point);
-        if (_route.isNotEmpty && step >= 2 && step <= 250) {
+            : LocationTrackingService.distanceMeters(previous, point);
+        final movementThreshold = previous == null
+            ? 0.0
+            : MapGpsFilter.meaningfulMovementThresholdMeters(previous, point);
+
+        if (previous != null &&
+            step >= movementThreshold &&
+            step <= maximumContinuousStepMeters) {
           _distanceMeters += step;
         }
-        if (_route.isEmpty || step >= 2) {
-          if (_route.isEmpty && _segmentStarts.isEmpty) _segmentStarts.add(0);
+        if (_route.isEmpty || step >= movementThreshold) {
+          if (_route.isEmpty && _segmentStarts.isEmpty) {
+            _segmentStarts.add(0);
+          } else if (step > maximumContinuousStepMeters) {
+            // Perda/reentrada de GPS ou suspensão: inicia outro segmento sem
+            // somar a distância nem desenhar uma reta artificial.
+            _segmentStarts.add(_route.length);
+          }
           _route.add(point);
           _schedulePersist();
         }
@@ -355,7 +456,9 @@ class MapRouteService extends ChangeNotifier {
         (value) => value.name == modeName,
         orElse: () => MonitorMapVisibilityMode.automatic,
       );
-      _tracking = json['tracking'] as bool? ?? false;
+      _tracking = json['recording'] as bool? ??
+          json['tracking'] as bool? ??
+          false;
       _paused = _tracking && (json['paused'] as bool? ?? false);
       _distanceMeters = (json['distanceMeters'] as num?)?.toDouble() ?? 0;
       _routeStartedAt = _date(json['routeStartedAt']);
@@ -367,6 +470,7 @@ class MapRouteService extends ChangeNotifier {
       _current = _point(json['current']);
       _start = _point(json['start']);
       _end = _point(json['end']);
+      _navigationTarget = _navigationTargetFromJson(json['navigationTarget']);
       final rawRoute = json['route'];
       if (rawRoute is List) {
         _route
@@ -392,6 +496,15 @@ class MapRouteService extends ChangeNotifier {
         _paused = false;
         _pauseStartedAt = null;
       }
+      final savedAt = _date(json['savedAt']);
+      if (_tracking && !_paused && savedAt != null) {
+        final downtime = DateTime.now().difference(savedAt);
+        if (!downtime.isNegative && downtime > Duration.zero) {
+          _pausedDuration += downtime;
+        }
+        _startNewSegmentOnNextPoint = true;
+      }
+      _gpsFilter.reset(seed: _current);
     } catch (_) {
       _route.clear();
       _segmentStarts.clear();
@@ -404,6 +517,17 @@ class MapRouteService extends ChangeNotifier {
       _pausedDuration = Duration.zero;
       _start = null;
       _end = null;
+      _navigationTarget = null;
+      _gpsFilter.reset();
+    }
+  }
+
+  MapNavigationTarget? _navigationTargetFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    try {
+      return MapNavigationTarget.fromJson(Map<String, dynamic>.from(raw));
+    } catch (_) {
+      return null;
     }
   }
 
@@ -428,8 +552,10 @@ class MapRouteService extends ChangeNotifier {
     _persistDebounce = null;
     final temporary = File('${file.path}.tmp');
     final payload = <String, Object?>{
-      'schema': 2,
+      'schema': persistenceSchema,
+      'savedAt': DateTime.now().toIso8601String(),
       'monitorVisibility': _monitorVisibility.name,
+      'recording': _tracking,
       'tracking': _tracking,
       'paused': _paused,
       'pausedDurationMs': _pausedDuration.inMilliseconds,
@@ -440,6 +566,7 @@ class MapRouteService extends ChangeNotifier {
       'current': _current?.toJson(),
       'start': _start?.toJson(),
       'end': _end?.toJson(),
+      'navigationTarget': _navigationTarget?.toJson(),
       'segmentStarts': _normalizedSegmentStarts(),
       'route': _route.map((point) => point.toJson()).toList(growable: false),
     };

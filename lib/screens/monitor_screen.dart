@@ -980,9 +980,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-
-
-  Widget _mapMonitoringScreen() {
+  Widget _mapMonitoringScreen({RouteExplorerResult? focus}) {
     final secondary = _secondaryController;
     return MapMonitoringScreen(
       cameraPreviewBuilder: (_) => _controller.buildPreview(),
@@ -994,6 +992,7 @@ class _MonitorScreenState extends State<MonitorScreen>
       secondaryCameraListenable: secondary,
       secondaryCameraAspectRatioProvider:
           secondary == null ? null : () => secondary.previewAspectRatio,
+      initialPointOfInterest: focus,
     );
   }
 
