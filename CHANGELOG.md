@@ -1,3 +1,11 @@
+## 1.0.128+128 — 2026-09-25
+
+- Corrigido o Android-APK-95, que falhava no `flutter analyze` em `lib/screens/map_monitoring_screen.dart` por referência a `Icons.offline_map_rounded`, getter inexistente no Flutter 3.44.9.
+- O botão **Mapas offline** agora usa `Icons.download_for_offline_outlined`, já compatível com o SDK estável do workflow.
+- Adicionada verificação preventiva em `tool/verify_project.sh` para impedir a reintrodução do identificador de ícone inválido.
+- Preservadas integralmente as melhorias de GPS, percurso, visão à frente, orientação, POIs, offline e câmeras das versões 1.0.125–1.0.127.
+- Versão, identidade, README, arquitetura, validação, Mudanças e verificadores sincronizados em `1.0.128+128`.
+
 ## 1.0.127+127 — 2026-09-25
 
 - Seguimento do GPS passa a usar offset de câmera, mantendo o usuário abaixo do centro e aumentando a área visível à frente sem adulterar latitude/longitude.

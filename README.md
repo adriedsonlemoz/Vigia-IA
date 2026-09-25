@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.127+127`
+> **Versão atual:** `1.0.128+128`
 
 ## Estado atual
 
-A `1.0.127+127` melhora a câmera do mapa para uso em bike e viagem: visão à frente, orientação por rumo e enquadramentos rápidos Perto/Região/Rota sobre a base de GPS filtrado da 1.0.126.
+A `1.0.128+128` é um buildfix do mapa para o workflow Android: corrige o Material Icon inválido identificado pelo `flutter analyze` do Android-APK-95, sem alterar o comportamento funcional da visão à frente introduzida na 1.0.127.
+
+### Correção 1.0.128 — Android-APK-95
+
+- Corrigido `Icons.offline_map_rounded`, que não existe no Flutter 3.44.9 e interrompia `flutter analyze` com `undefined_getter` e `const_with_non_constant_argument`.
+- O botão **Mapas offline** usa `Icons.download_for_offline_outlined`, já utilizado em outros pontos da mesma tela e reconhecido pelo SDK do workflow.
+- `tool/verify_project.sh` passa a rejeitar o identificador inválido para evitar regressão antes do próximo build.
+- Nenhum fluxo de GPS, percurso, orientação, POIs ou câmeras foi removido nesta correção.
 
 ### Evolução 1.0.127 — visão à frente e orientação do mapa
 

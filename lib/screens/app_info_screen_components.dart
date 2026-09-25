@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.127',
+          version: '1.0.128',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-95 que parava no flutter analyze por usar Icons.offline_map_rounded, inexistente no Flutter 3.44.9.',
+            'O botão Mapas offline passa a usar download_for_offline_outlined, já compatível com a versão estável usada no workflow.',
+            'Verificação preventiva passa a rejeitar o identificador de ícone inválido antes de uma nova tentativa de build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.127',
           changes: [
             'Mapa ganha visão à frente: ao seguir o GPS, o usuário fica abaixo do centro para mostrar mais estrada no sentido do deslocamento.',
             'Novo controle alterna Norte fixo e acompanhamento por direção, com rotação suavizada por dead-zone e sem tremedeira quando parado.',
@@ -1172,8 +1181,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.127',
+          version: '1.0.128',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-95 que parava no flutter analyze por usar Icons.offline_map_rounded, inexistente no Flutter 3.44.9.',
+            'O botão Mapas offline passa a usar download_for_offline_outlined, já compatível com a versão estável usada no workflow.',
+            'Verificação preventiva passa a rejeitar o identificador de ícone inválido antes de uma nova tentativa de build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.127',
           changes: [
             'Mapa ganha visão à frente: ao seguir o GPS, o usuário fica abaixo do centro para mostrar mais estrada no sentido do deslocamento.',
             'Novo controle alterna Norte fixo e acompanhamento por direção, com rotação suavizada por dead-zone e sem tremedeira quando parado.',

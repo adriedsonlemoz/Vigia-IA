@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.127 evolui a câmera do mapa: visão à frente com usuário abaixo do centro, Norte fixo ou acompanhamento por direção e atalhos Perto/Região/Rota.",
-  "version": "1.0.127",
-  "build": 127
+  "notes": "A 1.0.128 corrige o build Android-APK-95: substitui o ícone inexistente offline_map_rounded por um Material Icon compatível com Flutter 3.44.9 e adiciona verificação preventiva.",
+  "version": "1.0.128",
+  "build": 128
 }

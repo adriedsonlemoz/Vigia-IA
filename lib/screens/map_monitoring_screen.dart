@@ -961,7 +961,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       Navigator.of(sheetContext).pop();
                       unawaited(_openOfflineMaps());
                     },
-                    icon: const Icon(Icons.offline_map_rounded),
+                    icon: const Icon(Icons.download_for_offline_outlined),
                     label: const Text('Mapas offline'),
                   ),
                   const SizedBox(height: 8),

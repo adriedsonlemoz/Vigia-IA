@@ -1,3 +1,10 @@
+## 1.0.128+128 — buildfix Android-APK-95
+
+- `flutter analyze` do workflow com Flutter 3.44.9 apontou exatamente dois erros, ambos originados pela referência inexistente `Icons.offline_map_rounded` em `map_monitoring_screen.dart`.
+- A referência foi substituída por `Icons.download_for_offline_outlined`.
+- `tool/verify_project.sh` agora falha caso `Icons.offline_map_rounded` reapareça.
+- Os validadores locais disponíveis devem ser executados novamente após a correção; `flutter analyze`, `flutter test` e o build Android dependem do SDK Flutter/Android quando ele não estiver instalado no ambiente local.
+
 ## 1.0.127+127 — visão à frente, orientação e enquadramentos rápidos
 
 - Com GPS válido, abrir o mapa e confirmar que **Perto** segue a posição com o marcador abaixo do centro, deixando mais mapa visível à frente.

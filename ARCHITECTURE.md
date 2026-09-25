@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.127+127
+# Arquitetura — Vigia IA 1.0.128+128
+
+## Correção 1.0.128 — compatibilidade de Material Icons
+
+- O build Android-APK-95 confirmou no Flutter 3.44.9 que `Icons.offline_map_rounded` não pertence ao catálogo Material disponível no SDK.
+- A UI do mapa mantém a mesma ação e substitui apenas o símbolo por `Icons.download_for_offline_outlined`, já usado em outra ação da tela.
+- A verificação estática do projeto passa a bloquear o identificador inválido antes do workflow, sem adicionar dependências ou alterar a arquitetura do mapa.
+
 
 ## Evolução 1.0.127 — política de câmera e visão à frente
 
