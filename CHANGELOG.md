@@ -1,3 +1,11 @@
+## 1.0.147+147 — 2026-09-25
+
+- Buildfix do Android-APK-110: corrigido erro de análise estática em `map_navigation_voice_policy.dart`, onde um `int?` era capturado por closure e enviado a uma comparação que exigia `num`.
+- `map_monitoring_offline_support.dart` deixa de chamar `State.setState` diretamente pela extension; as atualizações de UI passam por um helper pertencente ao próprio `State`.
+- Removida asserção não nula redundante no provider MBTiles e ajustada a inicialização do catálogo de Novidades para eliminar os avisos reportados pelo analyzer.
+- Nenhuma funcionalidade nova foi adicionada; navegação, voz, POIs, offline e revisão visual permanecem com o comportamento da 1.0.146.
+- Versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION e User-Agents sincronizados em `1.0.147+147`.
+
 ## 1.0.146+146 — 2026-09-25
 
 - Offline aprimorado no mapa com `MapConnectivityService`, sondagem leve enquanto a tela está ativa e recuperação automática após retorno da conexão.

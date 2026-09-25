@@ -7,6 +7,14 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.147', build: 147),
+      changes: <String>[
+        '🔧 Buildfix do Android-APK-110 para restaurar a análise estática do projeto.',
+        '🗣️ Corrigida a nulabilidade na política de avisos de navegação por voz.',
+        '📴 Ajustes técnicos do suporte offline eliminam avisos do analyzer sem mudar o comportamento.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.146', build: 146),
       changes: <String>[
         '📴 Navegação agora entra em fallback offline sem apagar a última rota conhecida.',

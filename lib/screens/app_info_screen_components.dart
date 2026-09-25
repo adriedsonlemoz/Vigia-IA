@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.146',
+          version: '1.0.147',
           current: true,
+          changes: [
+            'Buildfix do Android-APK-110: corrigida a nulabilidade na política de voz que bloqueava o flutter analyze.',
+            'Suporte offline deixa de chamar setState diretamente pela extension, eliminando avisos de membro protegido.',
+            'Removidos avisos estáticos redundantes sem alterar navegação, POIs, offline ou layout do mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.146',
           changes: [
             'Navegação preserva a última rota viária conhecida quando a internet cai e deixa claro quando só há direção ao destino.',
             'POIs offline entram imediatamente durante perda de conexão e a busca online volta automaticamente após recuperação.',
@@ -1351,8 +1360,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.146',
+          version: '1.0.147',
           current: true,
+          changes: [
+            'Buildfix do Android-APK-110: corrigida a nulabilidade na política de voz que bloqueava o flutter analyze.',
+            'Suporte offline deixa de chamar setState diretamente pela extension, eliminando avisos de membro protegido.',
+            'Removidos avisos estáticos redundantes sem alterar navegação, POIs, offline ou layout do mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.146',
           changes: [
             'Navegação preserva a última rota viária conhecida quando a internet cai e deixa claro quando só há direção ao destino.',
             'POIs offline entram imediatamente durante perda de conexão e a busca online volta automaticamente após recuperação.',

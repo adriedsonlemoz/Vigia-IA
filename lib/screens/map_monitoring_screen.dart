@@ -185,6 +185,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   static const String _mapLocalBackCameraId = '__map_local_back__';
 
+  void _applyOfflineUiState(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+  }
+
   Future<void> _initializeCameraOverlays() async {
     await Future.wait<void>([
       _cameraOverlaySettings.initialize(),
@@ -2595,7 +2600,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       key: ValueKey<String>(
                         'offline-${_offlineTilePackageId ?? 'active'}',
                       ),
-                      tileProvider: offlineProvider!,
+                      tileProvider: offlineProvider,
                       tileDisplay: TileDisplay.instantaneous(opacity: 1),
                       minNativeZoom: _offlineMinNativeZoom,
                       maxNativeZoom: _offlineMaxNativeZoom,

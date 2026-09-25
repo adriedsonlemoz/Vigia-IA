@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.146+146`
+> **Versão atual:** `1.0.147+147`
 
 ## Estado atual
 
-A `1.0.146+146` reúne **offline aprimorado + revisão visual do mapa**. Durante navegação, a queda da internet preserva a última rota viária conhecida, ativa POIs/mapa offline quando disponíveis e tenta recuperar rota/POIs automaticamente quando a conexão volta. O HUD, controles, filtros, banner e PiPs também ficaram mais compactos para liberar área útil.
+A `1.0.147+147` é um **buildfix do Android-APK-110**. Corrige a nulabilidade na política de voz e os avisos estáticos introduzidos pelo módulo offline, sem alterar as funcionalidades entregues na 1.0.146.
+
+### Correção 1.0.147 — Android-APK-110
+
+- `MapNavigationVoicePolicy` captura o marco selecionado em uma variável não nula antes do filtro, removendo o erro `int?` → `num` apontado pelo analyzer.
+- O módulo `map_monitoring_offline_support.dart` passa a solicitar atualizações de UI por um método do próprio `State`, em vez de chamar o método protegido `setState` diretamente pela extension.
+- Removidos a asserção `!` redundante do provider offline e o aviso de inicialização do catálogo de Novidades, sem mudança funcional.
 
 ### Evolução 1.0.146 — offline aprimorado + revisão visual do mapa
 

@@ -1,4 +1,17 @@
-# Validação Vigia IA 1.0.146+146
+# Validação Vigia IA 1.0.147+147
+
+## 1.0.147+147 — buildfix Android-APK-110
+
+- Confirmar que `lib/services/map_navigation_voice_policy.dart` não captura mais `threshold` anulável dentro do filtro após a checagem de nulo.
+- Confirmar que `map_monitoring_offline_support.dart` não chama `setState` diretamente e continua atualizando conectividade, fallback e recuperação de rota pelo `State` proprietário.
+- Confirmar ausência da asserção `offlineProvider!` redundante e preservação do mesmo provider MBTiles.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Executar `flutter analyze`; o Android-APK-110 falhou com 1 erro e 5 avisos relevantes a esta correção.
+- Executar `flutter test` e build Android no workflow para confirmar regressão zero.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- `.github/workflows` permanece byte a byte igual ao da 1.0.146; nenhum APK/AAB está presente no fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente, portanto `flutter analyze`, `flutter test` e build Android precisam ser reconfirmados no workflow.
+
 
 
 ## 1.0.146+146 — offline aprimorado + revisão visual do mapa

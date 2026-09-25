@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.146+146
+# Arquitetura — Vigia IA 1.0.147+147
+
+## Buildfix Android-APK-110 — 1.0.147
+
+- A política de voz mantém o mesmo comportamento, mas o limiar escolhido é copiado para um local não anulável antes de ser capturado pela closure de deduplicação.
+- A extension de suporte offline não acessa mais diretamente o método protegido `State.setState`; ela delega a atualização de UI a `_applyOfflineUiState`, pertencente ao `State` da tela.
+- A camada MBTiles usa a promoção de nulabilidade já garantida por `useOfflineLayer`, sem `!` redundante.
+- O catálogo do sistema de Novidades preserva o parâmetro público `catalog` e usa initializing formal, eliminando o lint sem alterar a API dos testes.
+
 
 ## Offline aprimorado + revisão visual do mapa 1.0.146
 

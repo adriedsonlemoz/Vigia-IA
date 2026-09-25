@@ -6,7 +6,7 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
     final previous = _lastConnectivityState;
     final current = _connectivity.state;
     _lastConnectivityState = current;
-    setState(() {});
+    _applyOfflineUiState(() {});
 
     if (current.isOffline) {
       unawaited(
@@ -45,7 +45,7 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
       recalculation: recalculation,
     );
     if (mounted) {
-      setState(() => _routeFallback = decision);
+      _applyOfflineUiState(() => _routeFallback = decision);
     } else {
       _routeFallback = decision;
     }
@@ -88,7 +88,7 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
       return;
     }
 
-    setState(() => _routeRecoveryBusy = true);
+    _applyOfflineUiState(() => _routeRecoveryBusy = true);
     try {
       await _requestCyclingRoute(
         origin: LatLng(current.latitude, current.longitude),
@@ -98,7 +98,7 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
         recalculation: _cyclingRoute != null,
       );
     } finally {
-      if (mounted) setState(() => _routeRecoveryBusy = false);
+      if (mounted) _applyOfflineUiState(() => _routeRecoveryBusy = false);
     }
   }
 

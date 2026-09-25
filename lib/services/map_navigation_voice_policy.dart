@@ -74,9 +74,10 @@ class MapNavigationVoicePolicy {
       }
     }
     if (threshold == null) return null;
+    final selectedThreshold = threshold;
 
     final lastAt = _lastManeuverAnnouncementAt;
-    final urgent = threshold <= 80;
+    final urgent = selectedThreshold <= 80;
     if (!urgent &&
         lastAt != null &&
         currentTime.difference(lastAt) < minimumManeuverGap) {
@@ -84,7 +85,7 @@ class MapNavigationVoicePolicy {
     }
 
     _announcedThresholds.addAll(
-      maneuverThresholdsMeters.where((candidate) => candidate >= threshold),
+      maneuverThresholdsMeters.where((candidate) => candidate >= selectedThreshold),
     );
     _lastManeuverAnnouncementAt = currentTime;
     return MapNavigationVoiceAnnouncement(

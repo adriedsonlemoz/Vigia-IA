@@ -74,16 +74,15 @@ class NativeInstalledVersionProvider implements InstalledVersionProvider {
 
 class UpdateNewsService {
   UpdateNewsService({
-    UpdateNewsCatalog catalog = UpdateNewsCatalog.current,
+    this.catalog = UpdateNewsCatalog.current,
     UpdateNewsStore? store,
     InstalledVersionProvider? versionProvider,
-  })  : _catalog = catalog,
-        _store = store ?? FileUpdateNewsStore(),
+  })  : _store = store ?? FileUpdateNewsStore(),
         _versionProvider = versionProvider ?? const NativeInstalledVersionProvider();
 
   static final UpdateNewsService instance = UpdateNewsService();
 
-  final UpdateNewsCatalog _catalog;
+  final UpdateNewsCatalog catalog;
   final UpdateNewsStore _store;
   final InstalledVersionProvider _versionProvider;
 
@@ -98,7 +97,7 @@ class UpdateNewsService {
       );
     }
 
-    final unseen = _catalog.unseenReleases(
+    final unseen = catalog.unseenReleases(
       installed: installed,
       lastShown: lastShown,
     );

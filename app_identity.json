@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.146 combina offline aprimorado com revisão visual do mapa: fallback seguro durante navegação, recuperação automática da rede, POIs offline imediatos e HUD/PiPs mais compactos.",
-  "version": "1.0.146",
-  "build": 146
+  "notes": "A 1.0.147 é um buildfix do Android-APK-110: corrige a nulabilidade da política de voz e elimina avisos estáticos introduzidos pelo suporte offline, sem alterar funcionalidades.",
+  "version": "1.0.147",
+  "build": 147
 }
