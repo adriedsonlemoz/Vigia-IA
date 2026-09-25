@@ -1,3 +1,14 @@
+## 1.0.130+130 — 2026-09-25
+
+- Mapa passa a gerenciar até duas câmeras diretamente, com seleção de fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e reutilização das câmeras já abertas pelo Monitor.
+- Home e Monitor usam a mesma experiência `MapMonitoringScreen`; abrir o mapa pela Home não deixa mais a função de câmera sem fonte selecionável.
+- PiPs agora permitem trocar fonte, minimizar, ocultar individualmente, alternar tamanho e encaixar nos cantos; layout visual é persistido em `map_camera_overlay_settings.json`.
+- Fontes abertas só para o mapa usam `SecondaryCameraController` sem pipeline de IA e são suspensas ao minimizar, ocultar ou colocar o app em background.
+- `MapRouteService` remove notificações globais de 1 Hz do cronômetro; o tempo do percurso passa a atualizar em widget isolado, reduzindo rebuilds do `FlutterMap`.
+- GPS contínuo passa a ter contagem de consumidores entre Monitor e mapa, sendo liberado quando ocioso sem interromper gravação de percurso ou navegação ativa.
+- `RouteExplorerService` deixa de recalcular distâncias em notificações sem novo ponto GPS; desenho de percursos longos limita os pontos apenas na camada visual, preservando a rota completa.
+- Teste `map_camera_overlay_settings_test.dart` cobre serialização e limites do layout dos PiPs; documentação/metadados sincronizados em `1.0.130+130`.
+
 ## 1.0.129+129 — 2026-09-25
 
 - Adicionadas camadas/tipos de mapa Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, com seleção persistente e provedores configuráveis sem serviço pago obrigatório.

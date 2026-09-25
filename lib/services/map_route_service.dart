@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/map_navigation_target.dart';
@@ -12,8 +13,10 @@ import 'map_gps_filter.dart';
 
 enum MonitorMapVisibilityMode { automatic, always, hidden }
 
-class MapRouteService extends ChangeNotifier {
-  MapRouteService._();
+class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
+  MapRouteService._() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   static const double maximumContinuousStepMeters = 250;
   static const int persistenceSchema = 3;
@@ -26,7 +29,6 @@ class MapRouteService extends ChangeNotifier {
   final List<int> _segmentStarts = <int>[];
 
   StreamSubscription<MapRoutePoint>? _positionSubscription;
-  Timer? _elapsedTimer;
   Timer? _persistDebounce;
   Future<void>? _initializing;
   File? _file;
@@ -46,6 +48,8 @@ class MapRouteService extends ChangeNotifier {
   Duration _pausedDuration = Duration.zero;
   double _distanceMeters = 0;
   int _rejectedGpsPoints = 0;
+  final Set<Object> _locationConsumers = <Object>{};
+  bool _passiveLocationSuspended = false;
   MapGpsRejectionReason? _lastGpsRejectionReason;
   DateTime? _lastGpsRejectedAt;
   MonitorMapVisibilityMode _monitorVisibility =
@@ -111,6 +115,55 @@ class MapRouteService extends ChangeNotifier {
     return point.accuracyMeters <= 50 && point.speedKilometersPerHour >= 4;
   }
 
+  int get locationConsumers => _locationConsumers.length;
+
+  Future<void> acquireLocationConsumer(
+    Object consumer, {
+    bool requestPermission = false,
+  }) async {
+    final added = _locationConsumers.add(consumer);
+    try {
+      await initialize(requestPermission: requestPermission);
+    } catch (_) {
+      if (added) _locationConsumers.remove(consumer);
+      rethrow;
+    }
+  }
+
+  void releaseLocationConsumer(Object consumer) {
+    _locationConsumers.remove(consumer);
+    releaseLocationIfIdle();
+  }
+
+  void releaseLocationIfIdle() {
+    if (_locationConsumers.isNotEmpty || _tracking || navigating) return;
+    final subscription = _positionSubscription;
+    _positionSubscription = null;
+    if (subscription != null) unawaited(subscription.cancel());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_passiveLocationSuspended && _locationConsumers.isNotEmpty) {
+        _passiveLocationSuspended = false;
+        unawaited(ensureLocation(requestPermission: false));
+      }
+      return;
+    }
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      if (!_tracking && !navigating && _positionSubscription != null) {
+        _passiveLocationSuspended = true;
+        final subscription = _positionSubscription;
+        _positionSubscription = null;
+        if (subscription != null) unawaited(subscription.cancel());
+      }
+    }
+  }
+
   Future<void> initialize({bool requestPermission = false}) {
     final pending = _initializing;
     if (pending != null) return pending;
@@ -125,7 +178,6 @@ class MapRouteService extends ChangeNotifier {
       _file = File('${root.path}${Platform.pathSeparator}map_route_state.json');
       await _restore();
       _initialized = true;
-      if (_tracking) _startElapsedTicker();
     }
     await ensureLocation(requestPermission: requestPermission);
   }
@@ -149,6 +201,7 @@ class MapRouteService extends ChangeNotifier {
       _positionSubscription = null;
       return availability;
     }
+    _passiveLocationSuspended = false;
 
     try {
       final point = await _location.currentPosition();
@@ -194,7 +247,6 @@ class MapRouteService extends ChangeNotifier {
     _paused = false;
     _startNewSegmentOnNextPoint = false;
     _tracking = true;
-    _startElapsedTicker();
     notifyListeners();
     await _persistNow();
     return true;
@@ -232,10 +284,9 @@ class MapRouteService extends ChangeNotifier {
     _tracking = false;
     _end = _route.isNotEmpty ? _route.last : _current;
     _routeEndedAt = DateTime.now();
-    _elapsedTimer?.cancel();
-    _elapsedTimer = null;
     notifyListeners();
     await _persistNow();
+    releaseLocationIfIdle();
   }
 
   /// Compatibilidade com chamadas antigas. Novas telas devem usar a
@@ -262,6 +313,7 @@ class MapRouteService extends ChangeNotifier {
     _navigationTarget = null;
     notifyListeners();
     await _persistNow();
+    releaseLocationIfIdle();
   }
 
   double? get navigationDistanceMeters {
@@ -309,8 +361,6 @@ class MapRouteService extends ChangeNotifier {
     _pauseStartedAt = null;
     _pausedDuration = Duration.zero;
     _startNewSegmentOnNextPoint = false;
-    _elapsedTimer?.cancel();
-    _elapsedTimer = null;
     notifyListeners();
     await _persistNow();
   }
@@ -417,13 +467,6 @@ class MapRouteService extends ChangeNotifier {
       }
     }
     notifyListeners();
-  }
-
-  void _startElapsedTicker() {
-    _elapsedTimer?.cancel();
-    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_tracking) notifyListeners();
-    });
   }
 
   void _schedulePersist() {

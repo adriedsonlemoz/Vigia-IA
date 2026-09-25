@@ -2,7 +2,10 @@ part of 'monitor_screen.dart';
 
 extension _MonitorLandscapeDashboard on _MonitorScreenState {
   Future<void> _initializeMiniMap({required bool requestPermission}) async {
-    await _mapRoute.initialize(requestPermission: requestPermission);
+    await _mapRoute.acquireLocationConsumer(
+      this,
+      requestPermission: requestPermission,
+    );
     if (mounted) _updateMulticameraState(() {});
   }
 

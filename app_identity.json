@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.129 integra camadas/tipos de mapa e pacotes regionais de Próximos pontos offline, com card compacto de POI e atualização automática durante deslocamento mesmo sem gravação.",
-  "version": "1.0.129",
-  "build": 129
+  "notes": "A 1.0.130 integra seleção completa de câmeras sobre o mapa e otimizações para uso prolongado: PiPs persistentes, suspensão inteligente, GPS por consumidores, cronômetro isolado e rota visual decimada.",
+  "version": "1.0.130",
+  "build": 130
 }

@@ -49,6 +49,7 @@ class RouteExplorerService extends ChangeNotifier {
   MapRoutePoint? _lastSearchOrigin;
   DateTime? _lastAutomaticSearchAt;
   double? _lastSearchHeadingDegrees;
+  DateTime? _lastHandledRoutePointAt;
   bool _automaticRefreshScheduled = false;
 
   bool get initialized => _initialized;
@@ -317,6 +318,7 @@ class RouteExplorerService extends ChangeNotifier {
     } finally {
       _loading = false;
       notifyListeners();
+      _routeState.releaseLocationIfIdle();
     }
   }
 
@@ -434,7 +436,8 @@ class RouteExplorerService extends ChangeNotifier {
 
   void _handleRouteChanged() {
     final point = _routeState.current;
-    if (point == null) return;
+    if (point == null || point.recordedAt == _lastHandledRoutePointAt) return;
+    _lastHandledRoutePointAt = point.recordedAt;
     if (_results.isNotEmpty) {
       _results = _recalculateDistances(
         _results,
@@ -515,7 +518,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.129');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.130');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );

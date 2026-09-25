@@ -2,9 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.129+129`
+> **Versão atual:** `1.0.130+130`
 
 ## Estado atual
+
+A `1.0.130+130` fecha os blocos de câmeras sobre o mapa e desempenho para uso prolongado, unificando Home/Monitor na mesma experiência de mapa e reduzindo trabalho contínuo de câmera, GPS, POIs e desenho de percurso.
+
+### Evolução 1.0.130 — câmeras no mapa + desempenho
+
+- o mapa passa a gerenciar até dois PiPs próprios e também reutiliza as visualizações já abertas pelo Monitor, sem duplicar o pipeline de IA;
+- seletor de fonte disponível dentro do mapa para traseira/local, frontal, RTSP, celular remoto, ESP32 e fontes cadastradas na Central multicâmera;
+- cada PiP pode trocar fonte, minimizar, ocultar, alternar tamanho e encaixar no canto mais próximo; posição, tamanho e estado visual ficam persistidos;
+- fontes abertas exclusivamente pelo mapa são suspensas quando minimizadas, ocultas ou quando o app vai para background e retomadas somente quando necessário;
+- Home e Monitor continuam abrindo `MapMonitoringScreen`, mas agora a Home não depende de câmera previamente injetada para usar os PiPs;
+- `MapRouteService` deixa de notificar a árvore inteira a cada segundo apenas pelo cronômetro; o tempo fica em um widget isolado;
+- GPS contínuo passa a usar contagem de consumidores e pode ser liberado quando nenhuma tela precisa dele e não há gravação/navegação ativa;
+- `RouteExplorerService` ignora notificações sem nova posição GPS e percursos longos são reduzidos apenas para renderização, preservando os dados completos para GPX/histórico;
+- adicionados testes do layout persistente dos PiPs e verificações preventivas da integração de câmera/desempenho.
 
 A `1.0.129+129` fecha dois blocos do redesign do mapa: camadas/tipos de mapa com controles reorganizados e Próximos pontos com pacotes offline regionais, card compacto de seleção e atualização automática durante o deslocamento.
 

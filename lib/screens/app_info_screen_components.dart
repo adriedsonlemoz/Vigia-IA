@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.129',
+          version: '1.0.130',
           current: true,
+          changes: [
+            'Mapa passa a gerenciar duas câmeras diretamente: fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e câmeras já abertas pelo Monitor.',
+            'PiPs podem trocar fonte, minimizar, ocultar, alternar tamanho e encaixar nos cantos; posição, tamanho e estado visual ficam persistidos.',
+            'Fontes abertas só pelo mapa são suspensas ao minimizar, ocultar ou mandar o app ao fundo, sem interromper a câmera de IA já usada pelo Monitor.',
+            'Desempenho do mapa melhora com cronômetro isolado, GPS por consumidores, recálculo de POIs apenas em GPS novo e redução visual de percursos muito longos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.129',
           changes: [
             'Mapa ganha camadas Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, preservando OSM como opção gratuita e usando a chave Stadia existente apenas quando necessária.',
             'Controles são reorganizados: funções secundárias passam para Opções, reduzindo a coluna permanente sem esconder Próximos pontos, offline e configurações.',
@@ -1191,8 +1201,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.129',
+          version: '1.0.130',
           current: true,
+          changes: [
+            'Mapa passa a gerenciar duas câmeras diretamente: fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e câmeras já abertas pelo Monitor.',
+            'PiPs podem trocar fonte, minimizar, ocultar, alternar tamanho e encaixar nos cantos; posição, tamanho e estado visual ficam persistidos.',
+            'Fontes abertas só pelo mapa são suspensas ao minimizar, ocultar ou mandar o app ao fundo, sem interromper a câmera de IA já usada pelo Monitor.',
+            'Desempenho do mapa melhora com cronômetro isolado, GPS por consumidores, recálculo de POIs apenas em GPS novo e redução visual de percursos muito longos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.129',
           changes: [
             'Mapa ganha camadas Padrão, Bike/Viagem, Terreno, Topográfico e Satélite, preservando OSM como opção gratuita e usando a chave Stadia existente apenas quando necessária.',
             'Controles são reorganizados: funções secundárias passam para Opções, reduzindo a coluna permanente sem esconder Próximos pontos, offline e configurações.',

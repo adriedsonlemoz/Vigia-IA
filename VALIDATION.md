@@ -1,3 +1,15 @@
+## 1.0.130+130 — câmeras no mapa + desempenho
+
+- `python3 tool/check_version_sync.py`: deve confirmar `1.0.130+130` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.
+- `bash tool/verify_project.sh`: deve confirmar serviço persistente dos PiPs, seleção de fontes dentro do mapa, reutilização das câmeras do Monitor, suspensão de câmeras internas, GPS por consumidores, ausência do ticker global de 1 Hz e redução visual de rotas longas.
+- Abrir **Mapa** diretamente pela Home e selecionar câmera traseira/local, frontal, RTSP/celular/ESP32 cadastrado; confirmar que não é necessário entrar primeiro no Monitor.
+- Abrir o mapa pelo Monitor e confirmar que **Câmera atual do Monitor** pode ser reutilizada sem abrir outro pipeline de IA; trocar um PiP por outra fonte não deve mudar a fonte principal analisada pelo Monitor.
+- Com dois PiPs, arrastar cada um e confirmar encaixe no canto mais próximo; alternar tamanho, minimizar e ocultar individualmente; fechar/reabrir o mapa e confirmar persistência do layout.
+- Em PiP interno, minimizar/ocultar e confirmar suspensão da fonte; restaurar e confirmar retomada. Colocar o app em background sem gravação/navegação e confirmar liberação das fontes internas e do GPS passivo.
+- Gravar percurso com o mapa aberto e confirmar que o tempo continua atualizando sem recentralização/rebuild global a cada segundo; percurso longo deve continuar exportando todos os pontos no GPX embora a polyline visual seja reduzida.
+- `test/map_camera_overlay_settings_test.dart` cobre serialização, persistência lógica e clamp de posição/tamanho.
+- `flutter analyze`, `flutter test` e build Android continuam condicionados à disponibilidade do Flutter/Android SDK no ambiente local e devem ser reconfirmados pelo workflow.
+
 ## 1.0.129+129 — camadas + pacotes offline de POIs
 
 - `python3 tool/check_version_sync.py`: deve confirmar `1.0.129+129` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.

@@ -7,11 +7,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../controllers/secondary_camera_controller.dart';
+import '../models/camera_endpoint.dart';
 import '../models/map_navigation_target.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
 import '../models/route_explorer_models.dart';
+import '../models/video_source_config.dart';
+import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
+import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_route_service.dart';
 import '../services/map_view_policy.dart';
@@ -33,6 +38,7 @@ class MapMonitoringScreen extends StatefulWidget {
     this.cameraAspectRatio,
     this.cameraListenable,
     this.cameraAspectRatioProvider,
+    this.externalCameraSourceProvider,
     this.secondaryCameraPreviewBuilder,
     this.secondaryCameraListenable,
     this.secondaryCameraAspectRatioProvider,
@@ -43,6 +49,7 @@ class MapMonitoringScreen extends StatefulWidget {
   final double? cameraAspectRatio;
   final Listenable? cameraListenable;
   final double? Function()? cameraAspectRatioProvider;
+  final VideoSourceConfig? Function(bool secondary)? externalCameraSourceProvider;
   final WidgetBuilder? secondaryCameraPreviewBuilder;
   final Listenable? secondaryCameraListenable;
   final double? Function()? secondaryCameraAspectRatioProvider;
@@ -52,7 +59,8 @@ class MapMonitoringScreen extends StatefulWidget {
   State<MapMonitoringScreen> createState() => _MapMonitoringScreenState();
 }
 
-class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
+class _MapMonitoringScreenState extends State<MapMonitoringScreen>
+    with WidgetsBindingObserver {
   final MapController _mapController = MapController();
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
@@ -60,6 +68,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   final NativePlatformService _native = NativePlatformService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
+  final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
+  final MapCameraOverlaySettingsService _cameraOverlaySettings =
+      MapCameraOverlaySettingsService.instance;
+
+  SecondaryCameraController? _primaryMapCamera;
+  SecondaryCameraController? _secondaryMapCamera;
+  bool _primaryUsesExternal = false;
+  bool _secondaryUsesExternal = false;
+  MapCameraSlotLayout _primaryCameraLayout = const MapCameraSlotLayout(yFraction: 0.20);
+  MapCameraSlotLayout _secondaryCameraLayout = const MapCameraSlotLayout(
+    yFraction: 0.48,
+  );
+  bool _appActive = true;
 
   MbTilesTileProvider? _offlineTileProvider;
   String? _offlineTilePackageId;
@@ -83,23 +104,540 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _primaryUsesExternal = widget.cameraPreviewBuilder != null;
+    _secondaryUsesExternal = widget.secondaryCameraPreviewBuilder != null;
     _offlineMaps.addListener(_onOfflineMapsChanged);
     _routeState.addListener(_onRouteStateChanged);
     _routeExplorer.addListener(_onRouteExplorerChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     unawaited(_initializeOfflineMaps());
+    unawaited(_initializeCameraOverlays());
     unawaited(_initialize());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _primaryMapCamera?.dispose();
+    _secondaryMapCamera?.dispose();
+    _routeState.releaseLocationConsumer(this);
     _offlineMaps.removeListener(_onOfflineMapsChanged);
     _routeState.removeListener(_onRouteStateChanged);
     _routeExplorer.removeListener(_onRouteExplorerChanged);
     _offlineTileProvider?.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  static const String _mapLocalBackCameraId = '__map_local_back__';
+
+  Future<void> _initializeCameraOverlays() async {
+    await Future.wait<void>([
+      _cameraOverlaySettings.initialize(),
+      _cameraRegistry.initialize(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _primaryCameraLayout = _cameraOverlaySettings.primary;
+      _secondaryCameraLayout = _cameraOverlaySettings.secondary;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final active = state == AppLifecycleState.resumed;
+    _appActive = active;
+    if (active) {
+      unawaited(_resumeVisibleInternalCameras());
+      return;
+    }
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      unawaited(_primaryMapCamera?.suspend());
+      unawaited(_secondaryMapCamera?.suspend());
+    }
+  }
+
+  Future<void> _resumeVisibleInternalCameras() async {
+    if (!_appActive || !_camerasVisible) return;
+    if (!_primaryUsesExternal &&
+        !_primaryCameraLayout.hidden &&
+        !_primaryCameraLayout.minimized) {
+      await _primaryMapCamera?.resume();
+    }
+    if (!_secondaryUsesExternal &&
+        !_secondaryCameraLayout.hidden &&
+        !_secondaryCameraLayout.minimized) {
+      await _secondaryMapCamera?.resume();
+    }
+  }
+
+  VideoSourceConfig _sourceForEndpoint(CameraEndpoint camera) =>
+      switch (camera.type) {
+        CameraEndpointType.local => VideoSourceConfig(
+            type: VideoSourceType.localCamera,
+            displayName: camera.name,
+            cameraId: camera.id,
+          ),
+        CameraEndpointType.rtsp => VideoSourceConfig(
+            type: VideoSourceType.rtsp,
+            rtspUrl: camera.address,
+            displayName: camera.name,
+            cameraId: camera.id,
+          ),
+        CameraEndpointType.remotePhone => VideoSourceConfig(
+            type: VideoSourceType.remotePhone,
+            remoteBaseUrl: camera.address,
+            remoteAccessKey: camera.accessKey,
+            displayName: camera.name,
+            cameraId: camera.id,
+          ),
+        CameraEndpointType.esp32 => VideoSourceConfig(
+            type: VideoSourceType.esp32,
+            remoteBaseUrl: camera.address,
+            remoteAccessKey: camera.accessKey,
+            displayName: camera.name,
+            cameraId: camera.id,
+          ),
+      };
+
+  VideoSourceConfig get _localBackSource => const VideoSourceConfig(
+        type: VideoSourceType.localCamera,
+        displayName: 'Traseira / local',
+        cameraId: _mapLocalBackCameraId,
+        analysisInterval: Duration(milliseconds: 800),
+      );
+
+  VideoSourceConfig get _frontCameraSource => const VideoSourceConfig(
+        type: VideoSourceType.localCamera,
+        displayName: 'Câmera frontal',
+        cameraId: frontCameraTestId,
+        analysisInterval: Duration(milliseconds: 800),
+      );
+
+  bool _sameCameraSource(VideoSourceConfig? first, VideoSourceConfig? second) {
+    if (first == null || second == null || first.type != second.type) {
+      return false;
+    }
+    if (first.type == VideoSourceType.localCamera) {
+      if (first.isFrontCameraTest || second.isFrontCameraTest) {
+        return first.isFrontCameraTest && second.isFrontCameraTest;
+      }
+      return true;
+    }
+    if (first.cameraId != null && second.cameraId != null) {
+      return first.cameraId == second.cameraId;
+    }
+    return switch (first.type) {
+      VideoSourceType.localCamera => true,
+      VideoSourceType.rtsp => first.rtspUrl == second.rtspUrl,
+      VideoSourceType.remotePhone => first.remoteBaseUrl == second.remoteBaseUrl,
+      VideoSourceType.esp32 => first.remoteBaseUrl == second.remoteBaseUrl,
+    };
+  }
+
+  VideoSourceConfig? _activeCameraConfig(bool secondary) {
+    if (secondary) {
+      return _secondaryUsesExternal
+          ? widget.externalCameraSourceProvider?.call(true)
+          : _secondaryMapCamera?.sourceConfig;
+    }
+    return _primaryUsesExternal
+        ? widget.externalCameraSourceProvider?.call(false)
+        : _primaryMapCamera?.sourceConfig;
+  }
+
+  String _activeCameraLabel(bool secondary) {
+    if (secondary) {
+      if (_secondaryUsesExternal) {
+        return widget.externalCameraSourceProvider?.call(true)?.displayName ??
+            'Câmera 2 do Monitor';
+      }
+      return _secondaryMapCamera?.displayName ?? 'Câmera 2';
+    }
+    if (_primaryUsesExternal) {
+      return widget.externalCameraSourceProvider?.call(false)?.displayName ??
+          'Câmera do Monitor';
+    }
+    return _primaryMapCamera?.displayName ?? 'Câmera 1';
+  }
+
+  bool _slotHasCamera(bool secondary) {
+    if (secondary) {
+      return (_secondaryUsesExternal &&
+              widget.secondaryCameraPreviewBuilder != null) ||
+          _secondaryMapCamera != null;
+    }
+    return (_primaryUsesExternal && widget.cameraPreviewBuilder != null) ||
+        _primaryMapCamera != null;
+  }
+
+  Future<bool> _ensureCameraPermission(VideoSourceConfig source) async {
+    if (source.type != VideoSourceType.localCamera) return true;
+    final granted = await _native.requestCameraPermission();
+    if (!mounted) return false;
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permita a câmera para usar esta fonte.')),
+      );
+    }
+    return granted;
+  }
+
+  Future<void> _replaceMapCamera(
+    bool secondary,
+    VideoSourceConfig? source, {
+    bool useExternal = false,
+  }) async {
+    if (source != null && !useExternal && !await _ensureCameraPermission(source)) {
+      return;
+    }
+    final other = _activeCameraConfig(!secondary);
+    if (source != null && _sameCameraSource(source, other)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Essa fonte já está sendo exibida no outro PiP.')),
+      );
+      return;
+    }
+
+    final previous = secondary ? _secondaryMapCamera : _primaryMapCamera;
+    await previous?.suspend();
+    previous?.dispose();
+    final next = source == null || useExternal
+        ? null
+        : SecondaryCameraController(sourceConfig: source);
+    if (secondary) {
+      _secondaryMapCamera = next;
+      _secondaryUsesExternal = useExternal;
+      _secondaryCameraOffset = null;
+      _secondaryCameraLayout = _secondaryCameraLayout.copyWith(
+        hidden: source == null && !useExternal,
+        minimized: false,
+      );
+      await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
+    } else {
+      _primaryMapCamera = next;
+      _primaryUsesExternal = useExternal;
+      _primaryCameraOffset = null;
+      _primaryCameraLayout = _primaryCameraLayout.copyWith(
+        hidden: source == null && !useExternal,
+        minimized: false,
+      );
+      await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
+    }
+    if (mounted) setState(() {});
+    if (next != null && _appActive && _camerasVisible) {
+      await next.start();
+    }
+  }
+
+  Future<void> _setCameraSlotHidden(bool secondary, bool hidden) async {
+    if (secondary) {
+      _secondaryCameraLayout = _secondaryCameraLayout.copyWith(hidden: hidden);
+      await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
+      if (!_secondaryUsesExternal) {
+        if (hidden) {
+          await _secondaryMapCamera?.suspend();
+        } else if (!_secondaryCameraLayout.minimized && _appActive) {
+          await _secondaryMapCamera?.resume();
+        }
+      }
+    } else {
+      _primaryCameraLayout = _primaryCameraLayout.copyWith(hidden: hidden);
+      await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
+      if (!_primaryUsesExternal) {
+        if (hidden) {
+          await _primaryMapCamera?.suspend();
+        } else if (!_primaryCameraLayout.minimized && _appActive) {
+          await _primaryMapCamera?.resume();
+        }
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleCameraSlotMinimized(bool secondary) async {
+    final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+    final minimized = !layout.minimized;
+    if (secondary) {
+      _secondaryCameraLayout = layout.copyWith(minimized: minimized, hidden: false);
+      await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
+      if (!_secondaryUsesExternal) {
+        if (minimized) {
+          await _secondaryMapCamera?.suspend();
+        } else if (_appActive && _camerasVisible) {
+          await _secondaryMapCamera?.resume();
+        }
+      }
+    } else {
+      _primaryCameraLayout = layout.copyWith(minimized: minimized, hidden: false);
+      await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
+      if (!_primaryUsesExternal) {
+        if (minimized) {
+          await _primaryMapCamera?.suspend();
+        } else if (_appActive && _camerasVisible) {
+          await _primaryMapCamera?.resume();
+        }
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _cycleCameraSlotSize(bool secondary) async {
+    final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+    final current = layout.sizeScale;
+    final next = current < 0.9 ? 1.0 : current < 1.15 ? 1.25 : 0.78;
+    final updated = layout.copyWith(sizeScale: next, minimized: false);
+    if (secondary) {
+      _secondaryCameraLayout = updated;
+      _secondaryCameraOffset = null;
+      await _cameraOverlaySettings.saveSecondary(updated);
+    } else {
+      _primaryCameraLayout = updated;
+      _primaryCameraOffset = null;
+      await _cameraOverlaySettings.savePrimary(updated);
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _persistCameraPosition(
+    bool secondary,
+    Offset position,
+    double maxX,
+    double maxY,
+  ) async {
+    final x = maxX <= 0 ? 0.0 : (position.dx / maxX).clamp(0, 1).toDouble();
+    final y = maxY <= 0 ? 0.0 : (position.dy / maxY).clamp(0, 1).toDouble();
+    if (secondary) {
+      _secondaryCameraLayout = _secondaryCameraLayout.copyWith(
+        xFraction: x,
+        yFraction: y,
+      );
+      await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
+    } else {
+      _primaryCameraLayout = _primaryCameraLayout.copyWith(
+        xFraction: x,
+        yFraction: y,
+      );
+      await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
+    }
+  }
+
+  Future<void> _showCameraSourcePicker(bool secondary) async {
+    await _cameraRegistry.initialize();
+    if (!mounted) return;
+    final options = <VideoSourceConfig>[
+      _localBackSource,
+      _frontCameraSource,
+      ..._cameraRegistry.items
+          .where(
+            (camera) =>
+                camera.enabled &&
+                (camera.type != CameraEndpointType.esp32 ||
+                    camera.esp32CameraEnabled),
+          )
+          .map(_sourceForEndpoint),
+    ];
+    final selectedKey = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 18),
+          children: [
+            ListTile(
+              title: Text(secondary ? 'Fonte da câmera 2' : 'Fonte da câmera 1'),
+              subtitle: const Text('A IA do Monitor não é duplicada pelas câmeras abertas só para o mapa.'),
+            ),
+            if ((!secondary && widget.cameraPreviewBuilder != null) ||
+                (secondary && widget.secondaryCameraPreviewBuilder != null))
+              ListTile(
+                leading: const Icon(Icons.monitor_rounded),
+                title: Text(secondary ? 'Câmera 2 do Monitor' : 'Câmera atual do Monitor'),
+                subtitle: const Text('Reutiliza a visualização já aberta pelo Monitor.'),
+                onTap: () => Navigator.pop(sheetContext, '__external__'),
+              ),
+            for (var index = 0; index < options.length; index++)
+              ListTile(
+                leading: Icon(_videoSourceIcon(options[index])),
+                title: Text(options[index].displayName ?? 'Câmera'),
+                subtitle: Text(_videoSourceDescription(options[index])),
+                trailing: _sameCameraSource(
+                  _activeCameraConfig(secondary),
+                  options[index],
+                )
+                    ? const Icon(Icons.check_circle_rounded)
+                    : null,
+                onTap: () => Navigator.pop(sheetContext, 'source:$index'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.videocam_off_outlined),
+              title: const Text('Remover deste PiP'),
+              onTap: () => Navigator.pop(sheetContext, '__none__'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selectedKey == null || !mounted) return;
+    if (selectedKey == '__external__') {
+      await _replaceMapCamera(
+        secondary,
+        widget.externalCameraSourceProvider?.call(secondary),
+        useExternal: true,
+      );
+      return;
+    }
+    if (selectedKey == '__none__') {
+      await _replaceMapCamera(secondary, null);
+      return;
+    }
+    if (!selectedKey.startsWith('source:')) return;
+    final index = int.tryParse(selectedKey.substring(7));
+    if (index == null || index < 0 || index >= options.length) return;
+    await _replaceMapCamera(secondary, options[index]);
+  }
+
+  IconData _videoSourceIcon(VideoSourceConfig source) => switch (source.type) {
+        VideoSourceType.localCamera => source.isFrontCameraTest
+            ? Icons.face_retouching_natural_outlined
+            : Icons.camera_alt_outlined,
+        VideoSourceType.rtsp => Icons.router_outlined,
+        VideoSourceType.remotePhone => Icons.phone_android_rounded,
+        VideoSourceType.esp32 => Icons.memory_rounded,
+      };
+
+  String _videoSourceDescription(VideoSourceConfig source) => switch (source.type) {
+        VideoSourceType.localCamera => source.isFrontCameraTest
+            ? 'Frontal deste aparelho'
+            : 'Traseira/local deste aparelho',
+        VideoSourceType.rtsp => 'Câmera de rede RTSP',
+        VideoSourceType.remotePhone => 'Celular remoto',
+        VideoSourceType.esp32 => 'Câmera do ESP32',
+      };
+
+  Future<void> _showCameraManager() async {
+    await _cameraRegistry.initialize();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          Widget slotTile(bool secondary) {
+            final hasCamera = _slotHasCamera(secondary);
+            final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+            return Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(secondary ? Icons.filter_2_rounded : Icons.filter_1_rounded),
+                    title: Text(hasCamera ? _activeCameraLabel(secondary) : (secondary ? 'Câmera 2' : 'Câmera 1')),
+                    subtitle: Text(hasCamera
+                        ? (layout.hidden
+                            ? 'Oculta'
+                            : layout.minimized
+                                ? 'Minimizada · fonte suspensa quando possível'
+                                : 'Visível sobre o mapa')
+                        : 'Nenhuma fonte selecionada'),
+                    trailing: IconButton(
+                      tooltip: 'Trocar fonte',
+                      icon: const Icon(Icons.cameraswitch_outlined),
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_showCameraSourcePicker(secondary));
+                      },
+                    ),
+                  ),
+                  if (hasCamera)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () async {
+                            await _setCameraSlotHidden(secondary, !layout.hidden);
+                            setSheetState(() {});
+                          },
+                          icon: Icon(layout.hidden ? Icons.visibility_rounded : Icons.visibility_off_outlined),
+                          label: Text(layout.hidden ? 'Mostrar' : 'Ocultar'),
+                        ),
+                        TextButton.icon(
+                          onPressed: layout.hidden
+                              ? null
+                              : () async {
+                                  await _toggleCameraSlotMinimized(secondary);
+                                  setSheetState(() {});
+                                },
+                          icon: Icon(layout.minimized ? Icons.open_in_full_rounded : Icons.minimize_rounded),
+                          label: Text(layout.minimized ? 'Expandir' : 'Minimizar'),
+                        ),
+                        TextButton.icon(
+                          onPressed: layout.hidden
+                              ? null
+                              : () async {
+                                  await _cycleCameraSlotSize(secondary);
+                                  setSheetState(() {});
+                                },
+                          icon: const Icon(Icons.aspect_ratio_rounded),
+                          label: const Text('Tamanho'),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 6),
+                ],
+              ),
+            );
+          }
+
+          return SafeArea(
+            child: FractionallySizedBox(
+              heightFactor: 0.70,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+                children: [
+                  const Text(
+                    'Câmeras sobre o mapa',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Escolha fontes, oculte ou minimize cada PiP. Arrastar encaixa no canto mais próximo e posição/tamanho ficam salvos.',
+                  ),
+                  const SizedBox(height: 12),
+                  slotTile(false),
+                  slotTile(true),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    value: _camerasVisible,
+                    title: const Text('Mostrar PiPs no mapa'),
+                    subtitle: const Text('Desligar pausa apenas as fontes abertas pelo próprio mapa.'),
+                    onChanged: (value) async {
+                      setState(() => _camerasVisible = value);
+                      setSheetState(() {});
+                      if (value) {
+                        await _resumeVisibleInternalCameras();
+                      } else {
+                        await _primaryMapCamera?.suspend();
+                        await _secondaryMapCamera?.suspend();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _initializeOfflineMaps() async {
@@ -147,7 +685,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
       MapFollowViewPreset.near => _MapQuickView.near,
       MapFollowViewPreset.region => _MapQuickView.region,
     };
-    await _routeState.initialize(requestPermission: true);
+    await _routeState.acquireLocationConsumer(
+      this,
+      requestPermission: true,
+    );
     await _routeExplorer.initialize();
     if (!mounted) return;
     setState(() {});
@@ -340,22 +881,77 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     }
   }
 
+  List<List<LatLng>> _routeSegmentsForDisplay() {
+    const maximumDisplayPoints = 2200;
+    final segments = _routeState.routeSegments;
+    final totalPoints = segments.fold<int>(0, (sum, item) => sum + item.length);
+    final stride = totalPoints <= maximumDisplayPoints
+        ? 1
+        : (totalPoints / maximumDisplayPoints).ceil();
+    return segments
+        .map((segment) {
+          if (segment.length < 2) return const <LatLng>[];
+          final points = <LatLng>[];
+          for (var index = 0; index < segment.length; index += stride) {
+            final point = segment[index];
+            points.add(LatLng(point.latitude, point.longitude));
+          }
+          final last = segment.last;
+          final lastLatLng = LatLng(last.latitude, last.longitude);
+          if (points.isEmpty ||
+              points.last.latitude != lastLatLng.latitude ||
+              points.last.longitude != lastLatLng.longitude) {
+            points.add(lastLatLng);
+          }
+          return points;
+        })
+        .where((segment) => segment.length >= 2)
+        .toList(growable: false);
+  }
+
   String _formatDistance() {
     final distanceMeters = _routeState.distanceMeters;
     if (distanceMeters < 1000) return '${distanceMeters.toStringAsFixed(0)} m';
     return '${(distanceMeters / 1000).toStringAsFixed(2)} km';
   }
 
-  String _formatDuration(Duration value) {
-    final hours = value.inHours.toString().padLeft(2, '0');
-    final minutes = (value.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (value.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
+  bool get _hasCameraOverlay => _slotHasCamera(false) || _slotHasCamera(true);
+
+  WidgetBuilder? _cameraPreviewBuilderFor(bool secondary) {
+    if (secondary) {
+      if (_secondaryUsesExternal) return widget.secondaryCameraPreviewBuilder;
+      final controller = _secondaryMapCamera;
+      return controller == null ? null : (_) => controller.buildPreview();
+    }
+    if (_primaryUsesExternal) return widget.cameraPreviewBuilder;
+    final controller = _primaryMapCamera;
+    return controller == null ? null : (_) => controller.buildPreview();
   }
 
-  bool get _hasCameraOverlay =>
-      widget.cameraPreviewBuilder != null ||
-      widget.secondaryCameraPreviewBuilder != null;
+  Listenable? _cameraListenableFor(bool secondary) {
+    if (secondary) {
+      return _secondaryUsesExternal
+          ? widget.secondaryCameraListenable
+          : _secondaryMapCamera;
+    }
+    return _primaryUsesExternal ? widget.cameraListenable : _primaryMapCamera;
+  }
+
+  double? Function()? _cameraAspectRatioProviderFor(bool secondary) {
+    if (secondary) {
+      if (_secondaryUsesExternal) return widget.secondaryCameraAspectRatioProvider;
+      final controller = _secondaryMapCamera;
+      return controller == null ? null : () => controller.previewAspectRatio;
+    }
+    if (_primaryUsesExternal) return widget.cameraAspectRatioProvider;
+    final controller = _primaryMapCamera;
+    return controller == null ? null : () => controller.previewAspectRatio;
+  }
+
+  double? _cameraFallbackAspectRatioFor(bool secondary) {
+    if (secondary) return 16 / 9;
+    return _primaryUsesExternal ? widget.cameraAspectRatio : 16 / 9;
+  }
 
   List<RouteExplorerResult> get _visiblePois => _routeExplorer.results
       .where((item) => _matchesPoiFilter(item, _poiFilter))
@@ -1394,14 +1990,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
     final center = current == null
         ? const LatLng(-14.2350, -51.9253)
         : LatLng(current.latitude, current.longitude);
-    final routeSegments = _routeState.routeSegments
-        .map(
-          (segment) => segment
-              .map((point) => LatLng(point.latitude, point.longitude))
-              .toList(growable: false),
-        )
-        .where((segment) => segment.length >= 2)
-        .toList(growable: false);
+    final routeSegments = _routeSegmentsForDisplay();
     final visiblePois = _visiblePois;
     final selectedPoi = _selectedPoi;
     final onlineLayer = _onlineMapLayerSpec;
@@ -1687,7 +2276,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                   paused: _routeState.paused,
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   distance: _formatDistance(),
-                  elapsed: _formatDuration(_routeState.elapsed),
+                  routeState: _routeState,
                   altitudeMeters: current?.altitudeMeters,
                   headingDegrees: current?.headingDegrees,
                   following: _followPosition,
@@ -1766,20 +2355,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: _camerasVisible
-                          ? 'Ocultar câmeras sobre o mapa'
-                          : 'Mostrar câmeras sobre o mapa',
+                      tooltip: 'Câmeras sobre o mapa',
                       icon: _hasCameraOverlay
                           ? (_camerasVisible
                               ? Icons.videocam_rounded
                               : Icons.videocam_off_rounded)
-                          : Icons.no_photography_outlined,
+                          : Icons.add_a_photo_outlined,
                       active: _hasCameraOverlay && _camerasVisible,
-                      onPressed: _hasCameraOverlay
-                          ? () => setState(
-                                () => _camerasVisible = !_camerasVisible,
-                              )
-                          : null,
+                      onPressed: () => unawaited(_showCameraManager()),
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
@@ -1851,25 +2434,28 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
                       : null,
                 ),
               ),
-              if (_camerasVisible && widget.cameraPreviewBuilder != null)
+              if (_camerasVisible &&
+                  !_primaryCameraLayout.hidden &&
+                  _cameraPreviewBuilderFor(false) != null)
                 _buildCameraPip(
                   context,
                   constraints,
-                  previewBuilder: widget.cameraPreviewBuilder!,
-                  listenable: widget.cameraListenable,
-                  aspectRatioProvider: widget.cameraAspectRatioProvider,
-                  fallbackAspectRatio: widget.cameraAspectRatio,
+                  previewBuilder: _cameraPreviewBuilderFor(false)!,
+                  listenable: _cameraListenableFor(false),
+                  aspectRatioProvider: _cameraAspectRatioProviderFor(false),
+                  fallbackAspectRatio: _cameraFallbackAspectRatioFor(false),
                   secondary: false,
                 ),
               if (_camerasVisible &&
-                  widget.secondaryCameraPreviewBuilder != null)
+                  !_secondaryCameraLayout.hidden &&
+                  _cameraPreviewBuilderFor(true) != null)
                 _buildCameraPip(
                   context,
                   constraints,
-                  previewBuilder: widget.secondaryCameraPreviewBuilder!,
-                  listenable: widget.secondaryCameraListenable,
-                  aspectRatioProvider: widget.secondaryCameraAspectRatioProvider,
-                  fallbackAspectRatio: 16 / 9,
+                  previewBuilder: _cameraPreviewBuilderFor(true)!,
+                  listenable: _cameraListenableFor(true),
+                  aspectRatioProvider: _cameraAspectRatioProviderFor(true),
+                  fallbackAspectRatio: _cameraFallbackAspectRatioFor(true),
                   secondary: true,
                 ),
             ],
@@ -1890,39 +2476,74 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
   }) {
     Widget buildPip(BuildContext context) {
       final scheme = Theme.of(context).colorScheme;
-      final requestedRatio = aspectRatioProvider?.call() ?? fallbackAspectRatio ?? (16 / 9);
+      final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+      final requestedRatio =
+          aspectRatioProvider?.call() ?? fallbackAspectRatio ?? (16 / 9);
       final aspectRatio = requestedRatio.clamp(0.50, 2.20).toDouble();
+      final minimized = layout.minimized;
       late final double width;
       late final double height;
-      if (aspectRatio >= 1) {
-        width = (constraints.maxWidth * 0.29).clamp(126.0, 190.0).toDouble();
-        height = (width / aspectRatio).clamp(78.0, 132.0).toDouble();
+      if (minimized) {
+        width = 154;
+        height = 42;
+      } else if (aspectRatio >= 1) {
+        final baseWidth =
+            (constraints.maxWidth * 0.29).clamp(126.0, 190.0).toDouble();
+        width = (baseWidth * layout.sizeScale)
+            .clamp(104.0, math.min(238.0, constraints.maxWidth * 0.52))
+            .toDouble();
+        height = (width / aspectRatio).clamp(70.0, 166.0).toDouble();
       } else {
-        height = (constraints.maxHeight * 0.22).clamp(118.0, 188.0).toDouble();
-        width = (height * aspectRatio).clamp(82.0, 128.0).toDouble();
+        final baseHeight =
+            (constraints.maxHeight * 0.22).clamp(118.0, 188.0).toDouble();
+        height = (baseHeight * layout.sizeScale)
+            .clamp(94.0, math.min(228.0, constraints.maxHeight * 0.42))
+            .toDouble();
+        width = (height * aspectRatio).clamp(76.0, 164.0).toDouble();
       }
 
       final safePadding = MediaQuery.paddingOf(context);
-      final shortLayout = constraints.maxHeight < 520;
-      final defaultTop = safePadding.top +
-          (shortLayout ? 164.0 : secondary ? 320.0 : 164.0);
-      // Em paisagem as duas câmeras começam lado a lado; em retrato, empilhadas.
-      final fallback = Offset(
-        shortLayout && secondary ? width + 20 : 10,
-        defaultTop,
+      const minX = 8.0;
+      final minY = safePadding.top + 8;
+      final maxX = math.max(minX, constraints.maxWidth - width - 58);
+      final maxY = math.max(
+        minY,
+        constraints.maxHeight - height - safePadding.bottom - 66,
+      );
+      final spanX = math.max(0.0, maxX - minX);
+      final spanY = math.max(0.0, maxY - minY);
+      final storedPosition = Offset(
+        minX + (spanX * layout.xFraction),
+        minY + (spanY * layout.yFraction),
       );
       final raw = secondary
-          ? (_secondaryCameraOffset ?? fallback)
-          : (_primaryCameraOffset ?? fallback);
-      final maxX = (constraints.maxWidth - width - 58)
-          .clamp(8.0, double.infinity);
-      // Reserva a barra compacta da rota e a navegação do sistema.
-      final maxY = (constraints.maxHeight - height - safePadding.bottom - 66)
-          .clamp(8.0, double.infinity);
+          ? (_secondaryCameraOffset ?? storedPosition)
+          : (_primaryCameraOffset ?? storedPosition);
       final position = Offset(
-        raw.dx.clamp(8.0, maxX).toDouble(),
-        raw.dy.clamp(8.0, maxY).toDouble(),
+        raw.dx.clamp(minX, maxX).toDouble(),
+        raw.dy.clamp(minY, maxY).toDouble(),
       );
+      final label = _activeCameraLabel(secondary);
+
+      Future<void> snapAndPersist() async {
+        final current = secondary
+            ? (_secondaryCameraOffset ?? position)
+            : (_primaryCameraOffset ?? position);
+        final snapped = Offset(
+          current.dx <= minX + spanX / 2 ? minX : maxX,
+          current.dy <= minY + spanY / 2 ? minY : maxY,
+        );
+        if (mounted) {
+          setState(() {
+            if (secondary) {
+              _secondaryCameraOffset = snapped;
+            } else {
+              _primaryCameraOffset = snapped;
+            }
+          });
+        }
+        await _persistCameraPosition(secondary, snapped, maxX, maxY);
+      }
 
       return Positioned(
         left: position.dx,
@@ -1935,8 +2556,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
             setState(() {
               final next = position + details.delta;
               final updated = Offset(
-                next.dx.clamp(8.0, maxX).toDouble(),
-                next.dy.clamp(8.0, maxY).toDouble(),
+                next.dx.clamp(minX, maxX).toDouble(),
+                next.dy.clamp(minY, maxY).toDouble(),
               );
               if (secondary) {
                 _secondaryCameraOffset = updated;
@@ -1945,60 +2566,117 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen> {
               }
             });
           },
+          onPanEnd: (_) => unawaited(snapAndPersist()),
           child: Material(
             elevation: 10,
             color: Colors.black,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(minimized ? 22 : 16),
             clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                previewBuilder(context),
-                Positioned(
-                  left: 6,
-                  top: 6,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.58),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.drag_indicator_rounded,
-                        size: 15,
+            child: minimized
+                ? Row(
+                    children: [
+                      const SizedBox(width: 8),
+                      Icon(
+                        secondary ? Icons.filter_2_rounded : Icons.videocam_rounded,
+                        size: 17,
                         color: Colors.white,
                       ),
-                    ),
-                  ),
-                ),
-                if (secondary)
-                  const Positioned(
-                    right: 7,
-                    top: 7,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Color(0xAA000000),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(5),
+                      const SizedBox(width: 6),
+                      Expanded(
                         child: Text(
-                          '2',
-                          style: TextStyle(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                    ),
+                      IconButton(
+                        tooltip: 'Expandir câmera',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                        onPressed: () => unawaited(_toggleCameraSlotMinimized(secondary)),
+                        icon: const Icon(Icons.open_in_full_rounded, size: 16, color: Colors.white),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      RepaintBoundary(child: previewBuilder(context)),
+                      Positioned(
+                        left: 6,
+                        top: 6,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.62),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: scheme.primary.withValues(alpha: 0.40),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.drag_indicator_rounded, size: 14, color: Colors.white),
+                                const SizedBox(width: 3),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: math.max(42.0, width - 126).toDouble(),
+                                  ),
+                                  child: Text(
+                                    label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _CameraPipAction(
+                              tooltip: 'Trocar fonte',
+                              icon: Icons.cameraswitch_outlined,
+                              onPressed: () => unawaited(_showCameraSourcePicker(secondary)),
+                            ),
+                            _CameraPipAction(
+                              tooltip: 'Tamanho',
+                              icon: Icons.aspect_ratio_rounded,
+                              onPressed: () => unawaited(_cycleCameraSlotSize(secondary)),
+                            ),
+                            _CameraPipAction(
+                              tooltip: 'Minimizar',
+                              icon: Icons.minimize_rounded,
+                              onPressed: () => unawaited(_toggleCameraSlotMinimized(secondary)),
+                            ),
+                            _CameraPipAction(
+                              tooltip: 'Ocultar',
+                              icon: Icons.close_rounded,
+                              onPressed: () => unawaited(_setCameraSlotHidden(secondary, true)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
           ),
         ),
       );
@@ -2207,6 +2885,33 @@ class _MapControlGap extends StatelessWidget {
         width: horizontal ? 6 : 0,
         height: horizontal ? 0 : 6,
       );
+}
+
+class _CameraPipAction extends StatelessWidget {
+  const _CameraPipAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 29, height: 29),
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.black.withValues(alpha: 0.62),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon, size: 14, color: Colors.white),
+    );
+  }
 }
 
 class _MapControlButton extends StatelessWidget {
@@ -2573,7 +3278,7 @@ class _MapTelemetryStrip extends StatelessWidget {
     required this.paused,
     required this.speedKmh,
     required this.distance,
-    required this.elapsed,
+    required this.routeState,
     required this.altitudeMeters,
     required this.headingDegrees,
     required this.following,
@@ -2583,7 +3288,7 @@ class _MapTelemetryStrip extends StatelessWidget {
   final bool paused;
   final double speedKmh;
   final String distance;
-  final String elapsed;
+  final MapRouteService routeState;
   final double? altitudeMeters;
   final double? headingDegrees;
   final bool following;
@@ -2610,7 +3315,7 @@ class _MapTelemetryStrip extends StatelessWidget {
           const SizedBox(width: 5),
           _MapInfoPill(icon: Icons.route_rounded, label: distance),
           const SizedBox(width: 5),
-          _MapInfoPill(icon: Icons.timer_outlined, label: elapsed),
+          _LiveRouteElapsedPill(routeState: routeState),
           const SizedBox(width: 5),
           _MapInfoPill(
             icon: Icons.height_rounded,
@@ -2642,6 +3347,51 @@ class _MapTelemetryStrip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LiveRouteElapsedPill extends StatefulWidget {
+  const _LiveRouteElapsedPill({required this.routeState});
+
+  final MapRouteService routeState;
+
+  @override
+  State<_LiveRouteElapsedPill> createState() => _LiveRouteElapsedPillState();
+}
+
+class _LiveRouteElapsedPillState extends State<_LiveRouteElapsedPill> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || !widget.routeState.recording || widget.routeState.paused) {
+        return;
+      }
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _format(Duration value) {
+    final hours = value.inHours.toString().padLeft(2, '0');
+    final minutes = (value.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (value.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _MapInfoPill(
+      icon: Icons.timer_outlined,
+      label: _format(widget.routeState.elapsed),
     );
   }
 }

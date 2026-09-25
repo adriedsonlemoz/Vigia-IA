@@ -181,7 +181,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     _secondaryController?.removeListener(_refresh);
     _secondaryController?.dispose();
     _bikeSensors.removeListener(_refresh);
-    _mapRoute.removeListener(_onMapRouteChanged);
+    _mapRoute.removeListener(_onMapRouteChanged); _mapRoute.releaseLocationConsumer(this);
     _offlineMaps.removeListener(_onOfflineMapsChanged);
     _routeExplorer.removeListener(_refresh);
     _miniOfflineTileProvider?.dispose();
@@ -987,6 +987,7 @@ class _MonitorScreenState extends State<MonitorScreen>
       cameraAspectRatio: _controller.previewAspectRatio,
       cameraListenable: _controller,
       cameraAspectRatioProvider: () => _controller.previewAspectRatio,
+      externalCameraSourceProvider: (second) => second ? secondary?.sourceConfig : _controller.sourceConfig,
       secondaryCameraPreviewBuilder:
           secondary == null ? null : (_) => secondary.buildPreview(),
       secondaryCameraListenable: secondary,

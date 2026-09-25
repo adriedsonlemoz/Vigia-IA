@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.129+129
+# Arquitetura — Vigia IA 1.0.130+130
+
+## Evolução 1.0.130 — câmeras do mapa e orçamento de recursos
+
+- `MapMonitoringScreen` passa a ser a superfície única de mapa para Home e Monitor. Quando aberto pelo Monitor pode reutilizar previews externos; quando aberto sozinho cria visualizações leves com `SecondaryCameraController` e `emitFrames: false`, sem duplicar inferência de IA.
+- Cada slot de câmera possui fonte, visibilidade, minimização, escala e posição independentes. `MapCameraOverlaySettingsService` persiste somente layout visual em JSON, evitando armazenar segredos ou duplicar o registro de câmeras.
+- A seleção usa `CameraRegistryService` como catálogo para RTSP, celular remoto e ESP32; local/traseira e frontal são opções nativas. A mesma fonte não pode ocupar simultaneamente os dois PiPs.
+- Fontes internas são suspensas quando o slot é minimizado/oculto ou o app perde foreground. Fontes externas do Monitor não são suspensas pelo mapa porque podem estar alimentando a IA.
+- `MapRouteService` usa contagem de consumidores de localização. O stream é cancelado quando não há consumidores nem gravação/navegação, evitando GPS passivo após sair do mapa.
+- O ticker global de um segundo foi removido do `MapRouteService`; `_LiveRouteElapsedPill` atualiza somente o pequeno indicador de tempo.
+- `RouteExplorerService` processa distância/alertas apenas quando `recordedAt` muda. Percursos com muitos pontos são amostrados apenas na construção da polyline do mapa; armazenamento e exportação GPX permanecem completos.
+
 
 ## Evolução 1.0.129 — camadas do mapa e pacotes offline de POIs
 
