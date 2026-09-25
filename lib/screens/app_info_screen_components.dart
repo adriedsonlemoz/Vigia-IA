@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.123',
+          version: '1.0.124',
           current: true,
+          changes: [
+            'Sensores e recursos passam a mostrar separadamente leitura ativa, detecção do firmware, espera por leitura e estado offline.',
+            'Sensor novo informado pelo ESP32 aparece como detectado e não configurado, com atalho para revisar o wizard.',
+            'Firmware legado pode ter Hall, pneus, temperatura, bateria e energia inferidos pelos valores reais recebidos, mesmo sem capabilities.',
+            'Wi-Fi, endpoint, uptime, sequência e reconexão ficam em Conexão, sem misturar rede com valores dos sensores.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.123',
           changes: [
             'ESP32 ganha capacidade Energia separada da bateria do próprio módulo, permitindo monitorar a bateria principal sem acoplar as duas alimentações.',
             'Wizard aceita testes por power bank/tomada sem bateria e perfis de chumbo-ácido ou LiFePO₄ para a instalação definitiva.',
@@ -1132,8 +1142,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.123',
+          version: '1.0.124',
           current: true,
+          changes: [
+            'Sensores e recursos passam a mostrar separadamente leitura ativa, detecção do firmware, espera por leitura e estado offline.',
+            'Sensor novo informado pelo ESP32 aparece como detectado e não configurado, com atalho para revisar o wizard.',
+            'Firmware legado pode ter Hall, pneus, temperatura, bateria e energia inferidos pelos valores reais recebidos, mesmo sem capabilities.',
+            'Wi-Fi, endpoint, uptime, sequência e reconexão ficam em Conexão, sem misturar rede com valores dos sensores.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.123',
           changes: [
             'Nova capacidade Energia separa alimentação do módulo e bateria principal monitorada.',
             'Power bank/tomada funcionam sem bateria física; chumbo-ácido e LiFePO₄ ganham perfil próprio.',

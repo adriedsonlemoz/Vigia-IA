@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.123+123`
+> **Versão atual:** `1.0.124+124`
 
 ## Estado atual
 
-A `1.0.123+123` adiciona um perfil de energia independente ao ESP32: o módulo pode funcionar por power bank/tomada durante testes e monitorar separadamente uma bateria chumbo-ácido ou LiFePO₄, corrente/potência e entrada solar.
+A `1.0.124+124` refina a tela ESP32 para mostrar, por módulo, quais sensores estão configurados, detectados pelo firmware e realmente enviando leitura em tempo real.
+
+### Evolução 1.0.124 — estado individual dos sensores ESP32
+
+- O card de cada módulo ganha a seção **Sensores e recursos**, em vez de misturar capacidades e valores em chips genéricos.
+- Cada item pode aparecer como **Lendo agora**, **Detectado**, **Aguardando leitura**, **Módulo offline** ou **Detectado · não configurado**.
+- Temperatura, Hall, pneus, bateria do módulo e energia exibem o último valor recebido na própria linha do recurso.
+- Firmware legado continua útil: velocidade, pressão, temperatura, bateria e energia são inferidos pela telemetria mesmo quando o ESP32 não publica `capabilities`.
+- Se o firmware anunciar um sensor novo que não foi marcado no wizard, ele aparece automaticamente e oferece atalho para revisar o cadastro.
+- Wi‑Fi, endpoint, uptime, sequência e reconexão ficam separados em **Conexão**, reduzindo confusão entre rede e sensores físicos.
+- Adicionados testes de regressão para os cinco estados e para inferência de capacidades em firmware legado.
 
 ### Evolução 1.0.123 — energia, bateria e solar no ESP32
 

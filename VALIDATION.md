@@ -1,3 +1,15 @@
+## 1.0.124+124 — refinamento dos sensores ESP32
+
+- Com temperatura configurada e valor chegando, confirmar status **Lendo agora** e valor em °C na própria linha.
+- Com mmWave configurado e anunciado em `capabilities`, mas sem payload de leitura, confirmar status **Detectado**.
+- Com pneu configurado e módulo online sem leitura nem anúncio, confirmar **Aguardando leitura** sem gerar valor zero.
+- Desligar o ESP32 e confirmar que sensores configurados passam para **Módulo offline** sem perder o último cadastro.
+- Fazer o firmware anunciar ToF não marcado no wizard e confirmar **Detectado · não configurado** mais o botão de revisão.
+- Testar firmware legado sem `capabilities`, enviando velocidade/pressão/temperatura/bateria, e confirmar inferência automática desses recursos.
+- Confirmar que Wi‑Fi, endpoint, uptime, sequência e reconexão aparecem no bloco **Conexão**, sem duplicar velocidade/pressão/temperatura.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 ## 1.0.123+123 — energia, bateria e solar no ESP32
 
 - Criar módulo com capacidade **Energia**, alimentação **Power bank USB** e **Sem bateria monitorada**; confirmar que o wizard conclui sem exigir bateria física.

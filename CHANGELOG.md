@@ -1,3 +1,15 @@
+## 1.0.124+124 — 2026-09-25
+
+- Criado `Esp32CapabilityObservation` para representar separadamente capacidade configurada, anunciada pelo firmware e leitura realmente disponível.
+- A tela ESP32 passa a classificar cada sensor/recurso como **Lendo agora**, **Detectado**, **Aguardando leitura**, **Módulo offline** ou **Detectado · não configurado**.
+- Telemetria legada sem `capabilities` agora é usada para inferir Hall, pneus, temperatura, bateria do módulo e energia quando houver valores reais.
+- Sensores anunciados pelo firmware mas ainda ausentes do cadastro aparecem no card com atalho para revisão no wizard.
+- Valores de temperatura, velocidade/distância Hall, pressão dianteira/traseira, bateria do módulo e energia ficam junto do sensor correspondente.
+- Diagnóstico visual de rede foi separado dos sensores: Wi‑Fi, endpoint, uptime, sequência e reconexão ficam no bloco **Conexão**.
+- Removida a duplicação visual de valores de sensores no bloco genérico de telemetria.
+- Adicionados testes de regressão para estados de sensor, descoberta de recurso novo, offline e inferência de firmware legado.
+- Versionamento, identidade, Mudanças, README, arquitetura e validação sincronizados em `1.0.124+124`.
+
 ## 1.0.123+123 — 2026-09-25
 
 - Criada a capacidade `Esp32Capability.energy`, separada de `battery`, para distinguir a bateria principal/solar da alimentação do próprio módulo ESP32.

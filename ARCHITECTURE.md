@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.123+123
+# Arquitetura — Vigia IA 1.0.124+124
+
+## Evolução 1.0.124 — observabilidade por capacidade ESP32
+
+- `esp32_capability_status.dart` cria uma camada derivada entre cadastro e runtime: ela não persiste novo estado, apenas combina `Esp32Module.capabilities`, `Esp32TelemetryPacket.reportedCapabilities` e leituras realmente presentes.
+- A classificação evita tratar **configurado** como sinônimo de **conectado**. Um recurso pode estar lendo agora, apenas anunciado pelo firmware, aguardando leitura, offline ou ter sido descoberto sem estar habilitado no cadastro.
+- Para firmware legado, capacidades básicas são inferidas exclusivamente quando há valor concreto na telemetria: temperatura, Hall, pressão, bateria do módulo e energia. Nenhum zero sintético é criado.
+- Recursos futuros como mmWave, térmico e ToF podem aparecer como detectados apenas pela lista `capabilities` até que seus payloads de leitura ganhem normalização própria.
+- A tela ESP32 consome essa camada para renderizar `Sensores e recursos`; o bloco de transporte fica restrito a estado da conexão, endpoint, RSSI, uptime, sequência e reconexão.
+- Um recurso reportado mas não configurado não altera automaticamente o cadastro. O usuário recebe a indicação e pode revisar o wizard, preservando controle sobre o hardware ativo.
+
 
 ## Evolução 1.0.123 — subsistema de energia do ESP32
 

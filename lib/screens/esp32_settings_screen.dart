@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/audio_slot.dart';
 import '../models/bike_mode_config.dart';
+import '../models/esp32_capability_status.dart';
 import '../models/esp32_module.dart';
 import '../models/esp32_telemetry.dart';
 import '../services/app_settings_service.dart';
@@ -244,7 +245,7 @@ class _Esp32Intro extends StatelessWidget {
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  'Cada ESP32 agora é um módulo independente. Ele pode ter sensores, câmera ou futuras capacidades como mmWave, térmico e ToF; só módulos com câmera aparecem como fonte de vídeo.',
+                  'A tela separa o que foi configurado, o que o firmware detectou e o que está enviando leitura agora. Sensores novos reportados pelo ESP32 aparecem para revisão no assistente.',
                 ),
               ),
             ],
@@ -284,12 +285,8 @@ class _Esp32Card extends StatelessWidget {
     final lastSuccessAt = runtimeState?.lastSuccessAt;
     final firmware = packet?.firmwareVersion ?? status?.firmwareVersion;
     final protocol = packet?.protocolVersion ?? status?.protocolVersion;
-    final bike = packet?.bikePayload;
-    final speed = bike?['speedKmh'] as num?;
-    final frontPsi = bike?['frontTirePsi'] as num?;
-    final rearPsi = bike?['rearTirePsi'] as num?;
-    final temperature = bike?['temperatureC'] as num?;
     final energy = packet?.energy;
+    final observations = buildEsp32CapabilityObservations(device, runtimeState);
     final energyPercent = energy?.batteryPercent;
     final energyAlert = energyPercent == null
         ? null
@@ -369,24 +366,27 @@ class _Esp32Card extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                ...device.capabilities.map(
-                  (capability) => Chip(label: Text(capability.label)),
-                ),
-              ],
+            _Esp32CapabilityPanel(
+              observations: observations,
+              onConfigure: onEdit,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               'Telemetria: ${device.telemetryIntervalMs} ms · offline após ${(device.staleAfter.inMilliseconds / 1000).toStringAsFixed(0)} s sem dados',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             if (device.energyMonitoringEnabled)
               Text(
-                'Energia: ${device.energyProfileLabel} · ${device.powerMonitorType.label}${device.monitorSolarInput ? ' · solar' : ''}',
+                'Energia configurada: ${device.energyProfileLabel} · ${device.powerMonitorType.label}${device.monitorSolarInput ? ' · solar' : ''}',
                 style: Theme.of(context).textTheme.bodySmall,
+              ),
+            if (energyAlert != null)
+              Text(
+                energyAlert,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
             if (runtimeState != null) ...[
               const SizedBox(height: 8),
@@ -402,9 +402,13 @@ class _Esp32Card extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Conexão',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
                     Text(
                       '${runtimeState.connectionState.label}${runtimeState.endpointPath == null ? '' : ' · ${runtimeState.endpointPath}'}',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (lastSuccessAt != null)
                       Text(
@@ -425,89 +429,16 @@ class _Esp32Card extends StatelessWidget {
                           if (packet.rssiDbm != null)
                             Chip(
                               avatar: const Icon(Icons.wifi_rounded, size: 16),
-                              label: Text('${packet.wifiQualityLabel} · ${packet.rssiDbm} dBm'),
-                            ),
-                          if (packet.batteryPercent != null)
-                            Chip(
-                              avatar: const Icon(
-                                Icons.battery_std_rounded,
-                                size: 16,
-                              ),
-                              label: Text('Módulo ${packet.batteryPercent}%'),
-                            ),
-                          if (packet.batteryVoltage != null)
-                            Chip(
                               label: Text(
-                                'Módulo ${packet.batteryVoltage!.toStringAsFixed(2)} V',
+                                '${packet.wifiQualityLabel} · ${packet.rssiDbm} dBm',
                               ),
                             ),
-                          if (packet.charging == true)
-                            const Chip(label: Text('Alimentação externa')),
-                          if (energy?.batteryPercent != null)
-                            Chip(
-                              avatar: const Icon(Icons.battery_charging_full_rounded, size: 16),
-                              label: Text('Bateria ${energy!.batteryPercent}%'),
-                            ),
-                          if (energyAlert != null)
-                            Chip(
-                              avatar: const Icon(Icons.warning_amber_rounded, size: 16),
-                              label: Text(energyAlert),
-                            ),
-                          if (energy?.voltageV != null)
+                          if (packet.sequence != null)
+                            Chip(label: Text('Seq. ${packet.sequence}')),
+                          if (packet.uptime != null)
                             Chip(
                               label: Text(
-                                '${energy!.voltageV!.toStringAsFixed(2)} V',
-                              ),
-                            ),
-                          if (energy?.charging == true)
-                            const Chip(label: Text('Bateria carregando')),
-                          if (energy?.currentA != null)
-                            Chip(
-                              label: Text(
-                                '${energy!.currentA!.toStringAsFixed(2)} A',
-                              ),
-                            ),
-                          if (energy?.powerW != null)
-                            Chip(
-                              label: Text(
-                                '${energy!.powerW!.toStringAsFixed(1)} W',
-                              ),
-                            ),
-                          if (energy?.solarPowerW != null)
-                            Chip(
-                              avatar: const Icon(Icons.light_mode_outlined, size: 16),
-                              label: Text(
-                                'Solar ${energy!.solarPowerW!.toStringAsFixed(1)} W',
-                              ),
-                            ),
-                          if (energy?.energyInWh != null)
-                            Chip(
-                              label: Text(
-                                'Entrada ${energy!.energyInWh!.toStringAsFixed(1)} Wh',
-                              ),
-                            ),
-                          if (energy?.energyOutWh != null)
-                            Chip(
-                              label: Text(
-                                'Saída ${energy!.energyOutWh!.toStringAsFixed(1)} Wh',
-                              ),
-                            ),
-                          if (energy?.batteryTemperatureC != null)
-                            Chip(
-                              label: Text(
-                                'Bat. ${energy!.batteryTemperatureC!.toStringAsFixed(1)} °C',
-                              ),
-                            ),
-                          if (speed != null)
-                            Chip(label: Text('${speed.toStringAsFixed(1)} km/h')),
-                          if (frontPsi != null)
-                            Chip(label: Text('D ${frontPsi.toStringAsFixed(0)} PSI')),
-                          if (rearPsi != null)
-                            Chip(label: Text('T ${rearPsi.toStringAsFixed(0)} PSI')),
-                          if (temperature != null)
-                            Chip(
-                              label: Text(
-                                '${temperature.toStringAsFixed(1)} °C',
+                                'Ligado há ${_compactDuration(packet.uptime!)}',
                               ),
                             ),
                         ],
@@ -523,13 +454,6 @@ class _Esp32Card extends StatelessWidget {
                             energy.batteryChemistry,
                             energy.monitorType,
                           ].whereType<String>().map(_energyValueLabel).join(' · ')}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      if (packet.reportedCapabilities.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Reportado pelo módulo: ${packet.reportedCapabilities.map((item) => item.label).join(', ')}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -585,6 +509,259 @@ class _Esp32Card extends StatelessWidget {
         'smartBms' => 'BMS',
         _ => raw,
       };
+}
+
+
+class _Esp32CapabilityPanel extends StatelessWidget {
+  const _Esp32CapabilityPanel({
+    required this.observations,
+    required this.onConfigure,
+  });
+
+  final List<Esp32CapabilityObservation> observations;
+  final VoidCallback onConfigure;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final live = observations
+        .where((item) => item.activity == Esp32CapabilityActivity.live)
+        .length;
+    final detected = observations
+        .where((item) => item.activity == Esp32CapabilityActivity.detected)
+        .length;
+    final waiting = observations
+        .where((item) => item.activity == Esp32CapabilityActivity.waiting)
+        .length;
+    final discovered = observations
+        .where((item) => item.activity == Esp32CapabilityActivity.discovered)
+        .length;
+    final offline = observations
+        .where((item) => item.activity == Esp32CapabilityActivity.offline)
+        .length;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.32),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sensors_rounded, size: 19, color: scheme.primary),
+              const SizedBox(width: 7),
+              const Expanded(
+                child: Text(
+                  'Sensores e recursos',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            _capabilitySummary(
+              live: live,
+              detected: detected,
+              waiting: waiting,
+              discovered: discovered,
+              offline: offline,
+              total: observations.length,
+            ),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (observations.isEmpty) ...[
+            const SizedBox(height: 10),
+            const Text('Nenhum sensor ou recurso configurado.'),
+          ] else ...[
+            const SizedBox(height: 8),
+            for (var i = 0; i < observations.length; i++) ...[
+              if (i > 0) Divider(height: 13, color: scheme.outlineVariant),
+              _Esp32CapabilityRow(observation: observations[i]),
+            ],
+          ],
+          if (discovered > 0) ...[
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: onConfigure,
+              icon: const Icon(Icons.add_task_rounded),
+              label: Text(
+                discovered == 1
+                    ? 'Revisar sensor detectado'
+                    : 'Revisar sensores detectados ($discovered)',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Esp32CapabilityRow extends StatelessWidget {
+  const _Esp32CapabilityRow({required this.observation});
+
+  final Esp32CapabilityObservation observation;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final statusColor = _capabilityStatusColor(scheme, observation.activity);
+    final value = observation.valueLabel;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            _capabilityIcon(observation.capability),
+            size: 19,
+            color: statusColor,
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    observation.capability.label,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  _Esp32StatusBadge(
+                    label: observation.activity.label,
+                    color: statusColor,
+                  ),
+                ],
+              ),
+              if (value != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ] else if (observation.activity ==
+                  Esp32CapabilityActivity.detected) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'O firmware anunciou este recurso; aguardando valor de telemetria.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ] else if (observation.activity ==
+                  Esp32CapabilityActivity.discovered) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'O módulo informou este recurso, mas ele ainda não está ativado no cadastro.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Esp32StatusBadge extends StatelessWidget {
+  const _Esp32StatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.13),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withValues(alpha: 0.36)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+}
+
+String _capabilitySummary({
+  required int live,
+  required int detected,
+  required int waiting,
+  required int discovered,
+  required int offline,
+  required int total,
+}) {
+  if (total == 0) return 'Nada configurado neste módulo.';
+  final parts = <String>[];
+  if (live > 0) parts.add('$live lendo agora');
+  if (detected > 0) parts.add('$detected detectado${detected == 1 ? '' : 's'}');
+  if (waiting > 0) parts.add('$waiting aguardando');
+  if (offline > 0) parts.add('$offline offline');
+  if (discovered > 0) parts.add('$discovered novo${discovered == 1 ? '' : 's'}');
+  return parts.isEmpty ? '$total configurado${total == 1 ? '' : 's'}' : parts.join(' · ');
+}
+
+Color _capabilityStatusColor(
+  ColorScheme scheme,
+  Esp32CapabilityActivity activity,
+) =>
+    switch (activity) {
+      Esp32CapabilityActivity.live => const Color(0xFF22C55E),
+      Esp32CapabilityActivity.detected => scheme.primary,
+      Esp32CapabilityActivity.waiting => const Color(0xFFF59E0B),
+      Esp32CapabilityActivity.offline => scheme.outline,
+      Esp32CapabilityActivity.discovered => scheme.secondary,
+    };
+
+IconData _capabilityIcon(Esp32Capability capability) => switch (capability) {
+      Esp32Capability.camera => Icons.videocam_outlined,
+      Esp32Capability.temperature => Icons.thermostat_rounded,
+      Esp32Capability.hallSpeed => Icons.speed_rounded,
+      Esp32Capability.tirePressure => Icons.circle_outlined,
+      Esp32Capability.battery => Icons.battery_std_rounded,
+      Esp32Capability.energy => Icons.electrical_services_rounded,
+      Esp32Capability.mmWave => Icons.radar_rounded,
+      Esp32Capability.thermal => Icons.device_thermostat_rounded,
+      Esp32Capability.tof => Icons.straighten_rounded,
+      Esp32Capability.ultrasonic => Icons.sensors_rounded,
+      Esp32Capability.ambient => Icons.air_rounded,
+      Esp32Capability.gps => Icons.gps_fixed_rounded,
+      Esp32Capability.light => Icons.light_mode_outlined,
+      Esp32Capability.actuator => Icons.settings_remote_rounded,
+    };
+
+String _compactDuration(Duration duration) {
+  if (duration.inDays > 0) return '${duration.inDays}d ${duration.inHours.remainder(24)}h';
+  if (duration.inHours > 0) {
+    return '${duration.inHours}h ${duration.inMinutes.remainder(60)}min';
+  }
+  if (duration.inMinutes > 0) {
+    return '${duration.inMinutes}min ${duration.inSeconds.remainder(60)}s';
+  }
+  return '${duration.inSeconds}s';
 }
 
 class _EmptyEsp32 extends StatelessWidget {
