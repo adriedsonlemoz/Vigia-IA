@@ -29,7 +29,7 @@ class MapUxPolicy {
     required bool hasNavigation,
   }) {
     var reserve = safeBottom + 56;
-    if (hasNavigation) reserve += 58;
+    if (hasNavigation) reserve += 82;
     if (hasSelectedPoi) reserve += 60;
     return reserve;
   }
@@ -58,7 +58,7 @@ class MapUxPolicy {
     required bool hasNavigation,
   }) {
     var offset = safeBottom + 50;
-    if (hasNavigation) offset += 58;
+    if (hasNavigation) offset += 82;
     if (hasSelectedPoi) offset += 60;
     return offset;
   }

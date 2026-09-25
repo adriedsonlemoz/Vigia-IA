@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.135 corrige o Android-APK-102 removendo cinco assertions nulas redundantes no card de POI selecionado, restaurando o flutter analyze sem alterar a rota ciclável da 1.0.134.",
-  "version": "1.0.135",
-  "build": 135
+  "notes": "A 1.0.137 adiciona rotas alternativas para bicicleta, comparação de distância/tempo e troca da rota ativa diretamente no mapa.",
+  "version": "1.0.137",
+  "build": 137
 }

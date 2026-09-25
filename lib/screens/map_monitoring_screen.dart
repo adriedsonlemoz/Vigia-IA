@@ -22,6 +22,7 @@ import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
+import '../services/map_navigation_guidance.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
 import '../services/map_ux_policy.dart';
@@ -74,8 +75,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapRouteService _routeState = MapRouteService.instance;
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
+  final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
   MapCyclingRoute? _cyclingRoute;
+  List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
+  int _selectedCyclingRouteIndex = 0;
+  MapNavigationProgress? _navigationProgress;
   bool _cyclingRouteLoading = false;
+  int _cyclingRouteRequestSerial = 0;
+  int _offRouteSamples = 0;
+  DateTime? _lastRouteRecalculatedAt;
+  DateTime? _lastNavigationProgressPointAt;
   final NativePlatformService _native = NativePlatformService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
@@ -789,6 +798,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         !_routeExplorer.loading) {
       unawaited(_routeExplorer.searchNow(requestPermission: false));
     }
+    final restoredTarget = _routeState.navigationTarget;
+    final restoredPosition = _routeState.current;
+    if (restoredTarget != null && restoredPosition != null) {
+      unawaited(
+        _requestCyclingRoute(
+          origin: LatLng(restoredPosition.latitude, restoredPosition.longitude),
+          target: restoredTarget,
+          fitRoute: false,
+          announceFailure: false,
+        ),
+      );
+    }
   }
 
   void _onRouteExplorerChanged() {
@@ -798,13 +819,59 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _onRouteStateChanged() {
     if (!mounted) return;
-    setState(() {});
     final current = _routeState.current;
+    _navigationProgress = _evaluateNavigationProgress(current);
+    setState(() {});
     if (_followPosition &&
         current != null &&
         current.recordedAt != _lastFollowCameraPointAt) {
       _applyFollowCamera(current);
     }
+    if (current != null) {
+      unawaited(_maybeRecalculateCyclingRoute(current));
+    }
+  }
+
+  MapNavigationProgress? _evaluateNavigationProgress(MapRoutePoint? current) {
+    final route = _cyclingRoute;
+    if (current == null || route == null || _routeState.navigationTarget == null) {
+      return null;
+    }
+    return _navigationGuidance.evaluate(route: route, position: current);
+  }
+
+  Future<void> _maybeRecalculateCyclingRoute(MapRoutePoint current) async {
+    final target = _routeState.navigationTarget;
+    final progress = _navigationProgress;
+    if (target == null || progress == null || _cyclingRouteLoading) return;
+    if (_lastNavigationProgressPointAt == current.recordedAt) return;
+    _lastNavigationProgressPointAt = current.recordedAt;
+    if (progress.arrived || !progress.offRoute) {
+      _offRouteSamples = 0;
+      return;
+    }
+
+    _offRouteSamples += 1;
+    if (_offRouteSamples <
+        MapNavigationGuidance.offRouteSamplesBeforeRecalculation) {
+      return;
+    }
+    final lastRecalculation = _lastRouteRecalculatedAt;
+    if (lastRecalculation != null &&
+        DateTime.now().difference(lastRecalculation) <
+            MapNavigationGuidance.recalculationCooldown) {
+      return;
+    }
+
+    _offRouteSamples = 0;
+    _lastRouteRecalculatedAt = DateTime.now();
+    await _requestCyclingRoute(
+      origin: LatLng(current.latitude, current.longitude),
+      target: target,
+      fitRoute: false,
+      recalculation: true,
+      announceFailure: false,
+    );
   }
 
   double get _followZoom {
@@ -917,43 +984,124 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<void> _navigateToPoi(RouteExplorerResult item) async {
     final current = _routeState.current;
+    final target = MapNavigationTarget(
+      latitude: item.latitude,
+      longitude: item.longitude,
+      label: item.title,
+      startedAt: DateTime.now(),
+      sourceId: item.id,
+    );
     setState(() {
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
       _selectedPoiId = item.id;
       _cyclingRoute = null;
-      _cyclingRouteLoading = current != null;
+      _cyclingRouteAlternatives = const <MapCyclingRoute>[];
+      _selectedCyclingRouteIndex = 0;
+      _navigationProgress = null;
+      _offRouteSamples = 0;
+      _lastRouteRecalculatedAt = null;
+      _lastNavigationProgressPointAt = null;
     });
-    await _routeState.navigateTo(
-      MapNavigationTarget(
-        latitude: item.latitude,
-        longitude: item.longitude,
-        label: item.title,
-        startedAt: DateTime.now(),
-        sourceId: item.id,
-      ),
-    );
+    await _routeState.navigateTo(target);
     if (current != null) {
-      try {
-        final route = await _cyclingRoutes.fetch(
-          origin: LatLng(current.latitude, current.longitude),
-          destination: LatLng(item.latitude, item.longitude),
-        );
-        if (!mounted || _routeState.navigationTarget?.sourceId != item.id) return;
-        setState(() => _cyclingRoute = route);
-        _fitCyclingRoute(route.points);
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Rota viária indisponível. Usando direção direta.')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _cyclingRouteLoading = false);
-      }
+      await _requestCyclingRoute(
+        origin: LatLng(current.latitude, current.longitude),
+        target: target,
+        fitRoute: true,
+        announceFailure: true,
+      );
       _applyFollowCamera(current, forceRotation: true);
     }
+  }
+
+  Future<void> _requestCyclingRoute({
+    required LatLng origin,
+    required MapNavigationTarget target,
+    required bool fitRoute,
+    required bool announceFailure,
+    bool recalculation = false,
+  }) async {
+    final requestSerial = ++_cyclingRouteRequestSerial;
+    if (mounted) {
+      setState(() => _cyclingRouteLoading = true);
+    }
+    try {
+      final routes = await _cyclingRoutes.fetchAlternatives(
+        origin: origin,
+        destination: LatLng(target.latitude, target.longitude),
+        alternativeCount: 2,
+      );
+      if (!mounted || requestSerial != _cyclingRouteRequestSerial) return;
+      final activeTarget = _routeState.navigationTarget;
+      if (!_sameNavigationTarget(activeTarget, target)) return;
+      final current = _routeState.current;
+      final route = routes.first;
+      setState(() {
+        _cyclingRouteAlternatives = routes;
+        _selectedCyclingRouteIndex = 0;
+        _cyclingRoute = route;
+        _navigationProgress = current == null
+            ? null
+            : _navigationGuidance.evaluate(route: route, position: current);
+      });
+      if (fitRoute) _fitCyclingRoutes(routes);
+      if (recalculation && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rota recalculada a partir da posição atual.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted || requestSerial != _cyclingRouteRequestSerial) return;
+      if (announceFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rota viária indisponível. Usando direção direta.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted && requestSerial == _cyclingRouteRequestSerial) {
+        setState(() => _cyclingRouteLoading = false);
+      }
+    }
+  }
+
+  void _selectCyclingRoute(int index) {
+    if (index < 0 || index >= _cyclingRouteAlternatives.length) return;
+    if (index == _selectedCyclingRouteIndex) return;
+    final route = _cyclingRouteAlternatives[index];
+    final current = _routeState.current;
+    setState(() {
+      _selectedCyclingRouteIndex = index;
+      _cyclingRoute = route;
+      _navigationProgress = current == null
+          ? null
+          : _navigationGuidance.evaluate(route: route, position: current);
+      _offRouteSamples = 0;
+      _lastNavigationProgressPointAt = null;
+    });
+    if (!_followPosition) _fitCyclingRoute(route.points);
+  }
+
+  void _fitCyclingRoutes(List<MapCyclingRoute> routes) {
+    final points = <LatLng>[
+      for (final route in routes) ...route.points,
+    ];
+    _fitCyclingRoute(points);
+  }
+
+  bool _sameNavigationTarget(
+    MapNavigationTarget? active,
+    MapNavigationTarget expected,
+  ) {
+    if (active == null) return false;
+    if (active.sourceId != null && expected.sourceId != null) {
+      return active.sourceId == expected.sourceId;
+    }
+    return (active.latitude - expected.latitude).abs() < 0.00001 &&
+        (active.longitude - expected.longitude).abs() < 0.00001;
   }
 
   void _fitCyclingRoute(List<LatLng> points) {
@@ -972,9 +1120,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   void _stopNavigation() {
+    _cyclingRouteRequestSerial += 1;
     setState(() {
       _cyclingRoute = null;
+      _cyclingRouteAlternatives = const <MapCyclingRoute>[];
+      _selectedCyclingRouteIndex = 0;
+      _navigationProgress = null;
       _cyclingRouteLoading = false;
+      _offRouteSamples = 0;
+      _lastRouteRecalculatedAt = null;
+      _lastNavigationProgressPointAt = null;
     });
     unawaited(_routeState.stopNavigation());
   }
@@ -2377,14 +2532,24 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       maxNativeZoom: onlineLayer.maxNativeZoom,
                       subdomains: onlineLayer.subdomains,
                     ),
-                  if (_cyclingRoute != null)
+                  if (_cyclingRouteAlternatives.isNotEmpty)
                     PolylineLayer(
                       polylines: <Polyline>[
-                        Polyline(
-                          points: _cyclingRoute!.points,
-                          strokeWidth: 6,
-                          color: scheme.tertiary,
-                        ),
+                        for (var index = 0;
+                            index < _cyclingRouteAlternatives.length;
+                            index++)
+                          if (index != _selectedCyclingRouteIndex)
+                            Polyline(
+                              points: _cyclingRouteAlternatives[index].points,
+                              strokeWidth: 4,
+                              color: scheme.outline.withValues(alpha: 0.55),
+                            ),
+                        if (_cyclingRoute != null)
+                          Polyline(
+                            points: _cyclingRoute!.points,
+                            strokeWidth: 6,
+                            color: scheme.tertiary,
+                          ),
                       ],
                     ),
                   if (routeSegments.isNotEmpty)
@@ -2724,7 +2889,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: 10,
                   right: 10,
-                  bottom: bottomInset + (navigationTarget == null ? 62 : 124),
+                  bottom: bottomInset + (navigationTarget == null ? 62 : 150),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -2746,7 +2911,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     distanceMeters: _routeState.navigationDistanceMeters,
                     bearingDegrees: _routeState.navigationBearingDegrees,
                     roadRoute: _cyclingRoute,
+                    routeAlternatives: _cyclingRouteAlternatives,
+                    selectedRouteIndex: _selectedCyclingRouteIndex,
+                    guidance: _navigationProgress,
                     loadingRoadRoute: _cyclingRouteLoading,
+                    onRouteSelected: _selectCyclingRoute,
                     onStop: _stopNavigation,
                   ),
                 ),
@@ -3957,7 +4126,11 @@ class _NavigationBanner extends StatelessWidget {
     required this.distanceMeters,
     required this.bearingDegrees,
     required this.roadRoute,
+    required this.routeAlternatives,
+    required this.selectedRouteIndex,
+    required this.guidance,
     required this.loadingRoadRoute,
+    required this.onRouteSelected,
     required this.onStop,
   });
 
@@ -3965,7 +4138,11 @@ class _NavigationBanner extends StatelessWidget {
   final double? distanceMeters;
   final double? bearingDegrees;
   final MapCyclingRoute? roadRoute;
+  final List<MapCyclingRoute> routeAlternatives;
+  final int selectedRouteIndex;
+  final MapNavigationProgress? guidance;
   final bool loadingRoadRoute;
+  final ValueChanged<int> onRouteSelected;
   final VoidCallback onStop;
 
   String _distance(double? meters) {
@@ -3993,6 +4170,48 @@ class _NavigationBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final progress = guidance;
+    final route = roadRoute;
+    final currentInstruction = progress?.arrived == true
+        ? 'Destino alcançado'
+        : progress?.currentInstruction ?? target.label;
+
+    late final String nextLine;
+    if (progress?.arrived == true) {
+      nextLine = 'Você chegou ao destino.';
+    } else if (loadingRoadRoute && route != null) {
+      nextLine = 'Recalculando rota…';
+    } else if (route != null &&
+        progress != null &&
+        progress.nextInstruction != null) {
+      nextLine =
+          'Em ${_distance(progress.distanceToNextManeuverMeters)}: ${progress.nextInstruction}';
+    } else if (loadingRoadRoute) {
+      nextLine = 'Calculando rota de bicicleta…';
+    } else if (route != null) {
+      nextLine = 'Siga pela rota destacada até o destino.';
+    } else {
+      nextLine =
+          '${_distance(distanceMeters)} · ${_bearing(bearingDegrees)} · direção direta';
+    }
+
+    late final String summaryLine;
+    if (route != null && progress != null) {
+      final routeLabel = routeAlternatives.length > 1
+          ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
+          : '';
+      summaryLine =
+          '$routeLabel${_distance(progress.remainingDistanceMeters)} · ${_duration(progress.remainingDurationSeconds)} restantes · ${(progress.progressFraction * 100).round()}%';
+    } else if (route != null) {
+      final routeLabel = routeAlternatives.length > 1
+          ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
+          : '';
+      summaryLine =
+          '$routeLabel${_distance(route.distanceMeters)} · ${_duration(route.durationSeconds)} · bicicleta';
+    } else {
+      summaryLine = 'Destino: ${target.label}';
+    }
+
     return Center(
       child: Material(
         elevation: 7,
@@ -4004,7 +4223,9 @@ class _NavigationBanner extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.navigation_rounded,
+                progress?.offRoute == true
+                    ? Icons.alt_route_rounded
+                    : Icons.navigation_rounded,
                 size: 20,
                 color: scheme.onTertiaryContainer,
               ),
@@ -4015,7 +4236,7 @@ class _NavigationBanner extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      target.label,
+                      currentInstruction,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -4024,11 +4245,7 @@ class _NavigationBanner extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      loadingRoadRoute
-                          ? 'Calculando rota de bicicleta…'
-                          : roadRoute != null
-                              ? '${_distance(roadRoute!.distanceMeters)} · ${_duration(roadRoute!.durationSeconds)} · bicicleta'
-                              : '${_distance(distanceMeters)} · ${_bearing(bearingDegrees)} · direção direta',
+                      nextLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -4037,9 +4254,50 @@ class _NavigationBanner extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    Text(
+                      summaryLine,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.onTertiaryContainer.withValues(alpha: 0.82),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
+              if (routeAlternatives.length > 1)
+                PopupMenuButton<int>(
+                  tooltip: 'Escolher rota alternativa',
+                  initialValue: selectedRouteIndex,
+                  onSelected: onRouteSelected,
+                  itemBuilder: (context) => <PopupMenuEntry<int>>[
+                    for (var index = 0;
+                        index < routeAlternatives.length;
+                        index++)
+                      PopupMenuItem<int>(
+                        value: index,
+                        child: Row(
+                          children: [
+                            Icon(
+                              index == selectedRouteIndex
+                                  ? Icons.check_circle_rounded
+                                  : Icons.alt_route_rounded,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)} · ${_duration(routeAlternatives[index].durationSeconds)}',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                  icon: const Icon(Icons.alt_route_rounded),
+                ),
               IconButton(
                 tooltip: 'Parar navegação',
                 onPressed: onStop,

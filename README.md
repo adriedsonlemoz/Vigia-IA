@@ -2,11 +2,28 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.135+135`
+> **Versão atual:** `1.0.137+137`
 
 ## Estado atual
 
-A `1.0.135+135` é um buildfix do Android-APK-102: remove cinco assertions nulas redundantes detectadas pelo `flutter analyze` no card do POI selecionado, sem alterar a rota ciclável introduzida na 1.0.134.
+A `1.0.137+137` adiciona rotas alternativas para bicicleta: o mapa pode mostrar até três trajetos, comparar distância/tempo e trocar a rota ativa sem interromper a navegação.
+
+### Evolução 1.0.137 — rotas alternativas
+
+- `MapCyclingRouteService` solicita até duas alternativas além da rota principal e remove respostas duplicadas.
+- Todas as opções disponíveis aparecem sobre o mapa; alternativas ficam secundárias e a rota escolhida permanece em destaque.
+- O banner de navegação mostra qual rota está ativa e oferece um seletor com distância e duração de cada opção.
+- Ao trocar de rota, instruções, progresso e detecção de desvio passam imediatamente a usar a nova geometria.
+- Recálculo automático continua protegido por confirmação de desvio e cooldown, retornando um novo conjunto de opções quando disponível.
+
+### Evolução 1.0.136 — navegação guiada + recálculo automático
+
+- O roteador passa a solicitar instruções em português e importar as manobras retornadas junto da geometria da rota.
+- O HUD mostra instrução atual, próxima manobra, distância até a próxima ação, distância/tempo restantes e progresso percentual.
+- `MapNavigationGuidance` calcula progresso e distância até a geometria sem chamadas de rede.
+- Desvio só dispara recálculo após duas leituras consecutivas fora da rota; há cooldown de 45 s para evitar chamadas repetidas.
+- Rota restaurada ao reabrir a tela volta a ser consultada para recuperar geometria e instruções.
+- O fallback por direção direta continua disponível quando o serviço de rota não responde.
 
 ### Refinamento 1.0.133 — mapa mais limpo em uso real
 

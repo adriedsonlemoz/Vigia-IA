@@ -65,8 +65,26 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.135',
+          version: '1.0.137',
           current: true,
+          changes: [
+            'Roteamento ciclável passa a solicitar até duas alternativas adicionais quando o servidor consegue fornecê-las.',
+            'Mapa desenha as alternativas de forma secundária e mantém a rota ativa em destaque.',
+            'Banner permite comparar distância e duração e trocar a rota ativa sem encerrar a navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.136',
+          changes: [
+            'Navegação guiada mostra instrução atual, próxima manobra, distância até a ação e progresso da rota.',
+            'Saída confirmada da rota dispara recálculo automático a partir da posição atual, com proteção contra chamadas repetidas.',
+            'Navegação restaurada recupera novamente a rota viária e mantém direção direta como fallback se o serviço falhar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.135',
           changes: [
             'Corrige o Android-APK-102, que parava no flutter analyze antes dos testes e do build Android.',
             'Remove cinco assertions nulas redundantes no card do POI selecionado, eliminando os avisos unnecessary_non_null_assertion.',
@@ -1248,8 +1266,26 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.135',
+          version: '1.0.137',
           current: true,
+          changes: [
+            'Roteamento ciclável passa a solicitar até duas alternativas adicionais quando o servidor consegue fornecê-las.',
+            'Mapa desenha as alternativas de forma secundária e mantém a rota ativa em destaque.',
+            'Banner permite comparar distância e duração e trocar a rota ativa sem encerrar a navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.136',
+          changes: [
+            'Navegação guiada mostra instrução atual, próxima manobra, distância até a ação e progresso da rota.',
+            'Saída confirmada da rota dispara recálculo automático a partir da posição atual, com proteção contra chamadas repetidas.',
+            'Navegação restaurada recupera novamente a rota viária e mantém direção direta como fallback se o serviço falhar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.135',
           changes: [
             'Corrige o Android-APK-102, que parava no flutter analyze antes dos testes e do build Android.',
             'Remove cinco assertions nulas redundantes no card do POI selecionado, eliminando os avisos unnecessary_non_null_assertion.',

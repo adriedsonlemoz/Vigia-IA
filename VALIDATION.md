@@ -1,3 +1,26 @@
+## 1.0.137+137 — rotas alternativas
+
+- Confirmar rota principal + até duas alternativas distintas quando o servidor disponibilizar.
+- Confirmar que a rota ativa fica destacada e alternativas permanecem visíveis em segundo plano.
+- Confirmar seletor `Rota X/N` com distância e duração de cada opção.
+- Confirmar que trocar a rota atualiza instruções/progresso sem encerrar a navegação.
+- Confirmar que recálculo automático substitui o conjunto de alternativas sem índice inválido.
+- Confirmar fallback de rota única/direção direta quando alternativas ou roteamento não estiverem disponíveis.
+
+## 1.0.136+136 — navegação guiada + recálculo automático
+
+Validação preventiva desta etapa dupla:
+
+- iniciar navegação até um POI e confirmar que o banner mostra instrução atual, próxima manobra, distância até a próxima ação, distância/tempo restantes e progresso percentual;
+- confirmar que a polyline permanece a mesma rota viária e que direção direta continua disponível quando o roteador falha;
+- sair da rota e confirmar que uma leitura isolada não recalcula; duas posições GPS novas consecutivas fora da rota devem iniciar o recálculo;
+- confirmar que recálculos seguintes respeitam cooldown de 45 segundos e que uma resposta antiga não substitui rota mais nova;
+- fechar/reabrir o mapa durante navegação e confirmar que destino persistido recupera geometria e instruções a partir da posição atual;
+- validar que PiPs, atribuição, POI selecionado e banner maior não se sobrepõem;
+- executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`;
+- executar `test/map_navigation_guidance_test.dart` junto da suíte completa quando Flutter estiver disponível;
+- `flutter analyze`, `flutter test` e build Android dependem do SDK Flutter/Android e devem ser reconfirmados pelo workflow.
+
 ## 1.0.133+133 — refinamento visual do mapa
 
 Validação preventiva desta etapa:

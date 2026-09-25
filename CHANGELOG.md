@@ -1,3 +1,24 @@
+## 1.0.137+137 — 2026-09-25
+
+- Roteamento de bicicleta passa a solicitar até duas alternativas adicionais pelo parâmetro `alternates` do Valhalla.
+- `MapCyclingRouteService.parseRoutes()` preserva rota principal + alternativas e remove opções duplicadas antes de expor o resultado à UI.
+- Mapa renderiza alternativas em segundo plano e mantém a rota selecionada em destaque.
+- Banner de navegação indica `Rota X/N` e oferece seletor para comparar distância/duração e trocar a opção ativa sem parar a navegação.
+- Troca de rota recalcula imediatamente instruções, progresso e referência usada para detectar desvio.
+- Recálculo automático continua ativo e atualiza o conjunto de alternativas a partir da posição corrente.
+- Adicionados testes do parser de rota principal/alternativas e deduplicação.
+- Versionamento sincronizado em `1.0.137+137`.
+
+## 1.0.136+136 — 2026-09-25
+
+- Navegação ciclável passa a importar manobras do roteador e solicitar instruções em português.
+- HUD mostra instrução atual, próxima manobra, distância até a próxima ação, distância/tempo restantes e progresso da rota.
+- Adicionado `MapNavigationGuidance` para calcular progresso, chegada e distância lateral da posição até a geometria da rota.
+- Desvio confirmado por duas leituras consecutivas aciona recálculo automático a partir da posição atual, com cooldown de 45 segundos para evitar requisições repetidas.
+- Navegação restaurada ao reabrir o mapa recupera novamente a rota viária e as instruções; falha de roteamento mantém a direção direta como fallback.
+- Reservas inferiores do HUD/PiP foram ampliadas para o banner de navegação guiada.
+- Versionamento sincronizado em `1.0.136+136`.
+
 ## 1.0.135+135 — 2026-09-25
 
 - Corrigido o Android-APK-102, que parava no `flutter analyze` antes de testes/build Android.

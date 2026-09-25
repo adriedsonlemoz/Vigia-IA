@@ -1,4 +1,20 @@
-# Arquitetura — Vigia IA 1.0.135+135
+# Arquitetura — Vigia IA 1.0.137+137
+
+## Rotas alternativas 1.0.137
+
+- `MapCyclingRouteService` continua como única fronteira HTTP do roteamento e agora retorna uma lista imutável com rota principal e alternativas do mesmo pedido.
+- O parser aceita a estrutura nativa do Valhalla (`trip` + `alternates[].trip`) e deduplica respostas equivalentes antes de entregá-las ao mapa.
+- `MapMonitoringScreen` mantém somente o índice da alternativa ativa; `MapNavigationGuidance` continua recebendo uma única rota e não precisa conhecer a existência das demais.
+- Rotas não selecionadas são apenas contexto visual. A escolhida alimenta instruções, progresso, chegada e detecção de desvio.
+- O recálculo substitui atomicamente o conjunto de alternativas e volta à rota principal retornada para evitar preservar um índice que deixou de existir.
+
+## Navegação guiada e recálculo 1.0.136
+
+- `MapCyclingRouteService` continua responsável apenas pela consulta de rota; agora também converte as manobras do Valhalla em `MapCyclingManeuver`, mantendo geometria e instruções no mesmo resultado imutável.
+- `MapNavigationGuidance` é uma camada pura: projeta a posição atual sobre a polyline, calcula progresso, distância/tempo restantes, manobra atual/próxima, chegada e distância lateral até a rota.
+- `MapMonitoringScreen` apenas coordena o estado visual e as chamadas de recálculo. Dois pontos consecutivos fora da rota são exigidos antes de recalcular e um cooldown de 45 s limita novas consultas.
+- Requisições de rota usam serial monotônico para que respostas antigas não substituam uma rota mais nova após troca de destino ou recálculo.
+- A navegação persistida em `MapRouteService` continua separada da gravação GPX; ao restaurar a tela, a geometria/instruções são buscadas novamente a partir da posição atual.
 
 ## Buildfix 1.0.135 — promoção de nulabilidade no card de POI
 
