@@ -12,6 +12,7 @@ import '../models/camera_endpoint.dart';
 import '../models/map_navigation_target.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
+import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
 import '../services/camera_registry_service.dart';

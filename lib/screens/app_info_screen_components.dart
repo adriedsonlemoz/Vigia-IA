@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.131',
+          version: '1.0.132',
           current: true,
+          changes: [
+            'Correção do Android-APK-99: MapMonitoringScreen volta a importar explicitamente OfflinePoiPackage, eliminando dois erros undefined_class no flutter analyze.',
+            'MapRouteService remove import redundante de flutter/foundation.dart, eliminando o issue unnecessary_import do analyzer.',
+            'Verificador preventivo passa a exigir o import do modelo de pacote offline e a bloquear a reintrodução do import redundante.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.131',
           changes: [
             'UX final do mapa: HUD responsivo em telas estreitas/paisagem, zoom consolidado e camadas acessíveis pelo chip superior sem duplicar controles.',
             'PiPs passam a respeitar zonas seguras do HUD e dos cards inferiores; persistência de posição foi corrigida e há ação para restaurar o layout.',
@@ -1211,8 +1220,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.131',
+          version: '1.0.132',
           current: true,
+          changes: [
+            'Correção do Android-APK-99: MapMonitoringScreen volta a importar explicitamente OfflinePoiPackage, eliminando dois erros undefined_class no flutter analyze.',
+            'MapRouteService remove import redundante de flutter/foundation.dart, eliminando o issue unnecessary_import do analyzer.',
+            'Verificador preventivo passa a exigir o import do modelo de pacote offline e a bloquear a reintrodução do import redundante.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.131',
           changes: [
             'UX final do mapa: HUD responsivo em telas estreitas/paisagem, zoom consolidado e camadas acessíveis pelo chip superior sem duplicar controles.',
             'PiPs passam a respeitar zonas seguras do HUD e dos cards inferiores; persistência de posição foi corrigida e há ação para restaurar o layout.',

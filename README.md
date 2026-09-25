@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.131+131`
+> **Versão atual:** `1.0.132+132`
 
 ## Estado atual
 
-A `1.0.131+131` conclui o ciclo de redesign do mapa com refinamento de UX e revisão final de regressão dos fluxos de mapa, POIs, offline, percurso e câmeras.
+A `1.0.132+132` é um buildfix do Android-APK-99 e preserva integralmente o redesign do mapa concluído na 1.0.131.
+
+### Correção 1.0.132 — Android-APK-99
+
+- Corrigidos dois erros `undefined_class` em `MapMonitoringScreen`: o modelo `OfflinePoiPackage` existia, mas seu arquivo não estava importado na tela.
+- Removido `package:flutter/foundation.dart` redundante de `MapRouteService`, eliminando o `unnecessary_import` reportado pelo analyzer.
+- A verificação preventiva agora cobre ambos os casos para evitar regressão do buildfix.
 
 ### Evolução 1.0.131 — UX final + revisão do mapa
 

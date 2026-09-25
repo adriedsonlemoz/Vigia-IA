@@ -1,3 +1,11 @@
+## 1.0.132+132 — buildfix Android-APK-99
+
+- Confirmar que `lib/screens/map_monitoring_screen.dart` importa `../models/offline_poi_package.dart`.
+- Confirmar ausência de `package:flutter/foundation.dart` em `lib/services/map_route_service.dart`.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- O log Android-APK-99 registrou dois `undefined_class` para `OfflinePoiPackage` e um `unnecessary_import`; os três pontos foram corrigidos nesta versão.
+- Flutter/Android SDK não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build APK devem ser reconfirmados pelo workflow.
+
 ## 1.0.131+131 — UX final + revisão/regressão do mapa
 
 - `python3 tool/check_version_sync.py`: deve confirmar `1.0.131+131` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.

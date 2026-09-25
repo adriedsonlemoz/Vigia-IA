@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.131+131
+# Arquitetura — Vigia IA 1.0.132+132
+
+
+## Buildfix 1.0.132 — contratos de import do mapa
+
+- `MapMonitoringScreen` depende diretamente de `OfflinePoiPackage` para atualização/exclusão de pacotes e, portanto, importa explicitamente `models/offline_poi_package.dart`.
+- `MapRouteService` usa `ChangeNotifier`/`WidgetsBindingObserver` por meio de `package:flutter/widgets.dart`; o import separado de `flutter/foundation.dart` foi removido para manter `flutter analyze` limpo.
+- Nenhum fluxo funcional ou formato persistido do mapa foi alterado neste buildfix.
 
 ## Evolução 1.0.131 — política de UX e fechamento do mapa
 

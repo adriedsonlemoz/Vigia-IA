@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.131 conclui o ciclo do mapa com UX responsiva e revisão final: HUD compacto, controles consolidados, PiPs em zonas seguras, correções de persistência e atualização confiável dos pacotes offline.",
-  "version": "1.0.131",
-  "build": 131
+  "notes": "A 1.0.132 corrige o Android-APK-99: restaura o import explícito de OfflinePoiPackage no mapa e remove um import redundante que fazia flutter analyze falhar.",
+  "version": "1.0.132",
+  "build": 132
 }

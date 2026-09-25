@@ -1,3 +1,11 @@
+## 1.0.132+132 — 2026-09-25
+
+- Corrigido o Android-APK-99, que parava no `flutter analyze` antes de testes/build Android.
+- `MapMonitoringScreen` passa a importar explicitamente `lib/models/offline_poi_package.dart`, resolvendo os dois erros `undefined_class` em `_updateOfflinePoiPackage` e `_confirmDeleteOfflinePoiPackage`.
+- Removido import redundante de `package:flutter/foundation.dart` em `MapRouteService`, eliminando o issue `unnecessary_import`.
+- `tool/verify_project.sh` passa a proteger o import do modelo de pacote offline e a ausência do import redundante.
+- Funcionalidades de mapa, câmeras, POIs, offline, GPS/percurso e UX da 1.0.131 permanecem inalteradas.
+
 ## 1.0.131+131 — 2026-09-25
 
 - Concluído o ciclo do mapa com UX responsiva e revisão final de regressão.
