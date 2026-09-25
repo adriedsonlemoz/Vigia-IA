@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.130',
+          version: '1.0.131',
           current: true,
+          changes: [
+            'UX final do mapa: HUD responsivo em telas estreitas/paisagem, zoom consolidado e camadas acessíveis pelo chip superior sem duplicar controles.',
+            'PiPs passam a respeitar zonas seguras do HUD e dos cards inferiores; persistência de posição foi corrigida e há ação para restaurar o layout.',
+            'Ações do PiP foram condensadas em um menu para não cobrir a imagem em tamanhos pequenos; tela de GPS indisponível também segue o visual sem AppBar grande.',
+            'Revisão final corrige atualização de pacotes offline para buscar dados novos pela internet sem apagar o cache salvo quando a atualização falha.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.130',
           changes: [
             'Mapa passa a gerenciar duas câmeras diretamente: fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e câmeras já abertas pelo Monitor.',
             'PiPs podem trocar fonte, minimizar, ocultar, alternar tamanho e encaixar nos cantos; posição, tamanho e estado visual ficam persistidos.',
@@ -1201,8 +1211,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.130',
+          version: '1.0.131',
           current: true,
+          changes: [
+            'UX final do mapa: HUD responsivo em telas estreitas/paisagem, zoom consolidado e camadas acessíveis pelo chip superior sem duplicar controles.',
+            'PiPs passam a respeitar zonas seguras do HUD e dos cards inferiores; persistência de posição foi corrigida e há ação para restaurar o layout.',
+            'Ações do PiP foram condensadas em um menu para não cobrir a imagem em tamanhos pequenos; tela de GPS indisponível também segue o visual sem AppBar grande.',
+            'Revisão final corrige atualização de pacotes offline para buscar dados novos pela internet sem apagar o cache salvo quando a atualização falha.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.130',
           changes: [
             'Mapa passa a gerenciar duas câmeras diretamente: fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e câmeras já abertas pelo Monitor.',
             'PiPs podem trocar fonte, minimizar, ocultar, alternar tamanho e encaixar nos cantos; posição, tamanho e estado visual ficam persistidos.',

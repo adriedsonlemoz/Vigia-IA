@@ -120,6 +120,16 @@ class MapCameraOverlaySettingsService {
     await _persist();
   }
 
+  Future<void> resetLayout() async {
+    await initialize();
+    _primary = const MapCameraSlotLayout(yFraction: 0.20);
+    _secondary = const MapCameraSlotLayout(
+      xFraction: 0,
+      yFraction: 0.48,
+    );
+    await _persist();
+  }
+
   Future<void> _persist() async {
     final file = _file;
     if (file == null) return;

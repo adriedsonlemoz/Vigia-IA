@@ -19,6 +19,7 @@ import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_route_service.dart';
+import '../services/map_ux_policy.dart';
 import '../services/map_view_policy.dart';
 import '../services/map_view_settings_service.dart';
 import '../services/native_platform_service.dart';
@@ -30,6 +31,8 @@ import '../widgets/offline_map_manager_sheet.dart';
 enum _MapPoiQuickFilter { all, fuel, food, health, water, other }
 
 enum _MapQuickView { near, region, route }
+
+enum _CameraPipMenuAction { source, size, minimize, hide }
 
 class MapMonitoringScreen extends StatefulWidget {
   const MapMonitoringScreen({
@@ -407,12 +410,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<void> _persistCameraPosition(
     bool secondary,
-    Offset position,
-    double maxX,
-    double maxY,
-  ) async {
-    final x = maxX <= 0 ? 0.0 : (position.dx / maxX).clamp(0, 1).toDouble();
-    final y = maxY <= 0 ? 0.0 : (position.dy / maxY).clamp(0, 1).toDouble();
+    Offset position, {
+    required double minX,
+    required double minY,
+    required double maxX,
+    required double maxY,
+  }) async {
+    final x = MapUxPolicy.fractionForPosition(
+      position: position.dx,
+      min: minX,
+      max: maxX,
+    );
+    final y = MapUxPolicy.fractionForPosition(
+      position: position.dy,
+      min: minY,
+      max: maxY,
+    );
     if (secondary) {
       _secondaryCameraLayout = _secondaryCameraLayout.copyWith(
         xFraction: x,
@@ -630,6 +643,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         await _secondaryMapCamera?.suspend();
                       }
                     },
+                  ),
+                  const SizedBox(height: 4),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await _cameraOverlaySettings.resetLayout();
+                      if (!mounted) return;
+                      setState(() {
+                        _primaryCameraLayout = _cameraOverlaySettings.primary;
+                        _secondaryCameraLayout = _cameraOverlaySettings.secondary;
+                        _primaryCameraOffset = null;
+                        _secondaryCameraOffset = null;
+                      });
+                      setSheetState(() {});
+                      await _resumeVisibleInternalCameras();
+                    },
+                    icon: const Icon(Icons.restart_alt_rounded),
+                    label: const Text('Restaurar posição e tamanho dos PiPs'),
                   ),
                 ],
               ),
@@ -1413,6 +1443,48 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return '${two(local.day)}/${two(local.month)} ${two(local.hour)}:${two(local.minute)}';
   }
 
+  Future<void> _updateOfflinePoiPackage(OfflinePoiPackage package) async {
+    await _routeExplorer.updateOfflinePackage(package.id);
+    if (!mounted) return;
+    final message = _routeExplorer.statusMessage ?? _routeExplorer.error;
+    if (message == null || message.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _confirmDeleteOfflinePoiPackage(
+    OfflinePoiPackage package,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir pacote offline?'),
+        content: Text(
+          '“${package.name}” e seus ${package.itemCount} pontos serão removidos deste aparelho.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _routeExplorer.removeOfflinePackage(package.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_routeExplorer.statusMessage ?? 'Pacote removido.'),
+      ),
+    );
+  }
+
   Future<void> _showOfflinePoiPackages() async {
     await _routeExplorer.initialize();
     if (!mounted) return;
@@ -1488,13 +1560,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                           _routeExplorer.activateOfflinePackage(package.id),
                                         );
                                       } else if (value == 'update') {
-                                        unawaited(() async {
-                                          await _routeExplorer.activateOfflinePackage(package.id);
-                                          await _routeExplorer.updateActiveOfflinePackage();
-                                        }());
+                                        unawaited(
+                                          _updateOfflinePoiPackage(package),
+                                        );
                                       } else if (value == 'delete') {
                                         unawaited(
-                                          _routeExplorer.removeOfflinePackage(package.id),
+                                          _confirmDeleteOfflinePoiPackage(package),
                                         );
                                       }
                                     },
@@ -1505,7 +1576,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                       ),
                                       const PopupMenuItem(
                                         value: 'update',
-                                        child: Text('Atualizar com resultados atuais'),
+                                        child: Text('Atualizar pela internet'),
                                       ),
                                       const PopupMenuItem(
                                         value: 'delete',
@@ -2013,7 +2084,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       resizeToAvoidBottomInset: false,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final horizontalControls = constraints.maxHeight < 520;
+          final horizontalControls = MapUxPolicy.compactLandscape(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+          );
+          final compactHud = MapUxPolicy.compactHud(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+          );
+          final telemetryTop = topInset + 46;
+          final quickViewTop = topInset + (compactHud ? 82 : 87);
+          final controlDockTop = topInset + (compactHud ? 90 : 132);
+          final attributionBottom = MapUxPolicy.attributionBottom(
+            safeBottom: safePadding.bottom,
+            hasSelectedPoi: selectedPoi != null,
+            hasNavigation: navigationTarget != null,
+          );
           _mapViewportSize = Size(constraints.maxWidth, constraints.maxHeight);
           _compactLandscape = horizontalControls;
           return Stack(
@@ -2255,21 +2341,31 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               Positioned(
                 top: topInset,
                 left: 58,
-                child: _MapSourceChip(
-                  mode: mode,
-                  activePackage: activeOffline,
-                  error: _offlineTileError,
-                  styleLabel: _mapViewSettings.stylePreset.label,
-                  onTap: () => unawaited(_showLayerPicker()),
+                right: compactHud ? 86 : null,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (compactHud
+                            ? math.max(96.0, constraints.maxWidth - 124)
+                            : math.min(220.0, constraints.maxWidth - 180))
+                        .toDouble(),
+                  ),
+                  child: _MapSourceChip(
+                    mode: mode,
+                    activePackage: activeOffline,
+                    error: _offlineTileError,
+                    styleLabel: _mapViewSettings.stylePreset.label,
+                    compact: compactHud,
+                    onTap: () => unawaited(_showLayerPicker()),
+                  ),
                 ),
               ),
               Positioned(
                 top: topInset,
                 right: 8,
-                child: _GpsChip(point: current),
+                child: _GpsChip(point: current, compact: compactHud),
               ),
               Positioned(
-                top: topInset + 46,
+                top: telemetryTop,
                 left: 8,
                 right: 58,
                 child: _MapTelemetryStrip(
@@ -2281,28 +2377,30 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   headingDegrees: current?.headingDegrees,
                   following: _followPosition,
                   onToggleFollow: current == null ? null : _toggleFollow,
+                  compact: compactHud,
                 ),
               ),
               Positioned(
-                top: topInset + 87,
+                top: quickViewTop,
                 left: 8,
                 child: _MapQuickViewBar(
                   selected: _quickView,
                   routeAvailable:
                       _routeState.route.length >= 2 || navigationTarget != null,
                   onSelected: _selectQuickView,
+                  compact: compactHud,
                 ),
               ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
-                  top: topInset + 128,
+                  top: quickViewTop + (compactHud ? 39 : 41),
                   left: 8,
                   child: _OfflineAreaWarning(
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
               Positioned(
-                top: horizontalControls ? null : topInset + 98,
+                top: horizontalControls ? null : controlDockTop,
                 right: 8,
                 bottom: horizontalControls ? bottomInset + 58 : null,
                 child: Flex(
@@ -2310,16 +2408,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       horizontalControls ? Axis.horizontal : Axis.vertical,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _MapControlButton(
-                      tooltip: 'Aumentar zoom',
-                      icon: Icons.add_rounded,
-                      onPressed: () => _zoomBy(1),
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
-                      tooltip: 'Diminuir zoom',
-                      icon: Icons.remove_rounded,
-                      onPressed: () => _zoomBy(-1),
+                    _MapZoomCluster(
+                      horizontal: horizontalControls,
+                      onZoomIn: () => _zoomBy(1),
+                      onZoomOut: () => _zoomBy(-1),
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
@@ -2348,13 +2440,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: 'Camadas e tipo do mapa',
-                      icon: _mapStyleIcon(_mapViewSettings.stylePreset),
-                      active: _mapViewSettings.stylePreset != MapStylePreset.standard,
-                      onPressed: () => unawaited(_showLayerPicker()),
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
                       tooltip: 'Câmeras sobre o mapa',
                       icon: _hasCameraOverlay
                           ? (_camerasVisible
@@ -2380,7 +2465,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               Positioned(
                 left: 8,
-                bottom: bottomInset + 58,
+                bottom: attributionBottom,
                 child: _MapAttribution(
                   text: mode == OfflineMapMode.offline
                       ? (activeOffline?.providerId == 'stadia-alidade-smooth'
@@ -2399,6 +2484,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     distanceLabel:
                         _routeExplorer.formatDistance(selectedPoi.distanceMeters),
                     icon: _poiIcon(selectedPoi.category),
+                    compact: compactHud,
                     onClose: () => setState(() => _selectedPoiId = null),
                     onDetails: () => unawaited(_showPoiDetails(selectedPoi)),
                     onNavigate: () => _navigateToPoi(selectedPoi),
@@ -2481,8 +2567,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           aspectRatioProvider?.call() ?? fallbackAspectRatio ?? (16 / 9);
       final aspectRatio = requestedRatio.clamp(0.50, 2.20).toDouble();
       final minimized = layout.minimized;
-      late final double width;
-      late final double height;
+      late double width;
+      late double height;
       if (minimized) {
         width = 154;
         height = 42;
@@ -2504,17 +2590,49 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
       final safePadding = MediaQuery.paddingOf(context);
       const minX = 8.0;
-      final minY = safePadding.top + 8;
-      final maxX = math.max(minX, constraints.maxWidth - width - 58);
-      final maxY = math.max(
-        minY,
-        constraints.maxHeight - height - safePadding.bottom - 66,
+      final minY = MapUxPolicy.cameraMinY(
+        safeTop: safePadding.top,
+        compactLandscape: _compactLandscape,
       );
-      final spanX = math.max(0.0, maxX - minX);
-      final spanY = math.max(0.0, maxY - minY);
+      final bottomReserve = MapUxPolicy.cameraBottomReserve(
+        safeBottom: safePadding.bottom,
+        hasSelectedPoi: _selectedPoi != null,
+        hasNavigation: _routeState.navigationTarget != null,
+      );
+      final availableHeight = math.max(
+        minimized ? 42.0 : 70.0,
+        constraints.maxHeight - minY - bottomReserve,
+      ).toDouble();
+      if (!minimized && height > availableHeight) {
+        height = availableHeight;
+        width = math.min(width, height * aspectRatio).toDouble();
+      }
+      final rightReserve = _compactLandscape ? 8.0 : 58.0;
+      final maxX = math
+          .max(
+            minX,
+            constraints.maxWidth - width - rightReserve,
+          )
+          .toDouble();
+      final maxY = math
+          .max(
+            minY,
+            constraints.maxHeight - height - bottomReserve,
+          )
+          .toDouble();
+      final spanX = math.max(0.0, maxX - minX).toDouble();
+      final spanY = math.max(0.0, maxY - minY).toDouble();
       final storedPosition = Offset(
-        minX + (spanX * layout.xFraction),
-        minY + (spanY * layout.yFraction),
+        MapUxPolicy.positionForFraction(
+          fraction: layout.xFraction,
+          min: minX,
+          max: maxX,
+        ),
+        MapUxPolicy.positionForFraction(
+          fraction: layout.yFraction,
+          min: minY,
+          max: maxY,
+        ),
       );
       final raw = secondary
           ? (_secondaryCameraOffset ?? storedPosition)
@@ -2542,7 +2660,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             }
           });
         }
-        await _persistCameraPosition(secondary, snapped, maxX, maxY);
+        await _persistCameraPosition(
+          secondary,
+          snapped,
+          minX: minX,
+          minY: minY,
+          maxX: maxX,
+          maxY: maxY,
+        );
       }
 
       return Positioned(
@@ -2628,7 +2753,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                 const SizedBox(width: 3),
                                 ConstrainedBox(
                                   constraints: BoxConstraints(
-                                    maxWidth: math.max(42.0, width - 126).toDouble(),
+                                    maxWidth: math.max(42.0, width - 50).toDouble(),
                                   ),
                                   child: Text(
                                     label,
@@ -2649,30 +2774,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       Positioned(
                         right: 4,
                         top: 4,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _CameraPipAction(
-                              tooltip: 'Trocar fonte',
-                              icon: Icons.cameraswitch_outlined,
-                              onPressed: () => unawaited(_showCameraSourcePicker(secondary)),
-                            ),
-                            _CameraPipAction(
-                              tooltip: 'Tamanho',
-                              icon: Icons.aspect_ratio_rounded,
-                              onPressed: () => unawaited(_cycleCameraSlotSize(secondary)),
-                            ),
-                            _CameraPipAction(
-                              tooltip: 'Minimizar',
-                              icon: Icons.minimize_rounded,
-                              onPressed: () => unawaited(_toggleCameraSlotMinimized(secondary)),
-                            ),
-                            _CameraPipAction(
-                              tooltip: 'Ocultar',
-                              icon: Icons.close_rounded,
-                              onPressed: () => unawaited(_setCameraSlotHidden(secondary, true)),
-                            ),
-                          ],
+                        child: _CameraPipMenuButton(
+                          onSelected: (action) {
+                            switch (action) {
+                              case _CameraPipMenuAction.source:
+                                unawaited(_showCameraSourcePicker(secondary));
+                                break;
+                              case _CameraPipMenuAction.size:
+                                unawaited(_cycleCameraSlotSize(secondary));
+                                break;
+                              case _CameraPipMenuAction.minimize:
+                                unawaited(_toggleCameraSlotMinimized(secondary));
+                                break;
+                              case _CameraPipMenuAction.hide:
+                                unawaited(_setCameraSlotHidden(secondary, true));
+                                break;
+                            }
+                          },
                         ),
                       ),
                     ],
@@ -2709,8 +2827,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Widget _buildUnavailable(BuildContext context) {
     final availability = _routeState.availability;
-    final forever = availability == LocationTrackingAvailability.permissionDeniedForever;
-    final disabled = availability == LocationTrackingAvailability.servicesDisabled;
+    final forever =
+        availability == LocationTrackingAvailability.permissionDeniedForever;
+    final disabled =
+        availability == LocationTrackingAvailability.servicesDisabled;
     final title = disabled
         ? 'Localização do aparelho está desligada'
         : forever
@@ -2720,57 +2840,115 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         ? 'Ative a localização do Android para mostrar sua posição e registrar o trajeto.'
         : forever
             ? 'Abra as configurações do Vigia IA e permita localização durante o uso.'
-            : 'O GPS alimenta a mesma sessão de trajeto do Monitor e do mapa completo; um percurso em gravação continua registrado ao trocar de tela.';
+            : 'O GPS alimenta a mesma sessão de percurso do Monitor e do mapa completo; uma gravação ativa continua ao trocar de tela.';
+    final scheme = Theme.of(context).colorScheme;
+    final safePadding = MediaQuery.paddingOf(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mapa do monitoramento'),
-        actions: [
-          IconButton(
-            tooltip: 'Mapas offline',
-            onPressed: () => unawaited(_openOfflineMaps()),
-            icon: const Icon(Icons.download_for_offline_outlined),
+      extendBody: true,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  scheme.surfaceContainerHighest,
+                  scheme.surface,
+                ],
+              ),
+            ),
+          ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 88, 24, 72),
+                child: Material(
+                  elevation: 4,
+                  color: scheme.surface.withValues(alpha: 0.96),
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.location_off_outlined,
+                          size: 56,
+                          color: scheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(body, textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          onPressed: () async {
+                            if (disabled) {
+                              await _location.openLocationSettings();
+                            } else if (forever) {
+                              await _location.openAppSettings();
+                            } else {
+                              await _initialize();
+                            }
+                          },
+                          icon: Icon(
+                            disabled
+                                ? Icons.location_searching_rounded
+                                : Icons.settings_outlined,
+                          ),
+                          label: Text(
+                            disabled
+                                ? 'Ativar localização'
+                                : forever
+                                    ? 'Abrir configurações'
+                                    : 'Permitir localização',
+                          ),
+                        ),
+                        if (disabled || forever) ...[
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _initialize,
+                            child: const Text('Verificar novamente'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: safePadding.top + 8,
+            left: 8,
+            child: _MapControlButton(
+              tooltip: 'Voltar',
+              icon: Icons.arrow_back_rounded,
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+          Positioned(
+            top: safePadding.top + 8,
+            right: 8,
+            child: _MapControlButton(
+              tooltip: 'Mapas offline',
+              icon: Icons.download_for_offline_outlined,
+              onPressed: () => unawaited(_openOfflineMaps()),
+            ),
           ),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.location_off_outlined, size: 56),
-                const SizedBox(height: 16),
-                Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                Text(body, textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () async {
-                    if (disabled) {
-                      await _location.openLocationSettings();
-                    } else if (forever) {
-                      await _location.openAppSettings();
-                    } else {
-                      await _initialize();
-                    }
-                  },
-                  icon: Icon(disabled ? Icons.location_searching_rounded : Icons.settings_outlined),
-                  label: Text(disabled ? 'Ativar localização' : forever ? 'Abrir configurações' : 'Permitir localização'),
-                ),
-                if (disabled || forever) ...[
-                  const SizedBox(height: 8),
-                  TextButton(onPressed: _initialize, child: const Text('Verificar novamente')),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
+
 }
 
 class _MapQuickViewBar extends StatelessWidget {
@@ -2778,11 +2956,13 @@ class _MapQuickViewBar extends StatelessWidget {
     required this.selected,
     required this.routeAvailable,
     required this.onSelected,
+    this.compact = false,
   });
 
   final _MapQuickView? selected;
   final bool routeAvailable;
   final ValueChanged<_MapQuickView> onSelected;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -2800,12 +2980,14 @@ class _MapQuickViewBar extends StatelessWidget {
             icon: Icons.near_me_rounded,
             active: selected == _MapQuickView.near,
             onPressed: () => onSelected(_MapQuickView.near),
+            compact: compact,
           ),
           _MapQuickViewButton(
             label: 'Região',
             icon: Icons.public_rounded,
             active: selected == _MapQuickView.region,
             onPressed: () => onSelected(_MapQuickView.region),
+            compact: compact,
           ),
           _MapQuickViewButton(
             label: 'Rota',
@@ -2813,6 +2995,7 @@ class _MapQuickViewBar extends StatelessWidget {
             active: selected == _MapQuickView.route,
             onPressed:
                 routeAvailable ? () => onSelected(_MapQuickView.route) : null,
+            compact: compact,
           ),
         ],
       ),
@@ -2826,49 +3009,52 @@ class _MapQuickViewButton extends StatelessWidget {
     required this.icon,
     required this.active,
     required this.onPressed,
+    this.compact = false,
   });
 
   final String label;
   final IconData icon;
   final bool active;
   final VoidCallback? onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
-    return InkWell(
-      onTap: onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-        color: active ? scheme.primaryContainer : Colors.transparent,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: !enabled
-                  ? scheme.onSurface.withValues(alpha: 0.32)
-                  : active
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurface,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-                color: !enabled
-                    ? scheme.onSurface.withValues(alpha: 0.32)
-                    : active
-                        ? scheme.onPrimaryContainer
-                        : scheme.onSurface,
-              ),
-            ),
-          ],
+    final foreground = !enabled
+        ? scheme.onSurface.withValues(alpha: 0.32)
+        : active
+            ? scheme.onPrimaryContainer
+            : scheme.onSurface;
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 8 : 9,
+            vertical: 7,
+          ),
+          color: active ? scheme.primaryContainer : Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: compact ? 17 : 15, color: foreground),
+              if (!compact) ...[
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: active ? FontWeight.w900 : FontWeight.w700,
+                    color: foreground,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -2887,8 +3073,55 @@ class _MapControlGap extends StatelessWidget {
       );
 }
 
-class _CameraPipAction extends StatelessWidget {
-  const _CameraPipAction({
+class _MapZoomCluster extends StatelessWidget {
+  const _MapZoomCluster({
+    required this.horizontal,
+    required this.onZoomIn,
+    required this.onZoomOut,
+  });
+
+  final bool horizontal;
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final children = <Widget>[
+      _MapZoomAction(
+        tooltip: 'Aumentar zoom',
+        icon: Icons.add_rounded,
+        onPressed: onZoomIn,
+      ),
+      SizedBox(
+        width: horizontal ? 1 : 28,
+        height: horizontal ? 28 : 1,
+        child: ColoredBox(
+          color: scheme.outlineVariant.withValues(alpha: 0.65),
+        ),
+      ),
+      _MapZoomAction(
+        tooltip: 'Diminuir zoom',
+        icon: Icons.remove_rounded,
+        onPressed: onZoomOut,
+      ),
+    ];
+    return Material(
+      elevation: 4,
+      color: scheme.surface.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: Flex(
+        direction: horizontal ? Axis.horizontal : Axis.vertical,
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _MapZoomAction extends StatelessWidget {
+  const _MapZoomAction({
     required this.tooltip,
     required this.icon,
     required this.onPressed,
@@ -2899,19 +3132,85 @@ class _CameraPipAction extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints.tightFor(width: 29, height: 29),
-      style: IconButton.styleFrom(
-        backgroundColor: Colors.black.withValues(alpha: 0.62),
-      ),
-      onPressed: onPressed,
-      icon: Icon(icon, size: 14, color: Colors.white),
-    );
-  }
+  Widget build(BuildContext context) => Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox(
+            width: MapUxPolicy.controlSize,
+            height: MapUxPolicy.controlSize,
+            child: Icon(icon, size: 21),
+          ),
+        ),
+      );
+}
+
+class _CameraPipMenuButton extends StatelessWidget {
+  const _CameraPipMenuButton({required this.onSelected});
+
+  final ValueChanged<_CameraPipMenuAction> onSelected;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 30,
+        height: 30,
+        child: PopupMenuButton<_CameraPipMenuAction>(
+          tooltip: 'Opções da câmera',
+          onSelected: onSelected,
+          padding: EdgeInsets.zero,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.66),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.more_vert_rounded,
+                size: 18,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: _CameraPipMenuAction.source,
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.cameraswitch_outlined),
+                title: Text('Trocar fonte'),
+              ),
+            ),
+            PopupMenuItem(
+              value: _CameraPipMenuAction.size,
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.aspect_ratio_rounded),
+                title: Text('Alterar tamanho'),
+              ),
+            ),
+            PopupMenuItem(
+              value: _CameraPipMenuAction.minimize,
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.minimize_rounded),
+                title: Text('Minimizar'),
+              ),
+            ),
+            PopupMenuItem(
+              value: _CameraPipMenuAction.hide,
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.visibility_off_outlined),
+                title: Text('Ocultar'),
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _MapControlButton extends StatelessWidget {
@@ -3077,6 +3376,7 @@ class _SelectedPoiCard extends StatelessWidget {
     required this.onClose,
     required this.onDetails,
     required this.onNavigate,
+    this.compact = false,
   });
 
   final RouteExplorerResult item;
@@ -3085,6 +3385,7 @@ class _SelectedPoiCard extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onDetails;
   final VoidCallback onNavigate;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -3104,32 +3405,40 @@ class _SelectedPoiCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+              child: InkWell(
+                onTap: onDetails,
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        '${item.category.label} · $distanceLabel · '
+                        '${item.source == 'offline' ? 'Offline' : 'Online'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${item.category.label} · $distanceLabel · '
-                    '${item.source == 'offline' ? 'Offline' : 'Online'}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                ),
               ),
             ),
-            IconButton(
-              tooltip: 'Detalhes',
-              visualDensity: VisualDensity.compact,
-              onPressed: onDetails,
-              icon: const Icon(Icons.info_outline_rounded),
-            ),
+            if (!compact)
+              IconButton(
+                tooltip: 'Detalhes',
+                visualDensity: VisualDensity.compact,
+                onPressed: onDetails,
+                icon: const Icon(Icons.info_outline_rounded),
+              ),
             IconButton(
               tooltip: 'Navegar até',
               visualDensity: VisualDensity.compact,
@@ -3156,6 +3465,7 @@ class _MapSourceChip extends StatelessWidget {
     required this.error,
     required this.styleLabel,
     required this.onTap,
+    this.compact = false,
   });
 
   final OfflineMapMode mode;
@@ -3163,6 +3473,7 @@ class _MapSourceChip extends StatelessWidget {
   final String? error;
   final String styleLabel;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -3181,24 +3492,41 @@ class _MapSourceChip extends StatelessWidget {
       OfflineMapMode.online => Icons.cloud_outlined,
       OfflineMapMode.offline => Icons.offline_pin_outlined,
     };
-    return Material(
-      color: scheme.surface.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
+    return Tooltip(
+      message: 'Camadas e tipo do mapa',
+      child: Material(
+        color: scheme.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 17, color: error == null ? scheme.primary : scheme.error),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-              ),
-            ],
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 8 : 11,
+              vertical: 7,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 17,
+                  color: error == null ? scheme.primary : scheme.error,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -3244,9 +3572,10 @@ class _OfflineAreaWarning extends StatelessWidget {
 }
 
 class _GpsChip extends StatelessWidget {
-  const _GpsChip({required this.point});
+  const _GpsChip({required this.point, this.compact = false});
 
   final MapRoutePoint? point;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -3263,7 +3592,11 @@ class _GpsChip extends StatelessWidget {
             Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.primary),
             const SizedBox(width: 6),
             Text(
-              accuracy == null ? 'GPS…' : 'GPS ±${accuracy.toStringAsFixed(0)} m',
+              accuracy == null
+                  ? 'GPS…'
+                  : compact
+                      ? '±${accuracy.toStringAsFixed(0)} m'
+                      : 'GPS ±${accuracy.toStringAsFixed(0)} m',
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
           ],
@@ -3283,6 +3616,7 @@ class _MapTelemetryStrip extends StatelessWidget {
     required this.headingDegrees,
     required this.following,
     required this.onToggleFollow,
+    this.compact = false,
   });
 
   final bool paused;
@@ -3293,6 +3627,7 @@ class _MapTelemetryStrip extends StatelessWidget {
   final double? headingDegrees;
   final bool following;
   final VoidCallback? onToggleFollow;
+  final bool compact;
 
   String _direction(double? degrees) {
     if (degrees == null || degrees.isNaN) return '--';
@@ -3314,15 +3649,19 @@ class _MapTelemetryStrip extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           _MapInfoPill(icon: Icons.route_rounded, label: distance),
-          const SizedBox(width: 5),
-          _LiveRouteElapsedPill(routeState: routeState),
-          const SizedBox(width: 5),
-          _MapInfoPill(
-            icon: Icons.height_rounded,
-            label: altitudeMeters == null
-                ? 'Alt. --'
-                : 'Alt. ${altitudeMeters!.toStringAsFixed(0)} m',
-          ),
+          if (!compact || routeState.recording) ...[
+            const SizedBox(width: 5),
+            _LiveRouteElapsedPill(routeState: routeState),
+          ],
+          if (!compact) ...[
+            const SizedBox(width: 5),
+            _MapInfoPill(
+              icon: Icons.height_rounded,
+              label: altitudeMeters == null
+                  ? 'Alt. --'
+                  : 'Alt. ${altitudeMeters!.toStringAsFixed(0)} m',
+            ),
+          ],
           const SizedBox(width: 5),
           _MapInfoPill(
             icon: Icons.explore_rounded,

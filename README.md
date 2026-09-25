@@ -2,9 +2,23 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.130+130`
+> **Versão atual:** `1.0.131+131`
 
 ## Estado atual
+
+A `1.0.131+131` conclui o ciclo de redesign do mapa com refinamento de UX e revisão final de regressão dos fluxos de mapa, POIs, offline, percurso e câmeras.
+
+### Evolução 1.0.131 — UX final + revisão do mapa
+
+- HUD do mapa fica responsivo em telas estreitas e paisagem: telemetria/atalhos compactam sem esconder velocidade, distância, rumo e acompanhamento;
+- zoom +/− vira um único cluster fixo e o acesso a camadas permanece no chip superior, removendo um controle duplicado da lateral;
+- PiPs passam a respeitar zonas seguras acima do HUD e acima de percurso/navegação/POI, evitando cobrir controles e cards importantes;
+- corrigida a normalização da posição persistida dos PiPs, que antes ignorava as margens mínimas e podia deslocar as janelas ao reabrir;
+- ações da câmera foram condensadas em um menu único para manter PiPs pequenos utilizáveis; gerenciador ganhou restauração de posição/tamanho;
+- card de POI fica mais compacto em telas estreitas e continua acessível por toque no próprio texto; atribuição do mapa sobe automaticamente quando há cards inferiores;
+- tela de localização indisponível abandona AppBar grande e preserva o padrão de controles flutuantes;
+- atualização de pacote offline passa a consultar a internet diretamente e preserva o pacote salvo se a atualização falhar, em vez de regravar silenciosamente os dados antigos;
+- revisão final inclui `MapUxPolicy` e testes de HUD, zonas seguras e normalização de posição.
 
 A `1.0.130+130` fecha os blocos de câmeras sobre o mapa e desempenho para uso prolongado, unificando Home/Monitor na mesma experiência de mapa e reduzindo trabalho contínuo de câmera, GPS, POIs e desenho de percurso.
 

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.130 integra seleção completa de câmeras sobre o mapa e otimizações para uso prolongado: PiPs persistentes, suspensão inteligente, GPS por consumidores, cronômetro isolado e rota visual decimada.",
-  "version": "1.0.130",
-  "build": 130
+  "notes": "A 1.0.131 conclui o ciclo do mapa com UX responsiva e revisão final: HUD compacto, controles consolidados, PiPs em zonas seguras, correções de persistência e atualização confiável dos pacotes offline.",
+  "version": "1.0.131",
+  "build": 131
 }

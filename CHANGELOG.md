@@ -1,3 +1,14 @@
+## 1.0.131+131 — 2026-09-25
+
+- Concluído o ciclo do mapa com UX responsiva e revisão final de regressão.
+- HUD compacto em telas estreitas/paisagem; atalhos Perto/Região/Rota passam a usar ícones quando necessário e a telemetria reduz itens secundários sem perder dados essenciais.
+- Zoom +/− consolidado em um cluster; camada/tipo do mapa continua acessível pelo chip superior, removendo duplicação da coluna lateral.
+- PiPs passam a respeitar zonas reservadas do HUD e dos painéis inferiores; posição persistida agora usa corretamente a faixa útil entre margens mínimas e máximas.
+- Menu dos PiPs substitui quatro botões sobre a imagem; gerenciador ganha restauração de posição/tamanho e mantém suspensão inteligente das fontes internas.
+- Card de POI e atribuição do mapa se adaptam melhor ao espaço disponível; tela sem GPS mantém visual edge-to-edge sem AppBar grande.
+- Corrigido fluxo de atualização de pacotes offline: atualização consulta a rede diretamente e, em caso de falha, preserva o pacote existente sem sobrescrever o cache com dados antigos.
+- Adicionado `MapUxPolicy` com testes de compactação, reservas de overlay e normalização/restauração de posição.
+
 ## 1.0.130+130 — 2026-09-25
 
 - Mapa passa a gerenciar até duas câmeras diretamente, com seleção de fonte local/traseira, frontal, RTSP, celular remoto, ESP32 e reutilização das câmeras já abertas pelo Monitor.

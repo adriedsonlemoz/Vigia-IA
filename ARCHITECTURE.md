@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.130+130
+# Arquitetura — Vigia IA 1.0.131+131
+
+## Evolução 1.0.131 — política de UX e fechamento do mapa
+
+- `MapUxPolicy` concentra regras puras de layout responsivo: detecção de HUD compacto, reservas superior/inferior dos PiPs, posição da atribuição e conversão entre coordenada absoluta e fração persistida.
+- `MapMonitoringScreen` usa essas reservas para manter PiPs fora do HUD, do controle de percurso e dos cards de destino/POI; a persistência passa a normalizar posição no intervalo útil real (`min..max`) em vez de usar apenas o limite máximo.
+- O dock lateral consolida +/− em um cluster e remove a ação duplicada de camadas; o chip de origem/camada no topo continua sendo o ponto principal para alternar estilo. Em paisagem/telas estreitas, telemetria e atalhos reduzem rótulos secundários.
+- Ações diretamente sobre o vídeo dos PiPs são condensadas em um menu único; `MapCameraOverlaySettingsService.resetLayout()` fornece recuperação explícita de layout sem apagar fontes cadastradas.
+- A superfície de GPS indisponível segue o mesmo padrão edge-to-edge e controles flutuantes do mapa, evitando mudança brusca para AppBar.
+- `RouteExplorerService.updateOfflinePackage()` atualiza um pacote específico usando consulta online direta e só substitui o cache após sucesso, preservando dados existentes em falha de rede.
 
 ## Evolução 1.0.130 — câmeras do mapa e orçamento de recursos
 

@@ -1,3 +1,16 @@
+## 1.0.131+131 — UX final + revisão/regressão do mapa
+
+- `python3 tool/check_version_sync.py`: deve confirmar `1.0.131+131` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.
+- `bash tool/verify_project.sh`: deve confirmar `MapUxPolicy`, cluster de zoom, menu compacto dos PiPs, restauração de layout, atualização online segura dos pacotes offline e ausência do ícone inválido do APK-95.
+- Em retrato estreito e paisagem curta, validar HUD compacto: Perto/Região/Rota permanecem acessíveis, GPS/camada não se sobrepõem e a telemetria mantém velocidade, distância e rumo.
+- Arrastar ambos os PiPs para os quatro cantos com e sem POI/destino ativo; confirmar que não cobrem Voltar/GPS/telemetria nem os cards inferiores. Fechar/reabrir e confirmar posição estável.
+- Reduzir o PiP ao menor tamanho e confirmar que as ações ficam no menu único sem transbordar a janela; usar **Restaurar posição e tamanho dos PiPs** e confirmar retorno ao layout padrão.
+- Selecionar POI em tela estreita, abrir detalhes tocando no texto, iniciar navegação e confirmar que card, banner, atribuição e barra de percurso permanecem separados.
+- Desligar GPS/permissão e confirmar tela sem AppBar grande, com Voltar e Mapas offline flutuantes.
+- Salvar um pacote de POIs, alterar a região e usar **Atualizar pela internet**; em sucesso, confirmar nova data/conteúdo. Em falha de rede, confirmar que o pacote anterior permanece intacto.
+- Executar os testes `map_ux_policy_test.dart`, `map_camera_overlay_settings_test.dart`, `map_view_policy_test.dart`, `offline_poi_package_test.dart` e os demais testes quando Flutter estiver disponível.
+- `flutter analyze`, `flutter test` e build Android dependem do Flutter/Android SDK deste ambiente e devem ser reconfirmados pelo workflow.
+
 ## 1.0.130+130 — câmeras no mapa + desempenho
 
 - `python3 tool/check_version_sync.py`: deve confirmar `1.0.130+130` em pubspec, AppMetadata, identidade, Mudanças, README, CHANGELOG, ARCHITECTURE e RELEASE.

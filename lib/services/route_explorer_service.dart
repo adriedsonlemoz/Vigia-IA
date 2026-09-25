@@ -350,51 +350,83 @@ class RouteExplorerService extends ChangeNotifier {
       await saveCurrentResultsOffline();
       return;
     }
-    if (_results.isEmpty) {
-      await searchNow(requestPermission: true);
-      if (_results.isEmpty) return;
+    await updateOfflinePackage(active.id);
+  }
+
+  Future<void> updateOfflinePackage(String packageId) async {
+    await initialize();
+    OfflinePoiPackage? target;
+    for (final package in _offlinePackages) {
+      if (package.id == packageId) {
+        target = package;
+        break;
+      }
     }
-    final current = _routeState.current;
-    if (current == null) {
-      _error = 'Localização indisponível para atualizar o pacote offline.';
-      notifyListeners();
-      return;
-    }
-    final now = DateTime.now();
-    final fresh = OfflinePoiPackage.fromResults(
-      id: active.id,
-      name: active.name,
-      now: now,
-      originLatitude: current.latitude,
-      originLongitude: current.longitude,
-      searchRadiusKm: _settings.radiusKm,
-      items: _results
-          .map((item) => item.copyWith(source: 'offline'))
-          .toList(growable: false),
-    );
-    final updated = OfflinePoiPackage(
-      id: active.id,
-      name: active.name,
-      createdAt: active.createdAt,
-      updatedAt: now,
-      west: fresh.west,
-      south: fresh.south,
-      east: fresh.east,
-      north: fresh.north,
-      originLatitude: fresh.originLatitude,
-      originLongitude: fresh.originLongitude,
-      searchRadiusKm: fresh.searchRadiusKm,
-      items: fresh.items,
-    );
-    final index = _offlinePackages.indexWhere((item) => item.id == active.id);
-    if (index >= 0) _offlinePackages[index] = updated;
-    _activeOfflinePackageId = updated.id;
-    _offlineResults = updated.items;
-    _offlineUpdatedAt = updated.updatedAt;
-    _statusMessage =
-        'Pacote “${updated.name}” atualizado com ${updated.itemCount} pontos.';
+    if (target == null || _loading) return;
+    final targetPackage = target;
+
+    _loading = true;
+    _error = null;
+    _statusMessage = null;
     notifyListeners();
-    await _persistNow();
+    try {
+      await _routeState.initialize(requestPermission: true);
+      await _routeState.ensureLocation(requestPermission: true);
+      final current = _routeState.current;
+      if (current == null) {
+        throw StateError('Localização indisponível para atualizar o pacote.');
+      }
+
+      // Atualização de pacote deve vir da rede. Não reutilize silenciosamente
+      // o próprio cache offline, pois isso mascara uma falha de atualização.
+      final onlineResults = await _fetchOnline(current);
+      final now = DateTime.now();
+      final fresh = OfflinePoiPackage.fromResults(
+        id: targetPackage.id,
+        name: targetPackage.name,
+        now: now,
+        originLatitude: current.latitude,
+        originLongitude: current.longitude,
+        searchRadiusKm: _settings.radiusKm,
+        items: onlineResults
+            .map((item) => item.copyWith(source: 'offline'))
+            .toList(growable: false),
+      );
+      final updated = OfflinePoiPackage(
+        id: targetPackage.id,
+        name: targetPackage.name,
+        createdAt: targetPackage.createdAt,
+        updatedAt: now,
+        west: fresh.west,
+        south: fresh.south,
+        east: fresh.east,
+        north: fresh.north,
+        originLatitude: fresh.originLatitude,
+        originLongitude: fresh.originLongitude,
+        searchRadiusKm: fresh.searchRadiusKm,
+        items: fresh.items,
+      );
+      final index = _offlinePackages.indexWhere(
+        (item) => item.id == targetPackage.id,
+      );
+      if (index < 0) return;
+      _offlinePackages[index] = updated;
+      if (_activeOfflinePackageId == updated.id) {
+        _offlineResults = updated.items;
+        _offlineUpdatedAt = updated.updatedAt;
+      }
+      _statusMessage =
+          'Pacote “${updated.name}” atualizado com ${updated.itemCount} pontos.';
+      await _persistNow();
+    } catch (error) {
+      _error = error.toString().replaceFirst('Exception: ', '');
+      _statusMessage =
+          'Não foi possível atualizar o pacote. Os dados salvos foram preservados.';
+    } finally {
+      _loading = false;
+      notifyListeners();
+      _routeState.releaseLocationIfIdle();
+    }
   }
 
   Future<void> _saveOfflinePackageFromResults(
@@ -518,7 +550,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.130');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.131');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
