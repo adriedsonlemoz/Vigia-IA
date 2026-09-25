@@ -65,10 +65,10 @@ class MapCameraOverlaySettingsService {
 
   File? _file;
   bool _initialized = false;
-  MapCameraSlotLayout _primary = const MapCameraSlotLayout(yFraction: 0.20);
+  MapCameraSlotLayout _primary = const MapCameraSlotLayout(yFraction: 0.08);
   MapCameraSlotLayout _secondary = const MapCameraSlotLayout(
     xFraction: 0,
-    yFraction: 0.48,
+    yFraction: 0.78,
   );
 
   MapCameraSlotLayout get primary => _primary;
@@ -122,10 +122,10 @@ class MapCameraOverlaySettingsService {
 
   Future<void> resetLayout() async {
     await initialize();
-    _primary = const MapCameraSlotLayout(yFraction: 0.20);
+    _primary = const MapCameraSlotLayout(yFraction: 0.08);
     _secondary = const MapCameraSlotLayout(
       xFraction: 0,
-      yFraction: 0.48,
+      yFraction: 0.78,
     );
     await _persist();
   }

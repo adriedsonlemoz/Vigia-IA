@@ -1,3 +1,17 @@
+## 1.0.133+133 — refinamento visual do mapa
+
+Validação preventiva desta etapa:
+
+- `MapPoiDisplayPolicy` e `test/map_poi_display_policy_test.dart` presentes;
+- clustering preserva POI selecionado individual e reduz rios/pontes em visão regional;
+- HUD permanente não mantém câmera/orientação como botões laterais separados; ambos continuam acessíveis em Opções;
+- barra de percurso compacta mantém cronômetro isolado, distância e pausa/encerrar;
+- mapa usa `AnnotatedRegion<SystemUiOverlayStyle>` com `SystemUiService.mapOverlayStyle` e scrims edge-to-edge;
+- PiP minimizado usa 44×44, duplo toque alterna tamanho e há troca de slots internos;
+- `MapUxPolicy` atualizado para as alturas menores dos overlays;
+- `tool/check_version_sync.py` e `tool/verify_project.sh` devem passar também após extração do ZIP final;
+- `flutter analyze`, `flutter test` e build Android dependem de SDK Flutter/Dart disponível no ambiente de validação.
+
 ## 1.0.132+132 — buildfix Android-APK-99
 
 - Confirmar que `lib/screens/map_monitoring_screen.dart` importa `../models/offline_poi_package.dart`.

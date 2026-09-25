@@ -1,5 +1,14 @@
-# Arquitetura — Vigia IA 1.0.132+132
+# Arquitetura — Vigia IA 1.0.133+133
 
+
+## Refinamento visual 1.0.133 — política de exibição e HUD
+
+- `MapPoiDisplayPolicy` fica fora da UI e decide quantos POIs entram no mapa, quantos rios/pontes são úteis em cada escala e qual raio de clustering usar por zoom.
+- `MapMonitoringScreen` mantém apenas o zoom atual para recalcular clusters em degraus de 0,20, evitando rebuild por cada pequeno movimento de câmera.
+- POIs selecionados são excluídos do agrupamento e renderizados individualmente; clusters são apenas uma representação visual e não alteram dados do `RouteExplorerService`.
+- Telemetria de percurso continua isolada do mapa: o contador de tempo vive em `_LiveRouteElapsedPill`, agora dentro da barra inferior compacta, sem ticker global no `MapRouteService`.
+- `SystemUiService.mapOverlayStyle` + scrims na borda superior/inferior garantem contraste das barras Android sem sacrificar a superfície edge-to-edge.
+- PiPs preservam controladores existentes; o refinamento mexe apenas no layout/gestos (bolha minimizada, duplo toque, arranjo da segunda câmera e troca de slots internos), sem duplicar pipeline de IA.
 
 ## Buildfix 1.0.132 — contratos de import do mapa
 

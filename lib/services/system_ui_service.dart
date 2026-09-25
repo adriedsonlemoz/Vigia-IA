@@ -7,8 +7,21 @@ class SystemUiService {
 
   static const SystemUiOverlayStyle _overlayStyle = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.black,
     systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
+
+  /// Estilo explícito para superfícies edge-to-edge com conteúdo visual sob as
+  /// barras do sistema. O mapa usa scrims próprios para manter contraste tanto
+  /// em tiles claros quanto escuros.
+  static const SystemUiOverlayStyle mapOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Color(0x33000000),
+    systemNavigationBarDividerColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarIconBrightness: Brightness.light,
   );
 
   static Future<void> edgeToEdge() async {

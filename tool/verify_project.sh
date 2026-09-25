@@ -11,13 +11,13 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.132+132' pubspec.yaml || fail 'Versao esperada 1.0.132+132 nao encontrada.'
+grep -Fxq 'version: 1.0.133+133' pubspec.yaml || fail 'Versao esperada 1.0.133+133 nao encontrada.'
 grep -q 'class Esp32CapabilityObservation' lib/models/esp32_capability_status.dart || fail 'Modelo de estado por sensor ESP32 1.0.124 ausente.'
 grep -q 'Esp32CapabilityActivity.live' lib/screens/esp32_settings_screen.dart || fail 'Tela ESP32 nao renderiza estado de leitura ativa 1.0.124.'
 grep -q 'Detectado · não configurado' lib/models/esp32_capability_status.dart || fail 'Estado de sensor novo ESP32 1.0.124 ausente.'
 grep -q 'firmware legado' test/esp32_capability_status_test.dart || fail 'Teste de inferencia ESP32 legado 1.0.124 ausente.'
-grep -Fq '## 1.0.132+132' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.132.'
-[[ -f RELEASE-1.0.132.md ]] || fail 'Notas da entrega 1.0.132 ausentes.'
+grep -Fq '## 1.0.133+133' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.133.'
+[[ -f RELEASE-1.0.133.md ]] || fail 'Notas da entrega 1.0.133 ausentes.'
 grep -q "import '../models/offline_poi_package.dart';" lib/screens/map_monitoring_screen.dart || fail 'Buildfix 1.0.132: MapMonitoringScreen nao importa OfflinePoiPackage.'
 if grep -q "import 'package:flutter/foundation.dart';" lib/services/map_route_service.dart; then
   fail 'Buildfix 1.0.132: import redundante de flutter/foundation.dart voltou ao MapRouteService.'
@@ -36,7 +36,8 @@ grep -q 'maximumRecordingAccuracyMeters = 35' lib/services/map_gps_filter.dart |
 grep -q 'maximumPlausibleSpeedMetersPerSecond = 70' lib/services/map_gps_filter.dart || fail 'Filtro de velocidade plausivel 1.0.126 ausente.'
 grep -q 'Future<bool> startRecording()' lib/services/map_route_service.dart || fail 'API Gravar percurso 1.0.126 ausente.'
 grep -q 'MapNavigationTarget' lib/services/map_route_service.dart lib/screens/map_monitoring_screen.dart || fail 'Destino separado da gravacao 1.0.126 ausente.'
-grep -q "label: Text(recording ? 'Encerrar percurso' : 'Gravar percurso')" lib/screens/map_monitoring_screen.dart || fail 'Nomenclatura Gravar percurso 1.0.126 ausente.'
+grep -q "label: const Text('Gravar')" lib/screens/map_monitoring_screen.dart || fail 'Acao compacta Gravar percurso 1.0.133 ausente.'
+grep -q "label: const Text('Encerrar')" lib/screens/map_monitoring_screen.dart || fail 'Acao compacta Encerrar percurso 1.0.133 ausente.'
 grep -q "label: const Text('Navegar até')" lib/screens/map_monitoring_screen.dart || fail 'Acao Navegar ate 1.0.126 ausente.'
 [[ -f test/map_gps_filter_test.dart ]] || fail 'Testes do filtro GPS 1.0.126 ausentes.'
 [[ -f test/map_navigation_target_test.dart ]] || fail 'Teste do destino de navegacao 1.0.126 ausente.'
@@ -85,6 +86,16 @@ grep -q 'resetLayout' lib/services/map_camera_overlay_settings_service.dart || f
 grep -q 'updateOfflinePackage' lib/services/route_explorer_service.dart || fail 'Atualizacao segura de pacote offline 1.0.132 ausente.'
 grep -q 'MapUxPolicy.cameraBottomReserve' lib/screens/map_monitoring_screen.dart || fail 'PiPs 1.0.132 nao respeitam overlays inferiores.'
 grep -q "message: 'Camadas e tipo do mapa'" lib/screens/map_monitoring_screen.dart || fail 'Acesso a camadas 1.0.132 ausente do chip superior.'
+[[ -f lib/services/map_poi_display_policy.dart ]] || fail 'MapPoiDisplayPolicy 1.0.133 ausente.'
+[[ -f test/map_poi_display_policy_test.dart ]] || fail 'Testes de clustering de POI 1.0.133 ausentes.'
+grep -q 'MapPoiDisplayPolicy.clusters' lib/screens/map_monitoring_screen.dart || fail 'Mapa 1.0.133 nao aplica clustering de POIs.'
+grep -q 'maximumRiverBridgeItems' lib/services/map_poi_display_policy.dart || fail 'Densidade de rios/pontes 1.0.133 ausente.'
+grep -q 'cluster.count' lib/screens/map_monitoring_screen.dart || fail 'Marcador numerico de cluster 1.0.133 ausente.'
+grep -q 'SystemUiService.mapOverlayStyle' lib/screens/map_monitoring_screen.dart || fail 'Contraste das barras Android 1.0.133 ausente.'
+grep -q 'width = 44;' lib/screens/map_monitoring_screen.dart || fail 'Bolha minimizada de PiP 1.0.133 ausente.'
+grep -q 'onDoubleTap:' lib/screens/map_monitoring_screen.dart || fail 'Duplo toque do PiP 1.0.133 ausente.'
+grep -q '_swapInternalCameraSlots' lib/screens/map_monitoring_screen.dart || fail 'Troca de cameras 1.0.133 ausente.'
+grep -q 'navigationMatchesSelectedPoi' lib/screens/map_monitoring_screen.dart || fail 'Deduplicacao de card POI/navegacao 1.0.133 ausente.'
 if grep -q "import 'dart:typed_data';" lib/screens/map_monitoring_screen.dart; then
   fail 'Import dart:typed_data redundante reapareceu em MapMonitoringScreen (Android-APK-73).'
 fi
@@ -439,10 +450,10 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.132';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.132.'
-grep -q 'static const int build = 132;' lib/core/app_metadata.dart \
-  || fail 'Build de AppMetadata nao esta em 132.'
+grep -q "static const String version = '1.0.133';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.133.'
+grep -q 'static const int build = 133;' lib/core/app_metadata.dart \
+  || fail 'Build de AppMetadata nao esta em 133.'
 grep -q "version: '1.0.123'" lib/screens/app_info_screen*.dart \
   || fail 'Tela Mudancas nao marca a versao 1.0.123.'
 
@@ -610,18 +621,18 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.132+132' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.132+132.'
+grep -Fq 'version: 1.0.133+133' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.133+133.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.132"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.132.'
-grep -q '"build": 132' app_identity.json \
-  || fail 'app_identity.json nao esta no build 132.'
+grep -q '"version": "1.0.133"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.133.'
+grep -q '"build": 133' app_identity.json \
+  || fail 'app_identity.json nao esta no build 133.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
 grep -q 'namespace = "com.vigiaia.app"' android/app/build.gradle.kts \
@@ -938,7 +949,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.132+132' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.132+132.'
+grep -Fq 'Vigia IA 1.0.133+133' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.133+133.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2259,8 +2270,9 @@ grep -q "label: altitudeMeters == null" lib/screens/map_monitoring_screen.dart \
   || fail 'Painel do mapa completo nao mostra altitude.'
 grep -q "label: _direction(headingDegrees)" lib/screens/map_monitoring_screen.dart \
   || fail 'Painel do mapa completo nao mostra rumo.'
-grep -q "following ? 'Seguindo' : 'Mapa livre'" lib/screens/map_monitoring_screen.dart \
-  || fail 'Mapa completo nao explicita Seguindo/Mapa livre.'
+grep -q "'Posição sendo seguida'" lib/screens/map_monitoring_screen.dart \
+  && grep -q "'Centralizar e seguir posição'" lib/screens/map_monitoring_screen.dart \
+  || fail 'Mapa completo nao explicita o estado de acompanhamento da posicao.'
 
 # Ajuda de configuracao da API de mapas offline - 1.0.102
 grep -q '^## 1.0.102+102' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.102.'
@@ -2464,7 +2476,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.132' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.133' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,6 +20,7 @@ import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_gps_filter.dart';
+import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
 import '../services/map_ux_policy.dart';
 import '../services/map_view_policy.dart';
@@ -80,9 +82,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   SecondaryCameraController? _secondaryMapCamera;
   bool _primaryUsesExternal = false;
   bool _secondaryUsesExternal = false;
-  MapCameraSlotLayout _primaryCameraLayout = const MapCameraSlotLayout(yFraction: 0.20);
+  MapCameraSlotLayout _primaryCameraLayout = const MapCameraSlotLayout(yFraction: 0.08);
   MapCameraSlotLayout _secondaryCameraLayout = const MapCameraSlotLayout(
-    yFraction: 0.48,
+    yFraction: 0.78,
   );
   bool _appActive = true;
 
@@ -104,6 +106,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   DateTime? _lastFollowCameraPointAt;
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
   String? _selectedPoiId;
+  double _visibleMapZoom = MapViewPolicy.nearZoom;
 
   @override
   void initState() {
@@ -300,6 +303,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (source != null && !useExternal && !await _ensureCameraPermission(source)) {
       return;
     }
+    final hadCamera = _slotHasCamera(secondary);
+    final otherHasCamera = _slotHasCamera(!secondary);
     final other = _activeCameraConfig(!secondary);
     if (source != null && _sameCameraSource(source, other)) {
       if (!mounted) return;
@@ -323,6 +328,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         hidden: source == null && !useExternal,
         minimized: false,
       );
+      if (!hadCamera && otherHasCamera && (source != null || useExternal)) {
+        _secondaryCameraLayout = _secondaryCameraLayout.copyWith(
+          xFraction: _compactLandscape
+              ? (_primaryCameraLayout.xFraction < 0.5 ? 0.92 : 0.08)
+              : _primaryCameraLayout.xFraction,
+          yFraction: _compactLandscape
+              ? _primaryCameraLayout.yFraction
+              : (_primaryCameraLayout.yFraction < 0.5 ? 0.78 : 0.08),
+        );
+      }
       await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
     } else {
       _primaryMapCamera = next;
@@ -332,6 +347,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         hidden: source == null && !useExternal,
         minimized: false,
       );
+      if (!hadCamera && otherHasCamera && (source != null || useExternal)) {
+        _primaryCameraLayout = _primaryCameraLayout.copyWith(
+          xFraction: _compactLandscape
+              ? (_secondaryCameraLayout.xFraction < 0.5 ? 0.92 : 0.08)
+              : _secondaryCameraLayout.xFraction,
+          yFraction: _compactLandscape
+              ? _secondaryCameraLayout.yFraction
+              : (_secondaryCameraLayout.yFraction < 0.5 ? 0.78 : 0.08),
+        );
+      }
       await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
     }
     if (mounted) setState(() {});
@@ -406,6 +431,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _primaryCameraOffset = null;
       await _cameraOverlaySettings.savePrimary(updated);
     }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _swapInternalCameraSlots() async {
+    if (!_slotHasCamera(false) || !_slotHasCamera(true)) return;
+    if (_primaryUsesExternal || _secondaryUsesExternal) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Para câmeras vindas do Monitor, use “Trocar fonte”. A troca direta funciona nas fontes abertas pelo mapa.',
+          ),
+        ),
+      );
+      return;
+    }
+    final primary = _primaryMapCamera;
+    _primaryMapCamera = _secondaryMapCamera;
+    _secondaryMapCamera = primary;
     if (mounted) setState(() {});
   }
 
@@ -624,7 +668,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Escolha fontes, oculte ou minimize cada PiP. Arrastar encaixa no canto mais próximo e posição/tamanho ficam salvos.',
+                    'Escolha fontes e organize os PiPs. Arraste para encaixar, dê dois toques para mudar o tamanho e minimize para virar uma bolha; posição e tamanho ficam salvos.',
                   ),
                   const SizedBox(height: 12),
                   slotTile(false),
@@ -646,6 +690,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     },
                   ),
                   const SizedBox(height: 4),
+                  if (_slotHasCamera(false) && _slotHasCamera(true)) ...[
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await _swapInternalCameraSlots();
+                        setSheetState(() {});
+                      },
+                      icon: const Icon(Icons.swap_vert_rounded),
+                      label: const Text('Trocar câmera 1 ↔ 2'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   OutlinedButton.icon(
                     onPressed: () async {
                       await _cameraOverlaySettings.resetLayout();
@@ -1160,6 +1215,46 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         RouteExplorerCategory.riverBridge => Icons.water_rounded,
       };
 
+  Color _poiColor(RouteExplorerCategory category) => switch (category) {
+        RouteExplorerCategory.fuel => Colors.orange.shade700,
+        RouteExplorerCategory.restaurant => Colors.deepOrange.shade600,
+        RouteExplorerCategory.stop => Colors.indigo.shade600,
+        RouteExplorerCategory.workshop => Colors.amber.shade800,
+        RouteExplorerCategory.health => Colors.red.shade600,
+        RouteExplorerCategory.water => Colors.blue.shade600,
+        RouteExplorerCategory.riverBridge => Colors.cyan.shade700,
+      };
+
+  void _focusPoiCluster(MapPoiCluster cluster) {
+    if (!_mapReady) return;
+    if (!cluster.isCluster) {
+      _focusPoi(cluster.first);
+      return;
+    }
+    setState(() {
+      _followPosition = false;
+      _quickView = null;
+      _customFollowZoom = null;
+      _selectedPoiId = null;
+    });
+    final nextZoom =
+        math.min(16.0, math.max(_visibleMapZoom + 1.8, 13.0)).toDouble();
+    _mapController.move(
+      LatLng(cluster.latitude, cluster.longitude),
+      nextZoom,
+    );
+  }
+
+  bool _navigationMatchesSelectedPoi(
+    RouteExplorerResult? selectedPoi,
+    MapNavigationTarget? target,
+  ) {
+    if (selectedPoi == null || target == null) return false;
+    if (target.sourceId != null && target.sourceId == selectedPoi.id) return true;
+    return (target.latitude - selectedPoi.latitude).abs() < 0.00001 &&
+        (target.longitude - selectedPoi.longitude).abs() < 0.00001;
+  }
+
   void _focusPoi(RouteExplorerResult item) {
     if (!_mapReady) return;
     setState(() {
@@ -1351,6 +1446,50 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ListTile(
+                leading: const Icon(Icons.layers_outlined),
+                title: const Text('Camadas e tipo do mapa'),
+                subtitle: Text(_mapViewSettings.stylePreset.label),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showLayerPicker());
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  _mapViewSettings.orientationMode == MapOrientationMode.headingUp
+                      ? Icons.explore_rounded
+                      : Icons.north_rounded,
+                ),
+                title: const Text('Orientação'),
+                subtitle: Text(
+                  _mapViewSettings.orientationMode == MapOrientationMode.headingUp
+                      ? 'Acompanhar direção'
+                      : 'Norte fixo',
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _toggleOrientationMode();
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  _hasCameraOverlay && _camerasVisible
+                      ? Icons.videocam_rounded
+                      : Icons.videocam_outlined,
+                ),
+                title: const Text('Câmeras sobre o mapa'),
+                subtitle: Text(
+                  _hasCameraOverlay
+                      ? (_camerasVisible ? 'PiPs visíveis' : 'PiPs ocultos')
+                      : 'Adicionar câmera ao mapa',
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showCameraManager());
+                },
+              ),
+              const Divider(height: 8),
               ListTile(
                 leading: const Icon(Icons.place_rounded),
                 title: const Text('Próximos pontos'),
@@ -2065,6 +2204,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final routeSegments = _routeSegmentsForDisplay();
     final visiblePois = _visiblePois;
     final selectedPoi = _selectedPoi;
+    final poiItemsForMap = <RouteExplorerResult>[...visiblePois];
+    if (selectedPoi != null &&
+        !poiItemsForMap.any((item) => item.id == selectedPoi.id)) {
+      poiItemsForMap.add(selectedPoi);
+    }
+    final poiClusters = MapPoiDisplayPolicy.clusters(
+      items: poiItemsForMap,
+      zoom: _visibleMapZoom,
+      selectedId: _selectedPoiId,
+    );
     final onlineLayer = _onlineMapLayerSpec;
     final activeOffline = _offlineMaps.activePackage;
     final outsideOfflineArea = activeOffline != null &&
@@ -2073,6 +2222,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           latitude: current.latitude,
           longitude: current.longitude,
         );
+    final navigationMatchesSelectedPoi =
+        _navigationMatchesSelectedPoi(selectedPoi, navigationTarget);
+    final showSelectedPoiCard = selectedPoi != null && !navigationMatchesSelectedPoi;
 
     final offlineProvider = _offlineTileProvider;
     final mode = _offlineMaps.mode;
@@ -2080,9 +2232,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final topInset = safePadding.top + 8;
     final bottomInset = safePadding.bottom + 8;
 
-    return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiService.mapOverlayStyle,
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: Colors.black,
+        resizeToAvoidBottomInset: false,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final horizontalControls = MapUxPolicy.compactLandscape(
@@ -2098,7 +2253,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           final controlDockTop = topInset + (compactHud ? 90 : 132);
           final attributionBottom = MapUxPolicy.attributionBottom(
             safeBottom: safePadding.bottom,
-            hasSelectedPoi: selectedPoi != null,
+            hasSelectedPoi: showSelectedPoiCard,
             hasNavigation: navigationTarget != null,
           );
           _mapViewportSize = Size(constraints.maxWidth, constraints.maxHeight);
@@ -2135,14 +2290,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       }
                     }
                   },
-                  onPositionChanged: (_, hasGesture) {
-                    if (hasGesture && _followPosition && mounted) {
-                      setState(() {
+                  onPositionChanged: (camera, hasGesture) {
+                    if (!mounted) return;
+                    final zoomChanged =
+                        (_visibleMapZoom - camera.zoom).abs() >= 0.20;
+                    final shouldReleaseFollow = hasGesture && _followPosition;
+                    if (!zoomChanged && !shouldReleaseFollow) return;
+                    setState(() {
+                      if (zoomChanged) _visibleMapZoom = camera.zoom;
+                      if (shouldReleaseFollow) {
                         _followPosition = false;
                         _quickView = null;
                         _customFollowZoom = null;
-                      });
-                    }
+                      }
+                    });
                   },
                   onTap: (_, _) {
                     if (_selectedPoiId != null) {
@@ -2187,45 +2348,71 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                   MarkerLayer(
                     markers: [
-                      for (final item in visiblePois)
+                      for (final cluster in poiClusters)
                         Marker(
-                          point: LatLng(item.latitude, item.longitude),
-                          width: item.id == _selectedPoiId ? 48 : 40,
+                          point: LatLng(cluster.latitude, cluster.longitude),
+                          width: cluster.isCluster
+                              ? 44
+                              : cluster.first.id == _selectedPoiId
+                                  ? 48
+                                  : 38,
                           rotate: true,
-                          height: item.id == _selectedPoiId ? 48 : 40,
+                          height: cluster.isCluster
+                              ? 44
+                              : cluster.first.id == _selectedPoiId
+                                  ? 48
+                                  : 38,
                           child: Semantics(
                             button: true,
-                            label:
-                                '${item.title}, ${_routeExplorer.formatDistance(item.distanceMeters)}',
+                            label: cluster.isCluster
+                                ? '${cluster.count} pontos próximos'
+                                : '${cluster.first.title}, '
+                                    '${_routeExplorer.formatDistance(cluster.first.distanceMeters)}',
                             child: GestureDetector(
-                              onTap: () => _focusPoi(item),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: item.id == _selectedPoiId
-                                      ? scheme.primary
-                                      : scheme.surface.withValues(alpha: 0.94),
-                                  border: Border.all(
-                                    color: item.id == _selectedPoiId
-                                        ? Colors.white
-                                        : scheme.primary.withValues(alpha: 0.72),
-                                    width: item.id == _selectedPoiId ? 3 : 2,
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      blurRadius: 7,
-                                      color: Color(0x44000000),
+                              onTap: () => _focusPoiCluster(cluster),
+                              child: Builder(
+                                builder: (context) {
+                                  final categoryColor = _poiColor(cluster.category);
+                                  final selected = !cluster.isCluster &&
+                                      cluster.first.id == _selectedPoiId;
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: cluster.isCluster || selected
+                                          ? categoryColor.withValues(alpha: 0.96)
+                                          : scheme.surface.withValues(alpha: 0.94),
+                                      border: Border.all(
+                                        color: cluster.isCluster || selected
+                                            ? Colors.white
+                                            : categoryColor,
+                                        width: selected ? 3 : 2,
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          blurRadius: 6,
+                                          color: Color(0x40000000),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  _poiIcon(item.category),
-                                  size: item.id == _selectedPoiId ? 23 : 19,
-                                  color: item.id == _selectedPoiId
-                                      ? scheme.onPrimary
-                                      : scheme.primary,
-                                ),
+                                    alignment: Alignment.center,
+                                    child: cluster.isCluster
+                                        ? Text(
+                                            '${cluster.count}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          )
+                                        : Icon(
+                                            _poiIcon(cluster.category),
+                                            size: selected ? 23 : 18,
+                                            color: selected
+                                                ? Colors.white
+                                                : categoryColor,
+                                          ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -2328,6 +2515,41 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 ],
               ),
 
+              // Scrims muito leves mantêm os ícones do Android legíveis sobre
+              // tiles claros sem criar uma barra sólida nem reduzir o mapa.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: safePadding.top + 54,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: <Color>[
+                          Colors.black.withValues(alpha: 0.36),
+                          Colors.black.withValues(alpha: 0.10),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: safePadding.bottom + 18,
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: Colors.black.withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+
               // O mapa permanece sob as áreas do sistema; somente os controles
               // respeitam notch/status/navigation bar para evitar faixas vazias.
               Positioned(
@@ -2370,14 +2592,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 left: 8,
                 right: 58,
                 child: _MapTelemetryStrip(
-                  paused: _routeState.paused,
                   speedKmh: current?.speedKilometersPerHour ?? 0,
-                  distance: _formatDistance(),
-                  routeState: _routeState,
                   altitudeMeters: current?.altitudeMeters,
                   headingDegrees: current?.headingDegrees,
-                  following: _followPosition,
-                  onToggleFollow: current == null ? null : _toggleFollow,
                   compact: compactHud,
                 ),
               ),
@@ -2427,31 +2644,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: _mapViewSettings.orientationMode ==
-                              MapOrientationMode.headingUp
-                          ? 'Acompanhando direção · tocar para Norte fixo'
-                          : 'Norte fixo · tocar para acompanhar direção',
-                      icon: _mapViewSettings.orientationMode ==
-                              MapOrientationMode.headingUp
-                          ? Icons.explore_rounded
-                          : Icons.north_rounded,
-                      active: _mapViewSettings.orientationMode ==
-                          MapOrientationMode.headingUp,
-                      onPressed: current == null ? null : _toggleOrientationMode,
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
-                      tooltip: 'Câmeras sobre o mapa',
-                      icon: _hasCameraOverlay
-                          ? (_camerasVisible
-                              ? Icons.videocam_rounded
-                              : Icons.videocam_off_rounded)
-                          : Icons.add_a_photo_outlined,
-                      active: _hasCameraOverlay && _camerasVisible,
-                      onPressed: () => unawaited(_showCameraManager()),
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
                       tooltip: 'Opções do mapa',
                       icon: Icons.more_horiz_rounded,
                       badge: _routeExplorer.results.isEmpty
@@ -2475,20 +2667,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       : onlineLayer.attribution,
                 ),
               ),
-              if (selectedPoi != null)
+              if (showSelectedPoiCard)
                 Positioned(
                   left: 10,
                   right: 10,
                   bottom: bottomInset + (navigationTarget == null ? 62 : 124),
                   child: _SelectedPoiCard(
-                    item: selectedPoi,
+                    item: selectedPoi!,
                     distanceLabel:
-                        _routeExplorer.formatDistance(selectedPoi.distanceMeters),
-                    icon: _poiIcon(selectedPoi.category),
+                        _routeExplorer.formatDistance(selectedPoi!.distanceMeters),
+                    icon: _poiIcon(selectedPoi!.category),
                     compact: compactHud,
                     onClose: () => setState(() => _selectedPoiId = null),
-                    onDetails: () => unawaited(_showPoiDetails(selectedPoi)),
-                    onNavigate: () => _navigateToPoi(selectedPoi),
+                    onDetails: () => unawaited(_showPoiDetails(selectedPoi!)),
+                    onNavigate: () => _navigateToPoi(selectedPoi!),
                   ),
                 ),
               if (navigationTarget != null)
@@ -2509,6 +2701,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   recording: _routeState.recording,
                   paused: _routeState.paused,
                   hasRoute: _routeState.route.length >= 2,
+                  routeState: _routeState,
+                  distanceLabel: _formatDistance(),
                   onToggleRecording: current == null
                       ? null
                       : _routeState.recording
@@ -2549,6 +2743,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           );
         },
       ),
+    ),
     );
   }
 
@@ -2571,8 +2766,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       late double width;
       late double height;
       if (minimized) {
-        width = 154;
-        height = 42;
+        width = 44;
+        height = 44;
       } else if (aspectRatio >= 1) {
         final baseWidth =
             (constraints.maxWidth * 0.29).clamp(126.0, 190.0).toDouble();
@@ -2595,10 +2790,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         safeTop: safePadding.top,
         compactLandscape: _compactLandscape,
       );
+      final selectedPoi = _selectedPoi;
+      final navigationTarget = _routeState.navigationTarget;
       final bottomReserve = MapUxPolicy.cameraBottomReserve(
         safeBottom: safePadding.bottom,
-        hasSelectedPoi: _selectedPoi != null,
-        hasNavigation: _routeState.navigationTarget != null,
+        hasSelectedPoi: selectedPoi != null &&
+            !_navigationMatchesSelectedPoi(selectedPoi, navigationTarget),
+        hasNavigation: navigationTarget != null,
       );
       final availableHeight = math.max(
         minimized ? 42.0 : 70.0,
@@ -2678,6 +2876,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         height: height,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
+          onTap: minimized
+              ? () => unawaited(_toggleCameraSlotMinimized(secondary))
+              : null,
+          onDoubleTap: minimized
+              ? null
+              : () => unawaited(_cycleCameraSlotSize(secondary)),
           onPanUpdate: (details) {
             setState(() {
               final next = position + details.delta;
@@ -2699,36 +2903,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             borderRadius: BorderRadius.circular(minimized ? 22 : 16),
             clipBehavior: Clip.antiAlias,
             child: minimized
-                ? Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      Icon(
+                ? Tooltip(
+                    message: '$label · tocar para expandir',
+                    child: Center(
+                      child: Icon(
                         secondary ? Icons.filter_2_rounded : Icons.videocam_rounded,
-                        size: 17,
+                        size: 20,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Expandir câmera',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-                        onPressed: () => unawaited(_toggleCameraSlotMinimized(secondary)),
-                        icon: const Icon(Icons.open_in_full_rounded, size: 16, color: Colors.white),
-                      ),
-                    ],
+                    ),
                   )
                 : Stack(
                     fit: StackFit.expand,
@@ -3493,6 +3676,12 @@ class _MapSourceChip extends StatelessWidget {
       OfflineMapMode.online => Icons.cloud_outlined,
       OfflineMapMode.offline => Icons.offline_pin_outlined,
     };
+    final displayLabel = compact
+        ? label
+            .replaceFirst('Bike/Viagem', 'Bike')
+            .replaceFirst('Topográfico', 'Topo')
+            .replaceFirst(' · Auto', '')
+        : label;
     return Tooltip(
       message: 'Camadas e tipo do mapa',
       child: Material(
@@ -3517,7 +3706,7 @@ class _MapSourceChip extends StatelessWidget {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    label,
+                    displayLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -3609,25 +3798,15 @@ class _GpsChip extends StatelessWidget {
 
 class _MapTelemetryStrip extends StatelessWidget {
   const _MapTelemetryStrip({
-    required this.paused,
     required this.speedKmh,
-    required this.distance,
-    required this.routeState,
     required this.altitudeMeters,
     required this.headingDegrees,
-    required this.following,
-    required this.onToggleFollow,
     this.compact = false,
   });
 
-  final bool paused;
   final double speedKmh;
-  final String distance;
-  final MapRouteService routeState;
   final double? altitudeMeters;
   final double? headingDegrees;
-  final bool following;
-  final VoidCallback? onToggleFollow;
   final bool compact;
 
   String _direction(double? degrees) {
@@ -3647,44 +3826,22 @@ class _MapTelemetryStrip extends StatelessWidget {
           _MapInfoPill(
             icon: Icons.speed_rounded,
             label: '${speedKmh.toStringAsFixed(1)} km/h',
+            emphasized: true,
           ),
           const SizedBox(width: 5),
-          _MapInfoPill(icon: Icons.route_rounded, label: distance),
-          if (!compact || routeState.recording) ...[
-            const SizedBox(width: 5),
-            _LiveRouteElapsedPill(routeState: routeState),
-          ],
+          _MapInfoPill(
+            icon: Icons.height_rounded,
+            label: altitudeMeters == null
+                ? 'Alt. --'
+                : '${altitudeMeters!.toStringAsFixed(0)} m',
+          ),
           if (!compact) ...[
             const SizedBox(width: 5),
             _MapInfoPill(
-              icon: Icons.height_rounded,
-              label: altitudeMeters == null
-                  ? 'Alt. --'
-                  : 'Alt. ${altitudeMeters!.toStringAsFixed(0)} m',
+              icon: Icons.explore_rounded,
+              label: _direction(headingDegrees),
             ),
           ],
-          const SizedBox(width: 5),
-          _MapInfoPill(
-            icon: Icons.explore_rounded,
-            label: _direction(headingDegrees),
-          ),
-          if (paused) ...[
-            const SizedBox(width: 5),
-            const _MapInfoPill(
-              icon: Icons.pause_circle_outline_rounded,
-              label: 'Percurso pausado',
-            ),
-          ],
-          const SizedBox(width: 5),
-          ActionChip(
-            avatar: Icon(
-              following ? Icons.navigation_rounded : Icons.pan_tool_alt_outlined,
-              size: 16,
-            ),
-            label: Text(following ? 'Seguindo' : 'Mapa livre'),
-            visualDensity: VisualDensity.compact,
-            onPressed: onToggleFollow,
-          ),
         ],
       ),
     );
@@ -3729,9 +3886,12 @@ class _LiveRouteElapsedPillState extends State<_LiveRouteElapsedPill> {
 
   @override
   Widget build(BuildContext context) {
-    return _MapInfoPill(
-      icon: Icons.timer_outlined,
-      label: _format(widget.routeState.elapsed),
+    return Text(
+      _format(widget.routeState.elapsed),
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w900,
+      ),
     );
   }
 }
@@ -3828,6 +3988,8 @@ class _RouteButtonBar extends StatelessWidget {
     required this.recording,
     required this.paused,
     required this.hasRoute,
+    required this.routeState,
+    required this.distanceLabel,
     required this.onToggleRecording,
     required this.onTogglePause,
     required this.onExport,
@@ -3836,6 +3998,8 @@ class _RouteButtonBar extends StatelessWidget {
   final bool recording;
   final bool paused;
   final bool hasRoute;
+  final MapRouteService routeState;
+  final String distanceLabel;
   final VoidCallback? onToggleRecording;
   final VoidCallback? onTogglePause;
   final VoidCallback? onExport;
@@ -3845,50 +4009,80 @@ class _RouteButtonBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 7),
       child: Center(
         child: Material(
-          elevation: 8,
-          color: scheme.surface.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(25),
+          elevation: 7,
+          color: scheme.surface.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(22),
           clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (recording)
-                  IconButton(
-                    tooltip: paused ? 'Continuar percurso' : 'Pausar percurso',
-                    onPressed: onTogglePause,
-                    visualDensity: VisualDensity.compact,
-                    icon: Icon(
-                      paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+          child: recording
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: paused ? 'Continuar percurso' : 'Pausar percurso',
+                        onPressed: onTogglePause,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+                        icon: Icon(
+                          paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                          size: 20,
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: paused ? scheme.tertiary : scheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _LiveRouteElapsedPill(routeState: routeState),
+                      const SizedBox(width: 8),
+                      Text(
+                        distanceLabel,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(width: 3),
+                      TextButton.icon(
+                        onPressed: onToggleRecording,
+                        style: TextButton.styleFrom(
+                          foregroundColor: scheme.error,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        icon: const Icon(Icons.stop_rounded, size: 18),
+                        label: const Text('Encerrar'),
+                      ),
+                    ],
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      onPressed: onToggleRecording,
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      ),
+                      icon: Icon(Icons.fiber_manual_record_rounded, size: 16, color: scheme.error),
+                      label: const Text('Gravar'),
                     ),
-                  ),
-                FilledButton.icon(
-                  onPressed: onToggleRecording,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 42),
-                    backgroundColor: recording ? scheme.error : null,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: Icon(
-                    recording ? Icons.stop_rounded : Icons.fiber_manual_record_rounded,
-                    size: 19,
-                  ),
-                  label: Text(recording ? 'Encerrar percurso' : 'Gravar percurso'),
+                    if (hasRoute)
+                      IconButton(
+                        tooltip: 'Exportar GPX',
+                        onPressed: onExport,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+                        icon: const Icon(Icons.file_upload_outlined, size: 19),
+                      ),
+                  ],
                 ),
-                if (hasRoute)
-                  IconButton(
-                    tooltip: 'Exportar GPX',
-                    onPressed: onExport,
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.file_upload_outlined),
-                  ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -3896,27 +4090,42 @@ class _RouteButtonBar extends StatelessWidget {
 }
 
 class _MapInfoPill extends StatelessWidget {
-  const _MapInfoPill({required this.icon, required this.label});
+  const _MapInfoPill({
+    required this.icon,
+    required this.label,
+    this.emphasized = false,
+  });
 
   final IconData icon;
   final String label;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surface.withValues(alpha: 0.92),
+      color: emphasized
+          ? scheme.primaryContainer.withValues(alpha: 0.94)
+          : scheme.surface.withValues(alpha: 0.92),
       borderRadius: BorderRadius.circular(18),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: scheme.primary),
+            Icon(
+              icon,
+              size: 14,
+              color: emphasized ? scheme.onPrimaryContainer : scheme.primary,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: emphasized ? FontWeight.w900 : FontWeight.w800,
+                color: emphasized ? scheme.onPrimaryContainer : null,
+              ),
             ),
           ],
         ),

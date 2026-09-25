@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.132+132`
+> **Versão atual:** `1.0.133+133`
 
 ## Estado atual
 
-A `1.0.132+132` é um buildfix do Android-APK-99 e preserva integralmente o redesign do mapa concluído na 1.0.131.
+A `1.0.133+133` é o refinamento visual do mapa após revisão de uso real em vídeo. Mantém as funções concluídas nas versões 1.0.125–1.0.132, mas reduz poluição visual e melhora leitura durante pedal/viagem.
+
+### Refinamento 1.0.133 — mapa mais limpo em uso real
+
+- POIs usam clustering por proximidade, limite de densidade por zoom e prioridade para combustível, saúde, comida e água; rios/pontes deixam de dominar a visão regional.
+- Marcadores recebem cores e ícones por categoria; tocar em um cluster aproxima o mapa e o POI selecionado permanece sempre individual.
+- HUD superior prioriza velocidade, GPS e altitude; distância/tempo saem do topo e aparecem na barra compacta de gravação quando o percurso está ativo.
+- Coluna lateral fica reduzida a zoom, seguir posição e Opções; camadas, orientação e câmeras continuam acessíveis pelo menu rápido e pelo chip de camada.
+- Barra de percurso passa a ocupar menos mapa: `Gravar` quando inativa e, durante a gravação, mostra pausa, tempo, distância e encerrar.
+- PiPs minimizados viram bolhas, duplo toque alterna tamanho, a segunda câmera ganha posição automática e fontes abertas pelo mapa podem trocar entre câmera 1 e 2.
+- Scrims transparentes mantêm status/navigation bar legíveis sobre mapas claros; o card do POI é ocultado quando o mesmo ponto já está representado pela navegação.
 
 ### Correção 1.0.132 — Android-APK-99
 

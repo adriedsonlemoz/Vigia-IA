@@ -24,7 +24,7 @@ void main() {
         hasSelectedPoi: true,
         hasNavigation: true,
       ),
-      220,
+      194,
     );
   });
 

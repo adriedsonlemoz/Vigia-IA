@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.132',
+          version: '1.0.133',
           current: true,
+          changes: [
+            'Refinamento visual do mapa após revisão em vídeo: POIs agora usam clustering, densidade por zoom e cores/ícones por categoria.',
+            'HUD fica mais leve: telemetria prioriza velocidade/altitude, lateral mantém zoom/seguir/opções e tempo/distância migram para a barra compacta de percurso.',
+            'PiPs ganham bolha minimizada, duplo toque para tamanho, arranjo automático da segunda câmera e troca direta entre câmera 1 e 2 para fontes abertas pelo mapa.',
+            'Barras do Android recebem contraste próprio sobre mapas claros e o card do POI não fica duplicado quando ele já virou destino de navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.132',
           changes: [
             'Correção do Android-APK-99: MapMonitoringScreen volta a importar explicitamente OfflinePoiPackage, eliminando dois erros undefined_class no flutter analyze.',
             'MapRouteService remove import redundante de flutter/foundation.dart, eliminando o issue unnecessary_import do analyzer.',
@@ -1220,8 +1230,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.132',
+          version: '1.0.133',
           current: true,
+          changes: [
+            'Refinamento visual do mapa após revisão em vídeo: POIs agora usam clustering, densidade por zoom e cores/ícones por categoria.',
+            'HUD fica mais leve: telemetria prioriza velocidade/altitude, lateral mantém zoom/seguir/opções e tempo/distância migram para a barra compacta de percurso.',
+            'PiPs ganham bolha minimizada, duplo toque para tamanho, arranjo automático da segunda câmera e troca direta entre câmera 1 e 2 para fontes abertas pelo mapa.',
+            'Barras do Android recebem contraste próprio sobre mapas claros e o card do POI não fica duplicado quando ele já virou destino de navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.132',
           changes: [
             'Correção do Android-APK-99: MapMonitoringScreen volta a importar explicitamente OfflinePoiPackage, eliminando dois erros undefined_class no flutter analyze.',
             'MapRouteService remove import redundante de flutter/foundation.dart, eliminando o issue unnecessary_import do analyzer.',

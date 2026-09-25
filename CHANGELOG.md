@@ -1,3 +1,16 @@
+## 1.0.133+133 — 2026-09-25
+
+- Refinamento visual do mapa baseado em revisão de uso real gravado em vídeo.
+- Adicionado `MapPoiDisplayPolicy`: clustering de POIs por proximidade, densidade variável por zoom e redução específica de rios/pontes quando a câmera está distante.
+- POI selecionado permanece individual fora dos clusters; clusters exibem quantidade e aproximam o mapa ao toque. Marcadores individuais usam ícone e cor específicos por categoria.
+- HUD do mapa é reduzido: faixa superior prioriza velocidade/altitude/rumo, enquanto tempo e distância do percurso migram para a barra de gravação compacta.
+- Controles permanentes da lateral ficam em zoom, seguir posição e Opções; camadas, orientação e câmeras ficam no menu rápido sem perder acesso.
+- Barra de percurso passa a usar `Gravar` em repouso e, durante a atividade, exibe pausar/continuar, tempo, distância e encerrar em uma única faixa menor.
+- `SystemUiService` ganha estilo específico do mapa e a tela usa scrims translúcidos para manter ícones do Android legíveis sobre tiles claros; navigation bar das demais telas fica escura.
+- PiPs minimizados viram bolhas de 44 px, duplo toque alterna tamanho, segunda câmera recebe posição automática e fontes internas podem trocar entre câmera 1 e 2.
+- Card de POI deixa de ser duplicado quando o mesmo ponto já virou destino da navegação; reservas inferiores dos PiPs/atribuição foram ajustadas à nova barra compacta.
+- Adicionados testes de clustering/densidade e atualizados testes de UX/reservas do mapa.
+
 ## 1.0.132+132 — 2026-09-25
 
 - Corrigido o Android-APK-99, que parava no `flutter analyze` antes de testes/build Android.

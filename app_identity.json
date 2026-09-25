@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.132 corrige o Android-APK-99: restaura o import explícito de OfflinePoiPackage no mapa e remove um import redundante que fazia flutter analyze falhar.",
-  "version": "1.0.132",
-  "build": 132
+  "notes": "A 1.0.133 refina visualmente o mapa após revisão em vídeo: clustering e densidade de POIs por zoom, HUD/barra de percurso compactos, controles simplificados, PiPs inteligentes e melhor contraste das barras do Android.",
+  "version": "1.0.133",
+  "build": 133
 }
