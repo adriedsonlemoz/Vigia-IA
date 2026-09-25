@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.133 refina visualmente o mapa após revisão em vídeo: clustering e densidade de POIs por zoom, HUD/barra de percurso compactos, controles simplificados, PiPs inteligentes e melhor contraste das barras do Android.",
-  "version": "1.0.133",
-  "build": 133
+  "notes": "A 1.0.134 adiciona rota viária real para bicicleta ao selecionar um destino no mapa, com distância, duração, geometria sobre as vias e fallback seguro para direção direta.",
+  "version": "1.0.134",
+  "build": 134
 }

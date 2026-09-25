@@ -1,5 +1,11 @@
-# Arquitetura — Vigia IA 1.0.133+133
+# Arquitetura — Vigia IA 1.0.134+134
 
+
+## Roteamento ciclável 1.0.134
+
+- `MapCyclingRouteService` consulta rota viária para bicicleta sem misturar lógica HTTP à tela.
+- `MapCyclingRoute` mantém geometria, distância e duração isoladas do estado de gravação de percurso.
+- O mapa preserva direção direta como fallback quando o roteamento online falha.
 
 ## Refinamento visual 1.0.133 — política de exibição e HUD
 

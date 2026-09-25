@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.133',
+          version: '1.0.134',
           current: true,
+          changes: [
+            'Mapa calcula rota viária real para bicicleta ao escolher um destino, desenhando o trajeto sobre as vias.',
+            'HUD da navegação mostra distância e duração estimadas da rota ciclável.',
+            'Se o roteamento online falhar, a navegação continua disponível por direção direta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.133',
           changes: [
             'Refinamento visual do mapa após revisão em vídeo: POIs agora usam clustering, densidade por zoom e cores/ícones por categoria.',
             'HUD fica mais leve: telemetria prioriza velocidade/altitude, lateral mantém zoom/seguir/opções e tempo/distância migram para a barra compacta de percurso.',
@@ -1230,8 +1239,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.133',
+          version: '1.0.134',
           current: true,
+          changes: [
+            'Mapa calcula rota viária real para bicicleta ao escolher um destino, desenhando o trajeto sobre as vias.',
+            'HUD da navegação mostra distância e duração estimadas da rota ciclável.',
+            'Se o roteamento online falhar, a navegação continua disponível por direção direta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.133',
           changes: [
             'Refinamento visual do mapa após revisão em vídeo: POIs agora usam clustering, densidade por zoom e cores/ícones por categoria.',
             'HUD fica mais leve: telemetria prioriza velocidade/altitude, lateral mantém zoom/seguir/opções e tempo/distância migram para a barra compacta de percurso.',

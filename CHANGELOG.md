@@ -1,3 +1,11 @@
+## 1.0.134+134 — 2026-09-25
+
+- Mapa passa a calcular rota viária real para bicicleta entre a posição atual e o POI escolhido.
+- A geometria da rota é desenhada sobre as vias e o HUD mostra distância e duração estimadas.
+- Falha de rede/roteamento preserva a navegação existente por direção direta, sem bloquear o mapa.
+- Etapa isolada: instruções, recálculo e rotas alternativas ficam para versões seguintes.
+- Versionamento sincronizado em `1.0.134+134`.
+
 ## 1.0.133+133 — 2026-09-25
 
 - Refinamento visual do mapa baseado em revisão de uso real gravado em vídeo.

@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import '../controllers/secondary_camera_controller.dart';
 import '../models/camera_endpoint.dart';
 import '../models/map_navigation_target.dart';
+import '../models/map_cycling_route.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
 import '../models/offline_poi_package.dart';
@@ -19,6 +20,7 @@ import '../models/video_source_config.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
+import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
@@ -71,6 +73,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapRouteService _routeState = MapRouteService.instance;
+  final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
+  MapCyclingRoute? _cyclingRoute;
+  bool _cyclingRouteLoading = false;
   final NativePlatformService _native = NativePlatformService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
@@ -910,29 +915,67 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
-  void _navigateToPoi(RouteExplorerResult item) {
+  Future<void> _navigateToPoi(RouteExplorerResult item) async {
+    final current = _routeState.current;
     setState(() {
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
       _selectedPoiId = item.id;
+      _cyclingRoute = null;
+      _cyclingRouteLoading = current != null;
     });
-    unawaited(
-      _routeState.navigateTo(
-        MapNavigationTarget(
-          latitude: item.latitude,
-          longitude: item.longitude,
-          label: item.title,
-          startedAt: DateTime.now(),
-          sourceId: item.id,
-        ),
+    await _routeState.navigateTo(
+      MapNavigationTarget(
+        latitude: item.latitude,
+        longitude: item.longitude,
+        label: item.title,
+        startedAt: DateTime.now(),
+        sourceId: item.id,
       ),
     );
-    final current = _routeState.current;
-    if (current != null) _applyFollowCamera(current, forceRotation: true);
+    if (current != null) {
+      try {
+        final route = await _cyclingRoutes.fetch(
+          origin: LatLng(current.latitude, current.longitude),
+          destination: LatLng(item.latitude, item.longitude),
+        );
+        if (!mounted || _routeState.navigationTarget?.sourceId != item.id) return;
+        setState(() => _cyclingRoute = route);
+        _fitCyclingRoute(route.points);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rota viária indisponível. Usando direção direta.')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _cyclingRouteLoading = false);
+      }
+      _applyFollowCamera(current, forceRotation: true);
+    }
+  }
+
+  void _fitCyclingRoute(List<LatLng> points) {
+    if (!_mapReady || points.length < 2) return;
+    try {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: points,
+          padding: const EdgeInsets.fromLTRB(48, 138, 60, 150),
+          minZoom: 3,
+          maxZoom: 16,
+        ),
+      );
+      setState(() => _followPosition = false);
+    } catch (_) {}
   }
 
   void _stopNavigation() {
+    setState(() {
+      _cyclingRoute = null;
+      _cyclingRouteLoading = false;
+    });
     unawaited(_routeState.stopNavigation());
   }
 
@@ -2334,6 +2377,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       maxNativeZoom: onlineLayer.maxNativeZoom,
                       subdomains: onlineLayer.subdomains,
                     ),
+                  if (_cyclingRoute != null)
+                    PolylineLayer(
+                      polylines: <Polyline>[
+                        Polyline(
+                          points: _cyclingRoute!.points,
+                          strokeWidth: 6,
+                          color: scheme.tertiary,
+                        ),
+                      ],
+                    ),
                   if (routeSegments.isNotEmpty)
                     PolylineLayer(
                       polylines: routeSegments
@@ -2692,6 +2745,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     target: navigationTarget,
                     distanceMeters: _routeState.navigationDistanceMeters,
                     bearingDegrees: _routeState.navigationBearingDegrees,
+                    roadRoute: _cyclingRoute,
+                    loadingRoadRoute: _cyclingRouteLoading,
                     onStop: _stopNavigation,
                   ),
                 ),
@@ -3901,18 +3956,30 @@ class _NavigationBanner extends StatelessWidget {
     required this.target,
     required this.distanceMeters,
     required this.bearingDegrees,
+    required this.roadRoute,
+    required this.loadingRoadRoute,
     required this.onStop,
   });
 
   final MapNavigationTarget target;
   final double? distanceMeters;
   final double? bearingDegrees;
+  final MapCyclingRoute? roadRoute;
+  final bool loadingRoadRoute;
   final VoidCallback onStop;
 
   String _distance(double? meters) {
     if (meters == null) return '--';
     if (meters < 1000) return '${meters.toStringAsFixed(0)} m';
     return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  String _duration(double seconds) {
+    final minutes = (seconds / 60).round();
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    final rest = minutes % 60;
+    return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
   }
 
   String _bearing(double? degrees) {
@@ -3957,7 +4024,11 @@ class _NavigationBanner extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${_distance(distanceMeters)} · ${_bearing(bearingDegrees)} · direção direta',
+                      loadingRoadRoute
+                          ? 'Calculando rota de bicicleta…'
+                          : roadRoute != null
+                              ? '${_distance(roadRoute!.distanceMeters)} · ${_duration(roadRoute!.durationSeconds)} · bicicleta'
+                              : '${_distance(distanceMeters)} · ${_bearing(bearingDegrees)} · direção direta',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
