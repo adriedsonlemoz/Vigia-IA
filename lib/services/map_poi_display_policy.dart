@@ -172,10 +172,14 @@ class MapPoiDisplayPolicy {
   static int _priority(RouteExplorerCategory category) => switch (category) {
         RouteExplorerCategory.fuel => 0,
         RouteExplorerCategory.health => 1,
-        RouteExplorerCategory.restaurant => 2,
-        RouteExplorerCategory.water => 3,
-        RouteExplorerCategory.workshop => 4,
-        RouteExplorerCategory.stop => 5,
-        RouteExplorerCategory.riverBridge => 6,
+        RouteExplorerCategory.water => 2,
+        RouteExplorerCategory.workshop => 3,
+        RouteExplorerCategory.camping => 4,
+        RouteExplorerCategory.market => 5,
+        RouteExplorerCategory.restaurant => 6,
+        RouteExplorerCategory.viewpoint => 7,
+        RouteExplorerCategory.waterfall => 8,
+        RouteExplorerCategory.stop => 9,
+        RouteExplorerCategory.riverBridge => 10,
       };
 }

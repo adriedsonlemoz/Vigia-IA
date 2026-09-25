@@ -2,11 +2,30 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.137+137`
+> **Versão atual:** `1.0.139+139`
 
 ## Estado atual
 
-A `1.0.137+137` adiciona rotas alternativas para bicicleta: o mapa pode mostrar até três trajetos, comparar distância/tempo e trocar a rota ativa sem interromper a navegação.
+A `1.0.139+139` transforma o POI selecionado em um painel completo de consulta rápida, mantendo a navegação e o mapa como ações centrais.
+
+### Evolução 1.0.139 — painel completo do local
+
+- Tocar em um marcador individual abre o painel completo; o componente foi extraído da tela principal para `MapPoiDetailsSheet`, reduzindo acoplamento no mapa.
+- Cabeçalho resume nome, categoria, distância e origem online/offline.
+- Endereço, horário, telefone, site e operador/marca são exibidos em uma área estruturada quando disponíveis.
+- Endereço, telefone, site e coordenadas têm cópia rápida para a área de transferência.
+- Comodidades aparecem em chips e as coordenadas permanecem disponíveis mesmo quando a origem não fornece outros dados.
+- A ação principal é `Ir até lá`; `Mostrar no mapa` permanece como ação secundária.
+
+### Evolução 1.0.138 — POIs enriquecidos + natureza/cicloviagem
+
+- POIs preservam endereço, horário, telefone, site, operador/marca e comodidades quando publicados na base consultada.
+- `RouteExplorerPoiCatalog` centraliza classificação e metadados sem aumentar a responsabilidade da tela do mapa.
+- Novas categorias: Camping, Mirantes, Cachoeiras e Mercados/Suprimentos; Oficinas seguem incluindo suporte para bicicleta.
+- Filtros rápidos `Natureza` e `Bike/viagem` ajudam a separar pontos úteis durante deslocamentos.
+- Pacotes offline guardam os novos campos e continuam recalculando distância localmente.
+- Migração do catálogo habilita as novas categorias para quem atualizar da versão anterior, sem limpar dados.
+- Seleção equilibrada impede que categorias muito numerosas eliminem totalmente POIs de viagem/natureza da lista limitada.
 
 ### Evolução 1.0.137 — rotas alternativas
 

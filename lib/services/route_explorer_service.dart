@@ -14,6 +14,7 @@ import '../models/route_explorer_models.dart';
 import 'alert_delivery_service.dart';
 import 'location_tracking_service.dart';
 import 'map_route_service.dart';
+import 'route_explorer_poi_catalog.dart';
 
 class RouteExplorerService extends ChangeNotifier {
   RouteExplorerService._();
@@ -550,7 +551,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.137');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.139');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -575,10 +576,12 @@ class RouteExplorerService extends ChangeNotifier {
               (key, value) => MapEntry(key.toString(), value.toString()),
             ) ??
             const <String, String>{};
-        final category = _resolveCategory(tags);
-        if (category == null || !_settings.categories.contains(category)) {
+        final metadata = RouteExplorerPoiCatalog.metadataFor(tags);
+        if (metadata == null ||
+            !_settings.categories.contains(metadata.category)) {
           continue;
         }
+        final category = metadata.category;
         if (_settings.searchAheadWhenMoving && !_isAheadOrNearby(current, coordinates)) {
           continue;
         }
@@ -587,7 +590,7 @@ class RouteExplorerService extends ChangeNotifier {
           origin,
           coordinates,
         );
-        final title = _resolveTitle(category, tags);
+        final title = metadata.title;
         final uniqueKey =
             '${category.name}:${title.toLowerCase()}:${coordinates.latitude.toStringAsFixed(4)}:${coordinates.longitude.toStringAsFixed(4)}';
         if (!seen.add(uniqueKey)) continue;
@@ -597,17 +600,23 @@ class RouteExplorerService extends ChangeNotifier {
                 '${raw['type'] ?? 'item'}-${raw['id'] ?? title.hashCode}-${category.name}',
             category: category,
             title: title,
-            subtitle: _resolveSubtitle(category, tags),
+            subtitle: metadata.subtitle,
             latitude: coordinates.latitude,
             longitude: coordinates.longitude,
             distanceMeters: distanceMeters,
+            address: metadata.address,
+            openingHours: metadata.openingHours,
+            phone: metadata.phone,
+            website: metadata.website,
+            operatorName: metadata.operatorName,
+            amenities: metadata.amenities,
           ),
         );
       }
       results.sort(
         (a, b) => a.distanceMeters.compareTo(b.distanceMeters),
       );
-      return results.take(maximumResults).toList(growable: false);
+      return _prioritizeCategoryDiversity(results);
     } finally {
       client.close(force: true);
     }
@@ -632,7 +641,7 @@ class RouteExplorerService extends ChangeNotifier {
         )
         .toList(growable: false)
       ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
-    return items.take(maximumResults).toList(growable: false);
+    return _prioritizeCategoryDiversity(items);
   }
 
   LatLng? _readCoordinates(Map<String, dynamic> raw) {
@@ -694,168 +703,45 @@ class RouteExplorerService extends ChangeNotifier {
   }) {
     final buffer = StringBuffer('[out:json][timeout:18];(');
     for (final category in categories) {
-      for (final clause in _clausesFor(category)) {
-        for (final type in const <String>['node', 'way', 'relation']) {
-          buffer.writeln(
-            '$type(around:$radiusMeters,$latitude,$longitude)$clause;',
-          );
-        }
+      for (final clause in RouteExplorerPoiCatalog.clausesFor(category)) {
+        buffer.writeln(
+          'nwr(around:$radiusMeters,$latitude,$longitude)$clause;',
+        );
       }
     }
-    buffer.write(');out center 64;');
+    buffer.write(');out center 160;');
     return buffer.toString();
   }
 
-  List<String> _clausesFor(RouteExplorerCategory category) {
-    switch (category) {
-      case RouteExplorerCategory.fuel:
-        return const <String>['["amenity"="fuel"]'];
-      case RouteExplorerCategory.restaurant:
-        return const <String>[
-          '["amenity"="restaurant"]',
-          '["amenity"="fast_food"]',
-          '["amenity"="cafe"]',
-        ];
-      case RouteExplorerCategory.stop:
-        return const <String>[
-          '["amenity"="parking"]',
-          '["amenity"="shelter"]',
-          '["amenity"="bus_station"]',
-          '["tourism"="camp_site"]',
-        ];
-      case RouteExplorerCategory.workshop:
-        return const <String>[
-          '["shop"="car_repair"]',
-          '["shop"="bicycle"]',
-          '["amenity"="bicycle_repair_station"]',
-        ];
-      case RouteExplorerCategory.health:
-        return const <String>[
-          '["amenity"="pharmacy"]',
-          '["amenity"="hospital"]',
-          '["amenity"="clinic"]',
-          '["amenity"="doctors"]',
-        ];
-      case RouteExplorerCategory.water:
-        return const <String>[
-          '["amenity"="drinking_water"]',
-          '["amenity"="toilets"]',
-          '["amenity"="shower"]',
-        ];
-      case RouteExplorerCategory.riverBridge:
-        return const <String>[
-          '["waterway"="river"]',
-          '["waterway"="stream"]',
-          '["bridge"]',
-          '["man_made"="bridge"]',
-        ];
-    }
-  }
-
-  RouteExplorerCategory? _resolveCategory(
-    Map<String, String> tags,
+  List<RouteExplorerResult> _prioritizeCategoryDiversity(
+    List<RouteExplorerResult> sortedResults,
   ) {
-    final amenity = tags['amenity'];
-    final tourism = tags['tourism'];
-    final shop = tags['shop'];
-    final waterway = tags['waterway'];
-    final manMade = tags['man_made'];
-    final bridge = tags['bridge'];
-    if (amenity == 'fuel') return RouteExplorerCategory.fuel;
-    if (amenity == 'restaurant' || amenity == 'fast_food' || amenity == 'cafe') {
-      return RouteExplorerCategory.restaurant;
+    if (sortedResults.length <= maximumResults) {
+      return List<RouteExplorerResult>.unmodifiable(sortedResults);
     }
-    if (amenity == 'parking' ||
-        amenity == 'shelter' ||
-        amenity == 'bus_station' ||
-        tourism == 'camp_site') {
-      return RouteExplorerCategory.stop;
-    }
-    if (shop == 'car_repair' ||
-        shop == 'bicycle' ||
-        amenity == 'bicycle_repair_station') {
-      return RouteExplorerCategory.workshop;
-    }
-    if (amenity == 'pharmacy' ||
-        amenity == 'hospital' ||
-        amenity == 'clinic' ||
-        amenity == 'doctors') {
-      return RouteExplorerCategory.health;
-    }
-    if (amenity == 'drinking_water' || amenity == 'toilets' || amenity == 'shower') {
-      return RouteExplorerCategory.water;
-    }
-    if (waterway == 'river' ||
-        waterway == 'stream' ||
-        manMade == 'bridge' ||
-        (bridge != null && bridge.isNotEmpty)) {
-      return RouteExplorerCategory.riverBridge;
-    }
-    return null;
-  }
 
-  String _resolveTitle(
-    RouteExplorerCategory category,
-    Map<String, String> tags,
-  ) {
-    final name = tags['name'];
-    if (name != null && name.trim().isNotEmpty) return name.trim();
-    switch (category) {
-      case RouteExplorerCategory.fuel:
-        return 'Posto próximo';
-      case RouteExplorerCategory.restaurant:
-        return 'Restaurante próximo';
-      case RouteExplorerCategory.stop:
-        return 'Parada próxima';
-      case RouteExplorerCategory.workshop:
-        return 'Oficina próxima';
-      case RouteExplorerCategory.health:
-        return 'Ponto de saúde';
-      case RouteExplorerCategory.water:
-        return 'Água/banheiro';
-      case RouteExplorerCategory.riverBridge:
-        return 'Rio ou ponte';
+    const minimumPerCategory = 2;
+    final selected = <RouteExplorerResult>[];
+    final selectedIds = <String>{};
+    for (final category in _settings.categories) {
+      var count = 0;
+      for (final item in sortedResults) {
+        if (item.category != category || !selectedIds.add(item.id)) continue;
+        selected.add(item);
+        count++;
+        if (count >= minimumPerCategory || selected.length >= maximumResults) {
+          break;
+        }
+      }
+      if (selected.length >= maximumResults) break;
     }
-  }
 
-  String _resolveSubtitle(
-    RouteExplorerCategory category,
-    Map<String, String> tags,
-  ) {
-    final details = <String>[];
-    final ref = tags['ref'];
-    final street = tags['addr:street'];
-    final brand = tags['brand'];
-    final description = tags['description'];
-    switch (category) {
-      case RouteExplorerCategory.fuel:
-        details.add(brand?.trim().isNotEmpty == true ? brand!.trim() : 'Combustível');
-        break;
-      case RouteExplorerCategory.restaurant:
-        details.add('Alimentação');
-        break;
-      case RouteExplorerCategory.stop:
-        details.add('Parada');
-        break;
-      case RouteExplorerCategory.workshop:
-        details.add('Suporte mecânico');
-        break;
-      case RouteExplorerCategory.health:
-        details.add('Atendimento');
-        break;
-      case RouteExplorerCategory.water:
-        details.add('Água ou banheiro');
-        break;
-      case RouteExplorerCategory.riverBridge:
-        details.add('Referência no caminho');
-        break;
+    for (final item in sortedResults) {
+      if (selected.length >= maximumResults) break;
+      if (selectedIds.add(item.id)) selected.add(item);
     }
-    if (ref != null && ref.trim().isNotEmpty) details.add(ref.trim());
-    if (street != null && street.trim().isNotEmpty) details.add(street.trim());
-    if (description != null && description.trim().isNotEmpty) {
-      details.add(description.trim());
-    }
-    return details.join(' · ');
+    selected.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    return List<RouteExplorerResult>.unmodifiable(selected);
   }
 
   void _evaluateAlerts(MapRoutePoint current) {
@@ -899,6 +785,10 @@ class RouteExplorerService extends ChangeNotifier {
       RouteExplorerCategory.workshop => 'Próxima oficina',
       RouteExplorerCategory.health => 'Próximo ponto de saúde',
       RouteExplorerCategory.water => 'Próximo ponto de água ou banheiro',
+      RouteExplorerCategory.camping => 'Próximo camping',
+      RouteExplorerCategory.viewpoint => 'Próximo mirante',
+      RouteExplorerCategory.waterfall => 'Próxima cachoeira',
+      RouteExplorerCategory.market => 'Próximo mercado',
       RouteExplorerCategory.riverBridge => 'Próxima referência',
     };
     return '$prefix em ${formatDistance(distanceMeters)}: ${item.title}.';

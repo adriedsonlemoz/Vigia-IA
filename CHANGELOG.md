@@ -1,3 +1,26 @@
+## 1.0.139+139 — 2026-09-25
+
+- Tocar em um marcador de POI individual abre diretamente um painel completo com nome, categoria, distância, origem online/offline e informações estruturadas do local.
+- Endereço, horário, telefone, site, operador/marca e comodidades aparecem quando disponíveis na origem online ou no pacote offline.
+- Endereço, telefone, site e coordenadas recebem ação de cópia rápida.
+- Ação principal do painel passa a ser `Ir até lá`, mantendo `Mostrar no mapa` como ação secundária.
+- O painel foi extraído para `lib/widgets/map_poi_details_sheet.dart`, evitando ampliar ainda mais `MapMonitoringScreen`.
+- Adicionado teste de widget do painel completo e validações preventivas do novo componente.
+- Versionamento sincronizado em `1.0.139+139`.
+
+## 1.0.138+138 — 2026-09-25
+
+- POIs online passam a preservar endereço, horário, telefone, site, operador/marca e comodidades quando disponíveis nas tags do OpenStreetMap.
+- Criado `RouteExplorerPoiCatalog` para centralizar categorias, consultas Overpass e leitura de metadados, mantendo rede e UI desacopladas.
+- Adicionadas categorias próprias de Camping, Mirantes, Cachoeiras e Mercados/Suprimentos; Oficinas continuam incluindo bicicletarias e estações de reparo.
+- Próximos pontos ganha filtros `Natureza` e `Bike/viagem`, além de resumo adicional nos itens encontrados.
+- Dados enriquecidos são serializados junto dos pacotes offline e preservados após restauração.
+- Configurações antigas migram uma única vez para o catálogo v2, habilitando as novas categorias sem reinstalação.
+- Resultados recebem cota mínima por categoria antes de completar pelos mais próximos para preservar diversidade em regiões densas.
+- Consulta Overpass passa a usar `nwr` para nós/vias/relações com query menor.
+- Adicionados testes de classificação de POIs, metadados enriquecidos, migração do catálogo e persistência offline.
+- Versionamento sincronizado em `1.0.138+138`.
+
 ## 1.0.137+137 — 2026-09-25
 
 - Roteamento de bicicleta passa a solicitar até duas alternativas adicionais pelo parâmetro `alternates` do Valhalla.

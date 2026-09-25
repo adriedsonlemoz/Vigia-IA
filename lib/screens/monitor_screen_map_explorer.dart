@@ -1,6 +1,6 @@
 part of 'monitor_screen.dart';
 
-enum _RouteQuickFilter { all, fuel, food, health, water, other }
+enum _RouteQuickFilter { all, fuel, food, health, water, nature, travel, other }
 
 extension _MonitorScreenMapExplorer on _MonitorScreenState {
   Future<void> _showMapExplorerSheet() async {
@@ -103,7 +103,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                                       child: ListTile(
                                         leading: CircleAvatar(child: Icon(_mapExplorerCategoryIcon(item.category), size: 19)),
                                         title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        subtitle: Text('${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        subtitle: Text(item.subtitle.trim().isEmpty ? '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}' : '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}\n${item.subtitle}', maxLines: 2, overflow: TextOverflow.ellipsis),
                                         trailing: Text(service.formatDistance(item.distanceMeters), style: const TextStyle(fontWeight: FontWeight.w900)),
                                         onTap: () {
                                           Navigator.of(sheetContext).pop();
@@ -581,6 +581,10 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
         RouteExplorerCategory.workshop => 'Oficinas',
         RouteExplorerCategory.health => 'Saúde',
         RouteExplorerCategory.water => 'Água',
+        RouteExplorerCategory.camping => 'Camping',
+        RouteExplorerCategory.viewpoint => 'Mirantes',
+        RouteExplorerCategory.waterfall => 'Cachoeiras',
+        RouteExplorerCategory.market => 'Mercados',
         RouteExplorerCategory.riverBridge => 'Rios/pontes',
       };
 
@@ -600,7 +604,13 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
     _RouteQuickFilter.food => item.category == RouteExplorerCategory.restaurant,
     _RouteQuickFilter.health => item.category == RouteExplorerCategory.health,
     _RouteQuickFilter.water => item.category == RouteExplorerCategory.water,
-    _RouteQuickFilter.other => item.category == RouteExplorerCategory.stop || item.category == RouteExplorerCategory.workshop || item.category == RouteExplorerCategory.riverBridge,
+    _RouteQuickFilter.nature => item.category == RouteExplorerCategory.viewpoint ||
+        item.category == RouteExplorerCategory.waterfall ||
+        item.category == RouteExplorerCategory.riverBridge,
+    _RouteQuickFilter.travel => item.category == RouteExplorerCategory.camping ||
+        item.category == RouteExplorerCategory.workshop ||
+        item.category == RouteExplorerCategory.market,
+    _RouteQuickFilter.other => item.category == RouteExplorerCategory.stop,
   };
 
   String _quickFilterLabel(_RouteQuickFilter filter) => switch (filter) {
@@ -609,6 +619,8 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
     _RouteQuickFilter.food => 'Comida',
     _RouteQuickFilter.health => 'Saúde',
     _RouteQuickFilter.water => 'Água',
+    _RouteQuickFilter.nature => 'Natureza',
+    _RouteQuickFilter.travel => 'Bike/viagem',
     _RouteQuickFilter.other => 'Outros',
   };
 
@@ -650,6 +662,10 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
     RouteExplorerCategory.workshop => Icons.build_circle_outlined,
     RouteExplorerCategory.health => Icons.local_hospital_outlined,
     RouteExplorerCategory.water => Icons.water_drop_outlined,
+    RouteExplorerCategory.camping => Icons.home_outlined,
+    RouteExplorerCategory.viewpoint => Icons.visibility_outlined,
+    RouteExplorerCategory.waterfall => Icons.water_drop_outlined,
+    RouteExplorerCategory.market => Icons.shopping_cart,
     RouteExplorerCategory.riverBridge => Icons.landscape_outlined,
   };
 

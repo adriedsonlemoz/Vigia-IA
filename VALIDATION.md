@@ -1,3 +1,15 @@
+## 1.0.138+138 — POIs enriquecidos + natureza/cicloviagem
+
+- Confirmar categorias Camping, Mirantes, Cachoeiras e Mercados nas configurações e nos marcadores/listas quando houver dados na região.
+- Confirmar filtros rápidos `Natureza` e `Bike/viagem` em Próximos pontos.
+- Confirmar endereço/horário/telefone/site/comodidades quando as tags correspondentes existirem e ausência limpa desses campos quando não existirem.
+- Salvar pacote offline, reiniciar e confirmar preservação dos metadados enriquecidos e das novas categorias.
+- Atualizar a partir de estado antigo sem `poiCatalogVersion` e confirmar migração automática das quatro novas categorias; após o usuário desmarcá-las no catálogo v2, elas não devem reaparecer sozinhas.
+- Confirmar que uma região densa ainda mantém alguma diversidade de categorias dentro do limite de resultados.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Executar `test/route_explorer_poi_catalog_test.dart`, `test/offline_poi_package_test.dart` e a suíte completa quando Flutter estiver disponível.
+- `flutter analyze`, `flutter test` e build Android dependem do SDK Flutter/Android e devem ser reconfirmados pelo workflow.
+
 ## 1.0.137+137 — rotas alternativas
 
 - Confirmar rota principal + até duas alternativas distintas quando o servidor disponibilizar.

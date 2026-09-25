@@ -22,6 +22,11 @@ void main() {
           longitude: -43.60,
           distanceMeters: 4200,
           source: 'offline',
+          address: 'Rodovia MG-010, km 20',
+          openingHours: '24/7',
+          phone: '+55 31 3000-0000',
+          website: 'https://example.com',
+          amenities: <String>['Banheiro', 'Água potável'],
         ),
       ],
     );
@@ -36,6 +41,11 @@ void main() {
     expect(restored.updatedAt, now);
     expect(restored.searchRadiusKm, 20);
     expect(restored.items.single.title, 'Posto teste');
+    expect(restored.items.single.address, 'Rodovia MG-010, km 20');
+    expect(restored.items.single.openingHours, '24/7');
+    expect(restored.items.single.phone, '+55 31 3000-0000');
+    expect(restored.items.single.website, 'https://example.com');
+    expect(restored.items.single.amenities, contains('Água potável'));
   });
 
   test('bounds do pacote acompanham o raio pesquisado', () {

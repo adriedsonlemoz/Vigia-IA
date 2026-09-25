@@ -1,4 +1,20 @@
-# Arquitetura — Vigia IA 1.0.137+137
+# Arquitetura — Vigia IA 1.0.139+139
+
+## Painel completo do local 1.0.139
+
+- `MapPoiDetailsSheet` concentra apresentação e ações locais do POI; `MapMonitoringScreen` apenas fornece o item, ícone, distância e callbacks de mapa/navegação.
+- O widget consome exclusivamente `RouteExplorerResult`, portanto funciona da mesma forma para resultados online e pacotes offline.
+- Campos opcionais são renderizados somente quando presentes; cópia usa `Clipboard` do Flutter e não introduz dependência externa.
+- A navegação continua sendo responsabilidade da tela/controlador do mapa; o painel não conhece roteamento nem GPS.
+
+## POIs enriquecidos e catálogo de viagem 1.0.138
+
+- `RouteExplorerPoiCatalog` concentra regras de classificação OSM, cláusulas Overpass e extração de metadados; `RouteExplorerService` permanece responsável por rede, distância, cache e alertas.
+- `RouteExplorerResult` passa a carregar metadados opcionais estruturados (`address`, `openingHours`, `phone`, `website`, `operatorName`, `amenities`) com serialização retrocompatível.
+- `RouteExplorerSettings` usa `poiCatalogVersion = 2` para migrar uma única vez as novas categorias em instalações existentes sem reativá-las depois caso o usuário as desmarque.
+- O catálogo separa Camping de Paradas e acrescenta Mirantes, Cachoeiras e Mercados; Oficinas continuam abrangendo bicicletarias/estações de reparo.
+- Busca Overpass utiliza `nwr` por cláusula para cobrir node/way/relation com query menor; resultados são deduplicados e limitados com diversidade mínima por categoria.
+- Pacotes offline reutilizam o mesmo `RouteExplorerResult`, portanto os metadados enriquecidos não exigem um segundo formato de cache.
 
 ## Rotas alternativas 1.0.137
 

@@ -34,7 +34,13 @@ void main() {
         RouteExplorerCategory.fuel,
         RouteExplorerCategory.restaurant,
         RouteExplorerCategory.stop,
+        RouteExplorerCategory.workshop,
+        RouteExplorerCategory.health,
         RouteExplorerCategory.water,
+        RouteExplorerCategory.camping,
+        RouteExplorerCategory.viewpoint,
+        RouteExplorerCategory.waterfall,
+        RouteExplorerCategory.market,
       ]),
     );
   });

@@ -65,8 +65,26 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.137',
+          version: '1.0.139',
           current: true,
+          changes: [
+            'POI selecionado ganha painel completo com categoria, distância, origem, endereço, horário, telefone, site, operador e comodidades.',
+            'Endereço, telefone, site e coordenadas podem ser copiados rapidamente sem sair do mapa.',
+            'Ação principal passa a ser Ir até lá, mantendo Mostrar no mapa como ação secundária.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.138',
+          changes: [
+            'POIs preservam endereço, horário, telefone, site e comodidades quando essas informações estão disponíveis.',
+            'Mapa ganha categorias próprias para camping, mirantes, cachoeiras e mercados, além de filtros Natureza e Bike/viagem.',
+            'Pacotes offline preservam os dados enriquecidos e instalações antigas recebem as novas categorias sem reinstalação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.137',
           changes: [
             'Roteamento ciclável passa a solicitar até duas alternativas adicionais quando o servidor consegue fornecê-las.',
             'Mapa desenha as alternativas de forma secundária e mantém a rota ativa em destaque.',
@@ -1266,8 +1284,26 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.137',
+          version: '1.0.139',
           current: true,
+          changes: [
+            'POI selecionado ganha painel completo com categoria, distância, origem, endereço, horário, telefone, site, operador e comodidades.',
+            'Endereço, telefone, site e coordenadas podem ser copiados rapidamente sem sair do mapa.',
+            'Ação principal passa a ser Ir até lá, mantendo Mostrar no mapa como ação secundária.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.138',
+          changes: [
+            'POIs preservam endereço, horário, telefone, site e comodidades quando essas informações estão disponíveis.',
+            'Mapa ganha categorias próprias para camping, mirantes, cachoeiras e mercados, além de filtros Natureza e Bike/viagem.',
+            'Pacotes offline preservam os dados enriquecidos e instalações antigas recebem as novas categorias sem reinstalação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.137',
           changes: [
             'Roteamento ciclável passa a solicitar até duas alternativas adicionais quando o servidor consegue fornecê-las.',
             'Mapa desenha as alternativas de forma secundária e mantém a rota ativa em destaque.',

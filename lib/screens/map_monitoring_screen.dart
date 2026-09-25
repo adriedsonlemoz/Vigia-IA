@@ -33,8 +33,9 @@ import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
 import '../services/system_ui_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
+import '../widgets/map_poi_details_sheet.dart';
 
-enum _MapPoiQuickFilter { all, fuel, food, health, water, other }
+enum _MapPoiQuickFilter { all, fuel, food, health, water, nature, travel, other }
 
 enum _MapQuickView { near, region, route }
 
@@ -1387,10 +1388,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _MapPoiQuickFilter.health =>
         item.category == RouteExplorerCategory.health,
       _MapPoiQuickFilter.water => item.category == RouteExplorerCategory.water,
-      _MapPoiQuickFilter.other =>
-        item.category == RouteExplorerCategory.stop ||
-            item.category == RouteExplorerCategory.workshop ||
+      _MapPoiQuickFilter.nature =>
+        item.category == RouteExplorerCategory.viewpoint ||
+            item.category == RouteExplorerCategory.waterfall ||
             item.category == RouteExplorerCategory.riverBridge,
+      _MapPoiQuickFilter.travel =>
+        item.category == RouteExplorerCategory.camping ||
+            item.category == RouteExplorerCategory.workshop ||
+            item.category == RouteExplorerCategory.market,
+      _MapPoiQuickFilter.other => item.category == RouteExplorerCategory.stop,
     };
   }
 
@@ -1400,6 +1406,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _MapPoiQuickFilter.food => 'Comida',
         _MapPoiQuickFilter.health => 'Saúde',
         _MapPoiQuickFilter.water => 'Água',
+        _MapPoiQuickFilter.nature => 'Natureza',
+        _MapPoiQuickFilter.travel => 'Bike/viagem',
         _MapPoiQuickFilter.other => 'Outros',
       };
 
@@ -1410,6 +1418,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         RouteExplorerCategory.workshop => Icons.build_rounded,
         RouteExplorerCategory.health => Icons.local_hospital_rounded,
         RouteExplorerCategory.water => Icons.water_drop_rounded,
+        RouteExplorerCategory.camping => Icons.home_rounded,
+        RouteExplorerCategory.viewpoint => Icons.visibility_rounded,
+        RouteExplorerCategory.waterfall => Icons.water_drop_rounded,
+        RouteExplorerCategory.market => Icons.shopping_cart,
         RouteExplorerCategory.riverBridge => Icons.water_rounded,
       };
 
@@ -1420,13 +1432,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         RouteExplorerCategory.workshop => Colors.amber.shade800,
         RouteExplorerCategory.health => Colors.red.shade600,
         RouteExplorerCategory.water => Colors.blue.shade600,
+        RouteExplorerCategory.camping => Colors.green.shade700,
+        RouteExplorerCategory.viewpoint => Colors.teal.shade700,
+        RouteExplorerCategory.waterfall => Colors.lightBlue.shade700,
+        RouteExplorerCategory.market => Colors.purple.shade600,
         RouteExplorerCategory.riverBridge => Colors.cyan.shade700,
       };
 
   void _focusPoiCluster(MapPoiCluster cluster) {
     if (!_mapReady) return;
     if (!cluster.isCluster) {
-      _focusPoi(cluster.first);
+      unawaited(_showPoiDetails(cluster.first));
       return;
     }
     setState(() {
@@ -1944,86 +1960,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) {
-        final scheme = Theme.of(sheetContext).colorScheme;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: scheme.primaryContainer,
-                      child: Icon(
-                        _poiIcon(item.category),
-                        color: scheme.onPrimaryContainer,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}',
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      _routeExplorer.formatDistance(item.distanceMeters),
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
-                if (item.subtitle.trim().isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(item.subtitle),
-                ],
-                const SizedBox(height: 12),
-                Text(
-                  '${item.latitude.toStringAsFixed(5)}, ${item.longitude.toStringAsFixed(5)}',
-                  style: Theme.of(sheetContext).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                        icon: const Icon(Icons.map_rounded),
-                        label: const Text('Mostrar'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          _navigateToPoi(item);
-                        },
-                        icon: const Icon(Icons.navigation_rounded),
-                        label: const Text('Navegar até'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => MapPoiDetailsSheet(
+        item: item,
+        icon: _poiIcon(item.category),
+        distanceLabel: _routeExplorer.formatDistance(item.distanceMeters),
+        onShowOnMap: () => Navigator.of(sheetContext).pop(),
+        onNavigate: () {
+          Navigator.of(sheetContext).pop();
+          _navigateToPoi(item);
+        },
+      ),
     );
   }
 
@@ -2186,8 +2134,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         subtitle: Text(
-                                          '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}',
-                                          maxLines: 1,
+                                          item.subtitle.trim().isEmpty
+                                              ? '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}'
+                                              : '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}\n${item.subtitle}',
+                                          maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         trailing: Text(
@@ -3835,6 +3785,13 @@ class _SelectedPoiCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (!compact && item.subtitle.trim().isNotEmpty)
+                        Text(
+                          item.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),

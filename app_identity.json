@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.137 adiciona rotas alternativas para bicicleta, comparação de distância/tempo e troca da rota ativa diretamente no mapa.",
-  "version": "1.0.137",
-  "build": 137
+  "notes": "A 1.0.139 adiciona um painel completo e modular de detalhes do local, com informações úteis, cópia rápida e ação Ir até lá.",
+  "version": "1.0.139",
+  "build": 139
 }

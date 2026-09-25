@@ -5,6 +5,10 @@ enum RouteExplorerCategory {
   workshop,
   health,
   water,
+  camping,
+  viewpoint,
+  waterfall,
+  market,
   riverBridge,
 }
 
@@ -23,6 +27,14 @@ extension RouteExplorerCategoryX on RouteExplorerCategory {
         return 'Saúde';
       case RouteExplorerCategory.water:
         return 'Água/banheiro';
+      case RouteExplorerCategory.camping:
+        return 'Camping';
+      case RouteExplorerCategory.viewpoint:
+        return 'Mirantes';
+      case RouteExplorerCategory.waterfall:
+        return 'Cachoeiras';
+      case RouteExplorerCategory.market:
+        return 'Mercados';
       case RouteExplorerCategory.riverBridge:
         return 'Rios e pontes';
     }
@@ -48,6 +60,12 @@ class RouteExplorerResult {
     required this.longitude,
     required this.distanceMeters,
     this.source = 'online',
+    this.address,
+    this.openingHours,
+    this.phone,
+    this.website,
+    this.operatorName,
+    this.amenities = const <String>[],
   });
 
   final String id;
@@ -58,6 +76,20 @@ class RouteExplorerResult {
   final double longitude;
   final double distanceMeters;
   final String source;
+  final String? address;
+  final String? openingHours;
+  final String? phone;
+  final String? website;
+  final String? operatorName;
+  final List<String> amenities;
+
+  bool get hasExtraDetails =>
+      _hasText(address) ||
+      _hasText(openingHours) ||
+      _hasText(phone) ||
+      _hasText(website) ||
+      _hasText(operatorName) ||
+      amenities.isNotEmpty;
 
   RouteExplorerResult copyWith({
     double? distanceMeters,
@@ -72,6 +104,12 @@ class RouteExplorerResult {
       longitude: longitude,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       source: source ?? this.source,
+      address: address,
+      openingHours: openingHours,
+      phone: phone,
+      website: website,
+      operatorName: operatorName,
+      amenities: amenities,
     );
   }
 
@@ -84,6 +122,12 @@ class RouteExplorerResult {
         'longitude': longitude,
         'distanceMeters': distanceMeters,
         'source': source,
+        if (_hasText(address)) 'address': address,
+        if (_hasText(openingHours)) 'openingHours': openingHours,
+        if (_hasText(phone)) 'phone': phone,
+        if (_hasText(website)) 'website': website,
+        if (_hasText(operatorName)) 'operatorName': operatorName,
+        if (amenities.isNotEmpty) 'amenities': amenities,
       };
 
   factory RouteExplorerResult.fromJson(Map<String, dynamic> json) {
@@ -100,24 +144,51 @@ class RouteExplorerResult {
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       distanceMeters: (json['distanceMeters'] as num?)?.toDouble() ?? 0,
       source: json['source'] as String? ?? 'online',
+      address: _nullableText(json['address']),
+      openingHours: _nullableText(json['openingHours']),
+      phone: _nullableText(json['phone']),
+      website: _nullableText(json['website']),
+      operatorName: _nullableText(json['operatorName']),
+      amenities: ((json['amenities'] as List?) ?? const <Object>[])
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
     );
+  }
+
+  static bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
+
+  static String? _nullableText(Object? value) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? null : text;
   }
 }
 
 class RouteExplorerSettings {
+  static const int currentPoiCatalogVersion = 2;
+  static const Set<RouteExplorerCategory> defaultCategories =
+      <RouteExplorerCategory>{
+    RouteExplorerCategory.fuel,
+    RouteExplorerCategory.restaurant,
+    RouteExplorerCategory.stop,
+    RouteExplorerCategory.workshop,
+    RouteExplorerCategory.health,
+    RouteExplorerCategory.water,
+    RouteExplorerCategory.camping,
+    RouteExplorerCategory.viewpoint,
+    RouteExplorerCategory.waterfall,
+    RouteExplorerCategory.market,
+  };
+
   const RouteExplorerSettings({
     this.radiusKm = 20,
-    this.categories = const <RouteExplorerCategory>{
-      RouteExplorerCategory.fuel,
-      RouteExplorerCategory.restaurant,
-      RouteExplorerCategory.stop,
-      RouteExplorerCategory.water,
-    },
+    this.categories = defaultCategories,
     this.alertsEnabled = true,
     this.voiceEnabled = true,
     this.notificationEnabled = true,
     this.searchAheadWhenMoving = true,
     this.alertDistanceMeters = 5000,
+    this.poiCatalogVersion = currentPoiCatalogVersion,
   });
 
   final int radiusKm;
@@ -127,6 +198,7 @@ class RouteExplorerSettings {
   final bool notificationEnabled;
   final bool searchAheadWhenMoving;
   final int alertDistanceMeters;
+  final int poiCatalogVersion;
 
   RouteExplorerSettings copyWith({
     int? radiusKm,
@@ -136,6 +208,7 @@ class RouteExplorerSettings {
     bool? notificationEnabled,
     bool? searchAheadWhenMoving,
     int? alertDistanceMeters,
+    int? poiCatalogVersion,
   }) {
     return RouteExplorerSettings(
       radiusKm: radiusKm ?? this.radiusKm,
@@ -146,6 +219,7 @@ class RouteExplorerSettings {
       searchAheadWhenMoving:
           searchAheadWhenMoving ?? this.searchAheadWhenMoving,
       alertDistanceMeters: alertDistanceMeters ?? this.alertDistanceMeters,
+      poiCatalogVersion: poiCatalogVersion ?? this.poiCatalogVersion,
     );
   }
 
@@ -157,6 +231,7 @@ class RouteExplorerSettings {
         'notificationEnabled': notificationEnabled,
         'searchAheadWhenMoving': searchAheadWhenMoving,
         'alertDistanceMeters': alertDistanceMeters,
+        'poiCatalogVersion': poiCatalogVersion,
       };
 
   factory RouteExplorerSettings.fromJson(Map<String, dynamic> json) {
@@ -164,22 +239,28 @@ class RouteExplorerSettings {
             ?.map((item) => RouteExplorerCategoryX.fromStorageKey(item.toString()))
             .whereType<RouteExplorerCategory>()
             .toSet() ??
-        const <RouteExplorerCategory>{};
+        <RouteExplorerCategory>{};
+    final catalogVersion = (json['poiCatalogVersion'] as num?)?.toInt() ?? 1;
+    final categories = rawCategories.isEmpty
+        ? <RouteExplorerCategory>{...defaultCategories}
+        : <RouteExplorerCategory>{...rawCategories};
+    if (catalogVersion < currentPoiCatalogVersion) {
+      categories.addAll(const <RouteExplorerCategory>{
+        RouteExplorerCategory.camping,
+        RouteExplorerCategory.viewpoint,
+        RouteExplorerCategory.waterfall,
+        RouteExplorerCategory.market,
+      });
+    }
     return RouteExplorerSettings(
       radiusKm: (json['radiusKm'] as num?)?.toInt() ?? 20,
-      categories: rawCategories.isEmpty
-          ? const <RouteExplorerCategory>{
-              RouteExplorerCategory.fuel,
-              RouteExplorerCategory.restaurant,
-              RouteExplorerCategory.stop,
-              RouteExplorerCategory.water,
-            }
-          : rawCategories,
+      categories: categories,
       alertsEnabled: json['alertsEnabled'] as bool? ?? true,
       voiceEnabled: json['voiceEnabled'] as bool? ?? true,
       notificationEnabled: json['notificationEnabled'] as bool? ?? true,
       searchAheadWhenMoving: json['searchAheadWhenMoving'] as bool? ?? true,
       alertDistanceMeters: (json['alertDistanceMeters'] as num?)?.toInt() ?? 5000,
+      poiCatalogVersion: currentPoiCatalogVersion,
     );
   }
 }
