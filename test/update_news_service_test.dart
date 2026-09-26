@@ -131,17 +131,17 @@ void main() {
     expect(missingDecision.shouldShow, isTrue);
     expect(missingDecision.releases.single.version.build, 144);
   });
+
   test('catálogo atual identifica a versão instalada', () {
     expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
     expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
-    expect(UpdateNewsCatalog.current.releases, hasLength(1));
-    expect(UpdateNewsCatalog.current.releases.single.version, UpdateNewsCatalog.currentVersion);
+    expect(UpdateNewsCatalog.current.releases, isEmpty);
   });
 
-  test('versão atual exibe somente as novidades visíveis da 1.0.182', () async {
-    final store = _MemoryStore()..value = '1.0.181+181';
+  test('versão técnica atual não abre popup de novidades', () async {
+    final store = _MemoryStore()..value = '1.0.182+182';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.182', build: 182),
+      const AppBuildVersion(version: '1.0.183', build: 183),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -151,11 +151,9 @@ void main() {
 
     final decision = await service.evaluate();
 
-    expect(decision.shouldShow, isTrue);
-    expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 182);
-    expect(decision.changes, hasLength(3));
-    expect(decision.changes.join(' '), contains('painel de navegação'));
+    expect(decision.shouldShow, isFalse);
+    expect(decision.releases, isEmpty);
+    expect(decision.changes, isEmpty);
   });
 
 }

@@ -1,4 +1,10 @@
-# Validação Vigia IA 1.0.182+182
+# Validação Vigia IA 1.0.183+183
+
+## Compatibilidade do build — 1.0.183
+
+- Builds 141 e 142: quatro `unnecessary_non_null_assertion` identificados no card de localização selecionada.
+- As quatro asserções redundantes foram removidas sem mudança funcional.
+- O verificador agora protege contra a regressão específica desse padrão.
 
 ## Navegação minimizável e rotas alternativas — 1.0.182
 

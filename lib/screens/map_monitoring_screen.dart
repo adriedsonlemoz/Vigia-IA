@@ -5535,13 +5535,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   right: compactHud ? 10 : 36,
                   bottom: bottomInset + (navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
                   child: _SelectedMapLocationCard(
-                    item: selectedMapLocation!,
+                    item: selectedMapLocation,
                     distanceLabel: _formatSearchDistance(
-                      selectedMapLocation!.distanceMeters,
+                      selectedMapLocation.distanceMeters,
                     ),
                     onClose: () => setState(() => _selectedMapLocation = null),
-                    onNavigate: () => _navigateToSearchResult(selectedMapLocation!),
-                    onAddStop: () => _addManualTripStop(selectedMapLocation!),
+                    onNavigate: () => _navigateToSearchResult(selectedMapLocation),
+                    onAddStop: () => _addManualTripStop(selectedMapLocation),
                   ),
                 ),
               if (showSelectedPoiCard)

@@ -65,6 +65,13 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.183',
+          changes: [
+            'Ajustes internos de compatibilidade mantêm o mapa e a navegação prontos para o próximo build de teste.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.182',
           changes: [
             'O painel de navegação pode ser minimizado para liberar a visão do mapa sem encerrar a rota.',
@@ -1672,8 +1679,15 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.182',
+          version: '1.0.183',
           current: true,
+          changes: [
+            'Compatibilidade interna refinada para preservar as melhorias recentes do mapa e da navegação no próximo build.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.182',
           changes: [
             'Navegação ganhou modo minimizado, deixando o mapa livre sem interromper o trajeto.',
             'Rotas alternativas agora são comparadas dentro do próprio card com distância e tempo.',

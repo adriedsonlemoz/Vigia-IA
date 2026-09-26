@@ -1,3 +1,9 @@
+## 1.0.183+183 — 2026-09-26
+
+- Mantém integralmente as funcionalidades de mapa e navegação da 1.0.182.
+- Remove asserções de nulidade redundantes no card de localização selecionada para manter a análise estática limpa.
+- Sincroniza versão, metadados, documentação, testes e verificadores em `1.0.183+183`.
+
 ## 1.0.182+182 — 2026-09-26
 
 - Painel de navegação minimizável sem encerrar a rota, com ação separada para parar a navegação.
