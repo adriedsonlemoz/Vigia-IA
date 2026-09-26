@@ -141,7 +141,7 @@ void main() {
   test('versão técnica atual não abre popup de novidades', () async {
     final store = _MemoryStore()..value = '1.0.182+182';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.183', build: 183),
+      const AppBuildVersion(version: '1.0.184', build: 184),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,

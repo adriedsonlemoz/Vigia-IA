@@ -1,6 +1,6 @@
-# Arquitetura — Vigia IA 1.0.183+183
+# Arquitetura — Vigia IA 1.0.184+184
 
-## Manutenção de compatibilidade — 1.0.183
+## Manutenção de compatibilidade — 1.0.184
 
 - O card de localização selecionada usa o valor já promovido a não nulo pelo fluxo de renderização, sem `!` redundante.
 - Nenhuma regra funcional de mapa, navegação, POIs, câmera ou cicloviagem foi alterada nesta manutenção.

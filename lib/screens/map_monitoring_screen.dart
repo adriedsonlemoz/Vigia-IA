@@ -7951,8 +7951,7 @@ class _NavigationBanner extends StatelessWidget {
     final timeText = timeDeltaMinutes == 0
         ? null
         : '${timeDeltaMinutes >= 0 ? '+' : '−'}${timeDeltaMinutes.abs()} min';
-    return <String>[if (distanceText != null) distanceText, if (timeText != null) timeText]
-        .join(' · ');
+    return <String>[?distanceText, ?timeText].join(' · ');
   }
 
   @override

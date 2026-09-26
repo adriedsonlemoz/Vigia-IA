@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.183 mantém as melhorias do mapa e da navegação da 1.0.182 com compatibilidade estática refinada para o próximo build de teste.",
-  "version": "1.0.183",
-  "build": 183
+  "notes": "A 1.0.184 mantém as melhorias do mapa e da navegação da 1.0.182 com compatibilidade estática refinada para o próximo build de teste.",
+  "version": "1.0.184",
+  "build": 184
 }

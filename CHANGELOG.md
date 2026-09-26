@@ -1,3 +1,9 @@
+## 1.0.184+184 — 2026-09-26
+
+- Ajusta a lista de diferenças das rotas alternativas para a sintaxe null-aware aceita pelo analyzer do build 143.
+- Nenhuma funcionalidade nova; preserva o conjunto funcional da 1.0.182.
+- Sincroniza versão, metadados, documentação, testes e verificadores em `1.0.184+184`.
+
 ## 1.0.183+183 — 2026-09-26
 
 - Mantém integralmente as funcionalidades de mapa e navegação da 1.0.182.

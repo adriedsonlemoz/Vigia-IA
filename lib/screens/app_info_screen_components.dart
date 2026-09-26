@@ -65,7 +65,7 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.183',
+          version: '1.0.184',
           changes: [
             'Ajustes internos de compatibilidade mantêm o mapa e a navegação prontos para o próximo build de teste.',
           ],
@@ -1679,7 +1679,7 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.183',
+          version: '1.0.184',
           current: true,
           changes: [
             'Compatibilidade interna refinada para preservar as melhorias recentes do mapa e da navegação no próximo build.',
