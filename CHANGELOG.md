@@ -1,3 +1,11 @@
+## 1.0.182+182 — 2026-09-26
+
+- Painel de navegação minimizável sem encerrar a rota, com ação separada para parar a navegação.
+- Rotas alternativas integradas como quinto item do card, com popup de comparação de distância e tempo.
+- Indicador de `Mapa livre` com ação para retomar o acompanhamento após gesto manual.
+- Banner de Próximos pontos enriquecido com resumo de pontos úteis e contexto `Próximos na rota`.
+- Versão, metadados, User-Agents, documentação, testes e verificadores sincronizados em `1.0.182+182`.
+
 ## 1.0.181+181 — 2026-09-26
 - Próximos pontos aplica automaticamente mudanças de raio, categorias e busca ao redor/no caminho, mantendo Atualizar como ação manual.
 - Configurações abertas a partir de Próximos pontos retornam diretamente para a lista atualizada.

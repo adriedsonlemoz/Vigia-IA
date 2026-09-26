@@ -8,16 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.181', build: 181);
+      AppBuildVersion(version: '1.0.182', build: 182);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
       version: currentVersion,
       changes: <String>[
-        'Próximos pontos agora aplica raio, categorias e direção de busca automaticamente; o botão Atualizar continua disponível para consulta manual.',
-        'A pesquisa ganhou ação Navegar explícita e o mapa aceita toque livre para identificar locais, navegar ou adicionar uma parada ao planejamento.',
-        'Avisos por voz lembram os POIs já anunciados durante a sessão, evitando repetir o mesmo local em atualizações posteriores.',
-        'A seleção de categorias ficou mais compacta para mostrar mais opções com menos rolagem.',
+        'O painel de navegação agora pode ser minimizado sem encerrar a rota e mostra quando o mapa está em modo livre.',
+        'Rotas alternativas foram integradas ao card com comparação compacta de distância e tempo antes da troca.',
+        'Próximos pontos passa a destacar os pontos úteis mais próximos e, durante a navegação, identifica o resumo como Próximos na rota.',
       ],
     ),
   ]);

@@ -185,6 +185,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _camerasVisible = false;
   bool _stopMapOwnedSourcesWhenHidden = true;
   bool? _fullscreenCameraSecondary;
+  bool _navigationPanelMinimized = false;
 
   bool _followPosition = true;
   bool _mapReady = false;
@@ -2122,6 +2123,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _navigation3dRendererReady = false;
     _navigation3dRendererFailed = false;
     _navigation3dFollowing = true;
+    _navigationPanelMinimized = false;
   }
 
   void _stopNavigation() {
@@ -5403,6 +5405,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   count: _routeExplorer.activeResults.length,
                   loading: _routeExplorer.loading,
                   offline: _routeExplorer.lastSource == 'offline' || networkOffline,
+                  routeActive: navigationTarget != null && _routeExplorer.settings.searchAheadWhenMoving,
+                  points: _routeExplorer.activeResults,
                   onTap: () => unawaited(_showNearbyPoints()),
                 ),
               ),
@@ -5529,7 +5533,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: compactHud ? 10 : 36,
                   right: compactHud ? 10 : 36,
-                  bottom: bottomInset + (navigationTarget == null ? 82 : 330),
+                  bottom: bottomInset + (navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
                   child: _SelectedMapLocationCard(
                     item: selectedMapLocation!,
                     distanceLabel: _formatSearchDistance(
@@ -5544,7 +5548,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: compactHud ? 10 : 36,
                   right: compactHud ? 10 : 36,
-                  bottom: bottomInset + (navigationTarget == null ? 82 : 330),
+                  bottom: bottomInset + (navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -5576,8 +5580,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     fallbackMessage: _routeFallback?.message,
                     networkOffline: networkOffline,
                     compact: compactHud,
+                    minimized: _navigationPanelMinimized,
+                    following: navigation3dActive ? _navigation3dFollowing : _followPosition,
                     nearbyPoints: _routeExplorer.activeResults,
                     onRouteSelected: _selectCyclingRoute,
+                    onToggleMinimized: () => setState(
+                      () => _navigationPanelMinimized = !_navigationPanelMinimized,
+                    ),
+                    onFollowRequested: current == null
+                        ? null
+                        : () {
+                            if (navigation3dActive) {
+                              _recenterNavigation3d();
+                            } else if (!_followPosition) {
+                              _toggleFollow();
+                            }
+                          },
                     onTripPlan: _bikeTripPlan == null
                         ? null
                         : () => unawaited(_showBikeTripPlan()),
@@ -6532,22 +6550,60 @@ class _NearbyPointsBanner extends StatelessWidget {
     required this.count,
     required this.loading,
     required this.offline,
+    required this.routeActive,
+    required this.points,
     required this.onTap,
   });
 
   final int count;
   final bool loading;
   final bool offline;
+  final bool routeActive;
+  final List<RouteExplorerResult> points;
   final VoidCallback onTap;
+
+  String _distance(double meters) {
+    if (meters < 1000) return '${meters.toStringAsFixed(0)} m';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  String _categoryLabel(RouteExplorerCategory category) => switch (category) {
+        RouteExplorerCategory.water => 'Água',
+        RouteExplorerCategory.fuel => 'Posto',
+        RouteExplorerCategory.restaurant => 'Comida',
+        RouteExplorerCategory.market => 'Mercado',
+        RouteExplorerCategory.health => 'Saúde',
+        RouteExplorerCategory.camping => 'Camping',
+        RouteExplorerCategory.stop => 'Parada',
+        RouteExplorerCategory.workshop => 'Oficina',
+        RouteExplorerCategory.viewpoint => 'Mirante',
+        RouteExplorerCategory.waterfall => 'Cachoeira',
+        RouteExplorerCategory.riverBridge => 'Rio/ponte',
+      };
+
+  String _summary() {
+    if (points.isEmpty) {
+      return 'Postos, comida, saúde, água e outros';
+    }
+    final sorted = List<RouteExplorerResult>.from(points)
+      ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    final seen = <RouteExplorerCategory>{};
+    final parts = <String>[];
+    for (final item in sorted) {
+      if (!seen.add(item.category)) continue;
+      parts.add('${_categoryLabel(item.category)} ${_distance(item.distanceMeters)}');
+      if (parts.length == 2) break;
+    }
+    return parts.isEmpty ? 'Pontos disponíveis no mapa' : parts.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final badge = MapUxPolicy.compactCountBadge(count) ?? '0';
     final sourceLabel = offline ? 'Offline' : 'Online';
-    final subtitle = count > 0
-        ? (offline ? 'Pontos disponíveis sem rede' : 'Pontos atualizados pela rede')
-        : 'Postos, comida, saúde, água e outros';
+    final title = routeActive ? 'Próximos na rota' : 'Locais próximos';
+    final subtitle = count > 0 ? _summary() : 'Postos, comida, saúde, água e outros';
 
     return Material(
       elevation: 2,
@@ -6573,12 +6629,12 @@ class _NearbyPointsBanner extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Flexible(
+                        Flexible(
                           child: Text(
-                            'Locais próximos',
+                            title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w900,
                             ),
@@ -7763,8 +7819,12 @@ class _NavigationBanner extends StatelessWidget {
     required this.fallbackMessage,
     required this.networkOffline,
     required this.compact,
+    required this.minimized,
+    required this.following,
     required this.nearbyPoints,
     required this.onRouteSelected,
+    required this.onToggleMinimized,
+    required this.onFollowRequested,
     required this.onTripPlan,
     required this.onStop,
   });
@@ -7783,8 +7843,12 @@ class _NavigationBanner extends StatelessWidget {
   final String? fallbackMessage;
   final bool networkOffline;
   final bool compact;
+  final bool minimized;
+  final bool following;
   final List<RouteExplorerResult> nearbyPoints;
   final ValueChanged<int> onRouteSelected;
+  final VoidCallback onToggleMinimized;
+  final VoidCallback? onFollowRequested;
   final VoidCallback? onTripPlan;
   final VoidCallback onStop;
 
@@ -7849,6 +7913,46 @@ class _NavigationBanner extends StatelessWidget {
       }
     }
     return best;
+  }
+
+  String _routeDuration(MapCyclingRoute route) {
+    final estimate = bikeEstimate;
+    if (estimate != null && estimate.preferences.averageSpeedKmh > 0) {
+      final seconds = route.distanceMeters / 1000 /
+          estimate.preferences.averageSpeedKmh * 3600;
+      return _duration(seconds);
+    }
+    return _duration(route.durationSeconds);
+  }
+
+  String _routeDelta(MapCyclingRoute route) {
+    if (routeAlternatives.isEmpty ||
+        selectedRouteIndex < 0 ||
+        selectedRouteIndex >= routeAlternatives.length) {
+      return '';
+    }
+    final selected = routeAlternatives[selectedRouteIndex];
+    final distanceDelta = route.distanceMeters - selected.distanceMeters;
+    final selectedSeconds = bikeEstimate != null &&
+            bikeEstimate!.preferences.averageSpeedKmh > 0
+        ? selected.distanceMeters / 1000 /
+            bikeEstimate!.preferences.averageSpeedKmh * 3600
+        : selected.durationSeconds;
+    final routeSeconds = bikeEstimate != null &&
+            bikeEstimate!.preferences.averageSpeedKmh > 0
+        ? route.distanceMeters / 1000 /
+            bikeEstimate!.preferences.averageSpeedKmh * 3600
+        : route.durationSeconds;
+    final timeDeltaMinutes = ((routeSeconds - selectedSeconds) / 60).round();
+    if (distanceDelta.abs() < 50 && timeDeltaMinutes.abs() < 1) return 'Atual';
+    final distanceText = distanceDelta.abs() < 50
+        ? null
+        : '${distanceDelta >= 0 ? '+' : '−'}${_distance(distanceDelta.abs())}';
+    final timeText = timeDeltaMinutes == 0
+        ? null
+        : '${timeDeltaMinutes >= 0 ? '+' : '−'}${timeDeltaMinutes.abs()} min';
+    return <String>[if (distanceText != null) distanceText, if (timeText != null) timeText]
+        .join(' · ');
   }
 
   @override
@@ -7929,6 +8033,74 @@ class _NavigationBanner extends StatelessWidget {
     final foreground = warning ? scheme.onSecondaryContainer : scheme.onSurface;
     final accent = warning ? scheme.secondary : scheme.primary;
 
+    if (minimized) {
+      return Material(
+        elevation: 10,
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          decoration: BoxDecoration(
+            color: panelColor,
+            border: Border.all(color: accent.withValues(alpha: 0.22)),
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.15),
+                  border: Border.all(color: accent.withValues(alpha: 0.65), width: 2),
+                ),
+                child: Icon(_maneuverIcon(primaryInstruction), color: accent, size: 31),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      primaryInstruction,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: foreground, fontSize: 15, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${_distance(remainingDistance)} · $remainingTime${following ? '' : ' · mapa livre'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: foreground.withValues(alpha: 0.70), fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              if (!following && onFollowRequested != null)
+                IconButton(
+                  tooltip: 'Voltar a seguir posição',
+                  onPressed: onFollowRequested,
+                  icon: const Icon(Icons.my_location_rounded),
+                ),
+              IconButton(
+                tooltip: 'Expandir navegação',
+                onPressed: onToggleMinimized,
+                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+              ),
+              IconButton(
+                tooltip: 'Parar navegação',
+                onPressed: onStop,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Material(
       elevation: 12,
       color: Colors.transparent,
@@ -7958,15 +8130,36 @@ class _NavigationBanner extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: foreground.withValues(alpha: 0.28),
-                borderRadius: BorderRadius.circular(99),
-              ),
+            Row(
+              children: [
+                const Spacer(),
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: foreground.withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Minimizar navegação',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onToggleMinimized,
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                ),
+              ],
             ),
-            SizedBox(height: compact ? 8 : 10),
+            if (!following && onFollowRequested != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onFollowRequested,
+                  icon: const Icon(Icons.pan_tool_alt_rounded, size: 16),
+                  label: const Text('Mapa livre · tocar para seguir'),
+                ),
+              ),
+            SizedBox(height: compact ? 4 : 6),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -8083,6 +8276,19 @@ class _NavigationBanner extends StatelessWidget {
                     compact: compact,
                   ),
                 ),
+                Expanded(
+                  child: _RouteAlternativesButton(
+                    routes: routeAlternatives,
+                    selectedIndex: selectedRouteIndex,
+                    accent: accent,
+                    foreground: foreground,
+                    compact: compact,
+                    distanceLabel: _distance,
+                    durationLabel: _routeDuration,
+                    deltaLabel: _routeDelta,
+                    onSelected: onRouteSelected,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: compact ? 9 : 12),
@@ -8144,8 +8350,7 @@ class _NavigationBanner extends StatelessWidget {
               ],
             ),
             if (bikeTripPlanLoading ||
-                (bikeTripPlan != null && bikeTripPlan!.estimate.dayCount > 1) ||
-                routeAlternatives.length > 1) ...[
+                (bikeTripPlan != null && bikeTripPlan!.estimate.dayCount > 1)) ...[
               SizedBox(height: compact ? 8 : 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -8169,28 +8374,122 @@ class _NavigationBanner extends StatelessWidget {
                         label: Text('Plano de ${bikeTripPlan!.estimate.dayCount} dias'),
                       ),
                     ),
-                  if (routeAlternatives.length > 1)
-                    PopupMenuButton<int>(
-                      tooltip: 'Escolher rota alternativa',
-                      initialValue: selectedRouteIndex,
-                      onSelected: onRouteSelected,
-                      itemBuilder: (context) => <PopupMenuEntry<int>>[
-                        for (var index = 0; index < routeAlternatives.length; index++)
-                          PopupMenuItem<int>(
-                            value: index,
-                            child: Text(
-                              'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)}',
-                            ),
-                          ),
-                      ],
-                      icon: const Icon(Icons.alt_route_rounded, size: 20),
-                    ),
                 ],
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RouteAlternativesButton extends StatelessWidget {
+  const _RouteAlternativesButton({
+    required this.routes,
+    required this.selectedIndex,
+    required this.accent,
+    required this.foreground,
+    required this.compact,
+    required this.distanceLabel,
+    required this.durationLabel,
+    required this.deltaLabel,
+    required this.onSelected,
+  });
+
+  final List<MapCyclingRoute> routes;
+  final int selectedIndex;
+  final Color accent;
+  final Color foreground;
+  final bool compact;
+  final String Function(double) distanceLabel;
+  final String Function(MapCyclingRoute) durationLabel;
+  final String Function(MapCyclingRoute) deltaLabel;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = routes.length > 1;
+    return PopupMenuButton<int>(
+      enabled: enabled,
+      tooltip: enabled ? 'Comparar rotas alternativas' : 'Sem rotas alternativas',
+      initialValue: selectedIndex,
+      onSelected: onSelected,
+      position: PopupMenuPosition.over,
+      constraints: const BoxConstraints(minWidth: 245, maxWidth: 310),
+      itemBuilder: (context) => <PopupMenuEntry<int>>[
+        for (var index = 0; index < routes.length; index++)
+          PopupMenuItem<int>(
+            value: index,
+            child: Row(
+              children: [
+                Icon(
+                  index == selectedIndex ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                  size: 18,
+                  color: index == selectedIndex ? accent : foreground.withValues(alpha: 0.55),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Rota ${index + 1} · ${distanceLabel(routes[index].distanceMeters)} · ${durationLabel(routes[index])}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      _deltaText(routes[index], deltaLabel, foreground),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: compact ? 28 : 32,
+              height: compact ? 24 : 28,
+              decoration: BoxDecoration(
+                color: enabled ? accent.withValues(alpha: 0.16) : foreground.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: enabled ? accent.withValues(alpha: 0.36) : foreground.withValues(alpha: 0.08)),
+              ),
+              child: Icon(Icons.alt_route_rounded, size: compact ? 16 : 18, color: enabled ? accent : foreground.withValues(alpha: 0.42)),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              enabled ? '${routes.length} opções' : '1 opção',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: foreground, fontSize: compact ? 10 : 11.5, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              'rotas',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: foreground.withValues(alpha: 0.62), fontSize: compact ? 7.5 : 8.5, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _deltaText(
+    MapCyclingRoute route,
+    String Function(MapCyclingRoute) formatter,
+    Color textColor,
+  ) {
+    final value = formatter(route);
+    return Text(
+      value.isEmpty ? 'Sem comparação disponível' : value,
+      style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.62)),
     );
   }
 }

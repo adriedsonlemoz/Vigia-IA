@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.182',
+          changes: [
+            'O painel de navegação pode ser minimizado para liberar a visão do mapa sem encerrar a rota.',
+            'Rotas alternativas ficam integradas ao card e mostram distância, tempo e diferença antes da seleção.',
+            'Próximos pontos mostra um resumo dos pontos úteis e muda para Próximos na rota durante a navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.181',
           changes: [
             'Próximos pontos aplica automaticamente mudanças de raio, categorias e busca ao redor/no caminho.',
@@ -1663,8 +1672,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.181',
+          version: '1.0.182',
           current: true,
+          changes: [
+            'Navegação ganhou modo minimizado, deixando o mapa livre sem interromper o trajeto.',
+            'Rotas alternativas agora são comparadas dentro do próprio card com distância e tempo.',
+            'O mapa avisa quando o acompanhamento foi pausado e Próximos pontos resume os pontos úteis da rota.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.181',
           changes: [
             'Filtros de Próximos pontos agora atualizam a lista automaticamente e a tela de configurações volta diretamente para os pontos.',
             'Resultados de pesquisa têm botão Navegar e qualquer ponto tocado no mapa pode virar destino ou parada manual.',

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.181 melhora Próximos pontos e navegação: filtros automáticos, busca com Navegar, toque livre no mapa, paradas manuais e avisos de POI sem repetição na sessão.",
-  "version": "1.0.181",
-  "build": 181
+  "notes": "A 1.0.182 torna a navegação menos invasiva com painel minimizável, comparação de rotas integrada, indicador de acompanhamento e resumo de pontos úteis na rota.",
+  "version": "1.0.182",
+  "build": 182
 }

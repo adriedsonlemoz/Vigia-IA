@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.181+181
+# Validação Vigia IA 1.0.182+182
+
+## Navegação minimizável e rotas alternativas — 1.0.182
+
+- Validar que minimizar não encerra nem recalcula a navegação.
+- Validar que expandir restaura o card completo.
+- Validar que `X` encerra a navegação.
+- Validar o quinto item de rotas alternativas e a seleção pelo popup.
+- Validar o aviso `Mapa livre` após mover o mapa e o retorno ao acompanhamento.
+- Validar o resumo de até dois pontos reais no banner e o título `Próximos na rota` durante uma navegação.
 
 ## Próximos pontos e navegação contextual — 1.0.181
 - Alterar raio/categoria/direção e confirmar atualização automática sem tocar em Atualizar.

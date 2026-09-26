@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.181+181
+# Arquitetura — Vigia IA 1.0.182+182
+
+## Navegação minimizável e contexto de rota — 1.0.182
+
+O painel de navegação mantém dois estados de composição, expandido e minimizado, sem recriar a rota. A comparação de alternativas foi incorporada ao próprio painel e utiliza as rotas já retornadas pelo serviço ciclável. O banner de pontos próximos reaproveita `RouteExplorerResult` para resumir categorias/distâncias reais e muda o contexto visual durante a navegação. O acompanhamento do mapa permanece controlado pelos estados 2D/3D existentes e expõe uma ação explícita de recenter quando um gesto suspende o follow.
 
 ## Próximos pontos, seleção livre e memória de anúncios — 1.0.181
 - `RouteExplorerService` agenda nova consulta após alterações de raio/categorias/direção, com debounce para evitar múltiplas requisições em sequência.
