@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.150+150
+# Validação Vigia IA 1.0.151+151
+
+## 1.0.151+151 — correção Android-APK-114
+
+- Log analisado: o workflow chegou à etapa `flutter analyze` e falhou exclusivamente com `unused_field` em `lib/screens/map_monitoring_screen.dart:129`, referente a `_offlineTileError`.
+- Correção aplicada: campo e atribuições mortos removidos; o `catch` de MBTiles continua registrando a exceção por `debugPrint`.
+- `tool/verify_project.sh` deve validar a versão `1.0.151+151`, a entrada em Novidades/Sobre e a ausência do estado morto.
+- Não houve alteração funcional no mapa, navegação ou pacotes offline.
+
 
 ## 1.0.150+150 — HUD do mapa e rotação manual
 

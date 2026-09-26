@@ -7,6 +7,14 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.151', build: 151),
+      changes: <String>[
+        '🔧 Corrigido o bloqueio do build Android-APK-114 na análise estática.',
+        '🗺️ O suporte a mapas offline deixa de manter um estado interno sem uso, sem alterar o funcionamento do MBTiles.',
+        '🧪 A falha ao abrir um pacote offline continua registrada no diagnóstico técnico do app.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.150', build: 150),
       changes: <String>[
         '🗺️ O mapa ganha um HUD reorganizado, mais próximo do visual Bike/Viagem planejado.',

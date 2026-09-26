@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.150+150
+# Arquitetura — Vigia IA 1.0.151+151
+
+## Buildfix Android-APK-114 — 1.0.151
+
+- `MapMonitoringScreen` não mantém mais `_offlineTileError`, porque o valor era apenas escrito e não participava de nenhuma decisão ou renderização.
+- `_syncOfflineTileProvider()` preserva o mesmo fluxo de `MbTilesTileProvider`; em exceções, registra pacote e erro com `debugPrint` em vez de criar estado morto.
+- A correção é deliberadamente limitada ao warning do analyzer e não modifica contratos de navegação, POIs, camadas, rotação ou offline.
+
 
 ## HUD do mapa e interação 1.0.150
 

@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.150',
+          version: '1.0.151',
           current: true,
+          changes: [
+            'Corrigido o aviso de análise estática que bloqueava o Android-APK-114.',
+            'Removido o estado interno de erro offline que era gravado, mas nunca lido pela interface.',
+            'Falhas de abertura de MBTiles continuam registradas no log técnico sem mudar o comportamento do mapa offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.150',
           changes: [
             'HUD do mapa reorganizado com engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio.',
             'Velocidade, altitude, bússola e GPS agora usam cards quadrados mais legíveis.',
@@ -1389,8 +1398,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.150',
+          version: '1.0.151',
           current: true,
+          changes: [
+            'Corrigido o aviso de análise estática que bloqueava o Android-APK-114.',
+            'Removido o estado interno de erro offline que era gravado, mas nunca lido pela interface.',
+            'Falhas de abertura de MBTiles continuam registradas no log técnico sem mudar o comportamento do mapa offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.150',
           changes: [
             'HUD do mapa reorganizado com engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio.',
             'Velocidade, altitude, bússola e GPS agora usam cards quadrados mais legíveis.',

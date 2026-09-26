@@ -1,3 +1,10 @@
+## 1.0.151+151 — 2026-09-25
+
+- Corrigido o Android-APK-114, que parava em `flutter analyze` por causa do campo `_offlineTileError` não utilizado em `map_monitoring_screen.dart`.
+- Removido o estado morto sem alterar seleção, abertura ou renderização dos pacotes MBTiles offline.
+- Falhas ao abrir um pacote offline agora permanecem visíveis no log técnico via `debugPrint`, sem manter estado de UI não consumido.
+- Sincronizados versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão e User-Agents em `1.0.151+151`.
+
 ## 1.0.150+150 — 2026-09-25
 
 - Reorganizado o HUD do mapa para aproximar a interface do layout Bike/Viagem de referência: engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio à direita.

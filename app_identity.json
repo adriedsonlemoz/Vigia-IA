@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.150 reorganiza o HUD do mapa, separa configurações, camadas e pontos próximos, melhora os cards de telemetria/POI e libera rotação manual do mapa.",
-  "version": "1.0.150",
-  "build": 150
+  "notes": "A 1.0.151 corrige o bloqueio do build Android-APK-114 causado por estado offline não utilizado no mapa, preservando o diagnóstico de falha do MBTiles.",
+  "version": "1.0.151",
+  "build": 151
 }

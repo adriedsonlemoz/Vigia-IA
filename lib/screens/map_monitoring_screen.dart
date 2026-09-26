@@ -126,7 +126,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   MbTilesTileProvider? _offlineTileProvider;
   String? _offlineTilePackageId;
-  String? _offlineTileError;
   int _offlineMinNativeZoom = 0;
   int _offlineMaxNativeZoom = 19;
   Offset? _primaryCameraOffset;
@@ -801,7 +800,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _offlineTileProvider?.dispose();
     _offlineTileProvider = null;
     _offlineTilePackageId = active?.id;
-    _offlineTileError = null;
     _offlineMinNativeZoom = 0;
     _offlineMaxNativeZoom = 19;
     if (active != null) {
@@ -814,7 +812,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _offlineMaxNativeZoom = maxZoom.toInt();
         _offlineTileProvider = provider;
       } catch (error) {
-        _offlineTileError = '$error';
+        debugPrint(
+          'Falha ao abrir mapa offline ${active.id}: $error',
+        );
       }
     }
     setState(() {});

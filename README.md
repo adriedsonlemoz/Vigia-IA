@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.150+150`
+> **Versão atual:** `1.0.151+151`
 
 ## Estado atual
 
-A `1.0.150+150` faz a **reorganização visual e funcional do mapa Bike/Viagem**, separando configurações, camadas e pontos próximos, compactando os cards de POI e liberando rotação manual sem remover as funções de navegação/offline já existentes.
+A `1.0.151+151` é uma **correção de build** após a reorganização do mapa: remove o estado `_offlineTileError` que era escrito mas nunca lido e fazia o `flutter analyze` encerrar o Android-APK-114 com código 1. O carregamento MBTiles continua igual e falhas de abertura permanecem registradas via `debugPrint`.
+
+### Correção 1.0.151 — Android-APK-114
+
+- Corrigido o único aviso encontrado pelo `flutter analyze`: `_offlineTileError` era atualizado, mas nunca consumido.
+- O estado morto foi removido para não bloquear o workflow, que trata avisos do analyzer como falha.
+- Exceções ao abrir pacotes MBTiles continuam registradas no log técnico com o identificador do pacote.
+- Nenhuma regra de navegação, POIs, rotação, camadas ou mapas offline foi alterada.
 
 ### Evolução 1.0.150 — HUD do mapa e rotação manual
 
