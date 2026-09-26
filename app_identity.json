@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.176 adiciona aprendizado local de ritmo de bicicleta a partir de percursos válidos, com média aprendida opcional para o ETA e preservação da média manual.",
-  "version": "1.0.176",
-  "build": 176
+  "notes": "A 1.0.177 corrige a pesquisa de destinos dos builds 136/137 ao disponibilizar a extensão RouteExplorerCategoryX no serviço, sem alterar o comportamento funcional do mapa.",
+  "version": "1.0.177",
+  "build": 177
 }

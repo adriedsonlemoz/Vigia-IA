@@ -1,4 +1,4 @@
-# Validação Vigia IA 1.0.176+176
+# Validação Vigia IA 1.0.177+177
 
 ## Aprendizado de ritmo Bike — 1.0.176
 

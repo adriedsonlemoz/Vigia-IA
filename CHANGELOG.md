@@ -1,3 +1,11 @@
+## 1.0.177+177 — 2026-09-26
+
+- Corrigidos os builds 136 e 137, que falhavam no `flutter analyze` porque `MapDestinationSearchService` usava o getter de extensão `RouteExplorerCategory.label` sem importar `route_explorer_models.dart`.
+- O serviço de pesquisa passa a importar explicitamente a extensão `RouteExplorerCategoryX`, preservando os rótulos de POIs sem duplicar a lógica de categorias.
+- `verify_project.sh` agora bloqueia a regressão caso a pesquisa volte a usar `.label` sem o import da extensão.
+- Release técnica: sem popup vazia de Novidades e sem repetir as mudanças visíveis da 1.0.176.
+- Versionamento, identidades, User-Agents, documentação, testes e verificadores sincronizados em `1.0.177+177`.
+
 ## 1.0.176+176 — 2026-09-26
 
 - Adicionado histórico local de percursos Bike válidos para aprender a média real de deslocamento.

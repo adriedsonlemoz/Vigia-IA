@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.176+176
+# Arquitetura — Vigia IA 1.0.177+177
 
 ## Aprendizado local de ritmo Bike — 1.0.176
 

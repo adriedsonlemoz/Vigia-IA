@@ -2,11 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.176+176`
+> **Versão atual:** `1.0.177+177`
 
 ## Estado atual
 
-A `1.0.176+176` acrescenta aprendizado local do ritmo de bicicleta: percursos Bike válidos formam uma média real opcional para o ETA e para o plano por dias, sem apagar a média manual configurada.
+A `1.0.177+177` é uma manutenção da pesquisa do mapa: corrige a resolução dos rótulos de categorias usada nos resultados offline, preservando integralmente a pesquisa online/offline, o planejamento Bike e o aprendizado de ritmo da 1.0.176.
 
 ### Ritmo aprendido da Bike — 1.0.176
 - Percursos Bike concluídos podem alimentar um histórico local quando passam pelos filtros de distância, duração, movimento e velocidade plausível.

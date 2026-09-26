@@ -131,20 +131,16 @@ void main() {
     expect(missingDecision.shouldShow, isTrue);
     expect(missingDecision.releases.single.version.build, 144);
   });
-  test('catálogo atual contém somente a versão instalada visível', () {
+  test('catálogo atual identifica a versão instalada', () {
     expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
     expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
-    expect(UpdateNewsCatalog.current.releases, hasLength(1));
-    expect(
-      UpdateNewsCatalog.current.releases.single.version,
-      UpdateNewsCatalog.currentVersion,
-    );
+    expect(UpdateNewsCatalog.current.releases, isEmpty);
   });
 
-  test('popup 1.0.176 não acumula as etapas anteriores', () async {
-    final store = _MemoryStore()..value = '1.0.172+172';
+  test('release técnica 1.0.177 não exibe popup vazia nem reutiliza novidades antigas', () async {
+    final store = _MemoryStore()..value = '1.0.176+176';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.176', build: 176),
+      const AppBuildVersion(version: '1.0.177', build: 177),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -154,11 +150,9 @@ void main() {
 
     final decision = await service.evaluate();
 
-    expect(decision.shouldShow, isTrue);
-    expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 176);
-    expect(decision.changes.join(' '), contains('média aprendida'));
-    expect(decision.changes.join(' '), isNot(contains('campings conhecidos')));
+    expect(decision.shouldShow, isFalse);
+    expect(decision.releases, isEmpty);
+    expect(decision.changes, isEmpty);
   });
 
 }

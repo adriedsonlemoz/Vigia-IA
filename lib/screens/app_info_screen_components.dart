@@ -65,6 +65,13 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.177',
+          changes: [
+            'Manutenção dos builds 136 e 137 restaura os rótulos das categorias na pesquisa do mapa sem mudar o comportamento da busca, dos POIs ou da navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.176',
           changes: [
             'O planejamento Bike ganhou uma média aprendida a partir de percursos válidos gravados no próprio aparelho.',
@@ -1622,8 +1629,15 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.176',
+          version: '1.0.177',
           current: true,
+          changes: [
+            'Manutenção da pesquisa do mapa após os builds 136 e 137, preservando busca online/offline, POIs e planejamento Bike.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.176',
           changes: [
             'O Vigia IA passa a aprender uma média real de pedal a partir de percursos Bike válidos gravados no aparelho.',
             'O planejamento permite usar a média aprendida no ETA sem apagar a média manual, e o histórico pode ser limpo quando quiser.',
