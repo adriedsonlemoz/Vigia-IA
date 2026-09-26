@@ -65,8 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.169',
+          version: '1.0.170',
           current: true,
+          changes: [
+            'A entrega final do mapa 3D da 1.0.169 agora está empacotada na versão 1.0.170, mantendo câmera suave por transporte, rota destacada e prédios 3D opcionais.',
+            'Clima ESP32 + online, navegação 2D/3D, fallback 2D e os demais recursos do mapa permanecem no mesmo fluxo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.169',
           changes: [
             'A câmera da navegação 3D ficou mais suave e adapta zoom, inclinação e avanço visual para bicicleta, moto, carro e caminhada.',
             'Curvas, manobras e aproximação ao destino agora usam transições mais graduais, sem fabricar direção quando sensor, GPS ou rota não fornecem rumo real.',
@@ -1567,8 +1575,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.169',
+          version: '1.0.170',
           current: true,
+          changes: [
+            'A entrega final do mapa 3D da 1.0.169 agora está empacotada na versão 1.0.170, mantendo câmera suave por transporte, rota destacada e prédios 3D opcionais.',
+            'Clima ESP32 + online, navegação 2D/3D, fallback 2D e os demais recursos do mapa permanecem no mesmo fluxo.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.169',
           changes: [
             'A câmera da navegação 3D ficou mais suave e adapta zoom, inclinação e avanço visual para bicicleta, moto, carro e caminhada.',
             'Curvas, manobras e aproximação ao destino agora usam transições mais graduais, sem fabricar direção quando sensor, GPS ou rota não fornecem rumo real.',

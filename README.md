@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.169+169`
+> **Versão atual:** `1.0.170+170`
 
 ## Estado atual
 
-A `1.0.169+169` conclui o plano atual de reformulação do mapa com refinamento da câmera e da rota 3D, prédios best-effort sem source fixa e diagnóstico ampliado, preservando o renderer 2D/offline e todas as integrações existentes.
+A `1.0.170+170` recompila a entrega final do mapa 3D após corrigir a referência de telemetria ESP32 usada pelo clima. O comportamento funcional permanece o da etapa final 1.0.169: câmera/rota 3D refinadas, prédios best-effort sem source fixa, diagnóstico ampliado e fallback 2D preservado.
+
+
+### Reempacotamento 1.0.170 — build do clima/ESP32
+- `MapWeatherService` agora importa explicitamente o modelo que declara `Esp32ConnectionState`, usado para aceitar somente telemetria `online`/`degraded` válida.
+- A mudança elimina os erros `undefined_identifier` encontrados pelo `flutter analyze` do build 132 sem alterar a política de clima, sensores, mapa ou navegação.
+- A popup de Novidades continua mostrando apenas as mudanças visíveis do mapa 3D, sem expor detalhes internos de build.
 
 
 ### Etapa final — Refinamento do mapa 3D — 1.0.169

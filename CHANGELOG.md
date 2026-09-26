@@ -1,3 +1,11 @@
+## 1.0.170+170 — 2026-09-26
+
+- Corrigida a falha de análise estática do build 132: `MapWeatherService` utilizava `Esp32ConnectionState` sem importar `models/esp32_telemetry.dart`, gerando dois `undefined_identifier`.
+- Mantida intacta a política do clima ESP32/online: somente estados reais `online`/`degraded` participam do snapshot e nenhuma telemetria é inventada.
+- Preservada integralmente a etapa final do mapa 3D da 1.0.169, incluindo câmera adaptativa, rota acima dos prédios, terrain desativado sem suporte seguro, inicialização por estágios e fallback 2D.
+- Popup de Novidades permanece restrita a mudanças visíveis; detalhes do build ficam apenas no histórico técnico.
+- Versionamento, AppMetadata, identidades, User-Agents, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados em `1.0.170+170`.
+
 ## 1.0.169+169 — 2026-09-26
 
 - Finalizado o ciclo atual do mapa 3D com câmera adaptativa por Bicicleta/Moto/Carro/A pé, suavização de centro e bearing, dead-zones, limite de giro por atualização e aproximação progressiva de manobras/destino.

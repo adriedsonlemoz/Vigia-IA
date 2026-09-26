@@ -1,4 +1,9 @@
-# Arquitetura — Vigia IA 1.0.169+169
+# Arquitetura — Vigia IA 1.0.170+170
+
+
+## Reempacotamento 1.0.170
+
+O serviço `MapWeatherService` depende explicitamente de `models/esp32_telemetry.dart` para avaliar `Esp32ConnectionState`. A dependência fica declarada no próprio arquivo, evitando que o analyzer dependa de exportações transitivas de outros services. Nenhuma regra de fusão ESP32/online ou do mapa foi alterada.
 
 
 ## Refinamento final da navegação MapLibre 3D — 1.0.169

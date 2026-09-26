@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.169 finaliza o refinamento do mapa 3D com câmera mais suave por modo de transporte, rota mais legível, prédios best-effort sem source fixa e diagnóstico ampliado; terrain real permanece desativado sem API/fonte DEM segura.",
-  "version": "1.0.169",
-  "build": 169
+  "notes": "A 1.0.170 recompila a entrega final do mapa 3D com a dependência de telemetria ESP32 declarada corretamente no serviço de clima, preservando integralmente o comportamento funcional da 1.0.169.",
+  "version": "1.0.170",
+  "build": 170
 }

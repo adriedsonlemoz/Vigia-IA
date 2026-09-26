@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.169+169
+# Validação Vigia IA 1.0.170+170
+
+
+## Build 132 / 1.0.170
+
+- Confirmar `import '../models/esp32_telemetry.dart';` em `lib/services/map_weather_service.dart`.
+- Confirmar que `Esp32ConnectionState.online` e `.degraded` compilam sem `undefined_identifier`.
+- Reexecutar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
+- Revalidar JSONs, scripts, workflow único, ausência de APK/AAB/caches e extração limpa do ZIP final.
+- Executar `flutter analyze`, `flutter test` e build Android quando Flutter/Dart estiverem disponíveis; não registrar esses comandos como executados fora de ambiente com SDK.
 
 
 ## 1.0.169+169 — refinamento final do mapa 3D

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/esp32_module.dart';
+import '../models/esp32_telemetry.dart';
 import '../models/map_weather.dart';
 import 'error_log_service.dart';
 import 'esp32_module_service.dart';
@@ -175,7 +176,7 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.169 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.170 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)
