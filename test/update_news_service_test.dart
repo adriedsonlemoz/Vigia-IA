@@ -138,10 +138,10 @@ void main() {
     expect(UpdateNewsCatalog.current.releases.single.version, UpdateNewsCatalog.currentVersion);
   });
 
-  test('1.0.178 exibe somente as novidades visíveis da câmera em tela inteira', () async {
-    final store = _MemoryStore()..value = '1.0.177+177';
+  test('versão atual exibe somente as novidades visíveis da 1.0.180', () async {
+    final store = _MemoryStore()..value = '1.0.179+179';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.178', build: 178),
+      const AppBuildVersion(version: '1.0.180', build: 180),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -153,9 +153,9 @@ void main() {
 
     expect(decision.shouldShow, isTrue);
     expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 178);
+    expect(decision.releases.single.version.build, 180);
     expect(decision.changes, hasLength(2));
-    expect(decision.changes.join(' '), contains('tela inteira'));
+    expect(decision.changes.join(' '), contains('painel de navegação'));
   });
 
 }

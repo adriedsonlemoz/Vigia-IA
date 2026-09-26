@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.179', build: 179);
+      AppBuildVersion(version: '1.0.180', build: 180);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
       version: currentVersion,
       changes: <String>[
-        'A pesquisa do mapa agora libera os resultados salvos imediatamente e busca cidades próximas em uma etapa rápida, ampliando a região em segundo plano quando necessário.',
-        'Ao abrir o mapa diretamente, nenhuma câmera é iniciada automaticamente; fontes abertas pelo mapa podem ser encerradas ao ocultar ou minimizar para economizar bateria.',
-        'As câmeras herdadas do Monitoramento continuam sob controle do Monitoramento, e o comportamento de economia fica disponível em uma opção fixa nas câmeras do mapa.',
+        'O painel de navegação do mapa ficou maior e mais visual, com a próxima manobra em destaque, distância, tempo, média e progresso organizados em blocos.',
+        'Durante a navegação, o card também mostra atalhos informativos para água, comida, descanso e parada quando esses pontos existem nos dados reais já carregados.',
       ],
     ),
   ]);

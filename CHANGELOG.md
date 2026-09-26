@@ -1,11 +1,20 @@
-## 1.0.179+179 — 2026-09-26
+## 1.0.180+180 — 2026-09-26
+
+- Painel de navegação do mapa redesenhado para um card maior, mais legível e mais próximo do conceito visual aprovado.
+- Próxima manobra ganha destaque com ícone dedicado; distância restante, ETA, média usada e progresso passam a ter blocos próprios.
+- Água, comida, descanso e parada usam apenas POIs reais já carregados; quando não há dado conhecido, o card mostra `--`.
+- Reserva vertical de PiPs e cards ajustada para o painel maior não encobrir câmeras ou detalhes de POI.
+- Teste de Novidades atualizado para validar a release instalada atual, corrigindo a única falha observada no build 139.
+- Versionamento, identidades, User-Agents, documentação e verificadores sincronizados em `1.0.180+180`.
+
+## 1.0.180+180 — 2026-09-26
 
 - Pesquisa do mapa separa atualização de sugestões e busca digitada, evitando que a consulta de cidades próximas bloqueie o botão de pesquisar.
 - Sugestões usam cache/índice local imediatamente e uma consulta Overpass curta (~65 km) antes de ampliar até 180 km em segundo plano quando necessário.
 - Entrada direta no mapa começa sem câmera automática; a câmera só é aberta após ação explícita do usuário.
 - Fontes abertas pelo mapa são encerradas ao ocultar/minimizar por padrão; uma opção persistente permite desativar essa economia.
 - Fontes herdadas do Monitoramento permanecem sob controle do Monitoramento e não são encerradas pelo mapa.
-- Versionamento, identidades, User-Agents, Novidades, Sobre > Mudanças, documentação e verificadores sincronizados em `1.0.179+179`.
+- Versionamento, identidades, User-Agents, Novidades, Sobre > Mudanças, documentação e verificadores sincronizados em `1.0.180+180`.
 
 ## 1.0.178+178 — 2026-09-26
 

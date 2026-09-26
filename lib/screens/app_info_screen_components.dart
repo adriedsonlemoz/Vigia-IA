@@ -65,6 +65,14 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.180',
+          changes: [
+            'O painel de navegação ficou maior e mais visual, com próxima manobra, distância, tempo, média e progresso em destaque.',
+            'Água, comida, descanso e parada aparecem no card somente quando existem pontos reais carregados; sem dado, o app mostra --.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.179',
           changes: [
             'A pesquisa do mapa mostra dados salvos imediatamente e usa uma consulta curta para cidades próximas antes de ampliar a região em segundo plano.',
@@ -1646,8 +1654,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.179',
+          version: '1.0.180',
           current: true,
+          changes: [
+            'Painel de navegação redesenhado e ampliado, com a próxima manobra em destaque e leitura rápida para uso na bicicleta.',
+            'O card reúne distância restante, ETA, média usada, progresso e pontos úteis reais já carregados no mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.179',
           changes: [
             'Pesquisa do mapa mais responsiva: dados locais aparecem primeiro e a busca de localidades amplia a região sem bloquear a pesquisa digitada.',
             'Entrada direta no mapa começa sem câmera; ao ocultar/minimizar uma fonte aberta pelo próprio mapa, o app pode encerrá-la para reduzir consumo.',

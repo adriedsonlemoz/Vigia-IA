@@ -2,18 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.179+179`
+> **Versão atual:** `1.0.180+180`
 
 ## Estado atual
 
-A `1.0.179+179` torna a pesquisa do mapa mais responsiva e fecha o ciclo de energia das câmeras: sugestões locais aparecem primeiro, a busca digitada não fica bloqueada pela atualização de cidades próximas e a entrada direta no mapa começa sem câmera automática.
+A `1.0.180+180` amplia o painel de navegação do mapa para leitura rápida durante a cicloviagem e corrige a validação de Novidades que interrompeu o build 139.
 
-### Pesquisa rápida + energia das câmeras — 1.0.179
-- A lupa mostra imediatamente o índice/cache já salvo e separa o carregamento das sugestões do carregamento da pesquisa digitada.
-- Cidades/comunidades próximas são consultadas primeiro em um raio curto; se ainda faltarem sugestões, o raio maior é atualizado em segundo plano sem bloquear o campo de pesquisa.
-- Ao abrir o mapa diretamente pela tela inicial, nenhum PiP/câmera é iniciado automaticamente.
-- Fontes abertas pelo próprio mapa são encerradas ao ocultar/minimizar por padrão, liberando câmera/stream para reduzir consumo.
-- A opção persistente `Economizar bateria ao ocultar câmera` permite manter ou não fontes abertas pelo mapa; fontes herdadas do Monitoramento continuam sob controle do Monitoramento.
+### Navegação visual ampliada — 1.0.180
+- O banner pequeno foi substituído por um card maior, com ícone da próxima manobra e instrução principal em destaque.
+- Distância restante, ETA, média usada no cálculo e progresso ficam em quatro blocos de leitura rápida.
+- Uma barra de progresso maior mostra visualmente quanto da rota já foi concluído.
+- Água, comida, descanso e parada aparecem em quatro indicadores inferiores usando somente POIs reais que já estejam carregados; sem dado conhecido, a distância aparece como `--`.
+- O botão do plano por dias e o seletor de rotas alternativas continuam disponíveis sem poluir a instrução principal.
+- O layout reserva mais espaço inferior para evitar colisão do novo card com PiPs e detalhes de pontos no mapa.
 
 ### Câmera do mapa em tela inteira — 1.0.178
 - Um toque diretamente na imagem de um PiP expandido abre essa câmera sobre toda a área do mapa.

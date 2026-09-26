@@ -5408,7 +5408,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: compactHud ? 10 : 36,
                   right: compactHud ? 10 : 36,
-                  bottom: bottomInset + (navigationTarget == null ? 82 : 164),
+                  bottom: bottomInset + (navigationTarget == null ? 82 : 330),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -5440,6 +5440,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     fallbackMessage: _routeFallback?.message,
                     networkOffline: networkOffline,
                     compact: compactHud,
+                    nearbyPoints: _routeExplorer.activeResults,
                     onRouteSelected: _selectCyclingRoute,
                     onTripPlan: _bikeTripPlan == null
                         ? null
@@ -7495,6 +7496,7 @@ class _NavigationBanner extends StatelessWidget {
     required this.fallbackMessage,
     required this.networkOffline,
     required this.compact,
+    required this.nearbyPoints,
     required this.onRouteSelected,
     required this.onTripPlan,
     required this.onStop,
@@ -7514,6 +7516,7 @@ class _NavigationBanner extends StatelessWidget {
   final String? fallbackMessage;
   final bool networkOffline;
   final bool compact;
+  final List<RouteExplorerResult> nearbyPoints;
   final ValueChanged<int> onRouteSelected;
   final VoidCallback? onTripPlan;
   final VoidCallback onStop;
@@ -7529,7 +7532,7 @@ class _NavigationBanner extends StatelessWidget {
     if (minutes < 60) return '$minutes min';
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
-    return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
+    return rest == 0 ? '${hours}h' : '${hours}h${rest.toString().padLeft(2, '0')}';
   }
 
   String _bikeDurationForDistance(double meters) {
@@ -7541,17 +7544,6 @@ class _NavigationBanner extends StatelessWidget {
     return _duration(seconds.toDouble());
   }
 
-  String _bikeDaysForDistance(double meters) {
-    final estimate = bikeEstimate;
-    if (estimate == null) return '';
-    final speed = estimate.preferences.averageSpeedKmh;
-    final hoursPerDay = estimate.preferences.ridingHoursPerDay;
-    if (speed <= 0 || hoursPerDay <= 0) return '';
-    final hours = meters / 1000 / speed;
-    final days = (hours / hoursPerDay).ceil().clamp(1, 999);
-    return days > 1 ? ' · ~$days dias' : '';
-  }
-
   String _bearing(double? degrees) {
     if (degrees == null || !degrees.isFinite) return '--';
     const labels = <String>['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
@@ -7560,207 +7552,495 @@ class _NavigationBanner extends StatelessWidget {
     return '${labels[index]} ${normalized.toStringAsFixed(0)}°';
   }
 
+  String _cleanInstruction(String value) {
+    final trimmed = value.trim();
+    if (trimmed.endsWith('.') || trimmed.endsWith(':')) {
+      return trimmed.substring(0, trimmed.length - 1);
+    }
+    return trimmed;
+  }
+
+  IconData _maneuverIcon(String text) {
+    final value = text.toLowerCase();
+    if (value.contains('esquerda')) return Icons.turn_left_rounded;
+    if (value.contains('direita')) return Icons.turn_right_rounded;
+    if (value.contains('retorno') || value.contains('volte')) {
+      return Icons.u_turn_left_rounded;
+    }
+    if (value.contains('destino') || value.contains('chegou')) {
+      return Icons.flag_rounded;
+    }
+    return Icons.navigation_rounded;
+  }
+
+  RouteExplorerResult? _nearest(Set<RouteExplorerCategory> categories) {
+    RouteExplorerResult? best;
+    for (final item in nearbyPoints) {
+      if (!categories.contains(item.category)) continue;
+      if (best == null || item.distanceMeters < best.distanceMeters) {
+        best = item;
+      }
+    }
+    return best;
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final travelLabel = target.travelMode.routeLabel;
     final progress = guidance;
     final route = roadRoute;
+    final warning = fallbackMessage != null || networkOffline;
+
     final currentInstruction = progress?.arrived == true
         ? 'Destino alcançado'
         : progress?.currentInstruction ?? target.label;
+    final nextManeuver = progress?.nextInstruction;
+    final nextManeuverDistance = progress?.distanceToNextManeuverMeters;
+    final hasUpcomingManeuver = progress?.arrived != true &&
+        nextManeuver != null &&
+        nextManeuverDistance != null;
 
-    late final String nextLine;
+    final primaryInstruction = hasUpcomingManeuver
+        ? '${_cleanInstruction(nextManeuver)} em ${_distance(nextManeuverDistance)}'
+        : currentInstruction;
+
+    late final String secondaryInstruction;
     if (progress?.arrived == true) {
-      nextLine = 'Você chegou ao destino.';
+      secondaryInstruction = 'Você chegou ao destino.';
     } else if (fallbackMessage != null) {
-      nextLine = fallbackMessage!;
+      secondaryInstruction = fallbackMessage!;
     } else if (loadingRoadRoute && route != null) {
-      nextLine = 'Recalculando rota…';
-    } else if (route != null &&
-        progress != null &&
-        progress.nextInstruction != null) {
-      nextLine =
-          'Em ${_distance(progress.distanceToNextManeuverMeters)}: ${progress.nextInstruction}';
+      secondaryInstruction = 'Recalculando rota…';
+    } else if (hasUpcomingManeuver) {
+      secondaryInstruction = currentInstruction;
     } else if (loadingRoadRoute) {
-      nextLine = 'Calculando rota de $travelLabel…';
+      secondaryInstruction = 'Calculando rota de ${target.travelMode.routeLabel}…';
     } else if (route != null) {
-      nextLine = 'Siga pela rota destacada até o destino.';
+      secondaryInstruction = 'Siga pela rota destacada até o destino.';
     } else {
-      nextLine =
+      secondaryInstruction =
           '${_distance(distanceMeters)} · ${_bearing(bearingDegrees)} · direção direta';
     }
 
-    late final String summaryLine;
-    if (route != null && progress != null) {
-      final routeLabel = routeAlternatives.length > 1
-          ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
-          : '';
-      final remainingTime = bikeEstimate == null
-          ? _duration(progress.remainingDurationSeconds)
-          : _bikeDurationForDistance(progress.remainingDistanceMeters);
-      final dayLabel = bikeEstimate == null
-          ? ''
-          : _bikeDaysForDistance(progress.remainingDistanceMeters);
-      summaryLine =
-          '$routeLabel${_distance(progress.remainingDistanceMeters)} · $remainingTime restantes$dayLabel · ${(progress.progressFraction * 100).round()}%';
-    } else if (route != null) {
-      final routeLabel = routeAlternatives.length > 1
-          ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
-          : '';
-      final routeTime = bikeEstimate == null
-          ? _duration(route.durationSeconds)
-          : _bikeDurationForDistance(route.distanceMeters);
-      final dayLabel = bikeEstimate == null
-          ? ''
-          : _bikeDaysForDistance(route.distanceMeters);
-      summaryLine =
-          '$routeLabel${_distance(route.distanceMeters)} · $routeTime$dayLabel · $travelLabel';
-    } else {
-      summaryLine = 'Destino: ${target.label}';
-    }
+    final remainingDistance = progress?.remainingDistanceMeters ??
+        route?.distanceMeters ??
+        distanceMeters;
+    final remainingDuration = route == null
+        ? null
+        : bikeEstimate == null
+            ? (progress?.remainingDurationSeconds ?? route.durationSeconds)
+            : null;
+    final remainingTime = remainingDistance == null
+        ? '--'
+        : bikeEstimate == null
+            ? (remainingDuration == null ? '--' : _duration(remainingDuration))
+            : _bikeDurationForDistance(remainingDistance);
+    final progressFraction = progress?.progressFraction.clamp(0.0, 1.0).toDouble() ?? 0.0;
+    final speedValue = bikeEstimate == null
+        ? target.travelMode.routeLabel
+        : '${bikeEstimate!.preferences.averageSpeedKmh.toStringAsFixed(0)} km/h';
 
-    final warning = fallbackMessage != null || networkOffline;
-    final background = warning
-        ? scheme.secondaryContainer.withValues(alpha: 0.96)
-        : scheme.tertiaryContainer.withValues(alpha: 0.95);
-    final foreground = warning
-        ? scheme.onSecondaryContainer
-        : scheme.onTertiaryContainer;
-    final progressFraction = progress?.progressFraction.clamp(0.0, 1.0).toDouble();
-    final detailLine = '$nextLine · $summaryLine';
-    return Center(
-      child: Material(
-        elevation: 3,
-        color: background,
-        borderRadius: BorderRadius.circular(14),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            compact ? 8 : 10,
-            compact ? 5 : 6,
-            2,
-            compact ? 4 : 5,
+    final water = _nearest(const <RouteExplorerCategory>{RouteExplorerCategory.water});
+    final food = _nearest(const <RouteExplorerCategory>{
+      RouteExplorerCategory.restaurant,
+      RouteExplorerCategory.market,
+    });
+    final rest = _nearest(const <RouteExplorerCategory>{
+      RouteExplorerCategory.camping,
+      RouteExplorerCategory.stop,
+      RouteExplorerCategory.viewpoint,
+    });
+    final stop = _nearest(const <RouteExplorerCategory>{
+      RouteExplorerCategory.fuel,
+      RouteExplorerCategory.health,
+      RouteExplorerCategory.workshop,
+    });
+
+    final panelColor = warning
+        ? scheme.secondaryContainer.withValues(alpha: 0.97)
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.97);
+    final foreground = warning ? scheme.onSecondaryContainer : scheme.onSurface;
+    final accent = warning ? scheme.secondary : scheme.primary;
+
+    return Material(
+      elevation: 12,
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(compact ? 22 : 26),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              panelColor,
+              panelColor.withValues(alpha: 0.94),
+              scheme.surface.withValues(alpha: 0.98),
+            ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                networkOffline
-                    ? Icons.wifi_off_rounded
-                    : progress?.offRoute == true
-                        ? Icons.alt_route_rounded
-                        : Icons.navigation_rounded,
-                size: compact ? 17 : 19,
-                color: foreground,
+          border: Border.all(
+            color: accent.withValues(alpha: 0.22),
+          ),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 12 : 16,
+          compact ? 9 : 12,
+          compact ? 10 : 14,
+          compact ? 10 : 14,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: foreground.withValues(alpha: 0.28),
+                borderRadius: BorderRadius.circular(99),
               ),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currentInstruction,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: foreground,
-                        fontSize: compact ? 11.5 : 13,
-                        height: 1.05,
-                        fontWeight: FontWeight.w900,
-                      ),
+            ),
+            SizedBox(height: compact ? 8 : 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: compact ? 68 : 80,
+                  height: compact ? 68 : 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withValues(alpha: 0.16),
+                    border: Border.all(
+                      color: accent.withValues(alpha: 0.72),
+                      width: 2,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      detailLine,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: foreground.withValues(alpha: 0.86),
-                        fontSize: compact ? 9 : 10,
-                        height: 1.05,
-                        fontWeight: FontWeight.w700,
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.20),
+                        blurRadius: 14,
+                        spreadRadius: 1,
                       ),
-                    ),
-                    if (progressFraction != null) ...[
-                      const SizedBox(height: 3),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: progressFraction,
-                          minHeight: 2,
-                          backgroundColor: foreground.withValues(alpha: 0.16),
-                          valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                    ],
+                  ),
+                  child: Icon(
+                    networkOffline
+                        ? Icons.wifi_off_rounded
+                        : progress?.offRoute == true
+                            ? Icons.alt_route_rounded
+                            : _maneuverIcon(primaryInstruction),
+                    size: compact ? 40 : 48,
+                    color: accent,
+                  ),
+                ),
+                SizedBox(width: compact ? 12 : 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        primaryInstruction,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: compact ? 18 : 22,
+                          height: 1.05,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        secondaryInstruction,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foreground.withValues(alpha: 0.72),
+                          fontSize: compact ? 12 : 14,
+                          height: 1.1,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-              if (bikeTripPlanLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                )
-              else if (bikeTripPlan != null &&
-                  bikeTripPlan!.estimate.dayCount > 1)
-                IconButton(
-                  tooltip: 'Ver plano por dias',
-                  onPressed: onTripPlan,
+                ),
+                IconButton.filledTonal(
+                  tooltip: 'Parar navegação',
+                  onPressed: onStop,
                   visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                  icon: const Icon(Icons.calendar_month_rounded, size: 20),
+                  icon: const Icon(Icons.close_rounded),
                 ),
-              if (routeAlternatives.length > 1)
-                PopupMenuButton<int>(
-                  tooltip: 'Escolher rota alternativa',
-                  initialValue: selectedRouteIndex,
-                  onSelected: onRouteSelected,
-                  itemBuilder: (context) => <PopupMenuEntry<int>>[
-                    for (var index = 0;
-                        index < routeAlternatives.length;
-                        index++)
-                      PopupMenuItem<int>(
-                        value: index,
-                        child: Row(
-                          children: [
-                            Icon(
-                              index == selectedRouteIndex
-                                  ? Icons.check_circle_rounded
-                                  : Icons.alt_route_rounded,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)} · ${bikeEstimate == null ? _duration(routeAlternatives[index].durationSeconds) : _bikeDurationForDistance(routeAlternatives[index].distanceMeters)}${bikeEstimate == null ? '' : _bikeDaysForDistance(routeAlternatives[index].distanceMeters)}',
-                              ),
-                            ),
-                          ],
-                        ),
+              ],
+            ),
+            SizedBox(height: compact ? 9 : 12),
+            Divider(height: 1, color: foreground.withValues(alpha: 0.12)),
+            SizedBox(height: compact ? 9 : 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _NavigationMetricCell(
+                    icon: Icons.flag_rounded,
+                    value: _distance(remainingDistance),
+                    label: 'restantes',
+                    accent: accent,
+                    foreground: foreground,
+                    compact: compact,
+                  ),
+                ),
+                Expanded(
+                  child: _NavigationMetricCell(
+                    icon: Icons.schedule_rounded,
+                    value: remainingTime,
+                    label: 'tempo estimado',
+                    accent: accent,
+                    foreground: foreground,
+                    compact: compact,
+                  ),
+                ),
+                Expanded(
+                  child: _NavigationMetricCell(
+                    icon: Icons.speed_rounded,
+                    value: speedValue,
+                    label: bikeEstimate == null ? 'modo da rota' : 'média no percurso',
+                    accent: accent,
+                    foreground: foreground,
+                    compact: compact,
+                  ),
+                ),
+                Expanded(
+                  child: _NavigationMetricCell(
+                    icon: Icons.route_rounded,
+                    value: '${(progressFraction * 100).round()}%',
+                    label: 'concluído',
+                    accent: accent,
+                    foreground: foreground,
+                    compact: compact,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: compact ? 9 : 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
+                value: progressFraction,
+                minHeight: compact ? 5 : 7,
+                backgroundColor: foreground.withValues(alpha: 0.13),
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+              ),
+            ),
+            SizedBox(height: compact ? 9 : 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _NavigationPoiChip(
+                    icon: Icons.water_drop_rounded,
+                    label: 'Água',
+                    distance: water == null ? '--' : _distance(water.distanceMeters),
+                    foreground: foreground,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _NavigationPoiChip(
+                    icon: Icons.restaurant_rounded,
+                    label: 'Comida',
+                    distance: food == null ? '--' : _distance(food.distanceMeters),
+                    foreground: foreground,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _NavigationPoiChip(
+                    icon: Icons.chair_alt_rounded,
+                    label: 'Descanso',
+                    distance: rest == null ? '--' : _distance(rest.distanceMeters),
+                    foreground: foreground,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _NavigationPoiChip(
+                    icon: Icons.local_gas_station_rounded,
+                    label: 'Parada',
+                    distance: stop == null ? '--' : _distance(stop.distanceMeters),
+                    foreground: foreground,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ),
+              ],
+            ),
+            if (bikeTripPlanLoading ||
+                (bikeTripPlan != null && bikeTripPlan!.estimate.dayCount > 1) ||
+                routeAlternatives.length > 1) ...[
+              SizedBox(height: compact ? 8 : 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (bikeTripPlanLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                  ],
-                  icon: const Icon(Icons.alt_route_rounded, size: 20),
-                ),
-              IconButton(
-                tooltip: 'Parar navegação',
-                onPressed: onStop,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                icon: const Icon(Icons.close_rounded, size: 20),
+                    )
+                  else if (bikeTripPlan != null &&
+                      bikeTripPlan!.estimate.dayCount > 1)
+                    Tooltip(
+                      message: 'Ver plano por dias',
+                      child: TextButton.icon(
+                        onPressed: onTripPlan,
+                        icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                        label: Text('Plano de ${bikeTripPlan!.estimate.dayCount} dias'),
+                      ),
+                    ),
+                  if (routeAlternatives.length > 1)
+                    PopupMenuButton<int>(
+                      tooltip: 'Escolher rota alternativa',
+                      initialValue: selectedRouteIndex,
+                      onSelected: onRouteSelected,
+                      itemBuilder: (context) => <PopupMenuEntry<int>>[
+                        for (var index = 0; index < routeAlternatives.length; index++)
+                          PopupMenuItem<int>(
+                            value: index,
+                            child: Text(
+                              'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)}',
+                            ),
+                          ),
+                      ],
+                      icon: const Icon(Icons.alt_route_rounded, size: 20),
+                    ),
+                ],
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
+}
 
+class _NavigationMetricCell extends StatelessWidget {
+  const _NavigationMetricCell({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.accent,
+    required this.foreground,
+    required this.compact,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color accent;
+  final Color foreground;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: compact ? 16 : 18, color: accent),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: foreground,
+              fontSize: compact ? 12 : 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: foreground.withValues(alpha: 0.62),
+              fontSize: compact ? 8 : 9.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavigationPoiChip extends StatelessWidget {
+  const _NavigationPoiChip({
+    required this.icon,
+    required this.label,
+    required this.distance,
+    required this.foreground,
+    required this.accent,
+    required this.compact,
+  });
+
+  final IconData icon;
+  final String label;
+  final String distance;
+  final Color foreground;
+  final Color accent;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 5 : 7,
+        vertical: compact ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: foreground.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: foreground.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: compact ? 17 : 20, color: accent),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: foreground,
+              fontSize: compact ? 9 : 10.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            distance,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: foreground.withValues(alpha: 0.68),
+              fontSize: compact ? 8 : 9.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RouteButtonBar extends StatelessWidget {

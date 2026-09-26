@@ -1,6 +1,6 @@
-# Arquitetura — Vigia IA 1.0.179+179
+# Arquitetura — Vigia IA 1.0.180+180
 
-## Pesquisa responsiva e ciclo de vida da câmera — 1.0.179
+## Pesquisa responsiva e ciclo de vida da câmera — 1.0.180
 
 - `MapDestinationSearchService` mantém estados independentes para atualização de sugestões e pesquisa submetida. O cache local é publicado primeiro; a descoberta de localidades usa uma consulta curta de nós `place` e amplia o raio em best-effort sem bloquear a pesquisa textual.
 - `MapMonitoringScreen` distingue entrada direta e entrada pelo Monitoramento. A entrada direta inicia com PiPs desligados e não cria `SecondaryCameraController` até seleção explícita de uma fonte.
@@ -1721,3 +1721,8 @@ O WAV único fornecido pelo usuário é armazenado apenas como fonte externa ao 
 `MonitorController` escolhe o slot de transição pela família semântica do objeto: pessoa usa `person_entered/person_exited`, veículo usa `vehicle_entered/vehicle_exited`, animal usa `animal_entered/animal_exited` e outras classes usam `object_entered/object_exited`. `NativePlatformService`/`MainActivity` continuam retornando `false` quando o recurso não existe; `_deliverAlert()` então usa TTS sem alterar o restante do alerta.
 
 A gravação recebida contém dez falas. As duas falas de entrada/saída de animal não estão presentes e, por isso, esses dois slots ficam intencionalmente sem arquivo até nova gravação.
+
+
+### Navegação visual ampliada — 1.0.180
+
+O `_NavigationBanner` do mapa foi convertido em card de navegação ampliado com hierarquia visual para manobra, ETA, distância, ritmo e progresso. Os quatro indicadores de apoio (água, comida, descanso e parada) são derivados de `RouteExplorerResult` reais já carregados; a UI nunca cria distâncias fictícias. O `MapUxPolicy` reserva mais área inferior durante navegação para evitar colisão do card com PiPs e cards de POI.

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.179 agiliza a pesquisa do mapa e torna explícito o controle de energia das câmeras: entrada direta sem câmera automática e encerramento opcional de fontes abertas pelo mapa quando ocultas.",
-  "version": "1.0.179",
-  "build": 179
+  "notes": "A 1.0.180 amplia e moderniza o painel de navegação do mapa, mantém POIs úteis visíveis com dados reais e ajusta o teste de Novidades à versão instalada atual.",
+  "version": "1.0.180",
+  "build": 180
 }
