@@ -15,6 +15,7 @@ import 'alert_delivery_service.dart';
 import 'location_tracking_service.dart';
 import 'map_connectivity_service.dart';
 import 'map_performance_policy.dart';
+import 'map_bike_consolidation_policy.dart';
 import 'map_route_service.dart';
 import 'route_explorer_alert_policy.dart';
 import 'route_explorer_poi_catalog.dart';
@@ -69,6 +70,10 @@ class RouteExplorerService extends ChangeNotifier {
   String get lastSource => _lastSource;
   RouteExplorerSettings get settings => _settings;
   List<RouteExplorerResult> get results => List<RouteExplorerResult>.unmodifiable(_results);
+  List<RouteExplorerResult> get activeResults =>
+      List<RouteExplorerResult>.unmodifiable(
+        _results.where((item) => _settings.categories.contains(item.category)),
+      );
   List<RouteExplorerResult> get offlineResults =>
       List<RouteExplorerResult>.unmodifiable(_offlineResults);
   List<OfflinePoiPackage> get offlinePackages =>
@@ -649,7 +654,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.148');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.149');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -1034,6 +1039,13 @@ class RouteExplorerService extends ChangeNotifier {
         bestMeters = meters;
         best = package;
       }
+    }
+    if (best == null) return null;
+    if (!MapBikeConsolidationPolicy.canUseOfflinePoiPackageFallback(
+      package: best,
+      distanceMeters: bestMeters,
+    )) {
+      return null;
     }
     return best;
   }

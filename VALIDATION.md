@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.148+148
+# Validação Vigia IA 1.0.149+149
+
+## 1.0.149+149 — consolidação mapa + Bike
+
+- Confirmar que o mini mapa em modo automático continua visível durante navegação ativa mesmo com a bicicleta parada e sem gravação de percurso.
+- Confirmar que TTC/aproximação desaparecem após expirar a janela de frescor ou quando a IA entra em aguardando frames, sem frames, desligada, câmera indisponível, conexão perdida ou possível erro.
+- Encerrar a navegação por outra superfície e reabrir o mapa; não deve permanecer rota, alternativa, fallback, progresso ou estado de recálculo local.
+- Manter apenas um pacote offline salvo a dezenas de quilômetros além da cobertura e confirmar que ele não é selecionado como região atual.
+- Desativar uma categoria de POI com resultados já carregados e confirmar remoção imediata das listas e marcadores, mantendo o cache interno disponível caso a categoria seja reativada.
+- Executar `test/map_bike_consolidation_policy_test.dart` e a suíte completa quando Flutter estiver disponível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow quando o SDK Flutter estiver disponível.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- `.github/workflows/android-apk.yml`: SHA-256 idêntico ao da 1.0.148 (`7d8bb2c8b637425307698b42c658c78cca59cee36d48dfb435704446a9690d15`).
+- Nenhum APK/AAB presente no fonte antes do empacotamento.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android precisam ser reconfirmados pelo workflow.
 
 ## 1.0.148+148 — desempenho e estabilidade
 

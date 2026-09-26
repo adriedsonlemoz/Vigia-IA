@@ -1,3 +1,13 @@
+## 1.0.149+149 — 2026-09-25
+
+- Consolidada a integração mapa + Bike com `MapBikeConsolidationPolicy`, sem criar novo pipeline de detecção, TTC, rota ou persistência.
+- O mini mapa automático permanece visível durante navegação ativa, inclusive em paradas temporárias sem conexão Bike.
+- O overlay de aproximação/TTC passa a exigir estado recente e IA/câmera válidos, evitando exibir risco antigo após perda de frames, conexão ou falha da IA.
+- Encerramento de navegação disparado fora da tela do mapa limpa também rota local, alternativas, fallback, progresso e recálculo, evitando rota residual ao retornar.
+- POIs offline não usam mais automaticamente um pacote muito distante da posição atual; o fallback respeita a cobertura declarada do pacote com margem controlada.
+- Categorias de POI desativadas deixam de aparecer imediatamente nas listas e no mapa mesmo se o resultado anterior continuar em cache.
+- Adicionados testes de regressão da política de consolidação e sincronizados Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados e User-Agents em `1.0.149+149`.
+
 ## 1.0.148+148 — 2026-09-25
 
 - Otimizado o GPS do mapa com filtro de deslocamento de 8 m para reduzir trabalho e consumo sem comprometer navegação Bike.

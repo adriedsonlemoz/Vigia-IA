@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.149', build: 149),
+      changes: <String>[
+        '🧭 Mapa e Bike passam a limpar juntos estados antigos quando a navegação é encerrada.',
+        '🚗 TTC deixa de aparecer quando o dado está antigo ou a câmera/IA não está mais pronta.',
+        '📴 POIs offline evitam usar pacotes salvos muito longe da região atual.',
+        '📍 Categorias de POI desativadas somem imediatamente das listas e do mapa.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.148', build: 148),
       changes: <String>[
         '⚡ Mapa e Bike fazem menos atualizações e reconstruções desnecessárias.',

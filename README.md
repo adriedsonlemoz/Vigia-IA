@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.148+148`
+> **Versão atual:** `1.0.149+149`
 
 ## Estado atual
 
-A `1.0.148+148` é a etapa de **desempenho e estabilidade** do bloco mapa + Bike, reduzindo atualizações, consultas e rebuilds redundantes sem afrouxar navegação, alertas ou IA.
+A `1.0.149+149` é a **consolidação do bloco mapa + Bike**, alinhando navegação, POIs, PiPs, IA/TTC, offline e o mini mapa automático antes da etapa planejada de navegação 3D.
+
+### Evolução 1.0.149 — consolidação mapa + Bike
+
+- `MapBikeConsolidationPolicy` centraliza regras de integração entre navegação, Modo Bike, TTC/IA e cobertura de POIs offline sem duplicar detecção ou roteamento.
+- O mini mapa no modo automático permanece disponível durante uma navegação ativa, mesmo se a bicicleta estiver temporariamente parada.
+- O overlay de aproximação só usa TTC recente e é ocultado quando a IA está desligada, aguardando/sem frames, a câmera está indisponível, a conexão caiu ou existe erro de IA.
+- Ao encerrar a navegação fora da tela do mapa, rota local, alternativas, fallback, progresso e estado de recálculo são limpos juntos, evitando geometria antiga no retorno.
+- O fallback de POIs offline deixa de escolher um pacote distante só por ser o mais próximo entre os salvos; a cobertura passa a respeitar o raio do pacote com margem controlada.
+- Categorias de POI desativadas deixam de aparecer imediatamente nas listas e marcadores, sem precisar aguardar uma nova consulta.
 
 ### Evolução 1.0.148 — desempenho e estabilidade
 

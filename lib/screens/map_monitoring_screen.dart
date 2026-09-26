@@ -23,6 +23,7 @@ import '../models/video_source_config.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
+import '../services/map_bike_consolidation_policy.dart';
 import '../services/map_connectivity_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
@@ -837,7 +838,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {});
     if (_routeState.availability == LocationTrackingAvailability.ready &&
         _routeState.current != null &&
-        _routeExplorer.results.isEmpty &&
+        _routeExplorer.activeResults.isEmpty &&
         !_routeExplorer.loading) {
       unawaited(_routeExplorer.searchNow(requestPermission: false));
     }
@@ -862,6 +863,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _onRouteStateChanged() {
     if (!mounted) return;
+    final navigationStopped = _routeState.navigationTarget == null &&
+        (_cyclingRoute != null ||
+            _cyclingRouteAlternatives.isNotEmpty ||
+            _cyclingRouteLoading ||
+            _routeFallback != null ||
+            _navigationProgress != null);
+    if (navigationStopped) {
+      _cancelRouteRecovery();
+      _cyclingRouteRequestSerial += 1;
+      _navigationVoice.resetRoute();
+      _clearLocalNavigationState();
+    }
     final current = _routeState.current;
     _navigationProgress = _evaluateNavigationProgress(current);
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
@@ -1189,21 +1202,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     } catch (_) {}
   }
 
+  void _clearLocalNavigationState() {
+    _routeFallback = null;
+    _cyclingRoute = null;
+    _cyclingRouteAlternatives = const <MapCyclingRoute>[];
+    _selectedCyclingRouteIndex = 0;
+    _navigationProgress = null;
+    _cyclingRouteLoading = false;
+    _offRouteSamples = 0;
+    _lastRouteRecalculatedAt = null;
+    _lastNavigationProgressPointAt = null;
+  }
+
   void _stopNavigation() {
     _cancelRouteRecovery();
-    _routeFallback = null;
     _cyclingRouteRequestSerial += 1;
     _navigationVoice.resetRoute();
-    setState(() {
-      _cyclingRoute = null;
-      _cyclingRouteAlternatives = const <MapCyclingRoute>[];
-      _selectedCyclingRouteIndex = 0;
-      _navigationProgress = null;
-      _cyclingRouteLoading = false;
-      _offRouteSamples = 0;
-      _lastRouteRecalculatedAt = null;
-      _lastNavigationProgressPointAt = null;
-    });
+    setState(_clearLocalNavigationState);
     unawaited(_routeState.stopNavigation());
   }
 
@@ -1349,7 +1364,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final source = _activeCameraConfig(false);
     if (source == null || source.isFrontCameraTest) return null;
     final status = widget.bikeApproachStatusProvider?.call();
-    if (status == null || status.updatedAt.millisecondsSinceEpoch <= 0) return null;
+    if (status == null) return null;
+    if (!MapBikeConsolidationPolicy.shouldShowApproachOverlay(
+      status: status,
+      aiStatus: widget.cameraAiStatusProvider?.call(),
+    )) {
+      return null;
+    }
     return status;
   }
 
@@ -1364,7 +1385,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return _primaryMapCamera?.aiPipStatus;
   }
 
-  List<RouteExplorerResult> get _visiblePois => _routeExplorer.results
+  List<RouteExplorerResult> get _visiblePois => _routeExplorer.activeResults
       .where((item) => _matchesPoiFilter(item, _poiFilter))
       .toList(growable: false);
 
@@ -1609,11 +1630,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   RouteExplorerResult? get _selectedPoi {
     final id = _selectedPoiId;
     if (id == null) return null;
-    for (final item in _routeExplorer.results) {
+    for (final item in _routeExplorer.activeResults) {
       if (item.id == id) return item;
     }
     for (final item in _routeExplorer.offlineResults) {
-      if (item.id == id) return item;
+      if (_routeExplorer.settings.categories.contains(item.category) &&
+          item.id == id) {
+        return item;
+      }
     }
     return null;
   }
@@ -1834,9 +1858,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 leading: const Icon(Icons.place_rounded),
                 title: const Text('Próximos pontos'),
                 subtitle: const Text('Postos, comida, saúde, água e outros.'),
-                trailing: _routeExplorer.results.isEmpty
+                trailing: _routeExplorer.activeResults.isEmpty
                     ? null
-                    : Text('${_routeExplorer.results.length}'),
+                    : Text('${_routeExplorer.activeResults.length}'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   unawaited(_showNearbyPoints());
@@ -1993,7 +2017,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ),
                         ),
                         FilledButton.tonalIcon(
-                          onPressed: _routeExplorer.results.isEmpty
+                          onPressed: _routeExplorer.activeResults.isEmpty
                               ? null
                               : () {
                                   Navigator.of(sheetContext).pop();
@@ -2138,7 +2162,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               listenable: _routeExplorer,
               builder: (context, _) {
                 final service = _routeExplorer;
-                final filtered = service.results
+                final filtered = service.activeResults
                     .where((item) => _matchesPoiFilter(item, filter))
                     .toList(growable: false);
                 return Column(
@@ -2221,7 +2245,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           const SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: service.loading || service.results.isEmpty
+                              onPressed: service.loading || service.activeResults.isEmpty
                                   ? null
                                   : () {
                                       Navigator.of(sheetContext).pop();
@@ -2235,7 +2259,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       ),
                     ),
                     Expanded(
-                      child: service.error != null && service.results.isEmpty
+                      child: service.error != null && service.activeResults.isEmpty
                           ? _MapEmptyState(message: service.error!)
                           : filtered.isEmpty
                               ? const _MapEmptyState(
@@ -2948,9 +2972,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     _MapControlButton(
                       tooltip: 'Opções do mapa',
                       icon: Icons.more_horiz_rounded,
-                      badge: _routeExplorer.results.isEmpty
+                      badge: _routeExplorer.activeResults.isEmpty
                           ? null
-                          : '${_routeExplorer.results.length}',
+                          : '${_routeExplorer.activeResults.length}',
                       active: offlineProvider != null ||
                           _routeExplorer.offlinePackages.isNotEmpty,
                       onPressed: () => unawaited(_showMapOptions()),

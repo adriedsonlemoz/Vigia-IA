@@ -44,7 +44,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
               listenable: _routeExplorer,
               builder: (context, _) {
                 final service = _routeExplorer;
-                final filtered = service.results.where((item) => _matchesQuickFilter(item, filter)).toList(growable: false);
+                final filtered = service.activeResults.where((item) => _matchesQuickFilter(item, filter)).toList(growable: false);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -116,12 +116,12 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                       ),
                     ),
                     Expanded(
-                      child: service.error != null && service.results.isEmpty
+                      child: service.error != null && service.activeResults.isEmpty
                           ? _buildRouteExplorerEmpty(sheetContext, service.error!)
                           : filtered.isEmpty
                               ? _buildRouteExplorerEmpty(
                                   sheetContext,
-                                  service.results.isEmpty ? 'Toque em Atualizar para buscar locais próximos.' : 'Nenhum ponto neste filtro.',
+                                  service.activeResults.isEmpty ? 'Toque em Atualizar para buscar locais próximos.' : 'Nenhum ponto neste filtro.',
                                 )
                               : ListView.separated(
                                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
@@ -553,7 +553,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                         if (mapMode == MonitorMapVisibilityMode.automatic) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Automático mostra o mapa com Bike, gravação de percurso ativa ou deslocamento pelo GPS.',
+                            'Automático mostra o mapa com Bike, navegação ativa, gravação de percurso ou deslocamento pelo GPS.',
                             style: Theme.of(settingsContext)
                                 .textTheme
                                 .bodySmall
@@ -657,9 +657,9 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
 
   String _routeExplorerSummary(RouteExplorerService service) {
     if (service.error != null && service.error!.trim().isNotEmpty) return service.error!;
-    if (service.results.isEmpty) return service.statusMessage ?? 'Nenhuma busca realizada ainda.';
+    if (service.activeResults.isEmpty) return service.statusMessage ?? 'Nenhuma busca realizada ainda.';
     final source = service.lastSource == 'offline' ? 'Offline' : 'Online';
-    return '${service.results.length} locais · $source${service.resultsUpdatedAt == null ? '' : ' · ${_formatRouteExplorerTimestamp(service.resultsUpdatedAt)}'}';
+    return '${service.activeResults.length} locais · $source${service.resultsUpdatedAt == null ? '' : ' · ${_formatRouteExplorerTimestamp(service.resultsUpdatedAt)}'}';
   }
 
   Future<void> _confirmDeleteOfflinePoints(BuildContext context) async {

@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.148',
+          version: '1.0.149',
           current: true,
+          changes: [
+            'Mapa e Bike passam a limpar juntos a rota local quando a navegação é encerrada fora da tela do mapa.',
+            'TTC antigo deixa de aparecer quando perde validade ou quando câmera/IA deixa de estar pronta.',
+            'POIs offline rejeitam pacotes distantes e categorias desativadas somem imediatamente da interface.',
+            'O mini mapa automático permanece disponível durante uma navegação ativa, mesmo com a bicicleta parada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.148',
           changes: [
             'GPS do mapa reduz amostras redundantes sem perder a precisão necessária para navegação Bike.',
             'POIs continuam precisos para alertas, mas a interface deixa de reconstruir a cada ponto do GPS.',
@@ -1369,8 +1379,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.148',
+          version: '1.0.149',
           current: true,
+          changes: [
+            'Mapa e Bike passam a limpar juntos a rota local quando a navegação é encerrada fora da tela do mapa.',
+            'TTC antigo deixa de aparecer quando perde validade ou quando câmera/IA deixa de estar pronta.',
+            'POIs offline rejeitam pacotes distantes e categorias desativadas somem imediatamente da interface.',
+            'O mini mapa automático permanece disponível durante uma navegação ativa, mesmo com a bicicleta parada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.148',
           changes: [
             'GPS do mapa reduz amostras redundantes sem perder a precisão necessária para navegação Bike.',
             'POIs continuam precisos para alertas, mas a interface deixa de reconstruir a cada ponto do GPS.',

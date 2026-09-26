@@ -9,6 +9,7 @@ import '../models/map_navigation_target.dart';
 import '../models/map_route_point.dart';
 import 'location_tracking_service.dart';
 import 'map_gps_filter.dart';
+import 'map_bike_consolidation_policy.dart';
 
 enum MonitorMapVisibilityMode { automatic, always, hidden }
 
@@ -415,7 +416,12 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
       MonitorMapVisibilityMode.always => true,
       MonitorMapVisibilityMode.hidden => false,
       MonitorMapVisibilityMode.automatic =>
-        bikeConnected || _tracking || hasRecentMovement,
+        MapBikeConsolidationPolicy.shouldShowAutomaticMonitorMap(
+          bikeConnected: bikeConnected,
+          recording: _tracking,
+          navigating: navigating,
+          recentMovement: hasRecentMovement,
+        ),
     };
   }
 

@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.148+148
+# Arquitetura — Vigia IA 1.0.149+149
+
+## Consolidação mapa + Bike 1.0.149
+
+- `MapBikeConsolidationPolicy` concentra regras puras de integração que antes dependiam de estados dispersos: visibilidade automática do mini mapa, validade do overlay TTC e cobertura aceitável de pacotes de POIs offline.
+- `MapRouteService.shouldShowInMonitor` considera navegação ativa como motivo suficiente para manter o mini mapa automático visível, independentemente de movimento momentâneo ou conexão Bike.
+- O PiP continua reutilizando `BikeApproachStatus` do `MonitorController`, mas só apresenta aproximação/TTC recente e compatível com o estado atual da IA/câmera; nenhum estimador paralelo foi criado.
+- `MapMonitoringScreen` limpa a cópia local da rota, alternativas, fallback, progresso e recálculo quando `MapRouteService` informa que a navegação terminou por outra superfície.
+- `RouteExplorerService.activeResults` aplica as categorias atuais sobre resultados já carregados, permitindo que mapa e listas reflitam uma desativação sem nova requisição.
+- O fallback de pacote offline mais próximo é aceito apenas dentro da área coerente com o raio salvo, evitando trazer POIs de uma região distante como se fossem locais.
 
 ## Desempenho e estabilidade 1.0.148
 
