@@ -62,4 +62,53 @@ void main() {
       closeTo(48, 0.001),
     );
   });
+  // Regras 1.0.163: a orientação nunca fabrica heading e identifica a fonte real.
+  test('Direção parado prioriza sensor físico', () {
+    final decision = MapViewPolicy.orientationHeading(
+      mode: MapOrientationMode.directionUp,
+      speedKmh: 0.5,
+      sensorHeadingDegrees: 42,
+      gpsHeadingDegrees: 120,
+      routeHeadingDegrees: 180,
+    );
+    expect(decision.headingDegrees, 42);
+    expect(decision.source, MapHeadingSource.sensor);
+  });
+
+  test('Direção em movimento prioriza heading GPS', () {
+    final decision = MapViewPolicy.orientationHeading(
+      mode: MapOrientationMode.directionUp,
+      speedKmh: 18,
+      sensorHeadingDegrees: 42,
+      gpsHeadingDegrees: 120,
+      routeHeadingDegrees: 180,
+    );
+    expect(decision.headingDegrees, 120);
+    expect(decision.source, MapHeadingSource.gps);
+  });
+
+  test('Rota usa geometria quando GPS não existe em movimento', () {
+    final decision = MapViewPolicy.orientationHeading(
+      mode: MapOrientationMode.routeUp,
+      speedKmh: 18,
+      sensorHeadingDegrees: 42,
+      routeHeadingDegrees: 180,
+    );
+    expect(decision.headingDegrees, 180);
+    expect(decision.source, MapHeadingSource.route);
+  });
+
+  test('sem sensor GPS ou rota o heading fica indisponível', () {
+    final decision = MapViewPolicy.orientationHeading(
+      mode: MapOrientationMode.directionUp,
+      speedKmh: 0,
+    );
+    expect(decision.headingDegrees, isNull);
+    expect(decision.source, MapHeadingSource.unavailable);
+  });
+
+  test('suavização cruza zero grau pelo caminho curto', () {
+    final value = MapViewPolicy.smoothHeading(358, 2, alpha: 0.5);
+    expect(value, closeTo(0, 0.001));
+  });
 }

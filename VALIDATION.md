@@ -1,4 +1,29 @@
-# Validação Vigia IA 1.0.162+162
+# Validação Vigia IA 1.0.164+164
+
+## 1.0.164+164 — telemetria superior compacta e clicável
+- Confirmar os quatro mini-cards no mesmo bloco superior com altura de 42–48 px, mantendo ícone, valor e contraste sem cobrir demasiadamente o mapa.
+- Tocar em Velocidade e confirmar atual, média, máxima da sessão, fonte e precisão; sem velocidade fornecida pela plataforma, mostrar `--`/`Indisponível`.
+- Tocar em Altitude e confirmar altitude, precisão vertical, fonte e última atualização; precisão ausente não pode virar `0 m`.
+- Tocar em Bússola e reconfirmar direção, graus, fonte e seletor Norte/Direção/Rota da 1.0.163.
+- Tocar em GPS e confirmar status, precisão, latitude/longitude, velocidade GPS, heading GPS, altitude e última leitura. Não deve existir número de satélites sem fonte real.
+- Forçar campos `hasSpeed/hasAltitude/hasHeading` ausentes e confirmar que nenhum valor é inventado; as precisões também devem respeitar os flags `has*Accuracy`.
+- Confirmar que média/máxima da sessão não duplicam o mesmo timestamp GPS e ignoram amostras sem velocidade real.
+- Revalidar 2D/3D, orientação, rota, Centralizar, offline, POIs, câmeras e voz para garantir ausência de regressão.
+- Confirmar que a popup `Novidades da atualização` mostra apenas os três itens de `1.0.164+164`, uma vez por versão, sem histórico e sem linguagem de bugs/correções.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: `check_version_sync.py` aprovado, sintaxe de `verify_project.sh` aprovada, `verify_project.sh` aprovado, JSONs válidos, somente `android-apk.yml` presente e nenhum APK/AAB na árvore-fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android precisam ser reconfirmados pelo workflow.
+
+## 1.0.163+163 — estabilização 3D + orientação
+- Confirmar que o 3D distingue `map_create`, `style_load`, `route_draw`, `camera_sync` e `first_render` e que cada estágio possui timeout próprio.
+- Confirmar fallback Stadia → OpenFreeMap no carregamento de style e fallback final para FlutterMap 2D sem interromper rota ativa.
+- Confirmar diagnóstico com `vectorStyle` sanitizado, `styleProvider`, status/erro de rede, `styleFallbackUsed`, estágio, duração e erro original sanitizado, sem API key/token.
+- Confirmar `AndroidPlatformViewMode.hc` e ausência de dependência obrigatória da camada de prédios para considerar o renderer pronto.
+- Em aparelho com sensores, validar Norte, Direção e Rota: parado/baixa velocidade prioriza sensor; em movimento GPS/rota; pequenas oscilações não devem girar continuamente o mapa.
+- Confirmar que gesto manual pausa follow e que Centralizar restaura acompanhamento no 2D e no 3D.
+- Confirmar que Bússola abre direção, graus, fonte real (`Sensor`, `GPS`, `Rota` ou `Indisponível`) e seletor Norte/Direção/Rota.
+- Confirmar que ausência de heading não produz 0° inventado e que velocidade sem posição aparece como `--`.
+- Confirmar que a popup `Novidades da atualização` mostra apenas os três itens de `1.0.163+163`, uma vez por versão, sem histórico e sem linguagem de bugs/correções.
 
 ## 1.0.162+162 — áudio do mapa + analyzer
 

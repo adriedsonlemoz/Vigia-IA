@@ -128,8 +128,13 @@ class MapGpsFilter {
       recordedAt: raw.recordedAt,
       accuracyMeters: raw.accuracyMeters,
       speedMetersPerSecond: _normalizedSpeed(raw.speedMetersPerSecond),
+      speedAvailable: raw.speedAvailable,
+      speedAccuracyMetersPerSecond: raw.speedAccuracyMetersPerSecond,
       altitudeMeters: raw.altitudeMeters,
+      altitudeAccuracyMeters: raw.altitudeAccuracyMeters,
       headingDegrees: heading,
+      headingAvailable: raw.headingAvailable && heading != null,
+      headingAccuracyDegrees: raw.headingAccuracyDegrees,
     );
   }
 
@@ -161,8 +166,13 @@ class MapGpsFilter {
       recordedAt: raw.recordedAt,
       accuracyMeters: raw.accuracyMeters,
       speedMetersPerSecond: speed,
+      speedAvailable: raw.speedAvailable,
+      speedAccuracyMetersPerSecond: raw.speedAccuracyMetersPerSecond,
       altitudeMeters: raw.altitudeMeters,
+      altitudeAccuracyMeters: raw.altitudeAccuracyMeters,
       headingDegrees: heading,
+      headingAvailable: raw.headingAvailable && candidateHeading != null,
+      headingAccuracyDegrees: raw.headingAccuracyDegrees,
     );
   }
 

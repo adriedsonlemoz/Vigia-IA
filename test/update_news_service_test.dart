@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vigiaia/core/app_metadata.dart';
 import 'package:vigiaia/models/update_release.dart';
 import 'package:vigiaia/services/update_news_catalog.dart';
 import 'package:vigiaia/services/update_news_service.dart';
@@ -130,4 +131,17 @@ void main() {
     expect(missingDecision.shouldShow, isTrue);
     expect(missingDecision.releases.single.version.build, 144);
   });
+  test('catalogo empacotado contém somente a versão atual e texto público', () {
+    expect(UpdateNewsCatalog.current.releases, hasLength(1));
+    final release = UpdateNewsCatalog.current.releases.single;
+    expect(release.version.version, AppMetadata.version);
+    expect(release.version.build, AppMetadata.build);
+    final joined = release.changes.join(' ').toLowerCase();
+    expect(joined, isNot(contains('bug')));
+    expect(joined, isNot(contains('erro')));
+    expect(joined, isNot(contains('falha')));
+    expect(joined, isNot(contains('correção')));
+    expect(joined, isNot(contains('correcao')));
+  });
+
 }

@@ -60,6 +60,33 @@ architecture = (root / "ARCHITECTURE.md").read_text(encoding="utf-8")
 if f"# Arquitetura — Vigia IA {full}" not in architecture:
     fail("ARCHITECTURE nao marca a versao atual")
 
+
+validation = (root / "VALIDATION.md").read_text(encoding="utf-8")
+if f"# Validação Vigia IA {full}" not in validation:
+    fail("VALIDATION nao marca a versao atual")
+
+news = (root / "lib/services/update_news_catalog.dart").read_text(encoding="utf-8")
+expected_news = f"version: AppBuildVersion(version: '{version}', build: {build})"
+if expected_news not in news:
+    fail("catalogo de Novidades diverge do pubspec")
+if news.count("UpdateRelease(") != 1:
+    fail("popup de Novidades deve conter somente a release instalada atual")
+news_changes = news.lower()
+for forbidden in ("bug", "erro", "falha", "correção", "correcao"):
+    if forbidden in news_changes:
+        fail(f"popup de Novidades contem termo tecnico proibido: {forbidden}")
+
+for user_agent_file in (
+    root / "lib/services/map_cycling_route_service.dart",
+    root / "lib/services/route_explorer_service.dart",
+    root / "lib/services/offline_map_service.dart",
+    root / "lib/widgets/map_navigation_3d_view.dart",
+):
+    content = user_agent_file.read_text(encoding="utf-8")
+    for agent in re.findall(r"VigiaIA/[0-9]+(?:\.[0-9]+){1,2}[^'\"]*", content):
+        if not agent.startswith(f"VigiaIA/{version}"):
+            fail(f"User-Agent diverge do pubspec em {user_agent_file.name}: {agent}")
+
 app_info = (root / "lib/screens/app_info_screen.dart").read_text(encoding="utf-8") + \
     (root / "lib/screens/app_info_screen_components.dart").read_text(encoding="utf-8")
 current_pattern = re.compile(

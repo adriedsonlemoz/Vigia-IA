@@ -1,3 +1,24 @@
+## 1.0.164+164 — 2026-09-26
+- ETAPA 2 do plano do mapa: telemetria superior compacta e clicável, sem antecipar clima, seletor de transporte, configurações ou demais etapas.
+- HUD superior reduzido de 64–72 px para 42–48 px, liberando mais área visível do mapa sem remover Velocidade, Altitude, Bússola ou GPS.
+- Todos os quatro mini-cards agora são clicáveis e abrem detalhes próprios; a Bússola preserva o seletor Norte/Direção/Rota da versão anterior.
+- `MapRoutePoint` passa a preservar disponibilidade e precisão reais de velocidade, altitude e heading fornecidas pelo Geolocator; campos não fornecidos permanecem indisponíveis.
+- Velocidade exibe atual, média/máxima da sessão, fonte e precisão quando disponíveis; Altitude exibe valor, precisão vertical, fonte e última atualização.
+- GPS exibe status, precisão, coordenadas, velocidade, heading realmente fornecido, altitude e última leitura; satélites não são fabricados nem exibidos sem API real.
+- Novo `MapTelemetrySessionTracker` evita duplicar amostras pelo mesmo timestamp e ignora velocidade que a plataforma marcou como indisponível.
+- Popup automática de Novidades contém somente `1.0.164+164`, com mudanças perceptíveis ao usuário e sem histórico/itens técnicos.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados para `1.0.164+164`.
+
+## 1.0.163+163 — 2026-09-26
+- Estabilização do MapLibre 3D com inicialização/timeout por estágio, sinal de primeiro frame por camera-idle/map-idle e fallback controlado Stadia → OpenFreeMap antes do retorno final ao mapa 2D.
+- Diagnóstico do 3D ampliado com estágio, erro original sanitizado, style/provider, status de preflight de rede, uso de fallback e duração, sem registrar secrets.
+- PlatformView Android do renderer 3D passa a usar Hybrid Composition (`hc`) para evitar depender do caminho Texture/ImageReader em dispositivos problemáticos.
+- Orientação do mapa passa a suportar Norte, Direção e Rota; bússola Android nativa prefere rotation-vector e usa acelerômetro+magnetômetro como fallback real.
+- Política de heading usa sensor em baixa velocidade, GPS confiável em movimento e geometria da rota quando aplicável, com suavização e dead-zone.
+- Bússola clicável mostra direção, graus, fonte usada e modo atual, sem fabricar leituras indisponíveis.
+- Popup automática de Novidades contém somente `1.0.163+163`, com mudanças perceptíveis ao usuário e sem histórico/itens técnicos.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados para `1.0.163+163`.
+
 ## 1.0.162+162 — 2026-09-26
 
 - Ajustado o controle de voz `IA/Detecções` do mapa para atuar somente no pipeline principal de monitoramento; a segunda câmera permanece como visualização auxiliar sem pipeline próprio de IA/voz.

@@ -24,9 +24,11 @@ import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
+import '../services/error_log_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_bike_consolidation_policy.dart';
 import '../services/map_connectivity_service.dart';
+import '../services/map_compass_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
 import '../services/map_navigation_guidance.dart';
@@ -34,6 +36,7 @@ import '../services/map_navigation_voice_service.dart';
 import '../services/map_offline_navigation_policy.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
+import '../services/map_telemetry_policy.dart';
 import '../services/map_ux_policy.dart';
 import '../services/map_view_policy.dart';
 import '../services/map_view_settings_service.dart';
@@ -123,6 +126,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final AppSettingsService _appSettings = AppSettingsService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapConnectivityService _connectivity = MapConnectivityService.instance;
+  final ErrorLogService _logs = ErrorLogService.instance;
+  final MapCompassService _compass = const MapCompassService();
+  final MapTelemetrySessionTracker _telemetrySession =
+      MapTelemetrySessionTracker();
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final MapCameraOverlaySettingsService _cameraOverlaySettings =
@@ -157,6 +164,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   _MapQuickView? _quickView = _MapQuickView.near;
   double? _customFollowZoom;
   DateTime? _lastFollowCameraPointAt;
+  StreamSubscription<MapCompassReading>? _compassSubscription;
+  MapCompassReading? _compassReading;
+  double? _smoothedSensorHeading;
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
   String? _selectedPoiId;
   double _visibleMapZoom = MapViewPolicy.nearZoom;
@@ -182,6 +192,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     unawaited(_initializeOfflineMaps());
     unawaited(_initializeCameraOverlays());
     unawaited(_connectivity.acquire(this));
+    _compassSubscription = _compass.readings().listen(
+      _onCompassReading,
+      onError: _onCompassError,
+    );
     unawaited(_initialize());
   }
 
@@ -197,6 +211,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _connectivity.removeListener(_onMapConnectivityChanged);
     _connectivity.release(this);
     _routeRecoveryTimer?.cancel();
+    unawaited(_compassSubscription?.cancel());
     _offlineTileProvider?.dispose();
     _navigationVoice.resetRoute();
     _mapController.dispose();
@@ -856,6 +871,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       this,
       requestPermission: true,
     );
+    if (MapTelemetryPolicy.isFresh(_routeState.current)) {
+      _telemetrySession.add(_routeState.current);
+    }
     await Future.wait<void>([
       _routeExplorer.initialize(),
       _navigationVoice.initialize(),
@@ -910,6 +928,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _clearLocalNavigationState();
     }
     final current = _routeState.current;
+    if (MapTelemetryPolicy.isFresh(current)) {
+      _telemetrySession.add(current);
+    }
     _navigationProgress = _evaluateNavigationProgress(current);
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
     setState(() {});
@@ -995,6 +1016,82 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         compactLandscape: _compactLandscape,
       );
 
+  double? get _sensorHeadingDegrees {
+    final reading = _compassReading;
+    if (reading == null || _smoothedSensorHeading == null) return null;
+    if (DateTime.now().difference(reading.recordedAt) >
+        const Duration(seconds: 3)) {
+      return null;
+    }
+    return _smoothedSensorHeading;
+  }
+
+  double? _routeHeadingFor(MapRoutePoint? current) =>
+      MapViewPolicy.routeBearingNear(
+        current: current,
+        routePoints: _cyclingRoute?.points ?? const <LatLng>[],
+      );
+
+  MapHeadingDecision _displayHeadingFor(MapRoutePoint? current) =>
+      MapViewPolicy.displayHeading(
+        speedKmh: current?.speedKilometersPerHour ?? 0,
+        sensorHeadingDegrees: _sensorHeadingDegrees,
+        gpsHeadingDegrees: current?.headingDegrees,
+        routeHeadingDegrees: _routeHeadingFor(current),
+      );
+
+  MapHeadingDecision _orientationHeadingFor(MapRoutePoint? current) =>
+      MapViewPolicy.orientationHeading(
+        mode: _mapViewSettings.orientationMode,
+        speedKmh: current?.speedKilometersPerHour ?? 0,
+        sensorHeadingDegrees: _sensorHeadingDegrees,
+        gpsHeadingDegrees: current?.headingDegrees,
+        routeHeadingDegrees: _routeHeadingFor(current),
+      );
+
+  void _onCompassError(Object error, StackTrace stackTrace) {
+    unawaited(
+      _logs.recordException(
+        source: 'Mapa / Bússola',
+        error: error,
+        stackTrace: stackTrace,
+        level: ErrorLogLevel.warning,
+        message: 'Bússola física indisponível; orientação continua com GPS/rota quando possível.',
+        context: <String, Object?>{
+          'orientationMode': _mapViewSettings.orientationMode.name,
+        },
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  void _onCompassReading(MapCompassReading reading) {
+    final previous = _smoothedSensorHeading;
+    final smoothed = MapViewPolicy.smoothHeading(
+      previous,
+      reading.headingDegrees,
+      alpha: 0.28,
+    );
+    _compassReading = reading;
+    if (previous != null &&
+        MapViewPolicy.shortestAngularDelta(previous, smoothed).abs() <
+            MapViewPolicy.sensorUpdateDeadZoneDegrees) {
+      return;
+    }
+    _smoothedSensorHeading = smoothed;
+    if (!mounted) return;
+    setState(() {});
+    final current = _routeState.current;
+    if (_followPosition && current != null &&
+        !(_navigation3dEnabled && _navigation3dRendererReady &&
+            !_navigation3dRendererFailed &&
+            _routeState.navigationTarget != null &&
+            _cyclingRoute != null && !_connectivity.isOffline &&
+            _offlineMaps.mode != OfflineMapMode.offline)) {
+      _applyFollowCamera(current);
+    }
+  }
+
   void _applyFollowCamera(
     MapRoutePoint point, {
     double? zoom,
@@ -1007,17 +1104,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           _mapController.rotate(0);
         }
       } else {
-        final heading = point.headingDegrees;
+        final decision = _orientationHeadingFor(point);
+        final heading = decision.headingDegrees;
         if (heading != null &&
-            MapViewPolicy.shouldApplyHeadingRotation(
+            MapViewPolicy.shouldApplyMapRotation(
               headingDegrees: heading,
-              speedKmh: point.speedKilometersPerHour,
               currentMapRotationDegrees: _mapController.camera.rotation,
               force: forceRotation,
             )) {
-          _mapController.rotate(
-            MapViewPolicy.mapRotationForHeading(heading),
-          );
+          _mapController.rotate(MapViewPolicy.mapRotationForHeading(heading));
         }
       }
       _mapController.move(
@@ -1623,46 +1718,340 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     } catch (_) {}
   }
 
-  void _toggleOrientationMode() {
-    final next = _mapViewSettings.orientationMode == MapOrientationMode.northUp
-        ? MapOrientationMode.headingUp
-        : MapOrientationMode.northUp;
-    final persistChange = _mapViewSettings.setOrientationMode(next);
+  Future<void> _setOrientationMode(
+    MapOrientationMode mode, {
+    bool showUnavailableNotice = true,
+  }) async {
+    await _mapViewSettings.setOrientationMode(mode);
+    if (!mounted) return;
     setState(() {});
-    unawaited(persistChange);
-
-    if (_navigation3dEnabled &&
-        _navigation3dRendererReady &&
-        !_navigation3dRendererFailed &&
-        _routeState.navigationTarget != null &&
-        _cyclingRoute != null &&
-        !_connectivity.isOffline &&
-        _offlineMaps.mode != OfflineMapMode.offline) {
-      return;
-    }
-    if (!_mapReady) return;
     final current = _routeState.current;
-    if (next == MapOrientationMode.northUp) {
-      _mapController.rotate(0);
-      if (_followPosition && current != null) {
-        _applyFollowCamera(current, forceRotation: true);
-      }
-      return;
-    }
-    final heading = current?.headingDegrees;
-    if (heading == null) {
+    if (mode == MapOrientationMode.northUp) {
+      if (_mapReady) _mapController.rotate(0);
+    } else if (showUnavailableNotice &&
+        !_orientationHeadingFor(current).available) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Acompanhamento por direção ativado; aguardando rumo do GPS.'),
+        SnackBar(
+          content: Text(
+            'Modo ${mode.label} ativado; aguardando sensor, GPS ou rota disponível.',
+          ),
         ),
       );
-      return;
     }
     if (_followPosition && current != null) {
       _applyFollowCamera(current, forceRotation: true);
-    } else {
-      _mapController.rotate(MapViewPolicy.mapRotationForHeading(heading));
     }
+  }
+
+  String _formatTelemetryTimestamp(DateTime? value) {
+    if (value == null) return '--';
+    final local = value.toLocal();
+    String two(int number) => number.toString().padLeft(2, '0');
+    return '${two(local.day)}/${two(local.month)} '
+        '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
+  }
+
+  String _gpsStatus(MapRoutePoint? current) {
+    return switch (_routeState.availability) {
+      null => 'Inicializando',
+      LocationTrackingAvailability.ready => current == null
+          ? 'Aguardando leitura'
+          : MapTelemetryPolicy.isFresh(current)
+              ? 'Ativo'
+              : 'Leitura antiga',
+      LocationTrackingAvailability.servicesDisabled => 'GPS desativado',
+      LocationTrackingAvailability.permissionDenied => 'Permissão negada',
+      LocationTrackingAvailability.permissionDeniedForever =>
+        'Permissão bloqueada',
+    };
+  }
+
+  Future<void> _showSpeedDetails() async {
+    if (!mounted) return;
+    final current = _routeState.current;
+    final speed = MapTelemetryPolicy.currentSpeedKmh(current);
+    final speedAccuracy = MapTelemetryPolicy.speedAccuracyKmh(current);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.speed_rounded),
+            SizedBox(width: 10),
+            Text('Velocidade'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _TelemetryDetailRow(
+                label: 'Velocidade atual',
+                value: speed == null
+                    ? '--'
+                    : '${speed.toStringAsFixed(1)} km/h',
+              ),
+              _TelemetryDetailRow(
+                label: 'Média da sessão',
+                value: _telemetrySession.averageSpeedKmh == null
+                    ? '--'
+                    : '${_telemetrySession.averageSpeedKmh!.toStringAsFixed(1)} km/h',
+              ),
+              _TelemetryDetailRow(
+                label: 'Máxima da sessão',
+                value: _telemetrySession.maximumSpeedKmh == null
+                    ? '--'
+                    : '${_telemetrySession.maximumSpeedKmh!.toStringAsFixed(1)} km/h',
+              ),
+              _TelemetryDetailRow(
+                label: 'Fonte',
+                value: speed == null ? 'Indisponível' : 'GPS do aparelho',
+              ),
+              _TelemetryDetailRow(
+                label: 'Qualidade da leitura',
+                value: speedAccuracy == null
+                    ? 'Precisão indisponível'
+                    : '±${speedAccuracy.toStringAsFixed(1)} km/h',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAltitudeDetails() async {
+    if (!mounted) return;
+    final current = _routeState.current;
+    final altitude = current?.altitudeMeters;
+    final accuracy = MapTelemetryPolicy.validAccuracyMeters(
+      current?.altitudeAccuracyMeters,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.height_rounded),
+            SizedBox(width: 10),
+            Text('Altitude'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TelemetryDetailRow(
+              label: 'Altitude atual',
+              value: altitude == null
+                  ? '--'
+                  : '${altitude.toStringAsFixed(1)} m',
+            ),
+            _TelemetryDetailRow(
+              label: 'Precisão vertical',
+              value: accuracy == null
+                  ? 'Indisponível'
+                  : '±${accuracy.toStringAsFixed(1)} m',
+            ),
+            _TelemetryDetailRow(
+              label: 'Fonte',
+              value: altitude == null ? 'Indisponível' : 'GPS do aparelho',
+            ),
+            _TelemetryDetailRow(
+              label: 'Última atualização',
+              value: altitude == null
+                  ? '--'
+                  : _formatTelemetryTimestamp(current?.recordedAt),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showGpsDetails() async {
+    if (!mounted) return;
+    final current = _routeState.current;
+    final accuracy = MapTelemetryPolicy.validAccuracyMeters(
+      current?.accuracyMeters,
+    );
+    final speed = MapTelemetryPolicy.currentSpeedKmh(current);
+    final heading = MapTelemetryPolicy.gpsHeadingDegrees(current);
+    final headingAccuracy = MapTelemetryPolicy.validAccuracyMeters(
+      current?.headingAccuracyDegrees,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.gps_fixed_rounded),
+            SizedBox(width: 10),
+            Text('GPS'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _TelemetryDetailRow(label: 'Status', value: _gpsStatus(current)),
+              _TelemetryDetailRow(
+                label: 'Precisão',
+                value: accuracy == null
+                    ? '--'
+                    : '±${accuracy.toStringAsFixed(1)} m',
+              ),
+              _TelemetryDetailRow(
+                label: 'Latitude',
+                value: current == null
+                    ? '--'
+                    : current.latitude.toStringAsFixed(6),
+              ),
+              _TelemetryDetailRow(
+                label: 'Longitude',
+                value: current == null
+                    ? '--'
+                    : current.longitude.toStringAsFixed(6),
+              ),
+              _TelemetryDetailRow(
+                label: 'Velocidade GPS',
+                value: speed == null
+                    ? '--'
+                    : '${speed.toStringAsFixed(1)} km/h',
+              ),
+              _TelemetryDetailRow(
+                label: 'Heading GPS',
+                value: heading == null
+                    ? '--'
+                    : '${heading.toStringAsFixed(0)}°',
+              ),
+              if (headingAccuracy != null)
+                _TelemetryDetailRow(
+                  label: 'Precisão do heading',
+                  value: '±${headingAccuracy.toStringAsFixed(0)}°',
+                ),
+              _TelemetryDetailRow(
+                label: 'Altitude',
+                value: current?.altitudeMeters == null
+                    ? '--'
+                    : '${current!.altitudeMeters!.toStringAsFixed(1)} m',
+              ),
+              _TelemetryDetailRow(
+                label: 'Última leitura',
+                value: _formatTelemetryTimestamp(current?.recordedAt),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCompassDetails() async {
+    if (!mounted) return;
+    var selected = _mapViewSettings.orientationMode;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final current = _routeState.current;
+          final heading = _displayHeadingFor(current);
+          final degrees = heading.headingDegrees;
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.explore_rounded),
+                SizedBox(width: 10),
+                Text('Bússola e orientação'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _TelemetryDetailRow(
+                  label: 'Direção atual',
+                  value: _mapDirectionLabel(degrees),
+                ),
+                _TelemetryDetailRow(
+                  label: 'Graus',
+                  value: degrees == null ? '--' : '${degrees.toStringAsFixed(0)}°',
+                ),
+                _TelemetryDetailRow(
+                  label: 'Fonte usada',
+                  value: heading.source.label,
+                ),
+                _TelemetryDetailRow(
+                  label: 'Modo atual',
+                  value: selected.label,
+                ),
+                const SizedBox(height: 14),
+                SegmentedButton<MapOrientationMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: MapOrientationMode.northUp,
+                      icon: Icon(Icons.north_rounded),
+                      label: Text('Norte'),
+                    ),
+                    ButtonSegment(
+                      value: MapOrientationMode.directionUp,
+                      icon: Icon(Icons.explore_rounded),
+                      label: Text('Direção'),
+                    ),
+                    ButtonSegment(
+                      value: MapOrientationMode.routeUp,
+                      icon: Icon(Icons.alt_route_rounded),
+                      label: Text('Rota'),
+                    ),
+                  ],
+                  selected: <MapOrientationMode>{selected},
+                  onSelectionChanged: (selection) {
+                    final next = selection.first;
+                    setDialogState(() => selected = next);
+                    unawaited(
+                      _setOrientationMode(
+                        next,
+                        showUnavailableNotice: false,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Fechar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  String _mapDirectionLabel(double? degrees) {
+    if (degrees == null || !degrees.isFinite) return '--';
+    const labels = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+    final normalized = MapViewPolicy.normalizeDegrees(degrees);
+    return labels[((normalized + 22.5) ~/ 45) % 8];
   }
 
   void _selectQuickView(_MapQuickView view) {
@@ -2031,19 +2420,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               ListTile(
                 leading: Icon(
-                  _mapViewSettings.orientationMode == MapOrientationMode.headingUp
-                      ? Icons.explore_rounded
-                      : Icons.north_rounded,
+                  _mapViewSettings.orientationMode == MapOrientationMode.northUp
+                      ? Icons.north_rounded
+                      : _mapViewSettings.orientationMode == MapOrientationMode.routeUp
+                          ? Icons.alt_route_rounded
+                          : Icons.explore_rounded,
                 ),
                 title: const Text('Orientação'),
                 subtitle: Text(
-                  _mapViewSettings.orientationMode == MapOrientationMode.headingUp
-                      ? 'Acompanhar direção'
-                      : 'Norte fixo',
+                  'Modo ${_mapViewSettings.orientationMode.label}',
                 ),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _toggleOrientationMode();
+                  unawaited(_showCompassDetails());
                 },
               ),
               ListTile(
@@ -2954,7 +3343,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             height: constraints.maxHeight,
           );
           final telemetryTop = topInset + MapUxPolicy.controlSize + 8;
-          final telemetryHeight = compactHud ? 64.0 : 72.0;
+          final telemetryHeight = compactHud ? 42.0 : 48.0;
           final nearbyTop = telemetryTop + telemetryHeight + 8;
           final nearbyHeight = compactHud ? 52.0 : 58.0;
           final cameraButtonTop = nearbyTop + nearbyHeight + 8;
@@ -3255,11 +3644,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         target: navigationTarget,
                         route: _cyclingRoute!,
                         current: current,
-                        headingUp: _mapViewSettings.orientationMode ==
-                            MapOrientationMode.headingUp,
+                        orientationMode: _mapViewSettings.orientationMode,
+                        sensorHeadingDegrees: _sensorHeadingDegrees,
                         distanceToNextManeuverMeters:
                             _navigationProgress?.distanceToNextManeuverMeters,
                         vectorStyleUrl: navigation3dStyleUrl,
+                        fallbackVectorStyleUrl: stadiaVectorStyle != null
+                            ? _openFreeMapVectorStyleUrl
+                            : null,
                         vectorAttribution: navigation3dAttribution,
                         recenterRequest: _navigation3dRecenterRequest,
                         onReady: _handleNavigation3dReady,
@@ -3358,13 +3750,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 right: MapUxPolicy.controlEdge,
                 height: telemetryHeight,
                 child: _MapTelemetryStrip(
-                  speedKmh: current?.speedKilometersPerHour ?? 0,
+                  speedKmh: MapTelemetryPolicy.currentSpeedKmh(current),
                   altitudeMeters: current?.altitudeMeters,
-                  headingDegrees: current?.headingDegrees,
-                  gpsAccuracyMeters: current?.accuracyMeters,
-                  headingUp:
-                      _mapViewSettings.orientationMode == MapOrientationMode.headingUp,
-                  onCompassTap: _toggleOrientationMode,
+                  headingDegrees: _displayHeadingFor(current).headingDegrees,
+                  gpsAccuracyMeters:
+                      MapTelemetryPolicy.validAccuracyMeters(current?.accuracyMeters),
+                  orientationMode: _mapViewSettings.orientationMode,
+                  onSpeedTap: () => unawaited(_showSpeedDetails()),
+                  onAltitudeTap: () => unawaited(_showAltitudeDetails()),
+                  onCompassTap: () => unawaited(_showCompassDetails()),
+                  onGpsTap: () => unawaited(_showGpsDetails()),
                   compact: compactHud,
                 ),
               ),
@@ -4871,23 +5266,55 @@ class _OfflineAreaWarning extends StatelessWidget {
   }
 }
 
+class _TelemetryDetailRow extends StatelessWidget {
+  const _TelemetryDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text(label)),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class _MapTelemetryStrip extends StatelessWidget {
   const _MapTelemetryStrip({
     required this.speedKmh,
     required this.altitudeMeters,
     required this.headingDegrees,
     required this.gpsAccuracyMeters,
-    required this.headingUp,
+    required this.orientationMode,
+    required this.onSpeedTap,
+    required this.onAltitudeTap,
     required this.onCompassTap,
+    required this.onGpsTap,
     this.compact = false,
   });
 
-  final double speedKmh;
+  final double? speedKmh;
   final double? altitudeMeters;
   final double? headingDegrees;
   final double? gpsAccuracyMeters;
-  final bool headingUp;
+  final MapOrientationMode orientationMode;
+  final VoidCallback onSpeedTap;
+  final VoidCallback onAltitudeTap;
   final VoidCallback onCompassTap;
+  final VoidCallback onGpsTap;
   final bool compact;
 
   String _direction(double? degrees) {
@@ -4907,70 +5334,58 @@ class _MapTelemetryStrip extends StatelessWidget {
         ? '--'
         : '±${gpsAccuracyMeters!.toStringAsFixed(0)}';
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = 5.0;
-        final slotWidth = (constraints.maxWidth - (gap * 3)) / 4;
-        final side = math.min(slotWidth, constraints.maxHeight);
-
-        Widget squareCard(_MapTelemetryCard card) => Expanded(
-              child: Center(
-                child: SizedBox.square(
-                  dimension: side,
-                  child: card,
-                ),
-              ),
-            );
-
-        return Row(
-          children: [
-            squareCard(
-              _MapTelemetryCard(
-                icon: Icons.speed_rounded,
-                value: speedKmh.toStringAsFixed(1),
-                unit: 'km/h',
-                label: 'Velocidade',
-                emphasized: true,
-                compact: compact,
-              ),
-            ),
-            const SizedBox(width: gap),
-            squareCard(
-              _MapTelemetryCard(
-                icon: Icons.height_rounded,
-                value: altitudeValue,
-                unit: altitudeMeters == null ? null : 'm',
-                label: 'Altitude',
-                compact: compact,
-              ),
-            ),
-            const SizedBox(width: gap),
-            squareCard(
-              _MapTelemetryCard(
-                icon: Icons.explore_rounded,
-                value: _direction(headingDegrees),
-                label: 'Bússola',
-                emphasized: headingUp,
-                onTap: onCompassTap,
-                tooltip: headingUp
-                    ? 'Bússola: mapa acompanha o rumo. Toque para manter o norte no topo.'
-                    : 'Bússola: mostra o rumo do GPS. Toque para o mapa acompanhar a direção.',
-                compact: compact,
-              ),
-            ),
-            const SizedBox(width: gap),
-            squareCard(
-              _MapTelemetryCard(
-                icon: Icons.gps_fixed_rounded,
-                value: gpsValue,
-                unit: gpsAccuracyMeters == null ? null : 'm',
-                label: 'GPS',
-                compact: compact,
-              ),
-            ),
-          ],
-        );
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: _MapTelemetryCard(
+            icon: Icons.speed_rounded,
+            value: speedKmh == null ? '--' : speedKmh!.toStringAsFixed(1),
+            unit: speedKmh == null ? null : 'km/h',
+            label: 'Velocidade',
+            emphasized: true,
+            onTap: onSpeedTap,
+            tooltip: 'Velocidade: toque para ver detalhes da sessão.',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: _MapTelemetryCard(
+            icon: Icons.height_rounded,
+            value: altitudeValue,
+            unit: altitudeMeters == null ? null : 'm',
+            label: 'Altitude',
+            onTap: onAltitudeTap,
+            tooltip: 'Altitude: toque para ver fonte e precisão.',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: _MapTelemetryCard(
+            icon: Icons.explore_rounded,
+            value: _direction(headingDegrees),
+            label: 'Bússola',
+            emphasized: orientationMode != MapOrientationMode.northUp,
+            onTap: onCompassTap,
+            tooltip:
+                'Bússola: toque para ver direção, fonte e escolher Norte, Direção ou Rota.',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: _MapTelemetryCard(
+            icon: Icons.gps_fixed_rounded,
+            value: gpsValue,
+            unit: gpsAccuracyMeters == null ? null : 'm',
+            label: 'GPS',
+            onTap: onGpsTap,
+            tooltip: 'GPS: toque para ver posição e qualidade da leitura.',
+            compact: compact,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -4983,7 +5398,7 @@ class _MapTelemetryCard extends StatelessWidget {
     required this.compact,
     this.unit,
     this.emphasized = false,
-    this.onTap,
+    required this.onTap,
     this.tooltip,
   });
 
@@ -4993,7 +5408,7 @@ class _MapTelemetryCard extends StatelessWidget {
   final String label;
   final bool compact;
   final bool emphasized;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
   final String? tooltip;
 
   @override
@@ -5007,25 +5422,26 @@ class _MapTelemetryCard extends StatelessWidget {
     final iconColor = emphasized ? scheme.onPrimaryContainer : scheme.primary;
 
     Widget card = Material(
-      elevation: 3,
+      elevation: 2,
       color: background,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 5 : 6,
-            vertical: compact ? 4 : 5,
+            horizontal: compact ? 4 : 5,
+            vertical: compact ? 3 : 4,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: compact ? 13 : 15, color: iconColor),
-                  const SizedBox(width: 3),
-                  Expanded(
+                  Icon(icon, size: compact ? 11 : 12, color: iconColor),
+                  const SizedBox(width: 2),
+                  Flexible(
                     child: Text(
                       label,
                       maxLines: 1,
@@ -5033,49 +5449,46 @@ class _MapTelemetryCard extends StatelessWidget {
                       softWrap: false,
                       style: TextStyle(
                         color: foreground.withValues(alpha: 0.72),
-                        fontSize: compact ? 8.5 : 9.5,
+                        fontSize: compact ? 7.5 : 8.2,
+                        height: 1,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: compact ? 1 : 2),
-              Expanded(
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text.rich(
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
                       TextSpan(
-                        children: [
-                          TextSpan(
-                            text: value,
-                            style: TextStyle(
-                              color: foreground,
-                              fontSize: compact ? 19 : 22,
-                              height: 1,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          if (unit != null) ...[
-                            const TextSpan(text: ' '),
-                            TextSpan(
-                              text: unit,
-                              style: TextStyle(
-                                color: foreground.withValues(alpha: 0.76),
-                                fontSize: compact ? 8.5 : 10,
-                                height: 1,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ],
+                        text: value,
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: compact ? 15 : 17,
+                          height: 1,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                    ),
+                      if (unit != null) ...[
+                        const TextSpan(text: ' '),
+                        TextSpan(
+                          text: unit,
+                          style: TextStyle(
+                            color: foreground.withValues(alpha: 0.74),
+                            fontSize: compact ? 7 : 8,
+                            height: 1,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -5083,10 +5496,7 @@ class _MapTelemetryCard extends StatelessWidget {
         ),
       ),
     );
-
-    if (tooltip != null) {
-      card = Tooltip(message: tooltip!, child: card);
-    }
+    if (tooltip != null) card = Tooltip(message: tooltip!, child: card);
     return card;
   }
 }

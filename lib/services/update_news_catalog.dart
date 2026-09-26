@@ -9,11 +9,11 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.162', build: 162),
+      version: AppBuildVersion(version: '1.0.164', build: 164),
       changes: <String>[
-        '🎙️ O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
-        '📷 A segunda câmera permanece como visualização auxiliar, enquanto os alertas de IA continuam centralizados no pipeline principal de monitoramento.',
-        '✨ Novidades da atualização continua mostrando somente o conteúdo desta versão instalada, sem misturar o histórico de versões anteriores.',
+        '📊 Velocidade, Altitude, Bússola e GPS agora ocupam menos espaço no topo e deixam uma área maior do mapa visível.',
+        '👆 Os quatro indicadores agora podem ser tocados para abrir detalhes úteis da leitura e da sessão.',
+        '📍 Os detalhes mostram somente informações realmente disponíveis no aparelho e deixam claro quando alguma medição não está disponível.',
       ],
     ),
   ]);

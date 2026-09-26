@@ -45,6 +45,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
 import java.io.File
 import java.nio.ByteBuffer
 import java.security.KeyStore
@@ -59,6 +60,7 @@ import kotlin.math.min
 class MainActivity : FlutterActivity() {
     private val backgroundChannelName = "vigiaia/background"
     private val nativeChannelName = "vigiaia/native"
+    private val compassChannelName = "vigiaia/compass"
     private var pendingNotificationPermission: MethodChannel.Result? = null
     private var pendingCameraPermission: MethodChannel.Result? = null
     private var pendingLocalNetworkPermission: MethodChannel.Result? = null
@@ -81,6 +83,7 @@ class MainActivity : FlutterActivity() {
     private var bikeBrightnessOverride: Float? = null
     private var lastCpuWallMs: Long? = null
     private var lastCpuProcessMs: Long? = null
+    private var compassStreamHandler: CompassStreamHandler? = null
 
     private val notificationPermissionRequestCode = 4412
     private val cameraPermissionRequestCode = 4413
@@ -102,6 +105,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        compassStreamHandler?.dispose()
+        compassStreamHandler = null
         alertAudio.close()
         try { audioRecorder?.stop() } catch (_: Throwable) {}
         try { audioRecorder?.release() } catch (_: Throwable) {}
@@ -209,6 +214,12 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, nativeChannelName)
             .setMethodCallHandler { call, result -> handleNativeCall(call, result) }
+
+        compassStreamHandler?.dispose()
+        compassStreamHandler = CompassStreamHandler(this).also { handler ->
+            EventChannel(flutterEngine.dartExecutor.binaryMessenger, compassChannelName)
+                .setStreamHandler(handler)
+        }
     }
 
     private fun handleNativeCall(call: MethodCall, result: MethodChannel.Result) {

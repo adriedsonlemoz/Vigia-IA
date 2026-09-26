@@ -1,4 +1,20 @@
-# Arquitetura — Vigia IA 1.0.162+162
+# Arquitetura — Vigia IA 1.0.164+164
+
+## Telemetria superior compacta — 1.0.164
+
+- `MapMonitoringScreen` mantém um único HUD superior com quatro mini-cards clicáveis: Velocidade, Altitude, Bússola e GPS. A altura reservada cai para 42 px no HUD compacto e 48 px no normal, reposicionando os blocos seguintes sem cobrir conteúdo adicional.
+- `LocationTrackingService` usa os flags `hasSpeed`, `hasAltitude`, `hasAltitudeAccuracy`, `hasHeading`, `hasHeadingAccuracy` e `hasSpeedAccuracy` do Geolocator. Valores não declarados pela plataforma não são convertidos em telemetria visual válida.
+- `MapRoutePoint` transporta `speedAvailable`, `speedAccuracyMetersPerSecond`, `altitudeAccuracyMeters`, `headingAvailable` e `headingAccuracyDegrees`; `MapGpsFilter` preserva esses metadados ao normalizar/suavizar a posição.
+- `MapTelemetrySessionTracker` mantém média e máxima somente das amostras de velocidade reais recebidas durante a vida da tela e deduplica pelo timestamp GPS.
+- O popup GPS não apresenta contagem de satélites porque o Geolocator usado pelo projeto não fornece essa métrica. A ausência é intencional para cumprir a regra de não inventar dados.
+- A Bússola continua usando `MapViewPolicy` e o fluxo Norte/Direção/Rota da 1.0.163; esta etapa não altera roteamento, 3D, offline, voz ou perfis de transporte.
+
+## Estabilização 3D e orientação — 1.0.163
+- `MapNavigation3DView` mantém o FlutterMap 2D sob o renderer e só sinaliza pronto após criação da PlatformView, style, geometria, câmera e primeiro sinal real de renderização (`CameraIdle` ou `Idle`).
+- Os timeouts são reiniciados por estágio; falha de style Stadia pode acionar `setStyle` para OpenFreeMap uma única vez antes do fallback 2D.
+- Um preflight HTTP independente coleta somente diagnóstico de disponibilidade/style e descobre a source/layer de edifícios sem tornar prédios 3D requisito para a rota. URLs e erros são sanitizados antes de telemetria/log.
+- Android usa `AndroidPlatformViewMode.hc` no MapLibre 3D. A bússola nativa é publicada por `vigiaia/compass`, sem permissões extras e sem valores sintéticos.
+- `MapViewPolicy` centraliza seleção sensor/GPS/rota, bearing da geometria, suavização e dead-zone; os modos persistidos são `northUp`, `directionUp` e `routeUp`, com migração de `headingUp` para `directionUp`.
 
 ## Contrato de voz do mapa e câmera secundária — 1.0.162
 

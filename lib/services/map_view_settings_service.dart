@@ -76,10 +76,12 @@ class MapViewSettingsService extends ChangeNotifier {
           final styleName = map['stylePreset'] as String?;
           final lastTravelMode = map['lastTravelMode'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
-          _orientationMode = MapOrientationMode.values.firstWhere(
-            (value) => value.name == orientationName,
-            orElse: () => MapOrientationMode.northUp,
-          );
+          _orientationMode = orientationName == 'headingUp'
+              ? MapOrientationMode.directionUp
+              : MapOrientationMode.values.firstWhere(
+                  (value) => value.name == orientationName,
+                  orElse: () => MapOrientationMode.northUp,
+                );
           _followViewPreset = MapFollowViewPreset.values.firstWhere(
             (value) => value.name == presetName,
             orElse: () => MapFollowViewPreset.near,
@@ -147,7 +149,7 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 4,
+        'version': 5,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,

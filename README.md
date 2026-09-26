@@ -2,11 +2,28 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.162+162`
+> **Versão atual:** `1.0.164+164`
 
 ## Estado atual
 
-A `1.0.162+162` mantém a navegação 3D e os canais de áudio independentes, alinha o controle de voz da IA ao pipeline que realmente possui alertas e preserva a popup automática exclusiva da versão instalada atual.
+A `1.0.164+164` compacta a telemetria superior do mapa e transforma Velocidade, Altitude, Bússola e GPS em indicadores clicáveis com detalhes baseados somente em dados realmente fornecidos pelo aparelho.
+
+### Ajuste 1.0.164 — telemetria superior compacta e clicável
+- Os quatro cards superiores viraram mini-cards de 42–48 px de altura, mantendo ícone e valor principal com menos ocupação vertical.
+- Velocidade abre atual, média e máxima da sessão, fonte e precisão de velocidade quando o GPS fornece essa informação.
+- Altitude abre altitude atual, precisão vertical, fonte e horário da última leitura; campos ausentes ficam como `--`/`Indisponível`.
+- GPS abre status, precisão horizontal, latitude/longitude, velocidade GPS, heading GPS real quando disponível, altitude e última leitura.
+- Contagem de satélites não é exibida porque a API atual usada pelo projeto não fornece esse dado de forma real.
+- Bússola continua abrindo direção, graus, fonte e modo Norte/Direção/Rota, preservando integralmente a ETAPA 1.
+- A popup `Novidades da atualização` contém somente a entrada `1.0.164+164`; o histórico completo permanece em `Sobre > Mudanças`.
+
+### Ajuste 1.0.163 — estabilização 3D e orientação inteligente
+- O renderer MapLibre 3D passa a ter timeout por estágio (PlatformView, style, rota, câmera e primeiro frame), em vez de um único limite global.
+- Stadia pode cair para OpenFreeMap quando o style principal não concluir, mantendo o FlutterMap 2D como fallback final.
+- O diagnóstico do 3D registra estágio, provider/style sanitizado, status de rede, fallback, duração e erro original sanitizado, sem gravar API keys.
+- A orientação ganhou os modos Norte, Direção e Rota, com bússola Android nativa e seleção real entre sensor, GPS e geometria da rota.
+- O card Bússola abre direção, graus, fonte e seletor dos três modos; gestos pausam follow e Centralizar restaura o acompanhamento.
+- A popup `Novidades da atualização` contém somente a entrada `1.0.163+163`; o histórico completo permanece em `Sobre > Mudanças`.
 
 ### Ajuste 1.0.162 — áudio do mapa e câmera secundária
 

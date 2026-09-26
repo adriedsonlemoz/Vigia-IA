@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.162 mantém os canais de áudio independentes no mapa, alinha o controle de IA ao pipeline principal e preserva a popup de Novidades exclusiva da versão instalada.",
-  "version": "1.0.162",
-  "build": 162
+  "notes": "A 1.0.164 compacta a telemetria superior do mapa e adiciona detalhes clicáveis de Velocidade, Altitude, Bússola e GPS usando somente medições realmente disponíveis.",
+  "version": "1.0.164",
+  "build": 164
 }

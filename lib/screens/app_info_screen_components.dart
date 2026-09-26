@@ -65,8 +65,27 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.162',
+          version: '1.0.164',
           current: true,
+          changes: [
+            'Velocidade, Altitude, Bússola e GPS agora usam mini-cards mais baixos para liberar mais área do mapa.',
+            'Os quatro mini-cards são clicáveis e abrem detalhes próprios sem retirar o usuário da navegação.',
+            'Velocidade mostra atual, média, máxima, fonte e precisão quando disponíveis; Altitude mostra valor, precisão vertical, fonte e atualização.',
+            'GPS mostra status, precisão, coordenadas, velocidade, heading, altitude e horário somente quando esses dados existem de verdade.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.163',
+          changes: [
+            'O mapa oferece orientação Norte, Direção e Rota com seleção inteligente entre bússola física, GPS e direção real do percurso.',
+            'A navegação MapLibre 3D inicia por estágios e pode usar OpenFreeMap como alternativa ao style Stadia quando necessário.',
+            'A Bússola abre detalhes de direção, graus, fonte real usada e permite trocar o modo de orientação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.162',
           changes: [
             'O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
             'A segunda câmera permanece como visualização auxiliar; os alertas de IA continuam centralizados no pipeline principal de monitoramento.',
@@ -1503,8 +1522,26 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.162',
+          version: '1.0.164',
           current: true,
+          changes: [
+            'Velocidade, Altitude, Bússola e GPS agora usam mini-cards mais baixos para liberar mais área do mapa.',
+            'Os quatro mini-cards são clicáveis e abrem detalhes próprios sem retirar o usuário da navegação.',
+            'Os detalhes usam somente telemetria realmente fornecida pelo aparelho; campos ausentes aparecem como indisponíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.163',
+          changes: [
+            'O mapa oferece orientação Norte, Direção e Rota com seleção inteligente entre bússola física, GPS e direção real do percurso.',
+            'A navegação MapLibre 3D inicia por estágios e pode usar OpenFreeMap como alternativa ao style Stadia quando necessário.',
+            'A Bússola abre detalhes de direção, graus, fonte real usada e permite trocar o modo de orientação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.162',
           changes: [
             'O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
             'A segunda câmera permanece como visualização auxiliar; os alertas de IA continuam centralizados no pipeline principal de monitoramento.',

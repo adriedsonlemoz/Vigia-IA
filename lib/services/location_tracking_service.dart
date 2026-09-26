@@ -71,9 +71,29 @@ class LocationTrackingService {
         latitude: position.latitude,
         longitude: position.longitude,
         recordedAt: position.timestamp,
-        accuracyMeters: position.accuracy,
-        speedMetersPerSecond: position.speed < 0 ? 0 : position.speed,
-        altitudeMeters: position.altitude,
-        headingDegrees: position.heading < 0 ? null : position.heading,
+        accuracyMeters: position.hasAccuracy ? position.accuracy : 0,
+        speedMetersPerSecond:
+            position.hasSpeed && position.speed >= 0 ? position.speed : 0,
+        speedAvailable: position.hasSpeed,
+        speedAccuracyMetersPerSecond: position.hasSpeedAccuracy &&
+                position.speedAccuracy.isFinite &&
+                position.speedAccuracy > 0
+            ? position.speedAccuracy
+            : null,
+        altitudeMeters: position.hasAltitude ? position.altitude : null,
+        altitudeAccuracyMeters: position.hasAltitudeAccuracy &&
+                position.altitudeAccuracy.isFinite &&
+                position.altitudeAccuracy > 0
+            ? position.altitudeAccuracy
+            : null,
+        headingDegrees: position.hasHeading && position.heading >= 0
+            ? position.heading
+            : null,
+        headingAvailable: position.hasHeading,
+        headingAccuracyDegrees: position.hasHeadingAccuracy &&
+                position.headingAccuracy.isFinite &&
+                position.headingAccuracy > 0
+            ? position.headingAccuracy
+            : null,
       );
 }

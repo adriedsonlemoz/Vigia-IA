@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:maplibre/maplibre.dart' as ml;
 
 import '../models/map_cycling_route.dart';
@@ -12,6 +12,7 @@ import '../models/map_route_point.dart';
 import '../models/map_travel_mode.dart';
 import '../services/error_log_service.dart';
 import '../services/performance_telemetry_service.dart';
+import '../services/map_view_policy.dart';
 
 /// Renderer dedicado ao modo de navegação em perspectiva.
 ///
@@ -24,9 +25,11 @@ class MapNavigation3DView extends StatefulWidget {
     required this.target,
     required this.route,
     required this.current,
-    required this.headingUp,
+    required this.orientationMode,
+    required this.sensorHeadingDegrees,
     required this.distanceToNextManeuverMeters,
     required this.vectorStyleUrl,
+    required this.fallbackVectorStyleUrl,
     required this.vectorAttribution,
     required this.recenterRequest,
     required this.onReady,
@@ -37,9 +40,11 @@ class MapNavigation3DView extends StatefulWidget {
   final MapNavigationTarget target;
   final MapCyclingRoute route;
   final MapRoutePoint? current;
-  final bool headingUp;
+  final MapOrientationMode orientationMode;
+  final double? sensorHeadingDegrees;
   final double? distanceToNextManeuverMeters;
   final String vectorStyleUrl;
+  final String? fallbackVectorStyleUrl;
   final String vectorAttribution;
   final int recenterRequest;
   final VoidCallback onReady;
@@ -55,8 +60,14 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   static const _currentSourceId = 'vigia-current';
   static const _targetSourceId = 'vigia-target';
   static const _buildingsLayerId = 'vigia-3d-buildings';
-  static const _vectorSourceId = 'openmaptiles';
-  static const _startupTimeout = Duration(seconds: 9);
+  static const _defaultVectorSourceId = 'openmaptiles';
+  static const _defaultBuildingSourceLayerId = 'building';
+  static const _mapCreateTimeout = Duration(seconds: 12);
+  static const _styleLoadTimeout = Duration(seconds: 20);
+  static const _routeDrawTimeout = Duration(seconds: 8);
+  static const _cameraSyncTimeout = Duration(seconds: 8);
+  static const _firstRenderTimeout = Duration(seconds: 12);
+  static const _stylePreflightTimeout = Duration(seconds: 7);
   static const _navigationPadding = EdgeInsets.fromLTRB(20, 220, 20, 92);
 
   final ErrorLogService _logs = ErrorLogService.instance;
@@ -65,21 +76,41 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
 
   ml.MapController? _controller;
   Timer? _startupTimer;
+  late String _activeVectorStyleUrl;
+  DateTime _startupStartedAt = DateTime.now();
+  DateTime _phaseStartedAt = DateTime.now();
+  String _startupPhase = 'map_create';
   bool _mapCreated = false;
   bool _styleLoaded = false;
   bool _routeReady = false;
+  bool _positionReady = false;
   bool _cameraReady = false;
+  bool _cameraIdleSeen = false;
   bool _mapIdle = false;
+  bool _firstRenderSeen = false;
   bool _readySignaled = false;
   bool _failed = false;
   bool _following = true;
   bool _buildings3dInstalled = false;
+  bool _usedStyleFallback = false;
+  int? _styleHttpStatus;
+  String? _styleNetworkError;
+  bool _stylePreflightCompleted = false;
+  bool _styleJsonParsed = false;
+  int? _vectorSourceCount;
+  String? _buildingSourceId;
+  String? _buildingSourceLayerId;
+  String? _buildingLayerError;
   DateTime? _lastCameraPointAt;
+  double? _lastAppliedBearing;
 
   @override
   void initState() {
     super.initState();
-    _startupTimer = Timer(_startupTimeout, _handleStartupTimeout);
+    _activeVectorStyleUrl = widget.vectorStyleUrl;
+    _startupStartedAt = DateTime.now();
+    _setStartupPhase('map_create', _mapCreateTimeout);
+    _startStylePreflight();
   }
 
   @override
@@ -103,13 +134,15 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     if (_following &&
         (oldWidget.route != widget.route ||
             oldWidget.current != widget.current ||
-            oldWidget.headingUp != widget.headingUp ||
+            oldWidget.orientationMode != widget.orientationMode ||
+            oldWidget.sensorHeadingDegrees != widget.sensorHeadingDegrees ||
             oldWidget.distanceToNextManeuverMeters !=
                 widget.distanceToNextManeuverMeters)) {
       unawaited(
         _syncCamera(
           animated: true,
-          force: oldWidget.headingUp != widget.headingUp,
+          force: oldWidget.orientationMode != widget.orientationMode ||
+              oldWidget.sensorHeadingDegrees != widget.sensorHeadingDegrees,
         ),
       );
     }
@@ -167,6 +200,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       _controller = controller;
       _mapCreated = true;
       _recordTelemetry('map_created');
+      _setStartupPhase('style_load', _styleLoadTimeout);
     } catch (error, stackTrace) {
       await _fail(
         phase: 'map_create',
@@ -182,24 +216,37 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     _styleLoaded = true;
     _recordTelemetry(
       'style_loaded',
-      extra: <String, Object?>{'styleMode': 'vector'},
+      extra: <String, Object?>{
+        'styleMode': 'vector',
+        'phaseDurationMs': _phaseElapsedMs,
+      },
     );
 
-    await _install3dBuildingsBestEffort(style);
-
+    _setStartupPhase('route_draw', _routeDrawTimeout);
     try {
       await _installRouteGeometry(style);
       _routeReady = true;
+      _positionReady = true;
+      _recordTelemetry(
+        'route_and_position_ready',
+        extra: <String, Object?>{'phaseDurationMs': _phaseElapsedMs},
+      );
+      // Predios sao opcionais e nunca bloqueiam rota/camera/primeiro frame.
+      unawaited(_install3dBuildingsBestEffort(style));
     } catch (error, stackTrace) {
       await _fail(
         phase: 'route_draw',
-        message: 'Falha ao desenhar a rota no MapLibre 3D.',
+        message: 'Falha ao desenhar a rota/posição no MapLibre 3D.',
         error: error,
         stackTrace: stackTrace,
       );
       return;
     }
 
+    _cameraIdleSeen = false;
+    _mapIdle = false;
+    _firstRenderSeen = false;
+    _setStartupPhase('camera_sync', _cameraSyncTimeout);
     final cameraOk = await _syncCamera(
       animated: false,
       startup: true,
@@ -207,17 +254,25 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
     if (!cameraOk || _failed) return;
     _cameraReady = true;
+    _recordTelemetry(
+      'initial_camera_ready',
+      extra: <String, Object?>{'phaseDurationMs': _phaseElapsedMs},
+    );
+    _setStartupPhase('first_render', _firstRenderTimeout);
     _markReadyIfPossible();
   }
 
   Future<void> _install3dBuildingsBestEffort(ml.StyleController style) async {
     try {
       if (_buildings3dInstalled) return;
+      final sourceId = _buildingSourceId ?? _defaultVectorSourceId;
+      final sourceLayerId =
+          _buildingSourceLayerId ?? _defaultBuildingSourceLayerId;
       await style.addLayer(
-        const ml.FillExtrusionStyleLayer(
+        ml.FillExtrusionStyleLayer(
           id: _buildingsLayerId,
-          sourceId: _vectorSourceId,
-          sourceLayerId: 'building',
+          sourceId: sourceId,
+          sourceLayerId: sourceLayerId,
           minZoom: 14.5,
           paint: <String, Object>{
             'fill-extrusion-color': '#C7CDD3',
@@ -238,16 +293,27 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         ),
       );
       _buildings3dInstalled = true;
-      _recordTelemetry('buildings_3d_ready');
+      _buildingLayerError = null;
+      _recordTelemetry(
+        'buildings_3d_ready',
+        extra: <String, Object?>{
+          'buildingSourceId': sourceId,
+          'buildingSourceLayerId': sourceLayerId,
+        },
+      );
     } catch (error, stackTrace) {
       _buildings3dInstalled = false;
+      _buildingLayerError = _sanitizeDiagnosticText(error.toString());
       _recordTelemetry(
         'buildings_3d_unavailable',
-        extra: <String, Object?>{'errorType': error.runtimeType.toString()},
+        extra: <String, Object?>{
+          'errorType': error.runtimeType.toString(),
+          'originalError': _buildingLayerError,
+        },
       );
       await _logs.recordException(
         source: 'Mapa 3D / MapLibre',
-        error: error,
+        error: StateError(_sanitizeDiagnosticText(error.toString())),
         stackTrace: stackTrace,
         level: ErrorLogLevel.warning,
         message:
@@ -448,54 +514,41 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     return pitch;
   }
 
-  double _cameraBearing(MapRoutePoint? point) {
-    if (!widget.headingUp) return 0;
-    final sensorHeading = point?.headingDegrees;
-    if (sensorHeading != null && sensorHeading.isFinite) {
-      return _normalizeDegrees(sensorHeading);
-    }
-    return _routeBearingNear(point) ?? 0;
+  MapHeadingDecision _cameraHeadingDecision(MapRoutePoint? point) {
+    final routeHeading = MapViewPolicy.routeBearingNear(
+      current: point,
+      routePoints: widget.route.points,
+    );
+    return MapViewPolicy.orientationHeading(
+      mode: widget.orientationMode,
+      speedKmh: point?.speedKilometersPerHour ?? 0,
+      sensorHeadingDegrees: widget.sensorHeadingDegrees,
+      gpsHeadingDegrees: point?.headingDegrees,
+      routeHeadingDegrees: routeHeading,
+    );
   }
 
-  double? _routeBearingNear(MapRoutePoint? point) {
-    if (point == null || widget.route.points.length < 2) return null;
-    final routePoints = widget.route.points;
-    var nearestIndex = 0;
-    var nearestSquared = double.infinity;
-    final latitudeScale = math.cos(point.latitude * math.pi / 180).abs();
-    for (var index = 0; index < routePoints.length; index++) {
-      final candidate = routePoints[index];
-      final dx = (candidate.longitude - point.longitude) * latitudeScale;
-      final dy = candidate.latitude - point.latitude;
-      final squared = dx * dx + dy * dy;
-      if (squared < nearestSquared) {
-        nearestSquared = squared;
-        nearestIndex = index;
-      }
+  double _cameraBearing(MapRoutePoint? point, {bool force = false}) {
+    if (widget.orientationMode == MapOrientationMode.northUp) {
+      _lastAppliedBearing = 0;
+      return 0;
     }
-    final nextIndex = nearestIndex + 2 < routePoints.length
-        ? nearestIndex + 2
-        : routePoints.length - 1;
-    if (nextIndex == nearestIndex && nearestIndex > 0) {
-      return _bearingBetween(
-        routePoints[nearestIndex - 1],
-        routePoints[nearestIndex],
-      );
+    final decision = _cameraHeadingDecision(point);
+    final desired = decision.headingDegrees;
+    if (desired == null) return _lastAppliedBearing ?? 0;
+    final previous = _lastAppliedBearing;
+    if (!force &&
+        previous != null &&
+        MapViewPolicy.shortestAngularDelta(previous, desired).abs() <
+            MapViewPolicy.headingRotationDeadZoneDegrees) {
+      return previous;
     }
-    return _bearingBetween(routePoints[nearestIndex], routePoints[nextIndex]);
+    final next = force
+        ? MapViewPolicy.normalizeDegrees(desired)
+        : MapViewPolicy.smoothHeading(previous, desired, alpha: 0.30);
+    _lastAppliedBearing = next;
+    return next;
   }
-
-  double _bearingBetween(LatLng start, LatLng end) {
-    final lat1 = start.latitude * math.pi / 180;
-    final lat2 = end.latitude * math.pi / 180;
-    final deltaLon = (end.longitude - start.longitude) * math.pi / 180;
-    final y = math.sin(deltaLon) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
-        math.sin(lat1) * math.cos(lat2) * math.cos(deltaLon);
-    return _normalizeDegrees(math.atan2(y, x) * 180 / math.pi);
-  }
-
-  double _normalizeDegrees(double value) => ((value % 360) + 360) % 360;
 
   Future<bool> _syncCamera({
     required bool animated,
@@ -518,7 +571,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     final point = widget.current;
     final latitude = point?.latitude ?? widget.target.latitude;
     final longitude = point?.longitude ?? widget.target.longitude;
-    final heading = _cameraBearing(point);
+    final heading = _cameraBearing(point, force: force || startup);
     final recordedAt = point?.recordedAt;
     if (!force &&
         animated &&
@@ -568,8 +621,20 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         _readySignaled) {
       _setFollowing(false, telemetryEvent: 'follow_paused_by_gesture');
     }
-    if (event is ml.MapEventIdle && _styleLoaded && _routeReady) {
+    if (event is ml.MapEventCameraIdle) {
+      _cameraIdleSeen = true;
+      if (_cameraReady) {
+        _firstRenderSeen = true;
+        _recordTelemetry('first_render_camera_idle');
+      }
+      _markReadyIfPossible();
+    }
+    if (event is ml.MapEventIdle) {
       _mapIdle = true;
+      if (_cameraReady) {
+        _firstRenderSeen = true;
+        _recordTelemetry('map_idle');
+      }
       _markReadyIfPossible();
     }
   }
@@ -583,46 +648,85 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
 
   void _markReadyIfPossible() {
     if (_failed || _readySignaled) return;
+    if (_cameraReady && (_cameraIdleSeen || _mapIdle)) {
+      _firstRenderSeen = true;
+    }
     if (!_mapCreated ||
         !_styleLoaded ||
         !_routeReady ||
+        !_positionReady ||
         !_cameraReady ||
-        !_mapIdle) {
+        !_firstRenderSeen) {
       return;
     }
     _readySignaled = true;
     _startupTimer?.cancel();
     _startupTimer = null;
-    _recordTelemetry('ready');
+    _recordTelemetry(
+      'ready',
+      extra: <String, Object?>{
+        'startupDurationMs': _startupElapsedMs,
+        'renderSignal': _mapIdle ? 'map_idle' : 'camera_idle',
+      },
+    );
     widget.onReady();
+  }
+
+  int get _startupElapsedMs =>
+      DateTime.now().difference(_startupStartedAt).inMilliseconds;
+
+  int get _phaseElapsedMs =>
+      DateTime.now().difference(_phaseStartedAt).inMilliseconds;
+
+  void _setStartupPhase(String phase, Duration timeout) {
+    if (_failed || _readySignaled) return;
+    _startupTimer?.cancel();
+    _startupPhase = phase;
+    _phaseStartedAt = DateTime.now();
+    _recordTelemetry(
+      'phase_started',
+      extra: <String, Object?>{
+        'phase': phase,
+        'timeoutSeconds': timeout.inSeconds,
+      },
+    );
+    _startupTimer = Timer(timeout, _handleStartupTimeout);
   }
 
   void _handleStartupTimeout() {
     if (_failed || _readySignaled) return;
-    final blockedAt = !_mapCreated
-        ? 'map_create'
-        : !_styleLoaded
-            ? 'style_load'
-            : !_routeReady
-                ? 'route_draw'
-                : !_cameraReady
-                    ? 'camera_sync'
-                    : 'first_render';
+    final blockedAt = _startupPhase;
+    if (blockedAt == 'style_load' && _canTryStyleFallback) {
+      _recordTelemetry(
+        'style_timeout_trying_fallback',
+        extra: <String, Object?>{
+          'phaseDurationMs': _phaseElapsedMs,
+          'styleNetworkError': _styleNetworkError,
+          'styleHttpStatus': _styleHttpStatus,
+        },
+      );
+      _attemptStyleFallback();
+      return;
+    }
     final message = switch (blockedAt) {
       'map_create' =>
-        'Falha ao criar o mapa MapLibre 3D: timeout de inicialização.',
+        'Falha ao criar a PlatformView do MapLibre 3D: timeout de inicialização.',
       'style_load' =>
-        'Falha de estilo vetorial no MapLibre 3D: carregamento excedeu o timeout.',
+        'Falha ao carregar o style vetorial do MapLibre 3D dentro do timeout.',
       'route_draw' =>
-        'Falha ao desenhar a rota no MapLibre 3D: operação excedeu o timeout.',
+        'Falha ao desenhar a rota/posição no MapLibre 3D dentro do timeout.',
       'camera_sync' =>
-        'Falha ao sincronizar a câmera do MapLibre 3D: operação excedeu o timeout.',
+        'Falha ao sincronizar a câmera inicial do MapLibre 3D dentro do timeout.',
       _ =>
-        'Falha no primeiro render do MapLibre 3D: operação excedeu o timeout.',
+        'Falha no primeiro frame/idle do MapLibre 3D dentro do timeout.',
     };
     _recordTelemetry(
       'timeout',
-      extra: <String, Object?>{'blockedAt': blockedAt},
+      extra: <String, Object?>{
+        'blockedAt': blockedAt,
+        'phaseDurationMs': _phaseElapsedMs,
+        'startupDurationMs': _startupElapsedMs,
+      },
     );
     unawaited(
       _fail(
@@ -630,10 +734,53 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         message: message,
         context: <String, Object?>{
           'blockedAt': blockedAt,
-          'timeoutSeconds': _startupTimeout.inSeconds,
+          'phaseDurationMs': _phaseElapsedMs,
+          'startupDurationMs': _startupElapsedMs,
         },
       ),
     );
+  }
+
+  bool get _canTryStyleFallback {
+    final fallback = widget.fallbackVectorStyleUrl;
+    return !_usedStyleFallback &&
+        fallback != null &&
+        fallback.isNotEmpty &&
+        fallback != _activeVectorStyleUrl &&
+        _controller != null;
+  }
+
+  void _attemptStyleFallback() {
+    final fallback = widget.fallbackVectorStyleUrl;
+    final controller = _controller;
+    if (fallback == null || controller == null || !_canTryStyleFallback) return;
+    _usedStyleFallback = true;
+    _activeVectorStyleUrl = fallback;
+    _styleLoaded = false;
+    _routeReady = false;
+    _positionReady = false;
+    _cameraReady = false;
+    _cameraIdleSeen = false;
+    _mapIdle = false;
+    _firstRenderSeen = false;
+    _buildings3dInstalled = false;
+    _styleHttpStatus = null;
+    _styleNetworkError = null;
+    _stylePreflightCompleted = false;
+    _styleJsonParsed = false;
+    _vectorSourceCount = null;
+    _buildingSourceId = null;
+    _buildingSourceLayerId = null;
+    _buildingLayerError = null;
+    _recordTelemetry(
+      'style_fallback',
+      extra: <String, Object?>{
+        'fallbackTo': _styleProviderFor(fallback),
+      },
+    );
+    _setStartupPhase('style_load', _styleLoadTimeout);
+    _startStylePreflight();
+    controller.setStyle(fallback);
   }
 
   Future<void> _fail({
@@ -658,6 +805,8 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         'phase': phase,
         'message': message,
         'errorType': error?.runtimeType.toString(),
+        'originalError': error == null ? null : _sanitizeDiagnosticText(error.toString()),
+        'failureDurationMs': _startupElapsedMs,
       },
     );
     _recordTelemetry(
@@ -682,7 +831,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     } else {
       await _logs.recordException(
         source: 'Mapa 3D / MapLibre',
-        error: error,
+        error: StateError(_sanitizeDiagnosticText(error.toString())),
         stackTrace: stackTrace,
         message: message,
         context: <String, Object?>{
@@ -703,8 +852,127 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
   }
 
+  void _startStylePreflight() {
+    unawaited(_preflightStyle(_activeVectorStyleUrl));
+  }
+
+  Future<void> _preflightStyle(String styleUrl) async {
+    final startedAt = DateTime.now();
+    if (styleUrl == _activeVectorStyleUrl) {
+      _stylePreflightCompleted = false;
+      _styleJsonParsed = false;
+      _vectorSourceCount = null;
+    }
+    final client = HttpClient()..connectionTimeout = _stylePreflightTimeout;
+    try {
+      final uri = Uri.parse(styleUrl);
+      final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.164 map-3d-style');
+      final response = await request.close().timeout(_stylePreflightTimeout);
+      if (styleUrl != _activeVectorStyleUrl) return;
+      _styleHttpStatus = response.statusCode;
+      final body = await utf8.decoder.bind(response).join().timeout(_stylePreflightTimeout);
+      if (styleUrl != _activeVectorStyleUrl) return;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _styleNetworkError = 'HTTP ${response.statusCode}';
+        _recordTelemetry(
+          'style_preflight_http_error',
+          extra: <String, Object?>{
+            'httpStatus': response.statusCode,
+            'durationMs': DateTime.now().difference(startedAt).inMilliseconds,
+          },
+        );
+        return;
+      }
+
+      final decoded = jsonDecode(body);
+      if (decoded is! Map) {
+        _styleNetworkError = 'Style JSON inválido.';
+        _styleJsonParsed = false;
+        _recordTelemetry('style_preflight_invalid_json');
+        return;
+      }
+      final style = decoded.cast<String, dynamic>();
+      _styleJsonParsed = true;
+      final sources = style['sources'];
+      final sourceIds = sources is Map
+          ? sources.keys.whereType<String>().toList(growable: false)
+          : const <String>[];
+      _vectorSourceCount = sourceIds.length;
+      final layers = style['layers'];
+      if (layers is List) {
+        for (final rawLayer in layers) {
+          if (rawLayer is! Map) continue;
+          final layer = rawLayer.cast<dynamic, dynamic>();
+          final sourceLayer = layer['source-layer'];
+          final source = layer['source'];
+          if (sourceLayer is String &&
+              source is String &&
+              sourceLayer.toLowerCase().contains('building')) {
+            _buildingSourceId = source;
+            _buildingSourceLayerId = sourceLayer;
+            break;
+          }
+        }
+      }
+      _styleNetworkError = null;
+      _recordTelemetry(
+        'style_preflight_ok',
+        extra: <String, Object?>{
+          'httpStatus': response.statusCode,
+          'sourceCount': sourceIds.length,
+          'buildingSourceId': _buildingSourceId,
+          'buildingSourceLayerId': _buildingSourceLayerId,
+        'buildingLayerError': _buildingLayerError,
+          'durationMs': DateTime.now().difference(startedAt).inMilliseconds,
+        },
+      );
+    } catch (error) {
+      if (styleUrl != _activeVectorStyleUrl) return;
+      _styleNetworkError = _sanitizeDiagnosticText(error.toString());
+      _recordTelemetry(
+        'style_preflight_network_error',
+        extra: <String, Object?>{
+          'originalError': _styleNetworkError,
+          'durationMs': DateTime.now().difference(startedAt).inMilliseconds,
+        },
+      );
+    } finally {
+      if (styleUrl == _activeVectorStyleUrl) {
+        _stylePreflightCompleted = true;
+      }
+      client.close(force: true);
+    }
+  }
+
+  String _styleProviderFor(String styleUrl) {
+    final host = Uri.tryParse(styleUrl)?.host.toLowerCase() ?? '';
+    if (host.contains('stadiamaps')) return 'stadia';
+    if (host.contains('openfreemap')) return 'openfreemap';
+    return 'custom';
+  }
+
+  String _sanitizeDiagnosticText(String raw) {
+    var sanitized = raw.replaceAllMapped(
+      RegExp(r'https?://[^\s)\]}>]+', caseSensitive: false),
+      (match) {
+        final value = match.group(0)!;
+        final uri = Uri.tryParse(value);
+        if (uri == null) return '<url-redacted>';
+        return uri.replace(query: null, fragment: null).toString();
+      },
+    );
+    sanitized = sanitized.replaceAll(
+      RegExp(
+        r'(?i)(api[_-]?key|apikey|token|secret|key)\s*[:=]\s*[^\s,;]+',
+      ),
+      r'$1=<redacted>',
+    );
+    return sanitized;
+  }
+
   String _safeVectorStyleDescriptor() {
-    final parsed = Uri.tryParse(widget.vectorStyleUrl);
+    final parsed = Uri.tryParse(_activeVectorStyleUrl);
     if (parsed == null) return 'vector-style';
     return parsed.replace(query: null, fragment: null).toString();
   }
@@ -714,15 +982,35 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         'routePoints': widget.route.points.length,
         'hasCurrentPosition': widget.current != null,
         'vectorStyle': _safeVectorStyleDescriptor(),
+        'styleProvider': _styleProviderFor(_activeVectorStyleUrl),
+        'styleHttpStatus': _styleHttpStatus,
+        'styleNetworkError': _styleNetworkError,
+        'stylePreflightCompleted': _stylePreflightCompleted,
+        'styleJsonParsed': _styleJsonParsed,
+        'vectorSourceCount': _vectorSourceCount,
+        'styleFallbackUsed': _usedStyleFallback,
+        'primaryStyleProvider': _styleProviderFor(widget.vectorStyleUrl),
+        'androidPlatformViewMode': 'hc',
         'vectorAttribution': widget.vectorAttribution,
         'following': _following,
+        'orientationMode': widget.orientationMode.name,
+        'headingSource': _cameraHeadingDecision(widget.current).source.name,
         'buildings3dInstalled': _buildings3dInstalled,
+        'buildingSourceId': _buildingSourceId,
+        'buildingSourceLayerId': _buildingSourceLayerId,
+        'buildingLayerError': _buildingLayerError,
         'distanceToNextManeuverMeters': widget.distanceToNextManeuverMeters,
         'mapCreated': _mapCreated,
         'styleLoaded': _styleLoaded,
         'routeReady': _routeReady,
+        'positionReady': _positionReady,
         'cameraReady': _cameraReady,
+        'cameraIdleSeen': _cameraIdleSeen,
         'mapIdle': _mapIdle,
+        'firstRenderSeen': _firstRenderSeen,
+        'startupPhase': _startupPhase,
+        'phaseDurationMs': _phaseElapsedMs,
+        'startupDurationMs': _startupElapsedMs,
       };
 
   void _recordTelemetry(
@@ -747,21 +1035,20 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
     return ml.MapLibreMap(
       options: ml.MapOptions(
-        initStyle: widget.vectorStyleUrl,
+        initStyle: _activeVectorStyleUrl,
         initCenter: center,
         initZoom: _navigationZoom(point),
         initPitch: _navigationPitch(point),
-        initBearing: _cameraBearing(point),
+        initBearing: _cameraBearing(point, force: true),
         minZoom: 3,
         maxZoom: 20,
         minPitch: 0,
         maxPitch: 60,
         gestures: ml.MapGestures.all(),
-        // A 0.3.6 usa Texture Layer Hybrid Composition por padrão no Android.
-        // Mantemos o caminho de textura explicitamente para permitir a transição
-        // sobre o FlutterMap sem trocar para Virtual Display durante o startup.
-        androidTextureMode: true,
-        androidMode: ml.AndroidPlatformViewMode.tlhc_hc,
+        // Hybrid Composition evita depender do caminho Texture/ImageReader no
+        // renderer 3D e torna a falha de PlatformView distinguivel no diagnostico.
+        androidTextureMode: false,
+        androidMode: ml.AndroidPlatformViewMode.hc,
         androidTranslucentTextureSurface: false,
         androidForegroundLoadColor: Colors.transparent,
       ),
