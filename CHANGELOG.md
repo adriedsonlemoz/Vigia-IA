@@ -1,3 +1,15 @@
+## 1.0.169+169 — 2026-09-26
+
+- Finalizado o ciclo atual do mapa 3D com câmera adaptativa por Bicicleta/Moto/Carro/A pé, suavização de centro e bearing, dead-zones, limite de giro por atualização e aproximação progressiva de manobras/destino.
+- Mantida a política real de heading: sensor em baixa velocidade quando disponível e GPS/rota em movimento conforme o modo Norte/Direção/Rota; nenhuma direção sintética é criada na ausência de fonte real.
+- Rota MapLibre ganhou espessura/contorno por tema, marcadores de posição/destino mais legíveis e prioridade de renderização acima de prédios 3D.
+- Prédios 3D deixaram de depender de fallback fixo `openmaptiles`; a extrusão só é tentada quando o style realmente declara source/source-layer compatíveis e continua best-effort.
+- Investigado `maplibre 0.3.6`: há `RasterDemSource`/hillshade, porém a API Flutter pública atual não oferece controle seguro de terrain 3D no `StyleController`/`MapOptions`; sem fonte DEM configurada, terrain permanece desativado e sem simulação.
+- Diagnóstico 3D ampliado com duração acumulada por estágio, style/provedor/fallback, PlatformView, pitch, zoom, bearing, modo e fonte de heading, estado dos prédios, capacidade de terrain e motivo sanitizado de fallback 2D.
+- Preservados inicialização por estágios, timeouts individuais, primeiro frame/idle real, fallback de style, Hybrid Composition, sanitização, fallback 2D e todos os recursos anteriores do mapa/monitoramento.
+- Novidades da atualização permanece current-only e contém somente mudanças visíveis de `1.0.169+169`; Sobre > Mudanças preserva o histórico completo.
+- Versionamento, AppMetadata, identidades, User-Agents, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados em `1.0.169+169`.
+
 ## 1.0.168+168 — 2026-09-26
 
 - Etapas 6 e 7 do plano do mapa agrupadas por solicitação: polimento visual do HUD e temas/cores do mapa.

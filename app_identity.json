@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.168 reúne polimento visual do HUD e novos temas do mapa, com badge de locais sem clipping, navegação inferior compacta e presets Padrão, Escuro, Alto contraste e Bike/Viagem.",
-  "version": "1.0.168",
-  "build": 168
+  "notes": "A 1.0.169 finaliza o refinamento do mapa 3D com câmera mais suave por modo de transporte, rota mais legível, prédios best-effort sem source fixa e diagnóstico ampliado; terrain real permanece desativado sem API/fonte DEM segura.",
+  "version": "1.0.169",
+  "build": 169
 }

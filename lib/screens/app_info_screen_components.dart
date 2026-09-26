@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.168',
+          version: '1.0.169',
           current: true,
+          changes: [
+            'A câmera da navegação 3D ficou mais suave e adapta zoom, inclinação e avanço visual para bicicleta, moto, carro e caminhada.',
+            'Curvas, manobras e aproximação ao destino agora usam transições mais graduais, sem fabricar direção quando sensor, GPS ou rota não fornecem rumo real.',
+            'Rota, posição e destino ganharam mais contraste e permanecem acima dos prédios 3D nos temas Padrão, Escuro, Alto contraste e Bike/Viagem.',
+            'Prédios 3D continuam opcionais conforme o style disponível; relevo 3D real permanece desativado até existir API e fonte de elevação compatíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.168',
           changes: [
             'O HUD do mapa ficou mais compacto, com badge de locais legível, dock lateral uniforme e card de locais próximos menor.',
             'A navegação inferior agora usa duas linhas e uma barra fina de progresso, preservando próxima manobra, distância, tempo restante e encerramento.',
@@ -1557,8 +1567,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.168',
+          version: '1.0.169',
           current: true,
+          changes: [
+            'A câmera da navegação 3D ficou mais suave e adapta zoom, inclinação e avanço visual para bicicleta, moto, carro e caminhada.',
+            'Curvas, manobras e aproximação ao destino agora usam transições mais graduais, sem fabricar direção quando sensor, GPS ou rota não fornecem rumo real.',
+            'Rota, posição e destino ganharam mais contraste e permanecem acima dos prédios 3D nos temas Padrão, Escuro, Alto contraste e Bike/Viagem.',
+            'Prédios 3D continuam opcionais conforme o style disponível; relevo 3D real permanece desativado até existir API e fonte de elevação compatíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.168',
           changes: [
             'O HUD do mapa ficou mais compacto, com badge de locais legível, dock lateral uniforme e card de locais próximos menor.',
             'A navegação inferior agora usa duas linhas e uma barra fina de progresso, preservando próxima manobra, distância, tempo restante e encerramento.',

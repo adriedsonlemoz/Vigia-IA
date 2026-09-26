@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.168+168
+# Validação Vigia IA 1.0.169+169
+
+
+## 1.0.169+169 — refinamento final do mapa 3D
+
+- Confirmar navegação 3D real em Bicicleta, Moto, Carro e A pé, observando transições graduais de zoom/pitch/centro/bearing em baixa e alta velocidade, curvas, manobras e aproximação ao destino.
+- Em Norte, confirmar bearing 0; em Direção/Rota, validar no diagnóstico a fonte real `sensor`, `gps`, `route` ou `unavailable`. Remover todas as fontes de heading e confirmar ausência de rumo fabricado.
+- Arrastar, rotacionar e aplicar zoom manual: follow deve pausar e não disputar com o gesto; tocar `Centralizar` deve retomar o acompanhamento.
+- Testar Padrão, Escuro, Alto contraste e Bike/Viagem em área com prédios: rota/casing, posição e destino devem permanecer legíveis e acima das extrusões.
+- Testar style sem layer/source de edifícios: navegação 3D deve continuar e registrar apenas `buildings_3d_unavailable`, sem depender de `openmaptiles`.
+- Confirmar diagnóstico com duração por estágio, style/provedor, fallback de style, Hybrid Composition, pitch/zoom/bearing, orientação/fonte, prédios, `terrainElevationSupported=false`/razão e motivo real de fallback 2D; nenhum token/query sensível pode aparecer.
+- Terrain/elevation real permanece desativado nesta versão: não aceitar simulação de relevo nem ativação sem API Flutter pública segura e fonte DEM real/configurada.
+- Forçar falha em mapa/style/rota/câmera/primeiro frame e confirmar mensagem simples ao usuário e fallback automático para 2D preservando rota, localização, POIs, clima, câmeras, áudio e controles.
+- Confirmar popup Novidades somente com `1.0.169+169`, sem histórico/termos técnicos, e aparição única por versão instalada.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh`, `bash tool/verify_project.sh`, validação JSON/Python/shell, busca por versões/User-Agents antigos, workflow Android único e ausência de APK/AAB/caches/builds.
+- Se Flutter/Dart estiverem presentes, executar `flutter analyze`, `flutter test` e validação Android; se ausentes, registrar explicitamente a indisponibilidade.
 
 ## 1.0.168+168 — HUD compacto + temas do mapa
 

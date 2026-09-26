@@ -13,6 +13,9 @@ class MapAppearancePalette {
     required this.destinationColor,
     required this.destinationColorHex,
     required this.buildingColorHex,
+    required this.buildingOpacity,
+    required this.routeWidth,
+    required this.routeCasingWidth,
     required this.vectorStyleUrl,
     this.rasterColorMatrix,
   });
@@ -26,6 +29,9 @@ class MapAppearancePalette {
   final Color destinationColor;
   final String destinationColorHex;
   final String buildingColorHex;
+  final double buildingOpacity;
+  final double routeWidth;
+  final double routeCasingWidth;
   final String vectorStyleUrl;
   final List<double>? rasterColorMatrix;
 }
@@ -96,6 +102,9 @@ class MapAppearancePolicy {
             destinationColor: Color(0xFFE53956),
             destinationColorHex: '#E53956',
             buildingColorHex: '#C7CDD3',
+            buildingOpacity: 0.52,
+            routeWidth: 8.5,
+            routeCasingWidth: 13.0,
             vectorStyleUrl: libertyStyleUrl,
           ),
         MapAppearancePreset.dark => const MapAppearancePalette(
@@ -108,6 +117,9 @@ class MapAppearancePolicy {
             destinationColor: Color(0xFFFF6B81),
             destinationColorHex: '#FF6B81',
             buildingColorHex: '#667784',
+            buildingOpacity: 0.46,
+            routeWidth: 8.8,
+            routeCasingWidth: 13.4,
             vectorStyleUrl: darkStyleUrl,
             rasterColorMatrix: darkRasterMatrix,
           ),
@@ -121,6 +133,9 @@ class MapAppearancePolicy {
             destinationColor: Color(0xFFFF1744),
             destinationColorHex: '#FF1744',
             buildingColorHex: '#A0A0A0',
+            buildingOpacity: 0.38,
+            routeWidth: 9.2,
+            routeCasingWidth: 14.2,
             vectorStyleUrl: brightStyleUrl,
             rasterColorMatrix: highContrastRasterMatrix,
           ),
@@ -134,6 +149,9 @@ class MapAppearancePolicy {
             destinationColor: Color(0xFFFF7043),
             destinationColorHex: '#FF7043',
             buildingColorHex: '#AAB8AD',
+            buildingOpacity: 0.48,
+            routeWidth: 8.8,
+            routeCasingWidth: 13.6,
             vectorStyleUrl: fiordStyleUrl,
             rasterColorMatrix: bikeTravelRasterMatrix,
           ),

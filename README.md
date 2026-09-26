@@ -2,11 +2,22 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.168+168`
+> **Versão atual:** `1.0.169+169`
 
 ## Estado atual
 
-A `1.0.168+168` reúne as etapas de polimento visual do HUD e temas/cores do mapa, preservando 2D/3D, clima, transporte, configurações, rotas, offline e câmeras.
+A `1.0.169+169` conclui o plano atual de reformulação do mapa com refinamento da câmera e da rota 3D, prédios best-effort sem source fixa e diagnóstico ampliado, preservando o renderer 2D/offline e todas as integrações existentes.
+
+
+### Etapa final — Refinamento do mapa 3D — 1.0.169
+- A câmera MapLibre usa perfis próprios para Bicicleta, Moto, Carro e A pé, combinando velocidade, próxima manobra e distância ao destino para ajustar zoom, pitch, suavização e área visível à frente.
+- Centro e bearing são suavizados a partir de posições/headings reais, com dead-zone e limite de giro por atualização; sem fonte real de heading, o renderer preserva o último estado em vez de inventar direção.
+- Gestos manuais continuam pausando o follow; `Centralizar` retoma explicitamente o acompanhamento.
+- A rota ganhou espessura/contorno por tema, posição e destino mais legíveis e prioridade visual acima das extrusões de prédios.
+- Prédios 3D agora só são instalados quando o próprio style declara `source` e `source-layer` compatíveis; não existe mais fallback fixo para `openmaptiles`.
+- `maplibre 0.3.6` expõe Raster DEM/hillshade, mas não uma API Flutter pública segura para terrain 3D via `StyleController`/`MapOptions`; sem fonte DEM configurada, relevo real permanece desativado e documentado, sem simulação.
+- O diagnóstico registra duração por estágio, style/provedor, fallback, PlatformView, pitch, zoom, bearing, modo/fonte de orientação, prédios, capacidade de terrain e motivo real do fallback 2D, sempre com sanitização de URLs/segredos.
+- A popup `Novidades da atualização` contém somente `1.0.169+169` e aparece uma única vez por versão instalada; o histórico completo permanece em `Sobre > Mudanças`.
 
 ### Etapas 6 e 7 — HUD + Temas do mapa — 1.0.168
 - O badge de locais não é mais recortado pelo botão e compacta contagens acima de 99 para `99+`.

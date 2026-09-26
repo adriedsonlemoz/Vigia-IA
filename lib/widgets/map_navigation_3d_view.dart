@@ -15,6 +15,7 @@ import '../services/performance_telemetry_service.dart';
 import '../services/map_view_policy.dart';
 import '../services/map_view_settings_service.dart';
 import '../services/map_appearance_policy.dart';
+import '../services/map_terrain_capability.dart';
 
 /// Renderer dedicado ao modo de navegação em perspectiva.
 ///
@@ -61,18 +62,17 @@ class MapNavigation3DView extends StatefulWidget {
 
 class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   static const _routeSourceId = 'vigia-route';
+  static const _routeCasingLayerId = 'vigia-route-casing';
+  static const _routeLineLayerId = 'vigia-route-line';
   static const _currentSourceId = 'vigia-current';
   static const _targetSourceId = 'vigia-target';
   static const _buildingsLayerId = 'vigia-3d-buildings';
-  static const _defaultVectorSourceId = 'openmaptiles';
-  static const _defaultBuildingSourceLayerId = 'building';
   static const _mapCreateTimeout = Duration(seconds: 12);
   static const _styleLoadTimeout = Duration(seconds: 20);
   static const _routeDrawTimeout = Duration(seconds: 8);
   static const _cameraSyncTimeout = Duration(seconds: 8);
   static const _firstRenderTimeout = Duration(seconds: 12);
   static const _stylePreflightTimeout = Duration(seconds: 7);
-  static const _navigationPadding = EdgeInsets.fromLTRB(20, 220, 20, 92);
 
   final ErrorLogService _logs = ErrorLogService.instance;
   final PerformanceTelemetryService _telemetry =
@@ -80,6 +80,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
 
   ml.MapController? _controller;
   Timer? _startupTimer;
+  Future<void>? _stylePreflightTask;
   late String _activeVectorStyleUrl;
   DateTime _startupStartedAt = DateTime.now();
   DateTime _phaseStartedAt = DateTime.now();
@@ -107,6 +108,14 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   String? _buildingLayerError;
   DateTime? _lastCameraPointAt;
   double? _lastAppliedBearing;
+  double? _lastAppliedLatitude;
+  double? _lastAppliedLongitude;
+  double? _lastAppliedZoom;
+  double? _lastAppliedPitch;
+  MapHeadingSource _lastHeadingSource = MapHeadingSource.unavailable;
+  int? _lastCameraAnimationDurationMs;
+  String? _fallbackReason;
+  final Map<String, int> _stageDurationsMs = <String, int>{};
 
   @override
   void initState() {
@@ -140,12 +149,15 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
             oldWidget.current != widget.current ||
             oldWidget.orientationMode != widget.orientationMode ||
             oldWidget.sensorHeadingDegrees != widget.sensorHeadingDegrees ||
+            oldWidget.target != widget.target ||
             oldWidget.distanceToNextManeuverMeters !=
                 widget.distanceToNextManeuverMeters)) {
       unawaited(
         _syncCamera(
           animated: true,
-          force: oldWidget.orientationMode != widget.orientationMode ||
+          force: oldWidget.route != widget.route ||
+              oldWidget.target != widget.target ||
+              oldWidget.orientationMode != widget.orientationMode ||
               oldWidget.sensorHeadingDegrees != widget.sensorHeadingDegrees,
         ),
       );
@@ -269,9 +281,30 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   Future<void> _install3dBuildingsBestEffort(ml.StyleController style) async {
     try {
       if (_buildings3dInstalled) return;
-      final sourceId = _buildingSourceId ?? _defaultVectorSourceId;
-      final sourceLayerId =
-          _buildingSourceLayerId ?? _defaultBuildingSourceLayerId;
+      try {
+        await _stylePreflightTask?.timeout(const Duration(seconds: 3));
+      } catch (_) {
+        // O preflight e apenas diagnostico/descoberta e nunca bloqueia o mapa.
+      }
+
+      final sourceId = _buildingSourceId;
+      final sourceLayerId = _buildingSourceLayerId;
+      if (sourceId == null ||
+          sourceId.isEmpty ||
+          sourceLayerId == null ||
+          sourceLayerId.isEmpty) {
+        _buildings3dInstalled = false;
+        _buildingLayerError =
+            'Style nao declarou source/source-layer de edificios compativel.';
+        _recordTelemetry(
+          'buildings_3d_unavailable',
+          extra: <String, Object?>{
+            'reason': 'style_building_source_not_declared',
+          },
+        );
+        return;
+      }
+
       final palette = MapAppearancePolicy.palette(widget.appearancePreset);
       await style.addLayer(
         ml.FillExtrusionStyleLayer(
@@ -281,7 +314,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
           minZoom: 14.5,
           paint: <String, Object>{
             'fill-extrusion-color': palette.buildingColorHex,
-            'fill-extrusion-opacity': 0.72,
+            'fill-extrusion-opacity': palette.buildingOpacity,
             'fill-extrusion-height': <Object>[
               'coalesce',
               <Object>['get', 'render_height'],
@@ -296,6 +329,8 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
             ],
           },
         ),
+        // A rota fica sempre acima das extrusoes para nao ser escondida.
+        belowLayerId: _routeCasingLayerId,
       );
       _buildings3dInstalled = true;
       _buildingLayerError = null;
@@ -304,6 +339,8 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         extra: <String, Object?>{
           'buildingSourceId': sourceId,
           'buildingSourceLayerId': sourceLayerId,
+          'buildingOpacity': palette.buildingOpacity,
+          'routeAboveBuildings': true,
         },
       );
     } catch (error, stackTrace) {
@@ -322,7 +359,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         stackTrace: stackTrace,
         level: ErrorLogLevel.warning,
         message:
-            'Prédios 3D indisponíveis neste estilo/região; navegação vetorial mantida.',
+            'Predios 3D indisponiveis neste estilo/regiao; navegacao vetorial mantida.',
         context: _diagnosticContext(),
       );
     }
@@ -335,7 +372,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
     await style.addLayer(
       ml.LineStyleLayer(
-        id: 'vigia-route-casing',
+        id: _routeCasingLayerId,
         sourceId: _routeSourceId,
         layout: const <String, Object>{
           'line-cap': 'round',
@@ -343,14 +380,14 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         },
         paint: <String, Object>{
           'line-color': palette.routeCasingColorHex,
-          'line-width': 11.0,
+          'line-width': palette.routeCasingWidth,
           'line-opacity': 0.94,
         },
       ),
     );
     await style.addLayer(
       ml.LineStyleLayer(
-        id: 'vigia-route-line',
+        id: _routeLineLayerId,
         sourceId: _routeSourceId,
         layout: const <String, Object>{
           'line-cap': 'round',
@@ -358,7 +395,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         },
         paint: <String, Object>{
           'line-color': palette.routeColorHex,
-          'line-width': 7.0,
+          'line-width': palette.routeWidth,
           'line-opacity': 0.99,
         },
       ),
@@ -378,10 +415,10 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         id: 'vigia-target-point',
         sourceId: _targetSourceId,
         paint: <String, Object>{
-          'circle-radius': 8.0,
+          'circle-radius': 9.5,
           'circle-color': palette.destinationColorHex,
           'circle-stroke-color': '#FFFFFF',
-          'circle-stroke-width': 3.0,
+          'circle-stroke-width': 3.5,
         },
       ),
     );
@@ -394,7 +431,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         id: 'vigia-current-halo',
         sourceId: _currentSourceId,
         paint: <String, Object>{
-          'circle-radius': 14.0,
+          'circle-radius': 15.5,
           'circle-color': palette.currentPositionColorHex,
           'circle-opacity': 0.20,
         },
@@ -405,7 +442,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         id: 'vigia-current-point',
         sourceId: _currentSourceId,
         paint: <String, Object>{
-          'circle-radius': 8.5,
+          'circle-radius': 9.5,
           'circle-color': palette.currentPositionColorHex,
           'circle-stroke-color': '#FFFFFF',
           'circle-stroke-width': 3.0,
@@ -473,51 +510,34 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     }
   }
 
-  double _navigationZoom(MapRoutePoint? point) {
-    final speed = point?.speedKilometersPerHour ?? 0;
-    var zoom = speed >= 80
-        ? 15.7
-        : speed >= 45
-            ? 16.1
-            : speed >= 20
-                ? 16.5
-                : speed >= 7
-                    ? 16.9
-                    : 17.2;
-
-    final maneuverMeters = widget.distanceToNextManeuverMeters;
-    if (maneuverMeters != null && maneuverMeters.isFinite) {
-      if (maneuverMeters <= 55) {
-        zoom = math.max(zoom, 17.8).toDouble();
-      } else if (maneuverMeters <= 150) {
-        zoom = math.max(zoom, 17.5).toDouble();
-      } else if (maneuverMeters <= 350) {
-        zoom = math.max(zoom, 17.1).toDouble();
-      }
-    }
-    return zoom;
+  double? _distanceToDestinationMeters(MapRoutePoint? point) {
+    if (point == null) return null;
+    return MapViewPolicy.distanceMeters(
+      point.latitude,
+      point.longitude,
+      widget.target.latitude,
+      widget.target.longitude,
+    );
   }
 
-  double _navigationPitch(MapRoutePoint? point) {
-    final speed = point?.speedKilometersPerHour ?? 0;
-    var pitch = speed < 2
-        ? 28.0
-        : speed < 7
-            ? 38.0
-            : speed < 20
-                ? 49.0
-                : speed < 45
-                    ? 55.0
-                    : 58.0;
-    final maneuverMeters = widget.distanceToNextManeuverMeters;
-    if (maneuverMeters != null && maneuverMeters.isFinite) {
-      if (maneuverMeters <= 55) {
-        pitch = math.min(pitch, 42.0).toDouble();
-      } else if (maneuverMeters <= 150) {
-        pitch = math.min(pitch, 50.0).toDouble();
-      }
-    }
-    return pitch;
+  MapNavigationCameraTuning _cameraTuning(MapRoutePoint? point) =>
+      MapViewPolicy.navigationCameraTuning(
+        travelMode: widget.target.travelMode,
+        speedKmh: point?.speedKilometersPerHour ?? 0,
+        distanceToManeuverMeters: widget.distanceToNextManeuverMeters,
+        distanceToDestinationMeters: _distanceToDestinationMeters(point),
+      );
+
+  EdgeInsets _navigationPadding(MapNavigationCameraTuning tuning) {
+    final size = MediaQuery.sizeOf(context);
+    final top = MapViewPolicy.navigationTopPadding(
+      viewportHeight: size.height,
+      tuning: tuning,
+    );
+    final compactLandscape = size.width > size.height;
+    final bottom = compactLandscape ? 70.0 : 92.0;
+    final horizontal = compactLandscape ? 18.0 : 20.0;
+    return EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom);
   }
 
   MapHeadingDecision _cameraHeadingDecision(MapRoutePoint? point) {
@@ -534,14 +554,24 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
   }
 
-  double _cameraBearing(MapRoutePoint? point, {bool force = false}) {
+  double _cameraBearing(
+    MapRoutePoint? point,
+    MapNavigationCameraTuning tuning, {
+    bool force = false,
+    bool snap = false,
+  }) {
     if (widget.orientationMode == MapOrientationMode.northUp) {
+      _lastHeadingSource = MapHeadingSource.unavailable;
       _lastAppliedBearing = 0;
       return 0;
     }
     final decision = _cameraHeadingDecision(point);
+    _lastHeadingSource = decision.source;
     final desired = decision.headingDegrees;
-    if (desired == null) return _lastAppliedBearing ?? 0;
+    if (desired == null) {
+      // Sem fonte real nova, preserva o ultimo bearing aplicado sem fabricar rumo.
+      return _lastAppliedBearing ?? 0;
+    }
     final previous = _lastAppliedBearing;
     if (!force &&
         previous != null &&
@@ -549,9 +579,14 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
             MapViewPolicy.headingRotationDeadZoneDegrees) {
       return previous;
     }
-    final next = force
+    final next = previous == null || snap
         ? MapViewPolicy.normalizeDegrees(desired)
-        : MapViewPolicy.smoothHeading(previous, desired, alpha: 0.30);
+        : MapViewPolicy.smoothHeadingLimited(
+            previous,
+            desired,
+            alpha: tuning.bearingAlpha,
+            maxStepDegrees: tuning.maxBearingStepDegrees,
+          );
     _lastAppliedBearing = next;
     return next;
   }
@@ -567,52 +602,111 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       await _fail(
         phase: startup ? 'map_create' : 'camera_sync',
         message: startup
-            ? 'Falha ao criar o mapa MapLibre 3D: controlador indisponível.'
-            : 'Falha ao sincronizar a câmera: controlador MapLibre indisponível.',
+            ? 'Falha ao criar o mapa MapLibre 3D: controlador indisponivel.'
+            : 'Falha ao sincronizar a camera: controlador MapLibre indisponivel.',
       );
       return false;
     }
     if (!startup && !_following && !force) return true;
 
     final point = widget.current;
-    final latitude = point?.latitude ?? widget.target.latitude;
-    final longitude = point?.longitude ?? widget.target.longitude;
-    final heading = _cameraBearing(point, force: force || startup);
+    final rawLatitude = point?.latitude ?? widget.target.latitude;
+    final rawLongitude = point?.longitude ?? widget.target.longitude;
+    final tuning = _cameraTuning(point);
+    final previousBearing = _lastAppliedBearing;
+    final previousZoom = _lastAppliedZoom;
+    final previousPitch = _lastAppliedPitch;
+    final heading = _cameraBearing(
+      point,
+      tuning,
+      force: force || startup,
+      snap: startup,
+    );
     final recordedAt = point?.recordedAt;
+
+    final previousLatitude = _lastAppliedLatitude;
+    final previousLongitude = _lastAppliedLongitude;
     if (!force &&
         animated &&
-        recordedAt != null &&
-        recordedAt == _lastCameraPointAt) {
-      return true;
+        previousLatitude != null &&
+        previousLongitude != null) {
+      final movedMeters = MapViewPolicy.distanceMeters(
+        previousLatitude,
+        previousLongitude,
+        rawLatitude,
+        rawLongitude,
+      );
+      final bearingChanged = previousBearing != null &&
+          MapViewPolicy.shortestAngularDelta(previousBearing, heading).abs() >=
+              MapViewPolicy.headingRotationDeadZoneDegrees;
+      final zoomChanged = previousZoom == null ||
+          (tuning.zoom - previousZoom).abs() >= 0.05;
+      final pitchChanged = previousPitch == null ||
+          (tuning.pitch - previousPitch).abs() >= 1.0;
+      if (movedMeters < tuning.minimumCenterUpdateMeters &&
+          !bearingChanged &&
+          !zoomChanged &&
+          !pitchChanged) {
+        _lastCameraPointAt = recordedAt;
+        return true;
+      }
     }
+
+    final latitude = startup
+        ? rawLatitude
+        : MapViewPolicy.smoothCoordinate(
+            previousLatitude,
+            rawLatitude,
+            alpha: tuning.centerAlpha,
+          );
+    final longitude = startup
+        ? rawLongitude
+        : MapViewPolicy.smoothCoordinate(
+            previousLongitude,
+            rawLongitude,
+            alpha: tuning.centerAlpha,
+          );
     _lastCameraPointAt = recordedAt;
+    _lastAppliedLatitude = latitude;
+    _lastAppliedLongitude = longitude;
+    _lastAppliedZoom = tuning.zoom;
+    _lastAppliedPitch = tuning.pitch;
+    _lastCameraAnimationDurationMs = tuning.animationDuration.inMilliseconds;
+
     final center = ml.Geographic(lon: longitude, lat: latitude);
-    final zoom = _navigationZoom(point);
-    final pitch = _navigationPitch(point);
+    final padding = _navigationPadding(tuning);
     try {
       if (animated) {
         await controller.animateCamera(
           center: center,
-          zoom: zoom,
+          zoom: tuning.zoom,
           bearing: heading,
-          pitch: pitch,
-          padding: _navigationPadding,
-          nativeDuration: const Duration(milliseconds: 520),
+          pitch: tuning.pitch,
+          padding: padding,
+          nativeDuration: tuning.animationDuration,
         );
       } else {
         await controller.moveCamera(
           center: center,
-          zoom: zoom,
+          zoom: tuning.zoom,
           bearing: heading,
-          pitch: pitch,
-          padding: _navigationPadding,
+          pitch: tuning.pitch,
+          padding: padding,
         );
       }
+      _recordTelemetry(
+        'camera_synced',
+        extra: <String, Object?>{
+          'cameraAnimated': animated,
+          'cameraPaddingTop': padding.top,
+          'distanceToDestinationMeters': _distanceToDestinationMeters(point),
+        },
+      );
       return true;
     } catch (error, stackTrace) {
       await _fail(
         phase: 'camera_sync',
-        message: 'Falha ao sincronizar a câmera do MapLibre 3D.',
+        message: 'Falha ao sincronizar a camera do MapLibre 3D.',
         error: error,
         stackTrace: stackTrace,
       );
@@ -665,6 +759,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         !_firstRenderSeen) {
       return;
     }
+    _recordCurrentStageDuration();
     _readySignaled = true;
     _startupTimer?.cancel();
     _startupTimer = null;
@@ -684,9 +779,18 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   int get _phaseElapsedMs =>
       DateTime.now().difference(_phaseStartedAt).inMilliseconds;
 
+  void _recordCurrentStageDuration() {
+    final elapsed = _phaseElapsedMs;
+    final existing = _stageDurationsMs[_startupPhase] ?? 0;
+    _stageDurationsMs[_startupPhase] = existing + elapsed;
+  }
+
   void _setStartupPhase(String phase, Duration timeout) {
     if (_failed || _readySignaled) return;
     _startupTimer?.cancel();
+    if (_startupPhase != phase || _stageDurationsMs.isNotEmpty) {
+      _recordCurrentStageDuration();
+    }
     _startupPhase = phase;
     _phaseStartedAt = DateTime.now();
     _recordTelemetry(
@@ -797,6 +901,10 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     Map<String, Object?> context = const <String, Object?>{},
   }) async {
     if (_failed) return;
+    _recordCurrentStageDuration();
+    _fallbackReason = _sanitizeDiagnosticText(
+      error == null ? message : error.toString(),
+    );
     _failed = true;
     _startupTimer?.cancel();
     _startupTimer = null;
@@ -811,7 +919,8 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         'phase': phase,
         'message': message,
         'errorType': error?.runtimeType.toString(),
-        'originalError': error == null ? null : _sanitizeDiagnosticText(error.toString()),
+        'originalError':
+            error == null ? null : _sanitizeDiagnosticText(error.toString()),
         'failureDurationMs': _startupElapsedMs,
       },
     );
@@ -859,7 +968,9 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   }
 
   void _startStylePreflight() {
-    unawaited(_preflightStyle(_activeVectorStyleUrl));
+    final task = _preflightStyle(_activeVectorStyleUrl);
+    _stylePreflightTask = task;
+    unawaited(task);
   }
 
   Future<void> _preflightStyle(String styleUrl) async {
@@ -873,7 +984,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     try {
       final uri = Uri.parse(styleUrl);
       final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.168 map-3d-style');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.169 map-3d-style');
       final response = await request.close().timeout(_stylePreflightTimeout);
       if (styleUrl != _activeVectorStyleUrl) return;
       _styleHttpStatus = response.statusCode;
@@ -929,7 +1040,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
           'sourceCount': sourceIds.length,
           'buildingSourceId': _buildingSourceId,
           'buildingSourceLayerId': _buildingSourceLayerId,
-        'buildingLayerError': _buildingLayerError,
+          'buildingLayerError': _buildingLayerError,
           'durationMs': DateTime.now().difference(startedAt).inMilliseconds,
         },
       );
@@ -1002,12 +1113,23 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         'following': _following,
         'orientationMode': widget.orientationMode.name,
         'appearancePreset': widget.appearancePreset.name,
-        'headingSource': _cameraHeadingDecision(widget.current).source.name,
+        'headingSource': _lastHeadingSource.name,
+        'cameraPitch': _lastAppliedPitch,
+        'cameraZoom': _lastAppliedZoom,
+        'cameraBearing': _lastAppliedBearing,
+        'cameraAnimationDurationMs': _lastCameraAnimationDurationMs,
+        'stageDurationsMs': Map<String, int>.from(_stageDurationsMs),
+        'fallbackReason': _fallbackReason,
         'buildings3dInstalled': _buildings3dInstalled,
         'buildingSourceId': _buildingSourceId,
         'buildingSourceLayerId': _buildingSourceLayerId,
         'buildingLayerError': _buildingLayerError,
+        'terrainElevationSupported': MapTerrainCapability.canEnableRealTerrain,
+        'terrainElevationState': MapTerrainCapability.state,
+        'terrainElevationReason': MapTerrainCapability.reason,
+        'mapLibreFlutterVersion': MapTerrainCapability.mapLibreFlutterVersion,
         'distanceToNextManeuverMeters': widget.distanceToNextManeuverMeters,
+        'distanceToDestinationMeters': _distanceToDestinationMeters(widget.current),
         'mapCreated': _mapCreated,
         'styleLoaded': _styleLoaded,
         'routeReady': _routeReady,
@@ -1041,13 +1163,14 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       lon: point?.longitude ?? widget.target.longitude,
       lat: point?.latitude ?? widget.target.latitude,
     );
+    final tuning = _cameraTuning(point);
     return ml.MapLibreMap(
       options: ml.MapOptions(
         initStyle: _activeVectorStyleUrl,
         initCenter: center,
-        initZoom: _navigationZoom(point),
-        initPitch: _navigationPitch(point),
-        initBearing: _cameraBearing(point, force: true),
+        initZoom: tuning.zoom,
+        initPitch: tuning.pitch,
+        initBearing: _cameraBearing(point, tuning, force: true, snap: true),
         minZoom: 3,
         maxZoom: 20,
         minPitch: 0,

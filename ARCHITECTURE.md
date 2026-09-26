@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.168+168
+# Arquitetura — Vigia IA 1.0.169+169
+
+
+## Refinamento final da navegação MapLibre 3D — 1.0.169
+- `MapViewPolicy.navigationCameraTuning()` concentra perfis puros/testáveis de câmera para caminhada, bicicleta, moto e carro. O cálculo considera velocidade, distância à próxima manobra e ao destino para produzir zoom, pitch, interpolação de centro/bearing, limite angular, duração da animação e offset visual à frente.
+- `MapNavigation3DView` continua respeitando Norte/Direção/Rota e usa exclusivamente headings reais selecionados por `MapViewPolicy`. A suavização angular percorre o menor arco e limita o giro por atualização; a posição da câmera interpola coordenadas GPS reais e ignora microdeslocamentos abaixo da dead-zone do perfil.
+- Gestos `apiGesture` pausam o follow e nenhuma atualização automática disputa imediatamente com o usuário; a retomada exige `recenterRequest`/Centralizar.
+- Rota e casing são instalados antes da camada opcional de edifícios e a extrusão usa `belowLayerId` para manter rota/posição/destino visualmente acima dos prédios. Largura, casing e opacidade de edifícios vêm da paleta do tema.
+- Descoberta de edifícios usa apenas o style obtido no preflight. Não há source fixa `openmaptiles`; se o style não declarar source/source-layer compatíveis, `buildings_3d_unavailable` é apenas diagnóstico e a navegação continua.
+- `MapTerrainCapability` documenta a capacidade real do pacote `maplibre 0.3.6`: a API expõe `RasterDemSource`/hillshade, mas não um controle Flutter público seguro de terrain 3D no `StyleController`/`MapOptions`. Como também não existe fonte DEM configurada no projeto, `terrainElevationSupported=false` e nenhum relevo é simulado. A classe isola os requisitos para futura ativação quando API + fonte real existirem.
+- O diagnóstico registra `stageDurationsMs`, style/provedor e fallback, `androidPlatformViewMode=hc`, pitch/zoom/bearing aplicados, fonte de heading, estado dos prédios, estado/razão de terrain e `fallbackReason`; URLs, query strings e tokens continuam sanitizados.
+- Timeouts permanecem por estágio (`map_create`, `style_load`, `route_draw`, `camera_sync`, `first_render`), com primeiro `CameraIdle`/`Idle` real e fallback 2D imediato sobre o FlutterMap já montado.
 
 ## HUD e aparência do mapa — 1.0.168
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vigiaia/models/map_travel_mode.dart';
 import 'package:vigiaia/services/map_view_policy.dart';
 
 void main() {
@@ -110,5 +111,77 @@ void main() {
   test('suavização cruza zero grau pelo caminho curto', () {
     final value = MapViewPolicy.smoothHeading(358, 2, alpha: 0.5);
     expect(value, closeTo(0, 0.001));
+  });
+
+  test('camera 3D usa perfis diferentes por transporte', () {
+    final walking = MapViewPolicy.navigationCameraTuning(
+      travelMode: MapTravelMode.walking,
+      speedKmh: 5,
+    );
+    final car = MapViewPolicy.navigationCameraTuning(
+      travelMode: MapTravelMode.car,
+      speedKmh: 60,
+    );
+
+    expect(walking.zoom, greaterThan(car.zoom));
+    expect(walking.pitch, lessThan(car.pitch));
+    expect(walking.animationDuration, greaterThan(car.animationDuration));
+  });
+
+  test('camera aproxima e reduz pitch perto do destino', () {
+    final far = MapViewPolicy.navigationCameraTuning(
+      travelMode: MapTravelMode.bicycle,
+      speedKmh: 18,
+      distanceToDestinationMeters: 1200,
+    );
+    final near = MapViewPolicy.navigationCameraTuning(
+      travelMode: MapTravelMode.bicycle,
+      speedKmh: 18,
+      distanceToDestinationMeters: 40,
+    );
+
+    expect(near.zoom, greaterThan(far.zoom));
+    expect(near.pitch, lessThan(far.pitch));
+  });
+
+  test('bearing limitado evita giro brusco e respeita caminho curto', () {
+    final value = MapViewPolicy.smoothHeadingLimited(
+      350,
+      30,
+      alpha: 0.5,
+      maxStepDegrees: 12,
+    );
+    expect(value, closeTo(2, 0.001));
+  });
+
+  test('padding superior da navegacao respeita limites do perfil', () {
+    final tuning = MapViewPolicy.navigationCameraTuning(
+      travelMode: MapTravelMode.car,
+      speedKmh: 45,
+    );
+
+    expect(
+      MapViewPolicy.navigationTopPadding(
+        viewportHeight: 400,
+        tuning: tuning,
+      ),
+      tuning.topPaddingMin,
+    );
+    expect(
+      MapViewPolicy.navigationTopPadding(
+        viewportHeight: 2000,
+        tuning: tuning,
+      ),
+      tuning.topPaddingMax,
+    );
+  });
+
+  test('distancia e suavizacao de centro usam somente coordenadas reais', () {
+    final meters = MapViewPolicy.distanceMeters(0, 0, 0, 0.001);
+    expect(meters, inInclusiveRange(110, 112));
+    expect(
+      MapViewPolicy.smoothCoordinate(10, 12, alpha: 0.5),
+      closeTo(11, 0.001),
+    );
   });
 }

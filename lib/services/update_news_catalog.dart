@@ -9,11 +9,11 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.168', build: 168),
+      version: AppBuildVersion(version: '1.0.169', build: 169),
       changes: <String>[
-        '🗺️ O HUD do mapa ocupa menos espaço, com locais próximos, controles laterais e navegação mais compactos.',
-        '🎨 O mapa ganhou os temas Padrão, Escuro, Alto contraste e Bike/Viagem, mantendo rota e posição bem visíveis.',
-        '🌗 A aparência pode ser escolhida manualmente, seguir o tema do Android ou alternar entre dia e noite pelo horário local.',
+        '🧭 A navegação 3D ficou mais suave e estável em bicicleta, moto, carro e caminhada, inclusive em curvas e manobras.',
+        '🛣️ A rota, a posição atual e o destino ganharam mais destaque nos temas Padrão, Escuro, Alto contraste e Bike/Viagem.',
+        '🏙️ Os prédios 3D ficaram mais discretos e a rota continua visível acima deles, mantendo o movimento manual do mapa sem disputa com o acompanhamento.',
       ],
     ),
   ]);
