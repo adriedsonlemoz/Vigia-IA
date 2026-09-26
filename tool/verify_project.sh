@@ -132,9 +132,26 @@ grep -q "label: 'Máxima da sessão'" lib/screens/map_monitoring_screen.dart || 
 grep -q "label: 'Precisão vertical'" lib/screens/map_monitoring_screen.dart || fail 'Popup Altitude 1.0.164 sem precisao vertical.'
 grep -q "label: 'Latitude'" lib/screens/map_monitoring_screen.dart && grep -q "label: 'Longitude'" lib/screens/map_monitoring_screen.dart || fail 'Popup GPS 1.0.164 sem coordenadas.'
 grep -q "label: 'Heading GPS'" lib/screens/map_monitoring_screen.dart || fail 'Popup GPS 1.0.164 sem heading real.'
-if grep -Eqi "sat[eé]lit" lib/screens/map_monitoring_screen.dart; then
-  fail 'UI GPS 1.0.164 nao deve inventar contagem de satelites sem API real.'
-fi
+# Nao confundir a camada de mapa Satelite com telemetria GPS.
+# A regra deve bloquear somente contador/campo de satelites exposto como telemetria.
+python3 - <<'PY_GPS_SATELLITES' || fail 'UI GPS 1.0.164 nao deve inventar contagem de satelites sem API real.'
+from pathlib import Path
+import re
+
+source = Path('lib/screens/map_monitoring_screen.dart').read_text(encoding='utf-8')
+start = source.find('Future<void> _showGpsDetails()')
+end = source.find('Future<void> _showCompassDetails()', start)
+if start < 0 or end < 0:
+    raise SystemExit(1)
+gps_popup = source[start:end]
+for pattern in (
+    r"label\s*:\s*['\"]Sat[eé]lites?['\"]",
+    r'\bsatellite(?:s)?Count\b',
+    r'\bsatellites?(?:Visible|Used|InUse)\b',
+):
+    if re.search(pattern, gps_popup, flags=re.IGNORECASE):
+        raise SystemExit(1)
+PY_GPS_SATELLITES
 [[ -f lib/services/map_telemetry_policy.dart ]] || fail 'Politica de telemetria 1.0.164 ausente.'
 grep -q 'class MapTelemetrySessionTracker' lib/services/map_telemetry_policy.dart || fail 'Tracker de sessao 1.0.164 ausente.'
 grep -q 'speedAvailable: position.hasSpeed' lib/services/location_tracking_service.dart || fail 'Velocidade GPS 1.0.164 nao respeita hasSpeed.'

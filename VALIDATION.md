@@ -6,6 +6,7 @@
 - Tocar em Altitude e confirmar altitude, precisão vertical, fonte e última atualização; precisão ausente não pode virar `0 m`.
 - Tocar em Bússola e reconfirmar direção, graus, fonte e seletor Norte/Direção/Rota da 1.0.163.
 - Tocar em GPS e confirmar status, precisão, latitude/longitude, velocidade GPS, heading GPS, altitude e última leitura. Não deve existir número de satélites sem fonte real.
+- Verificador de telemetria GPS deve inspecionar apenas o popup/campos de GPS e não confundir a opção legítima de camada de mapa Satélite com contagem de satélites.
 - Forçar campos `hasSpeed/hasAltitude/hasHeading` ausentes e confirmar que nenhum valor é inventado; as precisões também devem respeitar os flags `has*Accuracy`.
 - Confirmar que média/máxima da sessão não duplicam o mesmo timestamp GPS e ignoram amostras sem velocidade real.
 - Revalidar 2D/3D, orientação, rota, Centralizar, offline, POIs, câmeras e voz para garantir ausência de regressão.

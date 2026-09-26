@@ -19,3 +19,5 @@ Mapa 2D, MapLibre 3D, fallback, offline/MBTiles, rota, perfis de transporte, voz
 
 ## Validação local
 Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`. Flutter/Dart devem ser executados em CI/ambiente com SDK disponível.
+
+- Validação preventiva ajustada para distinguir a camada visual de mapa Satélite de uma eventual contagem de satélites do GPS; não houve alteração funcional nem dado novo na interface.
