@@ -4609,12 +4609,12 @@ class _MapTelemetryStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final altitude = altitudeMeters == null
-        ? '-- m'
-        : '${altitudeMeters!.toStringAsFixed(0)} m';
-    final gps = gpsAccuracyMeters == null
-        ? 'Aguardando'
-        : '±${gpsAccuracyMeters!.toStringAsFixed(0)} m';
+    final altitudeValue = altitudeMeters == null
+        ? '--'
+        : altitudeMeters!.toStringAsFixed(0);
+    final gpsValue = gpsAccuracyMeters == null
+        ? '--'
+        : '±${gpsAccuracyMeters!.toStringAsFixed(0)}';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -4636,7 +4636,8 @@ class _MapTelemetryStrip extends StatelessWidget {
             squareCard(
               _MapTelemetryCard(
                 icon: Icons.speed_rounded,
-                value: '${speedKmh.toStringAsFixed(1)} km/h',
+                value: speedKmh.toStringAsFixed(1),
+                unit: 'km/h',
                 label: 'Velocidade',
                 emphasized: true,
                 compact: compact,
@@ -4646,7 +4647,8 @@ class _MapTelemetryStrip extends StatelessWidget {
             squareCard(
               _MapTelemetryCard(
                 icon: Icons.height_rounded,
-                value: altitude,
+                value: altitudeValue,
+                unit: altitudeMeters == null ? null : 'm',
                 label: 'Altitude',
                 compact: compact,
               ),
@@ -4656,7 +4658,7 @@ class _MapTelemetryStrip extends StatelessWidget {
               _MapTelemetryCard(
                 icon: Icons.explore_rounded,
                 value: _direction(headingDegrees),
-                label: headingUp ? 'Bússola · rumo' : 'Bússola',
+                label: 'Bússola',
                 emphasized: headingUp,
                 onTap: onCompassTap,
                 tooltip: headingUp
@@ -4669,7 +4671,8 @@ class _MapTelemetryStrip extends StatelessWidget {
             squareCard(
               _MapTelemetryCard(
                 icon: Icons.gps_fixed_rounded,
-                value: gps,
+                value: gpsValue,
+                unit: gpsAccuracyMeters == null ? null : 'm',
                 label: 'GPS',
                 compact: compact,
               ),
@@ -4687,6 +4690,7 @@ class _MapTelemetryCard extends StatelessWidget {
     required this.value,
     required this.label,
     required this.compact,
+    this.unit,
     this.emphasized = false,
     this.onTap,
     this.tooltip,
@@ -4694,6 +4698,7 @@ class _MapTelemetryCard extends StatelessWidget {
 
   final IconData icon;
   final String value;
+  final String? unit;
   final String label;
   final bool compact;
   final bool emphasized;
@@ -4719,43 +4724,66 @@ class _MapTelemetryCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 5 : 7,
-            vertical: compact ? 5 : 7,
+            horizontal: compact ? 5 : 6,
+            vertical: compact ? 4 : 5,
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: compact ? 16 : 19, color: iconColor),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        value,
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: foreground,
-                          fontSize: compact ? 12 : 14,
-                          fontWeight: FontWeight.w900,
-                        ),
+                  Icon(icon, size: compact ? 13 : 15, color: iconColor),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      style: TextStyle(
+                        color: foreground.withValues(alpha: 0.72),
+                        fontSize: compact ? 8.5 : 9.5,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: compact ? 2 : 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: foreground.withValues(alpha: 0.76),
-                    fontSize: compact ? 9 : 10.5,
-                    fontWeight: FontWeight.w700,
+              SizedBox(height: compact ? 1 : 2),
+              Expanded(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: value,
+                            style: TextStyle(
+                              color: foreground,
+                              fontSize: compact ? 19 : 22,
+                              height: 1,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          if (unit != null) ...[
+                            const TextSpan(text: ' '),
+                            TextSpan(
+                              text: unit,
+                              style: TextStyle(
+                                color: foreground.withValues(alpha: 0.76),
+                                fontSize: compact ? 8.5 : 10,
+                                height: 1,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),

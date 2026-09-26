@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.157+157`
+> **Versão atual:** `1.0.158+158`
 
 ## Estado atual
 
-A `1.0.157+157` conclui a Etapa 2 do mapa: o seletor de transporte passa a usar uma grade 2 × 2 compacta, o último perfil utilizado é persistido e o bottom sheet reserva explicitamente a área inferior do sistema Android para navegação por três botões ou gestos. Os quatro modos continuam alterando o perfil real de roteamento.
+A `1.0.158+158` conclui a Etapa 3 do mapa: os cards superiores de Velocidade, Altitude, Bússola e GPS mantêm a mesma área quadrada do HUD, mas passam a priorizar o valor principal, reduzir o destaque das unidades e aproveitar melhor o espaço interno para leitura rápida em movimento.
+
+### Etapa 3 — cards superiores — 1.0.158
+
+- Velocidade, altitude, bússola e precisão GPS mantêm quatro cards de mesma dimensão, sem aumentar `telemetryHeight`.
+- Ícone e título formam um cabeçalho compacto; o valor principal ganhou tipografia maior e peso visual dominante.
+- `km/h` e `m` usam tipografia menor que o valor para melhorar a hierarquia sem ocupar mais espaço.
+- Altitude e precisão GPS indisponíveis aparecem como `--`, sem estimativas ou dados fabricados.
+- O toque da bússola, orientação por rumo, rota, MapLibre 3D, fallback 2D, voz, POIs, offline e gravação foram preservados.
 
 ### Etapa 2 — seletor de veículo + Safe Area — 1.0.157
 

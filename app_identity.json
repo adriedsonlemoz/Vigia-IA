@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.157 reformula o seletor de transporte em grade 2x2, persiste o último perfil utilizado e corrige a área segura inferior do bottom sheet para navegação Android por botões ou gestos.",
-  "version": "1.0.157",
-  "build": 157
+  "notes": "A 1.0.158 reformula os cards superiores do mapa para priorizar velocidade, altitude, bússola e precisão GPS, com valor maior, unidade menor e cabeçalho compacto sem aumentar o HUD.",
+  "version": "1.0.158",
+  "build": 158
 }

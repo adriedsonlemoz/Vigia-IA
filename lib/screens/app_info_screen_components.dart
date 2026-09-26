@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.157',
+          version: '1.0.158',
           current: true,
+          changes: [
+            'Velocidade, altitude, bússola e GPS ganharam hierarquia visual mais clara, com o valor principal maior.',
+            'Ícone e título usam um cabeçalho compacto e as unidades ficam menores para liberar espaço interno.',
+            'Os quatro cards continuam quadrados e com a mesma altura do HUD anterior.',
+            'Sem altitude ou precisão GPS válidas, o app mostra -- em vez de preencher informação inexistente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.157',
           changes: [
             'Bicicleta, Moto, Carro e A pé agora aparecem em uma grade 2 × 2 mais compacta e visual.',
             'O último perfil utilizado fica salvo e volta selecionado por padrão na próxima navegação.',
@@ -1455,8 +1465,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.157',
+          version: '1.0.158',
           current: true,
+          changes: [
+            'Velocidade, altitude, bússola e GPS ganharam hierarquia visual mais clara, com o valor principal maior.',
+            'Ícone e título usam um cabeçalho compacto e as unidades ficam menores para liberar espaço interno.',
+            'Os quatro cards continuam quadrados e com a mesma altura do HUD anterior.',
+            'Sem altitude ou precisão GPS válidas, o app mostra -- em vez de preencher informação inexistente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.157',
           changes: [
             'Bicicleta, Moto, Carro e A pé agora aparecem em uma grade 2 × 2 mais compacta e visual.',
             'O último perfil utilizado fica salvo e volta selecionado por padrão na próxima navegação.',

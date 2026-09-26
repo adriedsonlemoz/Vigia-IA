@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.158', build: 158),
+      changes: <String>[
+        '🧭 Velocidade, altitude, bússola e GPS agora priorizam o valor principal com tipografia maior e leitura mais rápida durante o deslocamento.',
+        '📐 Os quatro cards mantêm exatamente a mesma área do HUD, mas aproveitam melhor o espaço interno com ícone e título em cabeçalho compacto.',
+        '🔎 Unidades como km/h e m ficam menores que o valor; quando altitude ou precisão GPS não estão disponíveis, o card mostra -- sem inventar dados.',
+        '🗺️ Bússola, orientação do mapa e toda a navegação existente permanecem funcionais sem aumento da faixa superior.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.157', build: 157),
       changes: <String>[
         '🚲 O seletor de Bicicleta, Moto, Carro e A pé agora usa quatro cartões em grade 2 × 2, com ícone grande e indicação clara do modo selecionado.',

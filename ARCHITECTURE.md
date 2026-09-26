@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.157+157
+# Arquitetura — Vigia IA 1.0.158+158
+
+## HUD de telemetria do mapa — 1.0.158
+
+- `_MapTelemetryStrip` continua calculando quatro slots uniformes e limita cada card à altura já reservada pelo HUD; a Etapa 3 não amplia a faixa superior.
+- `_MapTelemetryCard` separa a hierarquia em cabeçalho compacto (ícone + título) e área dominante para o valor, com unidade opcional em tipografia menor.
+- Velocidade usa valor decimal e unidade `km/h`; altitude e precisão GPS só exibem unidade quando existe leitura válida.
+- Ausência de altitude/precisão é representada por `--`; nenhuma estimativa é produzida pela camada visual.
+- A bússola continua acionando `_toggleOrientationMode` e usa o estado `emphasized` para indicar acompanhamento por rumo sem mudar o contrato de navegação.
+
 
 
 ## Seletor de transporte e Safe Area — 1.0.157

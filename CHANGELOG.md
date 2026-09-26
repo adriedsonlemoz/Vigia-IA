@@ -1,3 +1,12 @@
+## 1.0.158+158 — 2026-09-26
+
+- Reformulados os quatro cards superiores de Velocidade, Altitude, Bússola e GPS para priorizar o valor principal com fonte maior e leitura mais rápida.
+- Ícone e título passam a compartilhar um cabeçalho compacto; unidades como `km/h` e `m` ficam visualmente secundárias.
+- Mantidas as dimensões quadradas e a mesma altura externa do HUD (`64` px no compacto e `72` px no normal), evitando ocupar mais mapa.
+- Altitude e precisão GPS sem leitura válida usam `--`, sem criar estimativas ou dados inexistentes; a bússola mantém o toque que alterna a orientação.
+- Preservados rota, recálculo, GPS, voz, POIs, gravação, offline, MapLibre 3D/fallback 2D e os quatro perfis de transporte.
+- Atualizados Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados e verificações preventivas.
+
 ## 1.0.157+157 — 2026-09-26
 
 - Reformulado o seletor de transporte para grade 2 × 2 com cartões de Bicicleta, Moto, Carro e A pé, ícones maiores e check no modo selecionado.

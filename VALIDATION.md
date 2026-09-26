@@ -1,4 +1,16 @@
-# Validação Vigia IA 1.0.157+157
+# Validação Vigia IA 1.0.158+158
+
+## 1.0.158+158 — cards superiores do mapa
+
+- Abrir o mapa em retrato e paisagem e confirmar quatro cards de mesma dimensão para Velocidade, Altitude, Bússola e GPS, sem aumento da faixa superior.
+- Confirmar que o valor principal é visualmente dominante, enquanto ícone/título ficam compactos e `km/h`/`m` aparecem menores.
+- Sem altitude ou precisão GPS disponíveis, confirmar `--` e ausência de valores estimados/fabricados.
+- Alternar a bússola e confirmar que o toque continua mudando entre norte fixo e acompanhamento do rumo.
+- Confirmar legibilidade em movimento e que HUD, rota, MapLibre 3D, fallback 2D, POIs, voz, offline e gravação permanecem funcionais.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado**, `bash tool/verify_project.sh` **aprovado**, sintaxe shell e JSONs de identidade **aprovados**, um único workflow `android-apk.yml` preservado e nenhum APK/AAB presente no fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android release precisam ser reconfirmados pelo workflow.
+
 
 
 ## 1.0.157+157 — seletor de veículo + Safe Area
