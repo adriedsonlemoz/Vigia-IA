@@ -1,3 +1,12 @@
+## 1.0.160+160 — 2026-09-26
+
+- Evoluída a navegação MapLibre para estilo vetorial: Stadia Outdoors quando existe API key configurada e OpenFreeMap Liberty como fallback sem chave.
+- A câmera 3D passa a acompanhar posição/direção com zoom e pitch adaptativos por velocidade e proximidade da próxima manobra, mantendo o usuário mais abaixo na viewport para mostrar mais estrada à frente.
+- Movimento manual do mapa detectado por gesto pausa o acompanhamento automático e exibe `Centralizar`; GPS, rota e progresso continuam atualizados e o follow pode ser retomado sem reiniciar a navegação.
+- Adicionada extrusão 3D de prédios em modo best effort sobre a camada vetorial `building`; indisponibilidade de dados compatíveis gera diagnóstico sem provocar fallback do mapa.
+- Preservados gate 2D → 3D, timeout de 9 s, fallback automático 3D → 2D, offline/MBTiles, rota, recálculo, voz, POIs, gravação e os perfis Bicicleta/Moto/Carro/A pé.
+- Sincronizados Novidades, Sobre/Mudanças, README, ARCHITECTURE, THIRD_PARTY_NOTICES, RELEASE, VALIDATION, metadados, testes de versão, User-Agents e verificações preventivas.
+
 ## 1.0.159+159 — 2026-09-26
 
 - Adicionado botão rápido de áudio ao dock lateral do mapa, disponível tanto no FlutterMap 2D quanto durante a navegação MapLibre 3D.

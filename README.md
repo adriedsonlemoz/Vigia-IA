@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.159+159`
+> **Versão atual:** `1.0.160+160`
 
 ## Estado atual
 
-A `1.0.159+159` conclui a Etapa 4 do mapa: um controle rápido de áudio fica disponível sobre o mapa, inclusive no 3D, com canais persistentes e independentes para Navegação, IA/Detecções e Pontos próximos.
+A `1.0.160+160` conclui a Etapa 5 do mapa: a navegação MapLibre passa a usar base vetorial, câmera adaptativa e acompanhamento retomável, mantendo o FlutterMap 2D como camada segura e fallback.
+
+### Etapa 5 — evolução real do mapa 3D — 1.0.160
+
+- Durante navegação online, o MapLibre usa estilo vetorial: Stadia Outdoors quando há chave configurada; sem chave, o renderer usa o estilo Liberty do OpenFreeMap.
+- A câmera acompanha posição e direção e mantém o usuário mais abaixo na tela para ampliar a visão da via à frente; zoom e inclinação variam com velocidade e proximidade da próxima manobra.
+- Ao mover o mapa 3D manualmente, o acompanhamento é pausado sem interromper GPS/rota; o botão `Centralizar` reaparece para retomar o follow.
+- Prédios 3D são adicionados por extrusão quando o estilo/região expõe a camada vetorial compatível; ausência desses dados vira apenas aviso e não derruba a navegação.
+- Sem rota, ao encerrar a navegação, em offline/MBTiles ou após falha/timeout do MapLibre, o mapa 2D continua sendo o renderer seguro.
+- A transição 2D → 3D, timeout de 9 segundos, logs, telemetria, perfis Bicicleta/Moto/Carro/A pé, voz, POIs e gravação foram preservados.
 
 ### Etapa 4 — controle rápido de áudio — 1.0.159
 
@@ -68,9 +77,9 @@ A `1.0.159+159` conclui a Etapa 4 do mapa: um controle rápido de áudio fica di
 - `Navegar` agora abre um seletor de modo de transporte com Bicicleta, Moto, Carro e A pé, lembrando a escolha durante a sessão.
 - `MapNavigationTarget` persiste o modo selecionado e restaura destinos antigos como bicicleta para manter compatibilidade.
 - O serviço de rota passa a enviar `bicycle`, `motorcycle`, `auto` ou `pedestrian` ao Valhalla, sem perder alternativas, manobras, voz e recálculo existentes.
-- Rotas online carregadas entram automaticamente no `MapNavigation3DView`, baseado em MapLibre, com pitch de navegação, rotação por rumo, linha de rota, posição e destino.
+- Rotas online carregadas entram automaticamente no `MapNavigation3DView`, baseado em MapLibre, com perspectiva de navegação, rotação por rumo, linha de rota, posição e destino.
 - Um controle permite alternar 3D/2D durante a rota. Em modo offline ou sem rede, o mapa continua no renderer 2D/MBTiles atual.
-- Esta etapa implementa perspectiva de navegação 3D; prédios/terreno extrudados ficam para uma etapa posterior.
+- Essa entrega iniciou a perspectiva de navegação 3D; a evolução vetorial e prédios extrudados foi concluída posteriormente na 1.0.160.
 
 ### Correção 1.0.151 — Android-APK-114
 

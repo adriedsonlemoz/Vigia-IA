@@ -98,6 +98,11 @@ class MapMonitoringScreen extends StatefulWidget {
 
 class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     with WidgetsBindingObserver {
+  static const String _openFreeMapVectorStyleUrl =
+      'https://tiles.openfreemap.org/styles/liberty';
+  static const String _openFreeMapAttribution =
+      '© OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors';
+
   final MapController _mapController = MapController();
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
@@ -158,6 +163,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _navigation3dEnabled = true;
   bool _navigation3dRendererReady = false;
   bool _navigation3dRendererFailed = false;
+  bool _navigation3dFollowing = true;
+  int _navigation3dRecenterRequest = 0;
   MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
 
   @override
@@ -869,6 +876,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dEnabled = true;
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
     }
     if (restoredTarget != null && restoredPosition != null) {
       unawaited(
@@ -1163,6 +1171,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dEnabled = true;
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
@@ -1330,6 +1339,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _navigation3dEnabled = true;
     _navigation3dRendererReady = false;
     _navigation3dRendererFailed = false;
+    _navigation3dFollowing = true;
   }
 
   void _stopNavigation() {
@@ -1510,6 +1520,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dEnabled = next;
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
       if (!next) {
         _followPosition = true;
         _quickView = _MapQuickView.near;
@@ -1519,11 +1530,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!next) _restore2dFollowAfter3d();
   }
 
+  void _handleNavigation3dFollowChanged(bool following) {
+    if (!mounted || _navigation3dFollowing == following) return;
+    setState(() => _navigation3dFollowing = following);
+  }
+
+  void _recenterNavigation3d() {
+    if (!mounted || _routeState.current == null) return;
+    setState(() {
+      _navigation3dFollowing = true;
+      _navigation3dRecenterRequest += 1;
+    });
+  }
+
   void _handleNavigation3dReady() {
     if (!mounted || !_navigation3dEnabled) return;
     setState(() {
       _navigation3dRendererReady = true;
       _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
     });
   }
 
@@ -1533,6 +1558,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dEnabled = false;
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = true;
+      _navigation3dFollowing = true;
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
@@ -2889,6 +2915,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         !_navigation3dRendererFailed;
     final navigation3dActive =
         navigation3dRequested && _navigation3dRendererReady;
+    final stadiaVectorStyle = _offlineMaps.stadiaVectorStyleUrl('outdoors');
+    final navigation3dStyleUrl =
+        stadiaVectorStyle ?? _openFreeMapVectorStyleUrl;
+    final navigation3dAttribution = stadiaVectorStyle != null
+        ? '© Stadia Maps · © OpenMapTiles · © OpenStreetMap contributors'
+        : _openFreeMapAttribution;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
     final navigationAudioEnabled = _mapViewSettings.navigationVoiceEnabled;
@@ -3218,15 +3250,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       curve: Curves.easeOutCubic,
                       child: MapNavigation3DView(
                         key: ValueKey<String>(
-                          'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}',
+                          'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}-${stadiaVectorStyle != null ? 'stadia' : 'openfreemap'}',
                         ),
                         target: navigationTarget,
                         route: _cyclingRoute!,
                         current: current,
                         headingUp: _mapViewSettings.orientationMode ==
                             MapOrientationMode.headingUp,
+                        distanceToNextManeuverMeters:
+                            _navigationProgress?.distanceToNextManeuverMeters,
+                        vectorStyleUrl: navigation3dStyleUrl,
+                        vectorAttribution: navigation3dAttribution,
+                        recenterRequest: _navigation3dRecenterRequest,
                         onReady: _handleNavigation3dReady,
                         onFallback: _handleNavigation3dFallback,
+                        onFollowStateChanged:
+                            _handleNavigation3dFollowChanged,
                       ),
                     ),
                   ),
@@ -3396,6 +3435,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       active: enabledAudioChannels > 0,
                       onPressed: () => unawaited(_showAudioQuickControls()),
                     ),
+                    if (navigation3dActive && !_navigation3dFollowing) ...[
+                      _MapControlGap(horizontal: horizontalControls),
+                      _MapControlButton(
+                        tooltip: 'Centralizar e retomar acompanhamento 3D',
+                        icon: Icons.my_location_rounded,
+                        active: false,
+                        onPressed:
+                            current == null ? null : _recenterNavigation3d,
+                      ),
+                    ],
                     if (!navigation3dActive) ...[
                       _MapControlGap(horizontal: horizontalControls),
                       _MapZoomCluster(
@@ -3433,11 +3482,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 bottom: attributionBottom,
                 child: _MapAttribution(
                   text: navigation3dActive
-                      ? '3D · © OpenStreetMap contributors'
+                      ? '3D · $navigation3dAttribution'
                       : (mode == OfflineMapMode.offline ||
                               (networkOffline && useOfflineLayer))
                           ? (activeOffline?.providerId == 'stadia-alidade-smooth'
-                              ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
+                              ? '© Stadia Maps · © OpenMapTiles · © OpenStreetMap contributors'
                               : 'Mapa offline · licença do pacote')
                           : onlineLayer.attribution,
                 ),

@@ -111,6 +111,14 @@ class OfflineMapService extends ChangeNotifier {
     return 'https://tiles.stadiamaps.com/tiles/$styleId/'
         '{z}/{x}/{y}.$extension?api_key=$encodedKey';
   }
+
+  String? stadiaVectorStyleUrl(String styleId) {
+    final key = _stadiaApiKey?.trim();
+    if (key == null || key.isEmpty) return null;
+    final encodedKey = Uri.encodeQueryComponent(key);
+    return 'https://tiles.stadiamaps.com/styles/$styleId.json'
+        '?api_key=$encodedKey';
+  }
   int get stadiaCreditsUsedThisMonth => _stadiaCreditsUsedThisMonth;
   int get stadiaMonthlyCreditLimit => _stadiaMonthlyCreditLimit;
   int get stadiaCreditsRemainingThisMonth =>

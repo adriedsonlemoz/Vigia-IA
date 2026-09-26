@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.160', build: 160),
+      changes: <String>[
+        '🗺️ A navegação 3D agora usa mapa vetorial MapLibre: Stadia Outdoors quando há chave configurada e OpenFreeMap Liberty como alternativa sem chave.',
+        '🧭 A câmera acompanha posição e direção com zoom e inclinação adaptativos à velocidade e à proximidade da próxima manobra, deixando o usuário mais abaixo para mostrar mais estrada à frente.',
+        '👆 Ao mover o mapa 3D manualmente, o acompanhamento pausa e aparece o botão Centralizar para retomar o follow sem interromper a rota.',
+        '🏙️ Prédios 3D são adicionados quando o estilo vetorial oferece dados compatíveis; se não houver suporte, a navegação continua normalmente sem derrubar o renderer.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.159', build: 159),
       changes: <String>[
         '🔊 O mapa ganhou um botão rápido de áudio na lateral, acessível também durante a navegação 3D.',

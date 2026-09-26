@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.159',
+          version: '1.0.160',
           current: true,
+          changes: [
+            'O renderer 3D passa a usar mapa vetorial MapLibre, preferindo Stadia Outdoors quando configurado e usando OpenFreeMap Liberty sem chave.',
+            'A câmera ajusta zoom e inclinação conforme velocidade e próxima manobra e mantém o usuário mais baixo na tela para mostrar mais rota à frente.',
+            'Mover o mapa manualmente pausa o acompanhamento 3D e exibe Centralizar para retomá-lo.',
+            'Prédios 3D são tentados sobre dados OpenMapTiles compatíveis sem comprometer a navegação se a camada não estiver disponível.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.159',
           changes: [
             'O mapa ganhou um botão de áudio rápido junto aos controles laterais, inclusive durante o 3D.',
             'Navegação, IA/Detecções e Pontos próximos possuem controles separados e persistentes.',
@@ -1475,8 +1485,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.159',
+          version: '1.0.160',
           current: true,
+          changes: [
+            'O renderer 3D passa a usar mapa vetorial MapLibre, preferindo Stadia Outdoors quando configurado e usando OpenFreeMap Liberty sem chave.',
+            'A câmera ajusta zoom e inclinação conforme velocidade e próxima manobra e mantém o usuário mais baixo na tela para mostrar mais rota à frente.',
+            'Mover o mapa manualmente pausa o acompanhamento 3D e exibe Centralizar para retomá-lo.',
+            'Prédios 3D são tentados sobre dados OpenMapTiles compatíveis sem comprometer a navegação se a camada não estiver disponível.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.159',
           changes: [
             'O mapa ganhou um botão de áudio rápido junto aos controles laterais, inclusive durante o 3D.',
             'Navegação, IA/Detecções e Pontos próximos possuem controles separados e persistentes.',

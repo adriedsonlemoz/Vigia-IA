@@ -1,4 +1,20 @@
-# Validação Vigia IA 1.0.159+159
+# Validação Vigia IA 1.0.160+160
+
+## 1.0.160+160 — evolução real do mapa 3D
+
+- Sem rota ativa, confirmar que o mapa normal continua sendo FlutterMap e que o MapLibre não é montado desnecessariamente.
+- Iniciar navegação online com e sem chave Stadia configurada e confirmar base vetorial, rota destacada, posição e destino; o segredo da API não pode aparecer em logs/telemetria.
+- Com velocidade baixa, média e alta, confirmar variação gradual da inclinação/zoom e posição visual do usuário mais abaixo na tela; aproximar-se de uma manobra e confirmar ajuste de câmera sem saltos excessivos.
+- Desabilitar/indisponibilizar rumo do GPS e confirmar que a câmera consegue seguir a direção aproximada da geometria da rota quando possível.
+- Arrastar/girar/zoom manualmente no mapa 3D e confirmar pausa do follow e aparição do botão `Centralizar`; tocar no botão e confirmar retomada imediata do acompanhamento.
+- Em região com camada de edificações compatível, confirmar extrusão de prédios; em região/estilo sem a camada, confirmar que a navegação continua e apenas diagnóstico `buildings_3d_unavailable` é registrado.
+- Encerrar a navegação e confirmar retorno ao mapa normal. Forçar falha/timeout do MapLibre e confirmar fallback 2D sem tela preta e sem perder rota/HUD.
+- Ativar offline/MBTiles e confirmar que o renderer 3D não é solicitado. Revalidar Bicicleta, Moto, Carro e A pé, recálculo, GPS, voz, POIs, gravação e controle 3D/2D.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: `check_version_sync.py` **aprovado**, `bash -n tool/verify_project.sh` **aprovado**, `verify_project.sh` **aprovado**, JSONs de identidade **válidos**, somente `android-apk.yml` presente e nenhum APK/AAB no código-fonte.
+- Varredura focada: nenhum `catch (_)` silencioso e nenhuma referência a `tile.openstreetmap.org` permanecem em `MapNavigation3DView`; contratos de estilo vetorial, câmera adaptativa, pausa por gesto, `Centralizar` e prédios 3D passaram no verificador.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; análise, testes Flutter e build Android release precisam ser reconfirmados pelo workflow.
+
 
 ## 1.0.159+159 — controle rápido de áudio no mapa
 

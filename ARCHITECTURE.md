@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.159+159
+# Arquitetura — Vigia IA 1.0.160+160
+
+
+## Navegação MapLibre vetorial e câmera adaptativa — 1.0.160
+
+- O renderer exploratório continua sendo `FlutterMap`; `MapNavigation3DView` é montado somente quando existe rota online ativa e a preferência 3D está habilitada. O gate de prontidão/fallback da 1.0.155 continua obrigatório.
+- A base do MapLibre passa a ser vetorial. `OfflineMapService.stadiaVectorStyleUrl('outdoors')` monta o estilo Stadia quando existe API key configurada; sem chave, `MapMonitoringScreen` usa `https://tiles.openfreemap.org/styles/liberty`. A chave nunca é gravada no contexto de diagnóstico do renderer.
+- A câmera usa `speedKilometersPerHour` e `distanceToNextManeuverMeters` para ajustar zoom/pitch, com `EdgeInsets.fromLTRB(20, 220, 20, 92)` para posicionar o usuário mais abaixo e ampliar a estrada visível à frente.
+- Quando não há rumo confiável do GPS, o bearing pode ser derivado da geometria da rota próxima. Em baixa velocidade o pitch é reduzido; perto da manobra a câmera aproxima e reduz a inclinação.
+- `MapEventStartMoveCamera` com `CameraChangeReason.apiGesture` pausa somente o follow da câmera. GPS, posição, rota e progresso continuam atualizados. O pai mostra `Centralizar`, incrementa `recenterRequest` e o renderer retoma o acompanhamento.
+- `FillExtrusionStyleLayer` tenta extrudar a camada vetorial `building` da source `openmaptiles`. Essa capacidade é opcional: falha de source/layer gera log/telemetria `buildings_3d_unavailable`, mas não aciona fallback do renderer.
+- Falhas essenciais de mapa/estilo/rota/câmera ou timeout continuam acionando fallback 3D → 2D. Offline/MBTiles não solicita o renderer MapLibre.
 
 ## Canais rápidos de áudio do mapa — 1.0.159
 
@@ -64,8 +75,8 @@
 
 - O mapa exploratório permanece em `flutter_map`, preservando POIs, MBTiles, camadas, PiPs, gravação e controles já estabilizados.
 - Uma rota viária online ativa pode trocar apenas o renderer central para `MapNavigation3DView`, baseado no pacote `maplibre`, evitando uma migração completa do mapa nesta etapa.
-- `MapNavigation3DView` usa câmera com pitch de 54° (máximo 60°), acompanha centro/zoom/rumo do GPS e mantém a posição do usuário mais baixa pela câmera acolchoada para mostrar mais via à frente.
-- A geometria da rota, o destino e a posição atual são fontes GeoJSON atualizadas no estilo MapLibre. A base desta primeira etapa é raster OSM; prédios/terreno extrudados não fazem parte desta entrega.
+- `MapNavigation3DView` acompanha centro/zoom/rumo do GPS; desde a 1.0.160, zoom e pitch são adaptativos e a câmera reserva mais área à frente do usuário.
+- A geometria da rota, o destino e a posição atual são fontes GeoJSON atualizadas no estilo MapLibre. A base vetorial e as extrusões opcionais de prédios são aplicadas pela evolução 1.0.160.
 - `MapTravelMode` separa modo visual de perfil de roteamento. `MapNavigationTarget` persiste o modo e mantém compatibilidade retroativa assumindo bicicleta quando o campo não existe.
 - `MapCyclingRouteService` conserva o nome nesta etapa para reduzir mudança estrutural, mas deixa de fixar `costing: bicycle`: recebe o perfil e envia `bicycle`, `motorcycle`, `auto` ou `pedestrian` ao Valhalla.
 - Navegação 3D só é ativada com rota carregada e camada online disponível. Sem rede ou em modo offline, `FlutterMap` continua sendo o renderer e a rota conhecida/fallback existente permanece válida.
