@@ -77,6 +77,21 @@ void main() {
     expect(landscape.yFraction, 1);
   });
 
+  test('seletor de veículo reserva a barra do sistema Android', () {
+    expect(
+      MapUxPolicy.travelModeSheetBottomPadding(viewPaddingBottom: 0),
+      12,
+    );
+    expect(
+      MapUxPolicy.travelModeSheetBottomPadding(viewPaddingBottom: 24),
+      36,
+    );
+    expect(
+      MapUxPolicy.travelModeSheetBottomPadding(viewPaddingBottom: 48),
+      60,
+    );
+  });
+
   test('normalizacao de posicao respeita minimo diferente de zero', () {
     final fraction = MapUxPolicy.fractionForPosition(
       position: 58,

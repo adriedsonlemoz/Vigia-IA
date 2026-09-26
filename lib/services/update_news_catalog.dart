@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.157', build: 157),
+      changes: <String>[
+        '🚲 O seletor de Bicicleta, Moto, Carro e A pé agora usa quatro cartões em grade 2 × 2, com ícone grande e indicação clara do modo selecionado.',
+        '💾 O último perfil de transporte utilizado passa a ser persistido e volta selecionado por padrão mesmo depois de fechar e abrir o aplicativo.',
+        '📱 O painel de escolha agora reserva explicitamente a área da barra de navegação do Android, tanto em três botões quanto em gestos, sem esconder controles ou textos.',
+        '🛣️ Os quatro perfis continuam alterando o cálculo real da rota no Valhalla; nenhuma lógica foi reduzida a bicycle.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.156', build: 156),
       changes: <String>[
         '🔧 Corrigido o Android-APK-119, que parava no flutter analyze ao preparar o diagnóstico da navegação MapLibre 3D.',

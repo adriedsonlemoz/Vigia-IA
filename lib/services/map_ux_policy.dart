@@ -98,6 +98,16 @@ class MapUxPolicy {
     return (min + ((max - min) * fraction.clamp(0, 1))).toDouble();
   }
 
+
+  static double travelModeSheetBottomPadding({
+    required double viewPaddingBottom,
+  }) {
+    final safeBottom = viewPaddingBottom.isFinite && viewPaddingBottom > 0
+        ? viewPaddingBottom
+        : 0.0;
+    return safeBottom + 12;
+  }
+
   static double attributionBottom({
     required double safeBottom,
     required bool hasSelectedPoi,

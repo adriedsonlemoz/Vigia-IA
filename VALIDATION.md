@@ -1,4 +1,17 @@
-# Validação Vigia IA 1.0.156+156
+# Validação Vigia IA 1.0.157+157
+
+
+## 1.0.157+157 — seletor de veículo + Safe Area
+
+- Abrir um POI, tocar em Navegar e confirmar grade 2 × 2 na ordem Bicicleta/Moto e Carro/A pé, com ícone grande, nome e check no último perfil utilizado.
+- Selecionar cada modo e confirmar que o destino recebe o perfil escolhido e que o serviço continua enviando `bicycle`, `motorcycle`, `auto` e `pedestrian`, sem regressão para bicicleta em todos os casos.
+- Selecionar um modo diferente, encerrar/reabrir o aplicativo e confirmar que ele volta marcado por padrão no próximo seletor, mesmo sem navegação ativa restaurada.
+- Testar o bottom sheet com navegação Android por três botões e por gestos; nenhum cartão, texto ou área tocável pode ficar atrás da barra do sistema.
+- Testar retrato e paisagem/altura reduzida; em altura insuficiente o conteúdo deve permitir rolagem e manter a margem inferior segura.
+- Confirmar que rota, recálculo, GPS, voz, POIs, gravação, mapas offline, botão 3D/2D e fallback MapLibre continuam funcionando sem alteração funcional.
+- Executar `test/map_ux_policy_test.dart`, `test/map_travel_mode_test.dart`, `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado**, `bash tool/verify_project.sh` **aprovado**, JSONs de identidade válidos, `bash -n tool/verify_project.sh` **aprovado** e nenhum APK/AAB presente no fonte.
+- Flutter/Dart não estão disponíveis neste ambiente local; `flutter analyze`, `flutter test` e build release precisam ser reconfirmados no workflow Android.
 
 ## 1.0.156+156 — correção Android-APK-119
 

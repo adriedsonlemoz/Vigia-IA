@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.156',
+          version: '1.0.157',
           current: true,
+          changes: [
+            'Bicicleta, Moto, Carro e A pé agora aparecem em uma grade 2 × 2 mais compacta e visual.',
+            'O último perfil utilizado fica salvo e volta selecionado por padrão na próxima navegação.',
+            'O seletor respeita a área segura inferior do Android em navegação por gestos e por três botões.',
+            'Os quatro modos continuam usando perfis reais e distintos no cálculo da rota.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.156',
           changes: [
             'Corrigido o Android-APK-119 no flutter analyze.',
             'O renderer MapLibre 3D agora importa diretamente a extensão usada para serializar o modo de transporte no diagnóstico.',
@@ -1445,8 +1455,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.156',
+          version: '1.0.157',
           current: true,
+          changes: [
+            'Bicicleta, Moto, Carro e A pé agora aparecem em uma grade 2 × 2 mais compacta e visual.',
+            'O último perfil utilizado fica salvo e volta selecionado por padrão na próxima navegação.',
+            'O seletor respeita a área segura inferior do Android em navegação por gestos e por três botões.',
+            'Os quatro modos continuam usando perfis reais e distintos no cálculo da rota.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.156',
           changes: [
             'Corrigido o Android-APK-119 no flutter analyze.',
             'O renderer MapLibre 3D agora importa diretamente a extensão usada para serializar o modo de transporte no diagnóstico.',

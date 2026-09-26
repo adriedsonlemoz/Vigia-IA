@@ -834,6 +834,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       MapFollowViewPreset.near => _MapQuickView.near,
       MapFollowViewPreset.region => _MapQuickView.region,
     };
+    _lastTravelMode = _mapViewSettings.lastTravelMode;
     await _routeState.acquireLocationConsumer(
       this,
       requestPermission: true,
@@ -854,6 +855,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final restoredPosition = _routeState.current;
     if (restoredTarget != null) {
       _lastTravelMode = restoredTarget.travelMode;
+      unawaited(_mapViewSettings.setLastTravelMode(restoredTarget.travelMode));
       _navigation3dEnabled = true;
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = false;
@@ -1082,50 +1084,54 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       context: context,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Como você vai até o destino?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'A rota e o tempo estimado serão calculados para o veículo escolhido.',
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 12),
-            for (final mode in MapTravelMode.values)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                      color: mode == _lastTravelMode
-                          ? scheme.primary
-                          : scheme.outlineVariant,
-                    ),
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final systemBottom = MediaQuery.viewPaddingOf(sheetContext).bottom;
+        final bottomPadding = MapUxPolicy.travelModeSheetBottomPadding(
+          viewPaddingBottom: systemBottom,
+        );
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Como você vai até o destino?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'A rota e o tempo estimado serão calculados para o veículo escolhido.',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 14),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.04,
+                    children: [
+                      for (final mode in MapTravelMode.values)
+                        _TravelModeChoiceCard(
+                          mode: mode,
+                          icon: _travelModeIcon(mode),
+                          selected: mode == _lastTravelMode,
+                          onTap: () => Navigator.of(sheetContext).pop(mode),
+                        ),
+                    ],
                   ),
-                  selected: mode == _lastTravelMode,
-                  selectedTileColor: scheme.primaryContainer.withValues(alpha: 0.45),
-                  leading: Icon(_travelModeIcon(mode)),
-                  title: Text(
-                    mode.label,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  trailing: mode == _lastTravelMode
-                      ? Icon(Icons.check_circle_rounded, color: scheme.primary)
-                      : const Icon(Icons.chevron_right_rounded),
-                  onTap: () => Navigator.of(context).pop(mode),
                 ),
               ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1159,6 +1165,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _lastRouteRecalculatedAt = null;
       _lastNavigationProgressPointAt = null;
     });
+    unawaited(_mapViewSettings.setLastTravelMode(travelMode));
     await _routeState.navigateTo(target);
     if (current != null) {
       await _requestCyclingRoute(
@@ -3810,6 +3817,77 @@ class _MapQuickViewBar extends StatelessWidget {
             compact: compact,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TravelModeChoiceCard extends StatelessWidget {
+  const _TravelModeChoiceCard({
+    required this.mode,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final MapTravelMode mode;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor = selected ? scheme.primary : scheme.outlineVariant;
+    final background = selected
+        ? scheme.primaryContainer.withValues(alpha: 0.55)
+        : scheme.surfaceContainerLow;
+    final foreground = selected ? scheme.onPrimaryContainer : scheme.onSurface;
+
+    return Material(
+      color: background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: borderColor,
+          width: selected ? 1.7 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 38, color: foreground),
+                  const SizedBox(height: 9),
+                  Text(
+                    mode.label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: foreground,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              Positioned(
+                top: 9,
+                right: 9,
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: scheme.primary,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

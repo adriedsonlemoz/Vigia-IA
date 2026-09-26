@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.156 corrige o Android-APK-119: o renderer MapLibre 3D agora importa diretamente MapTravelModeX, permitindo ao analyzer resolver storageValue sem alterar o comportamento da Etapa 1.",
-  "version": "1.0.156",
-  "build": 156
+  "notes": "A 1.0.157 reformula o seletor de transporte em grade 2x2, persiste o último perfil utilizado e corrige a área segura inferior do bottom sheet para navegação Android por botões ou gestos.",
+  "version": "1.0.157",
+  "build": 157
 }

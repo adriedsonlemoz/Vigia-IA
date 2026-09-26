@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.156+156
+# Arquitetura — Vigia IA 1.0.157+157
+
+
+## Seletor de transporte e Safe Area — 1.0.157
+
+- `MapMonitoringScreen._chooseTravelMode()` apresenta `MapTravelMode.values` em uma grade fixa 2 × 2 de cartões, preservando uma única origem para os quatro perfis de transporte e evitando divergência entre UI e roteamento.
+- O cartão selecionado usa `_lastTravelMode` apenas como estado visual; ao iniciar a navegação, o modo continua sendo gravado em `MapNavigationTarget.travelMode` e entregue ao serviço de rota.
+- `MapViewSettingsService` passa a persistir `lastTravelMode` no mesmo arquivo de preferências visuais do mapa. A leitura usa `MapTravelModeX.fromStorage`, mantendo compatibilidade com arquivos antigos que não possuíam a chave e caindo em Bicicleta somente nesses casos legados.
+- O bottom sheet calcula sua margem inferior com `MediaQuery.viewPaddingOf(context).bottom` por meio de `MapUxPolicy.travelModeSheetBottomPadding`, garantindo espaço para a barra Android por botões ou para a área de gesto. Um `SingleChildScrollView` protege telas de baixa altura sem permitir que opções fiquem inacessíveis.
+- Nenhuma mudança foi feita nos valores `valhallaCosting`: Bicicleta=`bicycle`, Moto=`motorcycle`, Carro=`auto` e A pé=`pedestrian`.
 
 ## Buildfix Android-APK-119 — 1.0.156
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/map_travel_mode.dart';
 import 'map_view_policy.dart';
 
 enum MapStylePreset {
@@ -48,6 +49,7 @@ class MapViewSettingsService extends ChangeNotifier {
   MapOrientationMode _orientationMode = MapOrientationMode.northUp;
   MapFollowViewPreset _followViewPreset = MapFollowViewPreset.near;
   MapStylePreset _stylePreset = MapStylePreset.standard;
+  MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
   bool _initialized = false;
   File? _file;
 
@@ -55,6 +57,7 @@ class MapViewSettingsService extends ChangeNotifier {
   MapOrientationMode get orientationMode => _orientationMode;
   MapFollowViewPreset get followViewPreset => _followViewPreset;
   MapStylePreset get stylePreset => _stylePreset;
+  MapTravelMode get lastTravelMode => _lastTravelMode;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -69,6 +72,7 @@ class MapViewSettingsService extends ChangeNotifier {
           final orientationName = map['orientationMode'] as String?;
           final presetName = map['followViewPreset'] as String?;
           final styleName = map['stylePreset'] as String?;
+          final lastTravelMode = map['lastTravelMode'];
           _orientationMode = MapOrientationMode.values.firstWhere(
             (value) => value.name == orientationName,
             orElse: () => MapOrientationMode.northUp,
@@ -81,11 +85,13 @@ class MapViewSettingsService extends ChangeNotifier {
             (value) => value.name == styleName,
             orElse: () => MapStylePreset.standard,
           );
+          _lastTravelMode = MapTravelModeX.fromStorage(lastTravelMode);
         }
       } catch (_) {
         _orientationMode = MapOrientationMode.northUp;
         _followViewPreset = MapFollowViewPreset.near;
         _stylePreset = MapStylePreset.standard;
+        _lastTravelMode = MapTravelMode.bicycle;
       }
     }
     _initialized = true;
@@ -107,6 +113,14 @@ class MapViewSettingsService extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setLastTravelMode(MapTravelMode value) async {
+    if (!_initialized) await initialize();
+    if (_lastTravelMode == value) return;
+    _lastTravelMode = value;
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setStylePreset(MapStylePreset value) async {
     if (!_initialized) await initialize();
     if (_stylePreset == value) return;
@@ -120,10 +134,11 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 2,
+        'version': 3,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,
+        'lastTravelMode': _lastTravelMode.storageValue,
       }),
       flush: true,
     );

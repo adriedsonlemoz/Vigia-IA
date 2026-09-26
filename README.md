@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.156+156`
+> **Versão atual:** `1.0.157+157`
 
 ## Estado atual
 
-A `1.0.156+156` é um buildfix do Android-APK-119. O renderer MapLibre 3D passa a importar diretamente `map_travel_mode.dart`, tornando a extensão `MapTravelModeX.storageValue` visível ao analyzer. Nenhuma funcionalidade da Etapa 2 foi antecipada; a estabilização 2D → 3D da `1.0.155` permanece inalterada.
+A `1.0.157+157` conclui a Etapa 2 do mapa: o seletor de transporte passa a usar uma grade 2 × 2 compacta, o último perfil utilizado é persistido e o bottom sheet reserva explicitamente a área inferior do sistema Android para navegação por três botões ou gestos. Os quatro modos continuam alterando o perfil real de roteamento.
+
+### Etapa 2 — seletor de veículo + Safe Area — 1.0.157
+
+- Bicicleta, Moto, Carro e A pé são exibidos em quatro cartões praticamente quadrados, organizados em grade 2 × 2, com ícone grande, nome e check no perfil selecionado.
+- O último perfil utilizado é salvo em `map_view_settings.json` e restaurado como seleção padrão na próxima navegação, inclusive após reiniciar o aplicativo.
+- O bottom sheet usa `MediaQuery.viewPadding.bottom` para reservar a barra de navegação do Android, com margem adicional; o conteúdo também é rolável em telas muito baixas/paisagem para impedir corte.
+- O estado visual não altera o contrato de `MapTravelMode`: `bicycle`, `motorcycle`, `auto` e `pedestrian` continuam sendo enviados ao roteamento conforme a escolha real.
+- A estabilização 2D → 3D e o fallback MapLibre da etapa anterior foram preservados.
 
 ### Correção 1.0.156 — Android-APK-119
 

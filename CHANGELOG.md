@@ -1,3 +1,11 @@
+## 1.0.157+157 — 2026-09-26
+
+- Reformulado o seletor de transporte para grade 2 × 2 com cartões de Bicicleta, Moto, Carro e A pé, ícones maiores e check no modo selecionado.
+- O último modo utilizado passa a ser persistido em `MapViewSettingsService` e restaurado como seleção padrão após reabrir o aplicativo.
+- O bottom sheet de transporte agora reserva explicitamente `MediaQuery.viewPadding.bottom`, cobrindo navegação Android por três botões e por gestos; telas baixas permanecem roláveis sem esconder ações.
+- Mantidos os perfis reais de roteamento `bicycle`, `motorcycle`, `auto` e `pedestrian`, além de rota, recálculo, GPS, voz, POIs, gravação, offline e fallback 2D/3D.
+- Atualizados Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão e verificações preventivas.
+
 ## 1.0.156+156 — 2026-09-26
 
 - Corrigido o Android-APK-119, que falhava em `flutter analyze` com `undefined_getter` em `lib/widgets/map_navigation_3d_view.dart:506`.
