@@ -66,11 +66,17 @@ if f"# Validação Vigia IA {full}" not in validation:
     fail("VALIDATION nao marca a versao atual")
 
 news = (root / "lib/services/update_news_catalog.dart").read_text(encoding="utf-8")
-expected_news = f"version: AppBuildVersion(version: '{version}', build: {build})"
-if expected_news not in news:
-    fail("catalogo de Novidades diverge do pubspec")
-if news.count("UpdateRelease(") != 1:
-    fail("popup de Novidades deve conter somente a release instalada atual")
+version_refs = re.findall(
+    r"AppBuildVersion\(version: '([0-9]+\.[0-9]+\.[0-9]+)', build: ([0-9]+)\)",
+    news,
+)
+if not version_refs:
+    fail("catalogo de Novidades nao identifica a versao empacotada")
+for news_version, news_build in version_refs:
+    if news_version != version or int(news_build) != build:
+        fail("catalogo de Novidades contem versao diferente da instalada")
+if news.count("UpdateRelease(") > 1:
+    fail("popup de Novidades deve conter no maximo a release instalada atual")
 news_changes = news.lower()
 for forbidden in ("bug", "erro", "falha", "correção", "correcao"):
     if forbidden in news_changes:

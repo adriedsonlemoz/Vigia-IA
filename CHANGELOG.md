@@ -1,3 +1,11 @@
+## 1.0.171+171 — 2026-09-26
+
+- Corrigidos os seis apontamentos que fizeram o `flutter analyze` do build 133 encerrar com código 1: quatro `prefer_final_locals`, um import `dart:math` não usado e um campo `_lastCameraPointAt` somente escrito.
+- Parsers de `double`/`int` do clima mantêm a mesma validação e agora usam variáveis finais explicitamente inicializadas.
+- Renderer MapLibre 3D mantém exatamente a mesma lógica de câmera/rota; foram removidos apenas símbolos sem uso.
+- Release técnica sem mudança visível: o catálogo de Novidades identifica `1.0.171+171`, mas não exibe popup vazia nem reutiliza mudanças antigas.
+- Versionamento, AppMetadata, identidades, User-Agents, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados em `1.0.171+171`.
+
 ## 1.0.170+170 — 2026-09-26
 
 - Corrigida a falha de análise estática do build 132: `MapWeatherService` utilizava `Esp32ConnectionState` sem importar `models/esp32_telemetry.dart`, gerando dois `undefined_identifier`.

@@ -65,8 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.170',
+          version: '1.0.171',
           current: true,
+          changes: [
+            'Manutenção do build 133 removeu avisos do analisador Dart sem alterar o comportamento do mapa 3D, clima ou navegação.',
+            'A versão mantém integralmente câmera 3D, rota, prédios opcionais, fallback 2D e integração ESP32 da entrega anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.170',
           changes: [
             'A entrega final do mapa 3D da 1.0.169 agora está empacotada na versão 1.0.170, mantendo câmera suave por transporte, rota destacada e prédios 3D opcionais.',
             'Clima ESP32 + online, navegação 2D/3D, fallback 2D e os demais recursos do mapa permanecem no mesmo fluxo.',
@@ -1575,8 +1583,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.170',
+          version: '1.0.171',
           current: true,
+          changes: [
+            'Manutenção do build 133 removeu avisos do analisador Dart sem alterar o comportamento do mapa 3D, clima ou navegação.',
+            'A versão mantém integralmente câmera 3D, rota, prédios opcionais, fallback 2D e integração ESP32 da entrega anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.170',
           changes: [
             'A entrega final do mapa 3D da 1.0.169 agora está empacotada na versão 1.0.170, mantendo câmera suave por transporte, rota destacada e prédios 3D opcionais.',
             'Clima ESP32 + online, navegação 2D/3D, fallback 2D e os demais recursos do mapa permanecem no mesmo fluxo.',

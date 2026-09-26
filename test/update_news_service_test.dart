@@ -131,17 +131,28 @@ void main() {
     expect(missingDecision.shouldShow, isTrue);
     expect(missingDecision.releases.single.version.build, 144);
   });
-  test('catalogo empacotado contém somente a versão atual e texto público', () {
-    expect(UpdateNewsCatalog.current.releases, hasLength(1));
-    final release = UpdateNewsCatalog.current.releases.single;
-    expect(release.version.version, AppMetadata.version);
-    expect(release.version.build, AppMetadata.build);
-    final joined = release.changes.join(' ').toLowerCase();
-    expect(joined, isNot(contains('bug')));
-    expect(joined, isNot(contains('erro')));
-    expect(joined, isNot(contains('falha')));
-    expect(joined, isNot(contains('correção')));
-    expect(joined, isNot(contains('correcao')));
+  test('release técnica atual não fabrica popup sem mudança visível', () {
+    expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
+    expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
+    expect(UpdateNewsCatalog.current.releases, isEmpty);
+  });
+
+  test('catálogo vazio não mostra popup de novidades', () async {
+    final store = _MemoryStore()..value = '1.0.170+170';
+    final provider = _MutableVersionProvider(
+      const AppBuildVersion(version: '1.0.171', build: 171),
+    );
+    final service = UpdateNewsService(
+      catalog: UpdateNewsCatalog.current,
+      store: store,
+      versionProvider: provider,
+    );
+
+    final decision = await service.evaluate();
+
+    expect(decision.shouldShow, isFalse);
+    expect(decision.releases, isEmpty);
+    expect(decision.changes, isEmpty);
   });
 
 }

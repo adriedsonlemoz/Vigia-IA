@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:maplibre/maplibre.dart' as ml;
@@ -106,7 +105,6 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   String? _buildingSourceId;
   String? _buildingSourceLayerId;
   String? _buildingLayerError;
-  DateTime? _lastCameraPointAt;
   double? _lastAppliedBearing;
   double? _lastAppliedLatitude;
   double? _lastAppliedLongitude;
@@ -647,7 +645,6 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
           !bearingChanged &&
           !zoomChanged &&
           !pitchChanged) {
-        _lastCameraPointAt = recordedAt;
         return true;
       }
     }
@@ -666,7 +663,6 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
             rawLongitude,
             alpha: tuning.centerAlpha,
           );
-    _lastCameraPointAt = recordedAt;
     _lastAppliedLatitude = latitude;
     _lastAppliedLongitude = longitude;
     _lastAppliedZoom = tuning.zoom;
@@ -984,7 +980,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     try {
       final uri = Uri.parse(styleUrl);
       final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.170 map-3d-style');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.171 map-3d-style');
       final response = await request.close().timeout(_stylePreflightTimeout);
       if (styleUrl != _activeVectorStyleUrl) return;
       _styleHttpStatus = response.statusCode;

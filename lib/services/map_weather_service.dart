@@ -176,7 +176,7 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.170 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.171 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)
@@ -468,11 +468,14 @@ class MapWeatherService extends ChangeNotifier {
   }
 
   static double? _finiteDouble(Object? value, {double? min, double? max}) {
-    final parsed = switch (value) {
-      num number => number.toDouble(),
-      String text => double.tryParse(text.replaceAll(',', '.')),
-      _ => null,
-    };
+    final double? parsed;
+    if (value is num) {
+      parsed = value.toDouble();
+    } else if (value is String) {
+      parsed = double.tryParse(value.replaceAll(',', '.'));
+    } else {
+      parsed = null;
+    }
     if (parsed == null || !parsed.isFinite) return null;
     if (min != null && parsed < min) return null;
     if (max != null && parsed > max) return null;
@@ -480,11 +483,14 @@ class MapWeatherService extends ChangeNotifier {
   }
 
   static int? _finiteInt(Object? value, {required int min, required int max}) {
-    final parsed = switch (value) {
-      num number => number.toInt(),
-      String text => int.tryParse(text),
-      _ => null,
-    };
+    final int? parsed;
+    if (value is num) {
+      parsed = value.toInt();
+    } else if (value is String) {
+      parsed = int.tryParse(value);
+    } else {
+      parsed = null;
+    }
     if (parsed == null || parsed < min || parsed > max) return null;
     return parsed;
   }

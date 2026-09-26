@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.170+170
+# Validação Vigia IA 1.0.171+171
+
+
+## Build 133 / 1.0.171
+
+- Confirmar ausência de `dart:math` sem uso e de `_lastCameraPointAt` em `lib/widgets/map_navigation_3d_view.dart`.
+- Confirmar que `_finiteDouble` e `_finiteInt` não usam os pattern bindings que produziram quatro `prefer_final_locals` no build 133.
+- Confirmar que o catálogo de Novidades identifica `1.0.171+171`, porém não contém release pública quando não existe mudança visível.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
+- Validar JSONs, scripts, workflow Android único, ausência de APK/AAB e ausência de diretórios temporários no ZIP fonte.
+- Executar `flutter analyze`, `flutter test` e build Android somente quando Flutter/Dart estiverem disponíveis; não registrar esses comandos como executados fora de ambiente com SDK.
 
 
 ## Build 132 / 1.0.170

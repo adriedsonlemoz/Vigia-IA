@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.170+170
+# Arquitetura — Vigia IA 1.0.171+171
+
+
+## Manutenção de análise estática — 1.0.171
+
+A release 1.0.171 não altera contratos funcionais. `MapWeatherService._finiteDouble` e `_finiteInt` preservam as mesmas conversões/faixas com inicialização final explícita, evitando bindings de pattern que acionavam `prefer_final_locals` no analyzer atual. `MapNavigation3DView` remove apenas um import e um timestamp de câmera sem leitura; toda a política de câmera, heading, rota, buildings, terrain e fallback permanece intacta.
+
+`UpdateNewsCatalog.currentVersion` acompanha a versão empacotada mesmo quando `current.releases` fica vazio. Assim, releases estritamente técnicas não fabricam uma novidade pública nem reapresentam itens de releases anteriores.
 
 
 ## Reempacotamento 1.0.170
