@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.149 consolida mapa + Bike, sincronizando navegação, PiPs, IA/TTC e POIs offline para eliminar estados antigos ou incompatíveis sem adicionar um novo pipeline.",
-  "version": "1.0.149",
-  "build": 149
+  "notes": "A 1.0.150 reorganiza o HUD do mapa, separa configurações, camadas e pontos próximos, melhora os cards de telemetria/POI e libera rotação manual do mapa.",
+  "version": "1.0.150",
+  "build": 150
 }

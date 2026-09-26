@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.150', build: 150),
+      changes: <String>[
+        '🗺️ O mapa ganha um HUD reorganizado, mais próximo do visual Bike/Viagem planejado.',
+        '⚙️ Configurações, camadas e pontos próximos agora têm botões próprios e funções separadas.',
+        '🧭 Velocidade, altitude, bússola e GPS usam cards quadrados; a bússola também alterna a orientação do mapa.',
+        '📍 Tocar em um POI abre um card compacto com Detalhes e Navegar, e o mapa aceita rotação manual por gesto.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.149', build: 149),
       changes: <String>[
         '🧭 Mapa e Bike passam a limpar juntos estados antigos quando a navegação é encerrada.',

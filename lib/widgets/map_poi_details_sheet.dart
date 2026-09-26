@@ -76,11 +76,19 @@ class MapPoiDetailsSheet extends StatelessWidget {
         ),
     ];
 
+    final detailDensity = details.length + item.amenities.length;
+    final initialSize = detailDensity == 0
+        ? 0.46
+        : detailDensity <= 2
+            ? 0.58
+            : 0.72;
+    final minimumSize = detailDensity == 0 ? 0.34 : 0.42;
+
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.72,
-        minChildSize: 0.46,
+        initialChildSize: initialSize,
+        minChildSize: minimumSize,
         maxChildSize: 0.94,
         builder: (context, scrollController) => Column(
           children: [

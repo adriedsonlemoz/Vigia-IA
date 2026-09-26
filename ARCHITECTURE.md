@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.149+149
+# Arquitetura — Vigia IA 1.0.150+150
+
+## HUD do mapa e interação 1.0.150
+
+- `MapMonitoringScreen` separa três responsabilidades que antes estavam concentradas no menu de opções: configurações gerais (`_showMapOptions`), camadas (`_showLayerPicker`) e pontos próximos (`_showNearbyPoints`).
+- O HUD superior passa a reservar uma faixa para atalhos, uma para telemetria e uma para o card de POIs, mantendo o mapa full-bleed por baixo.
+- `_MapTelemetryStrip` representa velocidade, altitude, bússola e precisão do GPS em cards uniformes. A bússola reutiliza `MapViewSettingsService` e `_toggleOrientationMode`, sem criar um segundo estado de orientação.
+- A interação de `FlutterMap` usa `InteractiveFlag.all`, permitindo rotação manual. O gesto continua liberando o modo follow existente, evitando conflito entre a rotação do usuário e a câmera automática.
+- Marcadores individuais deixam de abrir diretamente o `MapPoiDetailsSheet`: `_focusPoi` seleciona o ponto e mostra `_SelectedPoiCard`, enquanto o painel completo permanece como ação `Detalhes`.
+- `MapPoiDetailsSheet` calcula a altura inicial pelo volume de metadados/amenidades, reduzindo espaço vazio para POIs simples.
+- `MapUxPolicy` aumenta a reserva superior dos PiPs para impedir que câmeras arrastáveis cubram o novo conjunto de HUD e recalibra a área inferior após a mudança do botão de gravação.
+
 
 ## Consolidação mapa + Bike 1.0.149
 

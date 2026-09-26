@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.149',
+          version: '1.0.150',
           current: true,
+          changes: [
+            'HUD do mapa reorganizado com engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio.',
+            'Velocidade, altitude, bússola e GPS agora usam cards quadrados mais legíveis.',
+            'O botão de pontos próximos virou um marcador dedicado, a câmera ganhou atalho abaixo do card de locais e Gravar foi fixado no canto inferior direito.',
+            'POIs abrem um card compacto com Detalhes/Navegar e o mapa volta a aceitar rotação manual por gesto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.149',
           changes: [
             'Mapa e Bike passam a limpar juntos a rota local quando a navegação é encerrada fora da tela do mapa.',
             'TTC antigo deixa de aparecer quando perde validade ou quando câmera/IA deixa de estar pronta.',
@@ -1379,8 +1389,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.149',
+          version: '1.0.150',
           current: true,
+          changes: [
+            'HUD do mapa reorganizado com engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio.',
+            'Velocidade, altitude, bússola e GPS agora usam cards quadrados mais legíveis.',
+            'O botão de pontos próximos virou um marcador dedicado, a câmera ganhou atalho abaixo do card de locais e Gravar foi fixado no canto inferior direito.',
+            'POIs abrem um card compacto com Detalhes/Navegar e o mapa volta a aceitar rotação manual por gesto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.149',
           changes: [
             'Mapa e Bike passam a limpar juntos a rota local quando a navegação é encerrada fora da tela do mapa.',
             'TTC antigo deixa de aparecer quando perde validade ou quando câmera/IA deixa de estar pronta.',

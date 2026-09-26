@@ -1,3 +1,16 @@
+## 1.0.150+150 — 2026-09-25
+
+- Reorganizado o HUD do mapa para aproximar a interface do layout Bike/Viagem de referência: engrenagem à esquerda, Perto/Região/Rota no topo e camadas em botão próprio à direita.
+- O antigo botão de opções no dock lateral foi substituído por um marcador dedicado de `Próximos pontos`, mantendo badge com a quantidade encontrada.
+- Adicionado card principal `Locais próximos` e atalho circular de câmera logo abaixo, sem esconder o acesso ao gerenciador/restauração dos PiPs.
+- Velocidade, altitude, bússola e GPS passaram a cards quadrados e uniformes; a altitude é exibida completa acima do rótulo.
+- A bússola foi consolidada como indicador de rumo do GPS e agora também alterna entre norte fixo e acompanhamento da direção.
+- A rotação manual do mapa por gesto foi reativada (`InteractiveFlag.rotate` volta a fazer parte das interações permitidas).
+- Tocar em um POI individual passa a abrir primeiro um card compacto sobre o mapa com `Detalhes` e `Navegar`, em vez de abrir imediatamente o painel completo.
+- O painel completo de POI reduz a altura inicial quando há poucos dados, eliminando espaço vazio desnecessário.
+- O botão `Gravar` foi fixado no canto inferior direito e as reservas de HUD/PiP foram recalibradas para o novo topo do mapa.
+- Versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados e User-Agents sincronizados em `1.0.150+150`.
+
 ## 1.0.149+149 — 2026-09-25
 
 - Consolidada a integração mapa + Bike com `MapBikeConsolidationPolicy`, sem criar novo pipeline de detecção, TTC, rota ou persistência.

@@ -31,16 +31,16 @@ class MapUxPolicy {
     required double safeTop,
     required bool compactLandscape,
   }) =>
-      safeTop + (compactLandscape ? 122 : 130);
+      safeTop + (compactLandscape ? 178 : 236);
 
   static double cameraBottomReserve({
     required double safeBottom,
     required bool hasSelectedPoi,
     required bool hasNavigation,
   }) {
-    var reserve = safeBottom + 50;
-    if (hasNavigation) reserve += 74;
-    if (hasSelectedPoi) reserve += 54;
+    var reserve = safeBottom + 56;
+    if (hasNavigation) reserve += 86;
+    if (hasSelectedPoi) reserve += 118;
     return reserve;
   }
 
@@ -103,9 +103,9 @@ class MapUxPolicy {
     required bool hasSelectedPoi,
     required bool hasNavigation,
   }) {
-    var offset = safeBottom + 44;
-    if (hasNavigation) offset += 74;
-    if (hasSelectedPoi) offset += 54;
+    var offset = safeBottom + 8;
+    if (hasNavigation) offset += 82;
+    if (hasSelectedPoi) offset += 126;
     return offset;
   }
 }

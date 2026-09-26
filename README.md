@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.149+149`
+> **Versão atual:** `1.0.150+150`
 
 ## Estado atual
 
-A `1.0.149+149` é a **consolidação do bloco mapa + Bike**, alinhando navegação, POIs, PiPs, IA/TTC, offline e o mini mapa automático antes da etapa planejada de navegação 3D.
+A `1.0.150+150` faz a **reorganização visual e funcional do mapa Bike/Viagem**, separando configurações, camadas e pontos próximos, compactando os cards de POI e liberando rotação manual sem remover as funções de navegação/offline já existentes.
+
+### Evolução 1.0.150 — HUD do mapa e rotação manual
+
+- O topo do mapa passa a usar engrenagem à esquerda, `Perto/Região/Rota` ao centro e camadas à direita, deixando as funções principais visíveis sem depender do menu de três pontos.
+- `Locais próximos` ganha um card próprio e o marcador lateral abre diretamente a lista de POIs; o antigo menu geral não mistura mais pontos próximos com configurações.
+- O atalho da câmera fica logo abaixo do card de locais próximos e abre o gerenciador ou restaura os PiPs quando eles estão ocultos.
+- Velocidade, altitude, bússola e GPS usam quatro cards uniformes; a bússola mostra o rumo e alterna entre norte fixo e acompanhamento da direção.
+- O mapa aceita novamente rotação manual por gesto; ao girar durante acompanhamento, o follow é liberado para não sobrescrever a interação do usuário.
+- POIs individuais abrem um card compacto com `Detalhes` e `Navegar`; o painel completo continua disponível e ajusta sua altura inicial ao volume real de informações.
+- `Gravar` fica ancorado no canto inferior direito e o crédito do mapa retorna ao canto inferior esquerdo quando não há banners sobrepostos.
 
 ### Evolução 1.0.149 — consolidação mapa + Bike
 

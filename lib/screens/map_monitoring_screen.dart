@@ -1589,7 +1589,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   void _focusPoiCluster(MapPoiCluster cluster) {
     if (!_mapReady) return;
     if (!cluster.isCluster) {
-      unawaited(_showPoiDetails(cluster.first));
+      _focusPoi(cluster.first);
       return;
     }
     setState(() {
@@ -1810,14 +1810,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.layers_outlined),
-                title: const Text('Camadas e tipo do mapa'),
-                subtitle: Text(_mapViewSettings.stylePreset.label),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(_showLayerPicker());
-                },
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Configurações do mapa',
+                    style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
               ),
               ListTile(
                 leading: Icon(
@@ -1854,18 +1857,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 },
               ),
               const Divider(height: 8),
-              ListTile(
-                leading: const Icon(Icons.place_rounded),
-                title: const Text('Próximos pontos'),
-                subtitle: const Text('Postos, comida, saúde, água e outros.'),
-                trailing: _routeExplorer.activeResults.isEmpty
-                    ? null
-                    : Text('${_routeExplorer.activeResults.length}'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(_showNearbyPoints());
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.inventory_2_outlined),
                 title: const Text('Pacotes de pontos offline'),
@@ -2555,9 +2546,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
-          final telemetryTop = topInset + 42;
-          final quickViewTop = topInset + (compactHud ? 72 : 78);
-          final controlDockTop = topInset + (compactHud ? 78 : 116);
+          final telemetryTop = topInset + MapUxPolicy.controlSize + 8;
+          final telemetryHeight = compactHud ? 64.0 : 72.0;
+          final nearbyTop = telemetryTop + telemetryHeight + 8;
+          final nearbyHeight = compactHud ? 52.0 : 58.0;
+          final cameraButtonTop = nearbyTop + nearbyHeight + 8;
+          final controlDockTop = cameraButtonTop;
           final attributionBottom = MapUxPolicy.attributionBottom(
             safeBottom: safePadding.bottom,
             hasSelectedPoi: showSelectedPoiCard,
@@ -2576,7 +2570,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   minZoom: 3,
                   maxZoom: 19,
                   interactionOptions: InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    flags: InteractiveFlag.all,
                   ),
                   onMapReady: () {
                     _mapReady = true;
@@ -2881,68 +2875,89 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 top: topInset,
                 left: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
-                  tooltip: 'Voltar',
-                  icon: Icons.arrow_back_rounded,
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  tooltip: 'Configurações do mapa',
+                  icon: Icons.settings_rounded,
+                  onPressed: () => unawaited(_showMapOptions()),
                 ),
               ),
               Positioned(
                 top: topInset,
                 left: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                 right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: math.max(96.0, constraints.maxWidth - 108)
-                        .clamp(96.0, compactHud ? 200.0 : 240.0)
-                        .toDouble(),
-                  ),
-                  child: _MapSourceChip(
-                    mode: mode,
-                    activePackage: activeOffline,
-                    error: _offlineTileError,
-                    styleLabel: _mapViewSettings.stylePreset.label,
-                    networkOffline: networkOffline,
-                    recovering: _routeRecoveryBusy,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _MapQuickViewBar(
+                    selected: _quickView,
+                    routeAvailable:
+                        _routeState.route.length >= 2 || navigationTarget != null,
+                    onSelected: _selectQuickView,
                     compact: compactHud,
-                    onTap: () => unawaited(_showLayerPicker()),
                   ),
                 ),
               ),
               Positioned(
                 top: topInset,
                 right: MapUxPolicy.controlEdge,
-                child: _GpsChip(point: current, compact: compactHud),
+                child: _MapControlButton(
+                  tooltip: 'Camadas e tipo do mapa',
+                  icon: Icons.layers_rounded,
+                  active: offlineProvider != null || networkOffline,
+                  onPressed: () => unawaited(_showLayerPicker()),
+                ),
               ),
               Positioned(
                 top: telemetryTop,
                 left: MapUxPolicy.controlEdge,
-                right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
+                right: MapUxPolicy.controlEdge,
+                height: telemetryHeight,
                 child: _MapTelemetryStrip(
                   speedKmh: current?.speedKilometersPerHour ?? 0,
                   altitudeMeters: current?.altitudeMeters,
                   headingDegrees: current?.headingDegrees,
+                  gpsAccuracyMeters: current?.accuracyMeters,
+                  headingUp:
+                      _mapViewSettings.orientationMode == MapOrientationMode.headingUp,
+                  onCompassTap: _toggleOrientationMode,
                   compact: compactHud,
                 ),
               ),
               Positioned(
-                top: quickViewTop,
+                top: nearbyTop,
                 left: MapUxPolicy.controlEdge,
-                child: _MapQuickViewBar(
-                  selected: _quickView,
-                  routeAvailable:
-                      _routeState.route.length >= 2 || navigationTarget != null,
-                  onSelected: _selectQuickView,
-                  compact: compactHud,
+                right: MapUxPolicy.controlEdge,
+                height: nearbyHeight,
+                child: _NearbyPointsBanner(
+                  count: _routeExplorer.activeResults.length,
+                  loading: _routeExplorer.loading,
+                  offline: _routeExplorer.lastSource == 'offline' || networkOffline,
+                  onTap: () => unawaited(_showNearbyPoints()),
                 ),
               ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
-                  top: quickViewTop + (compactHud ? 35 : 37),
+                  top: cameraButtonTop + MapUxPolicy.controlSize + 6,
                   left: MapUxPolicy.controlEdge,
                   child: _OfflineAreaWarning(
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
+              Positioned(
+                top: cameraButtonTop,
+                left: MapUxPolicy.controlEdge,
+                child: _MapControlButton(
+                  tooltip: _hasCameraOverlay
+                      ? 'Câmeras sobre o mapa'
+                      : 'Adicionar câmera ao mapa',
+                  icon: Icons.camera_alt_rounded,
+                  active: _hasCameraOverlay && _camerasVisible,
+                  onPressed: () => unawaited(
+                    _hasCameraOverlay &&
+                            (!_camerasVisible || _allCameraSlotsHidden)
+                        ? _showCameraOverlayQuickly()
+                        : _showCameraManager(),
+                  ),
+                ),
+              ),
               Positioned(
                 top: horizontalControls ? null : controlDockTop,
                 right: MapUxPolicy.controlEdge,
@@ -2970,30 +2985,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
-                      tooltip: 'Opções do mapa',
-                      icon: Icons.more_horiz_rounded,
+                      tooltip: 'Próximos pontos',
+                      icon: Icons.location_on_rounded,
                       badge: _routeExplorer.activeResults.isEmpty
                           ? null
                           : '${_routeExplorer.activeResults.length}',
-                      active: offlineProvider != null ||
-                          _routeExplorer.offlinePackages.isNotEmpty,
-                      onPressed: () => unawaited(_showMapOptions()),
+                      active: _routeExplorer.activeResults.isNotEmpty,
+                      onPressed: () => unawaited(_showNearbyPoints()),
                     ),
                   ],
                 ),
               ),
-              if (_hasCameraOverlay &&
-                  (!_camerasVisible || _allCameraSlotsHidden))
-                Positioned(
-                  top: quickViewTop,
-                  right: horizontalControls
-                      ? MapUxPolicy.controlEdge
-                      : MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
-                  child: _MapCameraRestoreChip(
-                    compact: compactHud,
-                    onPressed: () => unawaited(_showCameraOverlayQuickly()),
-                  ),
-                ),
               Positioned(
                 left: MapUxPolicy.controlEdge,
                 bottom: attributionBottom,
@@ -3008,9 +3010,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               if (showSelectedPoiCard)
                 Positioned(
-                  left: 8,
-                  right: 8,
-                  bottom: bottomInset + (navigationTarget == null ? 56 : 138),
+                  left: compactHud ? 10 : 36,
+                  right: compactHud ? 10 : 36,
+                  bottom: bottomInset + (navigationTarget == null ? 82 : 164),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -3026,7 +3028,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: 8,
                   right: 8,
-                  bottom: bottomInset + 56,
+                  bottom: bottomInset + 74,
                   child: _NavigationBanner(
                     target: navigationTarget,
                     distanceMeters: _routeState.navigationDistanceMeters,
@@ -3043,8 +3045,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onStop: _stopNavigation,
                   ),
                 ),
-              Align(
-                alignment: Alignment.bottomCenter,
+              Positioned(
+                right: MapUxPolicy.controlEdge,
+                bottom: bottomInset + 2,
                 child: _RouteButtonBar(
                   recording: _routeState.recording,
                   paused: _routeState.paused,
@@ -3628,18 +3631,94 @@ class _MapQuickViewButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: compact ? 17 : 15, color: foreground),
-              if (!compact) ...[
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-                    color: foreground,
-                  ),
+              Icon(icon, size: compact ? 16 : 17, color: foreground),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: compact ? 9.5 : 11,
+                  fontWeight: active ? FontWeight.w900 : FontWeight.w700,
+                  color: foreground,
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NearbyPointsBanner extends StatelessWidget {
+  const _NearbyPointsBanner({
+    required this.count,
+    required this.loading,
+    required this.offline,
+    required this.onTap,
+  });
+
+  final int count;
+  final bool loading;
+  final bool offline;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final subtitle = loading
+        ? 'Atualizando pontos próximos...'
+        : count > 0
+            ? '$count ponto${count == 1 ? '' : 's'} · ${offline ? 'dados offline' : 'dados online'}'
+            : 'Postos, comida, saúde, água, mirantes e outros.';
+
+    return Material(
+      elevation: 4,
+      color: scheme.surface.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            children: [
+              Icon(
+                Icons.location_on_rounded,
+                size: 24,
+                color: scheme.primary,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Locais próximos',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: 10.5,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),
@@ -3730,49 +3809,6 @@ class _MapZoomAction extends StatelessWidget {
           ),
         ),
       );
-}
-
-class _MapCameraRestoreChip extends StatelessWidget {
-  const _MapCameraRestoreChip({
-    required this.compact,
-    required this.onPressed,
-  });
-
-  final bool compact;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      elevation: 4,
-      color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 10 : 12,
-            vertical: 9,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.videocam_rounded, size: 20, color: scheme.primary),
-              if (!compact) ...[
-                const SizedBox(width: 6),
-                const Text(
-                  'Mostrar câmera',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _CameraPipMenuButton extends StatelessWidget {
@@ -4020,179 +4056,114 @@ class _SelectedPoiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final subtitle = item.subtitle.trim().isNotEmpty
+        ? item.subtitle.trim()
+        : item.category.label;
+
     return Material(
-      elevation: 8,
-      color: scheme.surface.withValues(alpha: 0.96),
-      borderRadius: BorderRadius.circular(16),
+      elevation: 9,
+      color: scheme.surface.withValues(alpha: 0.97),
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
-        child: Row(
+        padding: EdgeInsets.fromLTRB(
+          compact ? 10 : 12,
+          compact ? 9 : 11,
+          compact ? 8 : 10,
+          compact ? 9 : 11,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: scheme.primaryContainer,
-              child: Icon(icon, size: 19, color: scheme.onPrimaryContainer),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: InkWell(
-                onTap: onDetails,
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        '${item.category.label} · $distanceLabel · '
-                        '${item.source == 'offline' ? 'Offline' : 'Online'}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (!compact && item.subtitle.trim().isNotEmpty)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: compact ? 18 : 21,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(
+                    icon,
+                    size: compact ? 19 : 22,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: InkWell(
+                    onTap: onDetails,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          item.subtitle,
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          'Aprox. $distanceLabel · '
+                          '${item.source == 'offline' ? 'Offline' : 'Online'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            if (!compact)
-              IconButton(
-                tooltip: 'Detalhes',
-                visualDensity: VisualDensity.compact,
-                onPressed: onDetails,
-                icon: const Icon(Icons.info_outline_rounded),
-              ),
-            IconButton(
-              tooltip: 'Navegar até',
-              visualDensity: VisualDensity.compact,
-              onPressed: onNavigate,
-              icon: const Icon(Icons.navigation_rounded),
-            ),
-            IconButton(
-              tooltip: 'Fechar',
-              visualDensity: VisualDensity.compact,
-              onPressed: onClose,
-              icon: const Icon(Icons.close_rounded),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MapSourceChip extends StatelessWidget {
-  const _MapSourceChip({
-    required this.mode,
-    required this.activePackage,
-    required this.error,
-    required this.styleLabel,
-    required this.networkOffline,
-    required this.recovering,
-    required this.onTap,
-    this.compact = false,
-  });
-
-  final OfflineMapMode mode;
-  final OfflineMapPackage? activePackage;
-  final String? error;
-  final String styleLabel;
-  final bool networkOffline;
-  final bool recovering;
-  final VoidCallback onTap;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final hasOffline = activePackage != null && error == null;
-    final label = error != null
-        ? 'Offline com erro'
-        : recovering
-            ? 'Reconectando rota'
-            : networkOffline
-                ? hasOffline
-                    ? 'Offline automático'
-                    : 'Sem internet'
-                : switch (mode) {
-                    OfflineMapMode.automatic =>
-                      hasOffline ? '$styleLabel · Auto' : styleLabel,
-                    OfflineMapMode.online => styleLabel,
-                    OfflineMapMode.offline =>
-                      hasOffline ? 'Offline' : 'Offline indisponível',
-                  };
-    final icon = recovering
-        ? Icons.sync_rounded
-        : networkOffline
-            ? Icons.wifi_off_rounded
-            : switch (mode) {
-                OfflineMapMode.automatic => Icons.swap_calls_rounded,
-                OfflineMapMode.online => Icons.cloud_outlined,
-                OfflineMapMode.offline => Icons.offline_pin_outlined,
-              };
-    final iconColor = error != null || (networkOffline && !hasOffline)
-        ? scheme.error
-        : networkOffline
-            ? scheme.tertiary
-            : scheme.primary;
-    final displayLabel = compact
-        ? label
-            .replaceFirst('Bike/Viagem', 'Bike')
-            .replaceFirst('Topográfico', 'Topo')
-            .replaceFirst(' · Auto', '')
-        : label;
-    return Tooltip(
-      message: networkOffline
-          ? 'Sem internet · toque para ver camadas e mapas offline'
-          : 'Camadas e tipo do mapa',
-      child: Material(
-        color: scheme.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 7 : 9,
-              vertical: 6,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 17,
-                  color: iconColor,
+                IconButton(
+                  tooltip: 'Fechar',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 34,
+                    height: 34,
+                  ),
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close_rounded, size: 20),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    displayLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onDetails,
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
                     ),
+                    icon: const Icon(Icons.info_outline_rounded, size: 18),
+                    label: const Text('Detalhes'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onNavigate,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    icon: const Icon(Icons.navigation_rounded, size: 18),
+                    label: const Text('Navegar'),
                   ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -4236,52 +4207,23 @@ class _OfflineAreaWarning extends StatelessWidget {
   }
 }
 
-class _GpsChip extends StatelessWidget {
-  const _GpsChip({required this.point, this.compact = false});
-
-  final MapRoutePoint? point;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final accuracy = point?.accuracyMeters;
-    return Material(
-      color: scheme.surface.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.primary),
-            const SizedBox(width: 6),
-            Text(
-              accuracy == null
-                  ? 'GPS…'
-                  : compact
-                      ? '±${accuracy.toStringAsFixed(0)} m'
-                      : 'GPS ±${accuracy.toStringAsFixed(0)} m',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MapTelemetryStrip extends StatelessWidget {
   const _MapTelemetryStrip({
     required this.speedKmh,
     required this.altitudeMeters,
     required this.headingDegrees,
+    required this.gpsAccuracyMeters,
+    required this.headingUp,
+    required this.onCompassTap,
     this.compact = false,
   });
 
   final double speedKmh;
   final double? altitudeMeters;
   final double? headingDegrees;
+  final double? gpsAccuracyMeters;
+  final bool headingUp;
+  final VoidCallback onCompassTap;
   final bool compact;
 
   String _direction(double? degrees) {
@@ -4289,37 +4231,171 @@ class _MapTelemetryStrip extends StatelessWidget {
     const labels = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
     final normalized = ((degrees % 360) + 360) % 360;
     final index = ((normalized + 22.5) ~/ 45) % 8;
-    return '${labels[index]} ${normalized.toStringAsFixed(0)}°';
+    return labels[index];
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _MapInfoPill(
-            icon: Icons.speed_rounded,
-            label: '${speedKmh.toStringAsFixed(1)} km/h',
-            emphasized: true,
-          ),
-          const SizedBox(width: 5),
-          _MapInfoPill(
-            icon: Icons.height_rounded,
-            label: altitudeMeters == null
-                ? 'Alt. --'
-                : '${altitudeMeters!.toStringAsFixed(0)} m',
-          ),
-          if (!compact) ...[
-            const SizedBox(width: 5),
-            _MapInfoPill(
-              icon: Icons.explore_rounded,
-              label: _direction(headingDegrees),
+    final altitude = altitudeMeters == null
+        ? '-- m'
+        : '${altitudeMeters!.toStringAsFixed(0)} m';
+    final gps = gpsAccuracyMeters == null
+        ? 'Aguardando'
+        : '±${gpsAccuracyMeters!.toStringAsFixed(0)} m';
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 5.0;
+        final slotWidth = (constraints.maxWidth - (gap * 3)) / 4;
+        final side = math.min(slotWidth, constraints.maxHeight);
+
+        Widget squareCard(_MapTelemetryCard card) => Expanded(
+              child: Center(
+                child: SizedBox.square(
+                  dimension: side,
+                  child: card,
+                ),
+              ),
+            );
+
+        return Row(
+          children: [
+            squareCard(
+              _MapTelemetryCard(
+                icon: Icons.speed_rounded,
+                value: '${speedKmh.toStringAsFixed(1)} km/h',
+                label: 'Velocidade',
+                emphasized: true,
+                compact: compact,
+              ),
+            ),
+            const SizedBox(width: gap),
+            squareCard(
+              _MapTelemetryCard(
+                icon: Icons.height_rounded,
+                value: altitude,
+                label: 'Altitude',
+                compact: compact,
+              ),
+            ),
+            const SizedBox(width: gap),
+            squareCard(
+              _MapTelemetryCard(
+                icon: Icons.explore_rounded,
+                value: _direction(headingDegrees),
+                label: headingUp ? 'Bússola · rumo' : 'Bússola',
+                emphasized: headingUp,
+                onTap: onCompassTap,
+                tooltip: headingUp
+                    ? 'Bússola: mapa acompanha o rumo. Toque para manter o norte no topo.'
+                    : 'Bússola: mostra o rumo do GPS. Toque para o mapa acompanhar a direção.',
+                compact: compact,
+              ),
+            ),
+            const SizedBox(width: gap),
+            squareCard(
+              _MapTelemetryCard(
+                icon: Icons.gps_fixed_rounded,
+                value: gps,
+                label: 'GPS',
+                compact: compact,
+              ),
             ),
           ],
-        ],
+        );
+      },
+    );
+  }
+}
+
+class _MapTelemetryCard extends StatelessWidget {
+  const _MapTelemetryCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.compact,
+    this.emphasized = false,
+    this.onTap,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final bool compact;
+  final bool emphasized;
+  final VoidCallback? onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final background = emphasized
+        ? scheme.primaryContainer.withValues(alpha: 0.94)
+        : scheme.surface.withValues(alpha: 0.93);
+    final foreground =
+        emphasized ? scheme.onPrimaryContainer : scheme.onSurface;
+    final iconColor = emphasized ? scheme.onPrimaryContainer : scheme.primary;
+
+    Widget card = Material(
+      elevation: 3,
+      color: background,
+      borderRadius: BorderRadius.circular(15),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 5 : 7,
+            vertical: compact ? 5 : 7,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: compact ? 16 : 19, color: iconColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: compact ? 12 : 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: compact ? 2 : 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: foreground.withValues(alpha: 0.76),
+                    fontSize: compact ? 9 : 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    if (tooltip != null) {
+      card = Tooltip(message: tooltip!, child: card);
+    }
+    return card;
   }
 }
 
@@ -4610,16 +4686,12 @@ class _RouteButtonBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(8, 0, 8, 5),
-      child: Center(
-        child: Material(
-          elevation: 7,
-          color: scheme.surface.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(22),
-          clipBehavior: Clip.antiAlias,
-          child: recording
+    return Material(
+      elevation: 7,
+      color: scheme.surface.withValues(alpha: 0.95),
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
+      child: recording
               ? Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                   child: Row(
@@ -4686,54 +4758,6 @@ class _RouteButtonBar extends StatelessWidget {
                       ),
                   ],
                 ),
-        ),
-      ),
     );
   }
 }
-
-class _MapInfoPill extends StatelessWidget {
-  const _MapInfoPill({
-    required this.icon,
-    required this.label,
-    this.emphasized = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: emphasized
-          ? scheme.primaryContainer.withValues(alpha: 0.94)
-          : scheme.surface.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: emphasized ? scheme.onPrimaryContainer : scheme.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: emphasized ? FontWeight.w900 : FontWeight.w800,
-                color: emphasized ? scheme.onPrimaryContainer : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-

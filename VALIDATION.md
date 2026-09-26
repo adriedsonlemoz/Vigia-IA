@@ -1,4 +1,18 @@
-# Validação Vigia IA 1.0.149+149
+# Validação Vigia IA 1.0.150+150
+
+## 1.0.150+150 — HUD do mapa e rotação manual
+
+- Confirmar no mapa em retrato que a engrenagem aparece no canto superior esquerdo, `Perto/Região/Rota` fica centralizado no topo e camadas possui botão próprio à direita.
+- Confirmar que o botão lateral de localização abre `Próximos pontos` e mostra badge quando existem resultados.
+- Confirmar que `Locais próximos` aparece abaixo da telemetria e que o ícone de câmera fica imediatamente abaixo desse card.
+- Confirmar quatro cards uniformes para velocidade, altitude, bússola e GPS; altitude deve mostrar o valor completo e a bússola deve alternar Norte fixo/Acompanhar direção ao toque.
+- Girar o mapa com gesto de dois dedos e confirmar que a rotação manual funciona e não é revertida imediatamente pelo follow.
+- Tocar em um POI e confirmar card compacto com título, categoria/distância e botões `Detalhes` e `Navegar`; `Detalhes` deve abrir o painel completo sem espaço vazio excessivo quando o POI tiver poucos metadados.
+- Confirmar `Gravar` fixo no canto inferior direito e atribuição do mapa no canto inferior esquerdo sem sobreposição importante.
+- Confirmar que PiPs de câmera continuam respeitando as reservas do HUD em retrato e paisagem.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow, pois Flutter/Dart não estão instalados no ambiente local de edição.
+
 
 ## 1.0.149+149 — consolidação mapa + Bike
 
