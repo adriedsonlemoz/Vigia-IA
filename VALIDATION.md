@@ -1,4 +1,20 @@
-# Validação Vigia IA 1.0.154+154
+# Validação Vigia IA 1.0.155+155
+
+## 1.0.155+155 — estabilidade do MapLibre 3D
+
+- Iniciar uma rota online em Bicicleta, Moto, Carro e A pé e confirmar que o `FlutterMap` 2D continua visível durante o startup do MapLibre; não pode aparecer tela preta em nenhum momento.
+- Confirmar que a transição para 3D só ocorre depois de mapa, estilo, rota, câmera e primeiro ciclo de render estarem prontos.
+- Confirmar transição visual suave 2D → 3D e preservação do HUD, rota, GPS, próxima manobra, voz, POIs e gravação.
+- Forçar falha/indisponibilidade do MapLibre ou impedir conclusão do startup e confirmar fallback automático para 2D em até 9 segundos, com mensagem breve e follow restaurado.
+- Conferir no Diagnóstico/Central de Erros registros com origem `Mapa 3D / MapLibre` para falhas de criação, estilo, rota/camada, câmera e fallback 3D → 2D; conferir também eventos `map_navigation_3d` na telemetria exportada.
+- Cortar a internet ou selecionar modo offline/MBTiles durante navegação e confirmar que o renderer 3D é removido e o 2D assume sem apagar a rota conhecida.
+- Restaurar a internet e confirmar que qualquer nova tentativa de 3D reinicia o gate de prontidão; um estado `ready` antigo não pode fazer a view nativa reaparecer antes de carregar.
+- Alternar manualmente 3D → 2D → 3D e confirmar que a segunda entrada também passa pelo gate de startup.
+- Confirmar no Android que a composição declarada continua em Texture Layer Hybrid Composition (`androidTextureMode: true`, `tlhc_hc`) e que o foreground de criação da superfície é transparente.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Resultado local desta entrega: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**.
+- Varredura preventiva local: `app_identity.json` e `github-manager.json` válidos; nenhum `catch (_) {}` silencioso no renderer 3D; nenhum APK/AAB presente no fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente, portanto `flutter analyze`, `flutter test` e o build Android release devem ser reconfirmados pelo workflow.
 
 ## 1.0.154+154 — correção Android-APK-117
 

@@ -1,4 +1,16 @@
-# Arquitetura — Vigia IA 1.0.154+154
+# Arquitetura — Vigia IA 1.0.155+155
+
+## Inicialização resiliente do MapLibre 3D — 1.0.155
+
+- `MapMonitoringScreen` mantém o `FlutterMap` montado como renderer de segurança mesmo quando uma navegação 3D é solicitada. A decisão foi separada em `navigation3dRequested` e `navigation3dActive`: solicitado cria/prepara o MapLibre; ativo só fica verdadeiro após o callback de prontidão.
+- `MapNavigation3DView` possui um gate de inicialização com cinco marcos: mapa nativo criado, estilo carregado, rota instalada, câmera sincronizada e primeiro `MapEventIdle`. Somente depois desses marcos o pai inicia a transição de opacidade para o renderer 3D.
+- Um `Timer` de 9 segundos cobre ausência de callbacks nativos e classifica o ponto bloqueado como criação, estilo, rota, câmera ou primeiro render. Falhas explícitas nesses mesmos pontos cancelam o startup imediatamente.
+- Toda falha crítica é persistida no `ErrorLogService` com contexto do renderer e também enviada a `PerformanceTelemetryService` como evento `map_navigation_3d`; o fallback automático é registrado separadamente.
+- Ao falhar, o MapLibre é removido, o 2D já existente permanece visível e o follow da posição é restaurado no próximo frame. O usuário pode tentar o 3D novamente pelo mesmo controle.
+- Mudanças de conectividade ou de modo offline invalidam o estado de prontidão do renderer, evitando reutilizar um `ready` antigo após a view nativa ter sido desmontada.
+- No Android, `MapOptions` explicita `androidTextureMode: true` e `AndroidPlatformViewMode.tlhc_hc`; essa configuração usa Texture Layer Hybrid Composition e recorre a Hybrid Composition quando necessário. O foreground de carregamento permanece transparente para não encobrir o mapa 2D durante o startup.
+- O estilo raster inclui uma camada `background` clara antes dos tiles OSM, evitando uma superfície preta se a base cartográfica ainda estiver chegando depois do estilo.
+- O caminho offline não instancia MapLibre: `FlutterMap`/MBTiles continua responsável por navegação sem rede.
 
 ## Buildfix Android-APK-117 — 1.0.154
 

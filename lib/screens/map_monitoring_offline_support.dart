@@ -6,7 +6,12 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
     final previous = _lastConnectivityState;
     final current = _connectivity.state;
     _lastConnectivityState = current;
-    _applyOfflineUiState(() {});
+    _applyOfflineUiState(() {
+      if (previous != current) {
+        _navigation3dRendererReady = false;
+        _navigation3dRendererFailed = false;
+      }
+    });
 
     if (current.isOffline) {
       unawaited(

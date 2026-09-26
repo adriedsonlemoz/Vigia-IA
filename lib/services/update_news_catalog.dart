@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.155', build: 155),
+      changes: <String>[
+        '🗺️ O mapa 2D agora permanece visível enquanto o renderer MapLibre 3D inicializa, eliminando a troca prematura que podia deixar a navegação preta.',
+        '🛡️ O 3D só aparece após mapa, estilo, rota, câmera e primeiro ciclo de render estarem prontos; falha ou timeout retorna automaticamente ao 2D.',
+        '🧪 Falhas de criação, estilo, rota, câmera, timeout e fallback 3D → 2D passam a ser registradas no diagnóstico e na telemetria interna.',
+        '📴 Offline continua usando automaticamente FlutterMap/MBTiles sem tentar manter o renderer 3D.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.154', build: 154),
       changes: <String>[
         '🔧 Corrigido o Android-APK-117, que falhava ao configurar o MapLibre Android durante o build release.',

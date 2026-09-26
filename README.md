@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.154+154`
+> **Versão atual:** `1.0.155+155`
 
 ## Estado atual
 
-A `1.0.154+154` corrige o Android-APK-117 no build release: o `maplibre_android 0.3.6` aplica o plugin `org.jlleitschuh.gradle.ktlint` sem informar versão, e o projeto agora fornece essa versão pelo `pluginManagement` do Gradle. A navegação 3D da 1.0.152 permanece intacta.
+A `1.0.155+155` estabiliza a entrada na navegação MapLibre 3D. O `FlutterMap` 2D permanece montado e visível até o renderer 3D comprovar criação do mapa, carregamento do estilo, instalação da rota, sincronização da câmera e primeiro ciclo de render. Se qualquer etapa falhar ou ultrapassar 9 segundos, a navegação retorna automaticamente ao 2D sem perder rota, GPS, voz, POIs ou o perfil de transporte.
+
+### Correção 1.0.155 — estabilidade do renderer 3D
+
+- O mapa 2D não é mais removido assim que a navegação 3D é solicitada; ele funciona como camada segura durante toda a inicialização do MapLibre.
+- A transição 2D → 3D usa opacidade animada e só começa depois que mapa, estilo, geometria da rota, câmera e primeiro estado ocioso do renderer estão prontos.
+- O estilo MapLibre ganhou uma camada de fundo clara para evitar um quadro preto enquanto tiles raster ainda estão sendo carregados.
+- Falhas de criação, estilo, desenho/atualização da rota, câmera e timeout acionam fallback automático 3D → 2D e são registradas no `ErrorLogService` e na telemetria interna.
+- No Android, o renderer declara explicitamente Texture Layer Hybrid Composition com fallback de Hybrid Composition, mantendo a composição apropriada para a transição sobre o `FlutterMap`.
+- Em modo offline ou sem rede, o MapLibre não é solicitado; o mapa 2D/MBTiles continua sendo o renderer automático.
+- Bicicleta, Moto, Carro e A pé continuam alterando o perfil real de roteamento, sem regressão para `bicycle`.
 
 ### Correção 1.0.154 — Android-APK-117
 

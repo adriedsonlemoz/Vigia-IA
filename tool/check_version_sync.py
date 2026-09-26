@@ -26,6 +26,18 @@ identity = json.loads((root / "app_identity.json").read_text(encoding="utf-8"))
 if identity.get("version") != version or identity.get("build") != build:
     fail("app_identity.json diverge do pubspec")
 
+github_manager_path = root / "github-manager.json"
+if not github_manager_path.exists():
+    fail("github-manager.json ausente")
+github_manager = json.loads(github_manager_path.read_text(encoding="utf-8"))
+android_manifest = github_manager.get("android") or {}
+if github_manager.get("version") != version or github_manager.get("build") != build:
+    fail("github-manager.json diverge do pubspec")
+if android_manifest.get("versionName") != version or android_manifest.get("versionCode") != build:
+    fail("github-manager.json android diverge do pubspec")
+if android_manifest.get("applicationId") != identity.get("applicationId"):
+    fail("github-manager.json applicationId diverge de app_identity.json")
+
 metadata_test = (root / "test/app_metadata_test.dart").read_text(encoding="utf-8")
 if f"expect(AppMetadata.version, '{version}');" not in metadata_test:
     fail("test/app_metadata_test.dart espera uma versao diferente do pubspec")

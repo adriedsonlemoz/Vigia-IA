@@ -149,6 +149,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   String? _selectedPoiId;
   double _visibleMapZoom = MapViewPolicy.nearZoom;
   bool _navigation3dEnabled = true;
+  bool _navigation3dRendererReady = false;
+  bool _navigation3dRendererFailed = false;
   MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
 
   @override
@@ -792,6 +794,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _onOfflineMapsChanged() {
     if (!mounted) return;
+    _navigation3dRendererReady = false;
+    _navigation3dRendererFailed = false;
     _syncOfflineTileProvider();
   }
 
@@ -851,6 +855,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (restoredTarget != null) {
       _lastTravelMode = restoredTarget.travelMode;
       _navigation3dEnabled = true;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
     }
     if (restoredTarget != null && restoredPosition != null) {
       unawaited(
@@ -888,6 +894,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
     setState(() {});
     final routeUses3d = _navigation3dEnabled &&
+        _navigation3dRendererReady &&
+        !_navigation3dRendererFailed &&
         _routeState.navigationTarget != null &&
         _cyclingRoute != null &&
         !_connectivity.isOffline &&
@@ -1137,6 +1145,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {
       _lastTravelMode = travelMode;
       _navigation3dEnabled = true;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
@@ -1158,6 +1168,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         announceFailure: true,
       );
       final using3d = _navigation3dEnabled &&
+          _navigation3dRendererReady &&
+          !_navigation3dRendererFailed &&
           _cyclingRoute != null &&
           !_connectivity.isOffline &&
           _offlineMaps.mode != OfflineMapMode.offline;
@@ -1299,6 +1311,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _lastRouteRecalculatedAt = null;
     _lastNavigationProgressPointAt = null;
     _navigation3dEnabled = true;
+    _navigation3dRendererReady = false;
+    _navigation3dRendererFailed = false;
   }
 
   void _stopNavigation() {
@@ -1477,21 +1491,53 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final next = !_navigation3dEnabled;
     setState(() {
       _navigation3dEnabled = next;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
       if (!next) {
         _followPosition = true;
         _quickView = _MapQuickView.near;
         _customFollowZoom = null;
       }
     });
-    if (!next) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final current = _routeState.current;
-        if (current != null) {
-          _applyFollowCamera(current, forceRotation: true);
-        }
-      });
-    }
+    if (!next) _restore2dFollowAfter3d();
+  }
+
+  void _handleNavigation3dReady() {
+    if (!mounted || !_navigation3dEnabled) return;
+    setState(() {
+      _navigation3dRendererReady = true;
+      _navigation3dRendererFailed = false;
+    });
+  }
+
+  void _handleNavigation3dFallback(String _) {
+    if (!mounted) return;
+    setState(() {
+      _navigation3dEnabled = false;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = true;
+      _followPosition = true;
+      _quickView = _MapQuickView.near;
+      _customFollowZoom = null;
+    });
+    _restore2dFollowAfter3d();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Modo 3D indisponível. A navegação continua normalmente no mapa 2D.',
+        ),
+      ),
+    );
+  }
+
+  void _restore2dFollowAfter3d() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final current = _routeState.current;
+      if (current != null) {
+        _applyFollowCamera(current, forceRotation: true);
+      }
+    });
   }
 
   List<RouteExplorerResult> get _visiblePois => _routeExplorer.activeResults
@@ -1543,6 +1589,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     unawaited(persistChange);
 
     if (_navigation3dEnabled &&
+        _navigation3dRendererReady &&
+        !_navigation3dRendererFailed &&
         _routeState.navigationTarget != null &&
         _cyclingRoute != null &&
         !_connectivity.isOffline &&
@@ -2646,8 +2694,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final canRenderNavigation3d = navigationTarget != null &&
         _cyclingRoute != null &&
         useOnline;
+    final navigation3dRequested = _navigation3dEnabled &&
+        canRenderNavigation3d &&
+        !_navigation3dRendererFailed;
     final navigation3dActive =
-        _navigation3dEnabled && canRenderNavigation3d;
+        navigation3dRequested && _navigation3dRendererReady;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
 
@@ -2683,19 +2734,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (navigation3dActive)
-                MapNavigation3DView(
-                  key: ValueKey<String>(
-                    'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}',
-                  ),
-                  target: navigationTarget,
-                  route: _cyclingRoute!,
-                  current: current,
-                  headingUp: _mapViewSettings.orientationMode ==
-                      MapOrientationMode.headingUp,
-                )
-              else
-                FlutterMap(
+              FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
@@ -2966,6 +3005,29 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ],
               ),
+              if (navigation3dRequested)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: !navigation3dActive,
+                    child: AnimatedOpacity(
+                      opacity: navigation3dActive ? 1 : 0,
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      child: MapNavigation3DView(
+                        key: ValueKey<String>(
+                          'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}',
+                        ),
+                        target: navigationTarget,
+                        route: _cyclingRoute!,
+                        current: current,
+                        headingUp: _mapViewSettings.orientationMode ==
+                            MapOrientationMode.headingUp,
+                        onReady: _handleNavigation3dReady,
+                        onFallback: _handleNavigation3dFallback,
+                      ),
+                    ),
+                  ),
+                ),
 
               // Scrims muito leves mantêm os ícones do Android legíveis sobre
               // tiles claros sem criar uma barra sólida nem reduzir o mapa.

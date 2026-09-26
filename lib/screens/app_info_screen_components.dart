@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.154',
+          version: '1.0.155',
           current: true,
+          changes: [
+            'Corrigida a tela preta ao entrar na navegação MapLibre 3D.',
+            'O FlutterMap 2D permanece visível até mapa, estilo, rota, câmera e primeiro render do 3D estarem prontos.',
+            'Falhas e timeout do MapLibre acionam fallback automático para 2D e ficam registradas no diagnóstico e na telemetria.',
+            'Offline continua usando automaticamente o mapa 2D/MBTiles.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.154',
           changes: [
             'Corrigido o Android-APK-117 no build release do MapLibre Android.',
             'O plugin Gradle ktlint exigido pelo maplibre_android 0.3.6 agora recebe uma versão explícita pelo pluginManagement.',
@@ -1426,8 +1436,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.154',
+          version: '1.0.155',
           current: true,
+          changes: [
+            'Corrigida a tela preta ao entrar na navegação MapLibre 3D.',
+            'O FlutterMap 2D permanece visível até mapa, estilo, rota, câmera e primeiro render do 3D estarem prontos.',
+            'Falhas e timeout do MapLibre acionam fallback automático para 2D e ficam registradas no diagnóstico e na telemetria.',
+            'Offline continua usando automaticamente o mapa 2D/MBTiles.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.154',
           changes: [
             'Corrigido o Android-APK-117 no build release do MapLibre Android.',
             'O plugin Gradle ktlint exigido pelo maplibre_android 0.3.6 agora recebe uma versão explícita pelo pluginManagement.',

@@ -1,3 +1,15 @@
+## 1.0.155+155 — 2026-09-26
+
+- Corrigida a tela preta ao iniciar a navegação MapLibre 3D: o `FlutterMap` 2D permanece montado e visível durante toda a inicialização do renderer nativo.
+- O MapLibre só é revelado após confirmar criação do mapa, carregamento do estilo, instalação/atualização da rota, sincronização da câmera e primeiro estado ocioso do renderer.
+- Adicionada transição suave 2D → 3D e timeout de 9 segundos; falha ou timeout retorna automaticamente ao 2D e restaura o acompanhamento da posição.
+- Removidos `catch (_) {}` silenciosos do renderer 3D; falhas de criação, estilo, rota, posição e câmera agora chegam ao `ErrorLogService` e à telemetria interna, incluindo o evento de fallback 3D → 2D.
+- O estilo 3D ganhou fundo claro para não exibir preto enquanto os tiles raster carregam.
+- A composição Android do MapLibre fica explícita em Texture Layer Hybrid Composition com fallback Hybrid Composition.
+- Offline/MBTiles continua usando automaticamente o renderer 2D; rota, recálculo, GPS, voz, POIs, gravação, câmeras e perfis Bicicleta/Moto/Carro/A pé foram preservados.
+- Adicionado `github-manager.json` e ampliado `tool/check_version_sync.py` para validar versão/build/applicationId também nesse manifesto.
+- Sincronizados versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão, User-Agents e verificações preventivas em `1.0.155+155`.
+
 ## 1.0.154+154 — 2026-09-25
 
 - Corrigido o Android-APK-117, que passava por `flutter analyze` e testes, mas falhava no build release ao avaliar `maplibre_android-0.3.6/android/build.gradle.kts`.

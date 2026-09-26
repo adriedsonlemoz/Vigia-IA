@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.154 corrige o Android-APK-117: o MapLibre Android 0.3.6 requisita org.jlleitschuh.gradle.ktlint sem versão no subprojeto publicado; o projeto agora fornece uma versão padrão do plugin no pluginManagement do Gradle.",
-  "version": "1.0.154",
-  "build": 154
+  "notes": "A 1.0.155 estabiliza a entrada no MapLibre 3D: o FlutterMap permanece visível até mapa, estilo, rota e câmera estarem prontos; falhas ou timeout acionam fallback automático 3D → 2D com diagnóstico e telemetria.",
+  "version": "1.0.155",
+  "build": 155
 }
