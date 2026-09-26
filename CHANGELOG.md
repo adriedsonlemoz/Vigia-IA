@@ -1,3 +1,11 @@
+## 1.0.165+165 — 2026-09-26
+
+- Sanitizador do diagnóstico 3D ajustado para usar `caseSensitive: false`, sintaxe válida do `RegExp` do Dart, mantendo a remoção de chaves/tokens/secrets dos registros.
+- Adicionada verificação preventiva que bloqueia a reintrodução do modificador inline `(?i)` no sanitizador do renderer 3D.
+- Telemetria compacta da 1.0.164, MapLibre 3D/2D, fallback, offline, rotas, voz, POIs e câmeras preservados.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados para `1.0.165+165`.
+- Popup automática de Novidades contém somente `1.0.165+165` e descreve apenas comportamento perceptível ao usuário, sem histórico ou detalhes de falha.
+
 ## 1.0.164+164 — 2026-09-26
 - ETAPA 2 do plano do mapa: telemetria superior compacta e clicável, sem antecipar clima, seletor de transporte, configurações ou demais etapas.
 - HUD superior reduzido de 64–72 px para 42–48 px, liberando mais área visível do mapa sem remover Velocidade, Altitude, Bússola ou GPS.

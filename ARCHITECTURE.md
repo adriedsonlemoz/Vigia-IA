@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.164+164
+# Arquitetura — Vigia IA 1.0.165+165
+
+## Compatibilidade do sanitizador do diagnóstico 3D — 1.0.165
+
+- `_sanitizeDiagnosticText` mantém a remoção de query/fragment de URLs e a redação de `api_key`, `apikey`, `token`, `secret` e `key`.
+- A busca case-insensitive usa a opção `caseSensitive: false` do `RegExp`, evitando modificadores inline não aceitos pelo analisador Dart.
+- O verificador estrutural bloqueia a reintrodução de `(?i)` no sanitizador e exige a flag suportada.
+- Nenhum dado de telemetria, orientação, rota, 3D, offline ou câmera foi alterado por este buildfix.
 
 ## Telemetria superior compacta — 1.0.164
 

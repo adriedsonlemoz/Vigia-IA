@@ -9,11 +9,10 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.164', build: 164),
+      version: AppBuildVersion(version: '1.0.165', build: 165),
       changes: <String>[
-        '📊 Velocidade, Altitude, Bússola e GPS agora ocupam menos espaço no topo e deixam uma área maior do mapa visível.',
-        '👆 Os quatro indicadores agora podem ser tocados para abrir detalhes úteis da leitura e da sessão.',
-        '📍 Os detalhes mostram somente informações realmente disponíveis no aparelho e deixam claro quando alguma medição não está disponível.',
+        '🛡️ O diagnóstico exportado do mapa 3D mantém informações úteis de inicialização sem expor chaves de acesso.',
+        '📊 A telemetria compacta de Velocidade, Altitude, Bússola e GPS permanece disponível com detalhes baseados somente em leituras reais.',
       ],
     ),
   ]);

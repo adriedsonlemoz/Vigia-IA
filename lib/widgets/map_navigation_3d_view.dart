@@ -867,7 +867,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     try {
       final uri = Uri.parse(styleUrl);
       final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.164 map-3d-style');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.165 map-3d-style');
       final response = await request.close().timeout(_stylePreflightTimeout);
       if (styleUrl != _activeVectorStyleUrl) return;
       _styleHttpStatus = response.statusCode;
@@ -964,7 +964,8 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     );
     sanitized = sanitized.replaceAll(
       RegExp(
-        r'(?i)(api[_-]?key|apikey|token|secret|key)\s*[:=]\s*[^\s,;]+',
+        r'(api[_-]?key|apikey|token|secret|key)\s*[:=]\s*[^\s,;]+',
+        caseSensitive: false,
       ),
       r'$1=<redacted>',
     );

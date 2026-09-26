@@ -65,8 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.164',
+          version: '1.0.165',
           current: true,
+          changes: [
+            'O diagnóstico exportado do mapa 3D mantém sanitização de URLs e segredos usando sintaxe compatível com o analisador Dart.',
+            'A telemetria compacta e clicável da 1.0.164 permanece preservada sem alteração de dados ou fontes.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.164',
           changes: [
             'Velocidade, Altitude, Bússola e GPS agora usam mini-cards mais baixos para liberar mais área do mapa.',
             'Os quatro mini-cards são clicáveis e abrem detalhes próprios sem retirar o usuário da navegação.',
@@ -1522,8 +1530,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.164',
+          version: '1.0.165',
           current: true,
+          changes: [
+            'O diagnóstico exportado do mapa 3D mantém sanitização de URLs e segredos sem expor chaves de acesso.',
+            'A telemetria compacta e clicável da 1.0.164 permanece preservada sem alteração de dados ou fontes.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.164',
           changes: [
             'Velocidade, Altitude, Bússola e GPS agora usam mini-cards mais baixos para liberar mais área do mapa.',
             'Os quatro mini-cards são clicáveis e abrem detalhes próprios sem retirar o usuário da navegação.',

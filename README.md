@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.164+164`
+> **Versão atual:** `1.0.165+165`
 
 ## Estado atual
 
-A `1.0.164+164` compacta a telemetria superior do mapa e transforma Velocidade, Altitude, Bússola e GPS em indicadores clicáveis com detalhes baseados somente em dados realmente fornecidos pelo aparelho.
+A `1.0.165+165` preserva a telemetria compacta da etapa anterior e mantém o diagnóstico 3D sanitizado compatível com a análise estática do Dart, sem registrar chaves/API secrets.
+
+### Ajuste 1.0.165 — compatibilidade do diagnóstico 3D
+- O sanitizador do diagnóstico 3D usa `RegExp(..., caseSensitive: false)` em vez de modificador inline incompatível com o analisador Dart.
+- URLs continuam sendo sanitizadas e parâmetros sensíveis continuam redigidos antes de telemetria/log.
+- A telemetria superior compacta e todos os detalhes clicáveis da 1.0.164 permanecem preservados.
+- A popup `Novidades da atualização` contém somente a entrada `1.0.165+165`; o histórico completo permanece em `Sobre > Mudanças`.
 
 ### Ajuste 1.0.164 — telemetria superior compacta e clicável
 - Os quatro cards superiores viraram mini-cards de 42–48 px de altura, mantendo ícone e valor principal com menos ocupação vertical.

@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.164+164
+# Validação Vigia IA 1.0.165+165
+
+## 1.0.165+165 — compatibilidade do diagnóstico 3D
+
+- Confirmar que `_sanitizeDiagnosticText` não contém `(?i)` e usa `caseSensitive: false` no `RegExp` de secrets.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
+- Confirmar que a popup `Novidades da atualização` contém somente `1.0.165+165`, sem histórico e sem linguagem de bugs/erros/falhas/correções.
+- Confirmar que o ZIP fonte não contém APK/AAB e preserva somente o workflow Android principal.
+- Flutter/Dart devem ser reconfirmados no workflow, pois o SDK não está disponível no ambiente local.
 
 ## 1.0.164+164 — telemetria superior compacta e clicável
 - Confirmar os quatro mini-cards no mesmo bloco superior com altura de 42–48 px, mantendo ícone, valor e contraste sem cobrir demasiadamente o mapa.

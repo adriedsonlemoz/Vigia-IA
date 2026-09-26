@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.164 compacta a telemetria superior do mapa e adiciona detalhes clicáveis de Velocidade, Altitude, Bússola e GPS usando somente medições realmente disponíveis.",
-  "version": "1.0.164",
-  "build": 164
+  "notes": "A 1.0.165 preserva a telemetria compacta do mapa e mantém o diagnóstico 3D sanitizado compatível com a análise estática do Dart, sem expor chaves/API secrets.",
+  "version": "1.0.165",
+  "build": 165
 }
