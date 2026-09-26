@@ -1,5 +1,6 @@
 import 'map_navigation_guidance.dart';
 import 'map_navigation_voice_policy.dart';
+import 'map_view_settings_service.dart';
 import 'map_voice_service.dart';
 import 'speech_service.dart';
 
@@ -9,13 +10,24 @@ class MapNavigationVoiceService {
       : _voice = voice ?? MapVoiceService.instance;
 
   final MapVoiceService _voice;
+  final MapViewSettingsService _mapSettings = MapViewSettingsService.instance;
   final MapNavigationVoicePolicy _policy = MapNavigationVoicePolicy();
 
-  Future<void> initialize() => _voice.initialize();
+  Future<void> initialize() async {
+    await Future.wait<void>([
+      _voice.initialize(),
+      _mapSettings.initialize(),
+    ]);
+  }
+
+  bool get enabled => _mapSettings.navigationVoiceEnabled;
 
   void resetRoute() => _policy.reset();
 
+  Future<void> stop() => _voice.stop();
+
   Future<void> handleProgress(MapNavigationProgress? progress) async {
+    if (!enabled) return;
     final announcement = _policy.evaluate(progress);
     if (announcement == null) return;
     await _voice.deliver(
@@ -23,19 +35,26 @@ class MapNavigationVoiceService {
       priority: announcement.highPriority
           ? SpeechPriority.high
           : SpeechPriority.normal,
+      respectGlobalVoice: false,
     );
   }
 
-  Future<void> announceOffRouteAndRecalculation() => _voice.deliver(
-        'Você saiu da rota. Recalculando o caminho.',
-        priority: SpeechPriority.high,
-      );
+  Future<void> announceOffRouteAndRecalculation() async {
+    if (!enabled) return;
+    await _voice.deliver(
+      'Você saiu da rota. Recalculando o caminho.',
+      priority: SpeechPriority.high,
+      respectGlobalVoice: false,
+    );
+  }
 
   Future<void> announceRecalculated(MapNavigationProgress? progress) async {
     _policy.resetManeuver();
+    if (!enabled) return;
     await _voice.deliver(
       'Rota recalculada.',
       priority: SpeechPriority.high,
+      respectGlobalVoice: false,
     );
     await handleProgress(progress);
   }

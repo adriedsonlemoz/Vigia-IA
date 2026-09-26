@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.158+158`
+> **Versão atual:** `1.0.159+159`
 
 ## Estado atual
 
-A `1.0.158+158` conclui a Etapa 3 do mapa: os cards superiores de Velocidade, Altitude, Bússola e GPS mantêm a mesma área quadrada do HUD, mas passam a priorizar o valor principal, reduzir o destaque das unidades e aproveitar melhor o espaço interno para leitura rápida em movimento.
+A `1.0.159+159` conclui a Etapa 4 do mapa: um controle rápido de áudio fica disponível sobre o mapa, inclusive no 3D, com canais persistentes e independentes para Navegação, IA/Detecções e Pontos próximos.
+
+### Etapa 4 — controle rápido de áudio — 1.0.159
+
+- Um botão circular de áudio foi adicionado ao dock lateral do mapa e permanece acessível durante a navegação MapLibre 3D.
+- O popup compacto controla separadamente Navegação, IA/Detecções e Pontos próximos; `Silenciar tudo` desativa os três canais sem abrir outra tela.
+- A voz da Navegação ganhou preferência própria persistida em `map_view_settings.json`; os avisos de Pontos próximos continuam usando a preferência persistente do Route Explorer.
+- Navegação e Pontos próximos não ficam mais subordinados à chave global de voz do monitoramento, permitindo combinações como Navegação ON, IA OFF e Pontos próximos ON.
+- IA/Detecções preserva o controle de voz já existente do monitoramento, inclusive áudios personalizados, TTS e preferências individuais dos slots.
+- O popup oferece acesso direto e discreto à tela completa `Áudios e voz`.
 
 ### Etapa 3 — cards superiores — 1.0.158
 

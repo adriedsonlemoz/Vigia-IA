@@ -4,8 +4,9 @@ import 'speech_service.dart';
 
 /// Ponte única de voz usada pelos recursos do mapa.
 ///
-/// Reutiliza o coordenador de áudio/TTS do Vigia IA e respeita as preferências
-/// globais de voz (incluindo TTS dinâmico) antes de falar instruções variáveis.
+/// Reutiliza o coordenador de áudio/TTS do Vigia IA e as preferências de TTS.
+/// Chamadores podem manter a chave global como mestre ou usar um canal próprio,
+/// como navegação e pontos próximos, que possuem controles independentes.
 class MapVoiceService {
   MapVoiceService._();
 
@@ -35,16 +36,22 @@ class MapVoiceService {
   Future<void> deliver(
     String message, {
     SpeechPriority priority = SpeechPriority.normal,
+    bool respectGlobalVoice = true,
   }) async {
     final text = message.trim();
     if (text.isEmpty) return;
     await initialize();
 
     final monitorSettings = _settings.profile.settings;
-    if (!monitorSettings.alertOutputs.voice) return;
+    if (respectGlobalVoice && !monitorSettings.alertOutputs.voice) return;
 
     _voice.configure(monitorSettings.voiceAlertPreferences);
     if (!_voice.enabled) _voice.setEnabled(true);
     await _voice.deliver(text, priority: priority);
+  }
+
+  Future<void> stop() async {
+    await initialize();
+    await _voice.stop();
   }
 }

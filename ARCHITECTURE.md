@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.158+158
+# Arquitetura — Vigia IA 1.0.159+159
+
+## Canais rápidos de áudio do mapa — 1.0.159
+
+- `MapMonitoringScreen` mantém um botão de áudio no mesmo dock dos controles do mapa e fora do bloco exclusivo do renderer 2D, por isso ele permanece disponível durante a navegação MapLibre 3D.
+- `MapViewSettingsService.navigationVoiceEnabled` persiste a voz da navegação em `map_view_settings.json` (schema 4). `MapNavigationVoiceService` consulta essa preferência antes de consumir os marcos de fala da rota.
+- `MapVoiceService.deliver` aceita `respectGlobalVoice`; navegação e Pontos próximos usam `false` porque possuem controles próprios. Isso evita que o switch de voz do monitoramento da IA silencie os outros canais.
+- `RouteExplorerService.settings.voiceEnabled` continua sendo a fonte persistente para a voz de Pontos próximos. `AlertDeliveryService` usa o próprio `AlertOutputs.voice` do Route Explorer e não reaplica a chave global do monitoramento.
+- IA/Detecções reutiliza o controle existente do `MonitorController`/`AlertOutputs.voice`, preservando `AlertVoiceService`, áudios personalizados, TTS e preferências de slots. Quando o mapa é aberto a partir do monitor, callbacks atualizam os controladores ativo/secundário sem permitir que o secundário persista sua fonte como perfil global.
+- `Silenciar tudo` coordena as três preferências sem criar uma chave global nova, interrompe a voz de mapa que já estiver em reprodução e mantém os canais realmente independentes.
 
 ## HUD de telemetria do mapa — 1.0.158
 

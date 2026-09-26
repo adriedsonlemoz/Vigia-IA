@@ -21,6 +21,7 @@ import '../models/offline_map_package.dart';
 import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
+import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
@@ -40,6 +41,7 @@ import '../services/native_platform_service.dart';
 import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
 import '../services/system_ui_service.dart';
+import 'audio_settings_screen.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/map_navigation_3d_view.dart';
 import '../widgets/map_poi_details_sheet.dart';
@@ -69,6 +71,8 @@ class MapMonitoringScreen extends StatefulWidget {
     this.secondaryCameraAiStatusProvider,
     this.bikeApproachStatusProvider,
     this.bikeApproachEnabledProvider,
+    this.aiVoiceEnabledProvider,
+    this.onAiVoiceChanged,
     this.initialPointOfInterest,
   });
 
@@ -84,6 +88,8 @@ class MapMonitoringScreen extends StatefulWidget {
   final MonitorAiPipStatus Function()? secondaryCameraAiStatusProvider;
   final BikeApproachStatus Function()? bikeApproachStatusProvider;
   final bool Function()? bikeApproachEnabledProvider;
+  final bool Function()? aiVoiceEnabledProvider;
+  final ValueChanged<bool>? onAiVoiceChanged;
   final RouteExplorerResult? initialPointOfInterest;
 
   @override
@@ -109,6 +115,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   DateTime? _lastRouteRecalculatedAt;
   DateTime? _lastNavigationProgressPointAt;
   final NativePlatformService _native = NativePlatformService.instance;
+  final AppSettingsService _appSettings = AppSettingsService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapConnectivityService _connectivity = MapConnectivityService.instance;
   final MapViewSettingsService _mapViewSettings = MapViewSettingsService.instance;
@@ -829,7 +836,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _initialize() async {
-    await _mapViewSettings.initialize();
+    await Future.wait<void>([
+      _mapViewSettings.initialize(),
+      _appSettings.initialize().then((_) {}),
+    ]);
     _quickView = switch (_mapViewSettings.followViewPreset) {
       MapFollowViewPreset.near => _MapQuickView.near,
       MapFollowViewPreset.region => _MapQuickView.region,
@@ -2287,6 +2297,179 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
+  bool get _aiVoiceEnabled =>
+      widget.aiVoiceEnabledProvider?.call() ??
+      _appSettings.profile.settings.alertOutputs.voice;
+
+  Future<void> _setAiVoiceEnabled(bool enabled) async {
+    widget.onAiVoiceChanged?.call(enabled);
+    final current = await _appSettings.initialize();
+    final settings = current.settings.copyWith(
+      voiceEnabled: enabled,
+      alertOutputs: current.settings.alertOutputs.copyWith(voice: enabled),
+    );
+    await _appSettings.updateRuntime(settings: settings);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _muteAllQuickAudio() async {
+    await _mapViewSettings.setNavigationVoiceEnabled(false);
+    await _setAiVoiceEnabled(false);
+    await _routeExplorer.setVoiceEnabled(false);
+    await _navigationVoice.stop();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _showAudioQuickControls() async {
+    await Future.wait<void>([
+      _mapViewSettings.initialize(),
+      _routeExplorer.initialize(),
+      _appSettings.initialize().then((_) {}),
+    ]);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.24),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setPopupState) {
+          final navigationEnabled = _mapViewSettings.navigationVoiceEnabled;
+          final aiEnabled = _aiVoiceEnabled;
+          final nearbyEnabled = _routeExplorer.settings.voiceEnabled;
+          final allMuted =
+              !navigationEnabled && !aiEnabled && !nearbyEnabled;
+
+          Future<void> updateAndRefresh(Future<void> operation) async {
+            await operation;
+            if (!dialogContext.mounted) return;
+            setPopupState(() {});
+            if (mounted) setState(() {});
+          }
+
+          final dialogHeight = MediaQuery.sizeOf(dialogContext).height;
+          final dialogPadding = MediaQuery.paddingOf(dialogContext);
+          final maxHeight = math
+              .max(240.0, dialogHeight - dialogPadding.vertical - 32.0)
+              .toDouble();
+          return Dialog(
+            alignment: Alignment.centerRight,
+            insetPadding: const EdgeInsets.fromLTRB(24, 16, 14, 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 330, maxHeight: maxHeight),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.volume_up_rounded, size: 22),
+                          const SizedBox(width: 9),
+                          const Expanded(
+                            child: Text(
+                              'Áudio do mapa',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Fechar',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      _QuickAudioSwitch(
+                        icon: Icons.navigation_rounded,
+                        title: 'Navegação',
+                        subtitle: 'Manobras, recálculo e orientação da rota',
+                        value: navigationEnabled,
+                        onChanged: (value) => unawaited(
+                          updateAndRefresh(
+                            _mapViewSettings.setNavigationVoiceEnabled(value),
+                          ),
+                        ),
+                      ),
+                      _QuickAudioSwitch(
+                        icon: Icons.visibility_rounded,
+                        title: 'IA / Detecções',
+                        subtitle: 'Alertas falados do monitoramento',
+                        value: aiEnabled,
+                        onChanged: (value) => unawaited(
+                          updateAndRefresh(_setAiVoiceEnabled(value)),
+                        ),
+                      ),
+                      _QuickAudioSwitch(
+                        icon: Icons.location_on_rounded,
+                        title: 'Pontos próximos',
+                        subtitle: 'Avisos falados de locais no caminho',
+                        value: nearbyEnabled,
+                        onChanged: (value) => unawaited(
+                          updateAndRefresh(
+                            _routeExplorer.setVoiceEnabled(value),
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: allMuted
+                                  ? null
+                                  : () => unawaited(
+                                        updateAndRefresh(
+                                          _muteAllQuickAudio(),
+                                        ),
+                                      ),
+                              icon: const Icon(
+                                Icons.volume_off_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Silenciar tudo'),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                Navigator.of(dialogContext).pop();
+                                unawaited(
+                                  Navigator.of(context)
+                                      .push<void>(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) =>
+                                              const AudioSettingsScreen(),
+                                        ),
+                                      )
+                                      .then((_) {
+                                        if (mounted) setState(() {});
+                                      }),
+                                );
+                              },
+                              icon: const Icon(Icons.tune_rounded, size: 18),
+                              label: const Text('Configurações'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _refreshNearby({bool saveAsOffline = false}) async {
     try {
       await _routeExplorer.searchNow(
@@ -2708,6 +2891,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         navigation3dRequested && _navigation3dRendererReady;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
+    final navigationAudioEnabled = _mapViewSettings.navigationVoiceEnabled;
+    final aiAudioEnabled = _aiVoiceEnabled;
+    final nearbyAudioEnabled = _routeExplorer.settings.voiceEnabled;
+    final enabledAudioChannels = <bool>[
+      navigationAudioEnabled,
+      aiAudioEnabled,
+      nearbyAudioEnabled,
+    ].where((value) => value).length;
+    final quickAudioIcon = enabledAudioChannels == 0
+        ? Icons.volume_off_rounded
+        : enabledAudioChannels == 3
+            ? Icons.volume_up_rounded
+            : Icons.volume_down_rounded;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiService.mapOverlayStyle,
@@ -3190,9 +3386,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         active: navigation3dActive,
                         onPressed: _toggleNavigation3d,
                       ),
-                    if (canRenderNavigation3d && !navigation3dActive)
+                    if (canRenderNavigation3d)
                       _MapControlGap(horizontal: horizontalControls),
+                    _MapControlButton(
+                      tooltip: enabledAudioChannels == 0
+                          ? 'Áudio do mapa silenciado'
+                          : 'Áudio do mapa',
+                      icon: quickAudioIcon,
+                      active: enabledAudioChannels > 0,
+                      onPressed: () => unawaited(_showAudioQuickControls()),
+                    ),
                     if (!navigation3dActive) ...[
+                      _MapControlGap(horizontal: horizontalControls),
                       _MapZoomCluster(
                         horizontal: horizontalControls,
                         onZoomIn: () => _zoomBy(1),
@@ -4018,6 +4223,43 @@ class _MapQuickViewButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _QuickAudioSwitch extends StatelessWidget {
+  const _QuickAudioSwitch({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      secondary: Icon(icon, size: 20),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(
+        subtitle,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 11.5),
+      ),
+      value: value,
+      onChanged: onChanged,
     );
   }
 }

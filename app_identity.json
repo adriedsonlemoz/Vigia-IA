@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.158 reformula os cards superiores do mapa para priorizar velocidade, altitude, bússola e precisão GPS, com valor maior, unidade menor e cabeçalho compacto sem aumentar o HUD.",
-  "version": "1.0.158",
-  "build": 158
+  "notes": "A 1.0.159 adiciona controle rápido de áudio no mapa com canais persistentes e independentes para navegação, IA/detecções e pontos próximos, incluindo silenciar tudo e acesso às configurações completas.",
+  "version": "1.0.159",
+  "build": 159
 }

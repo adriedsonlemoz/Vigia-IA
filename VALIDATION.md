@@ -1,4 +1,18 @@
-# Validação Vigia IA 1.0.158+158
+# Validação Vigia IA 1.0.159+159
+
+## 1.0.159+159 — controle rápido de áudio no mapa
+
+- Abrir o mapa em 2D e confirmar o botão circular de áudio junto ao dock lateral; iniciar uma rota 3D e confirmar que o mesmo botão continua acessível.
+- Abrir o popup e alternar individualmente Navegação, IA/Detecções e Pontos próximos; confirmar combinações independentes como Navegação ON, IA OFF e Pontos próximos ON.
+- Desligar IA/Detecções e confirmar que instruções de navegação e avisos falados de POIs continuam permitidos quando seus respectivos canais estão ativos.
+- Desligar Navegação e confirmar ausência de instruções/recalculo falado sem impedir rota, HUD ou TTS de outros canais.
+- Desligar Pontos próximos e confirmar que o Route Explorer mantém busca/notificação conforme sua configuração, mas não emite voz.
+- Tocar em `Silenciar tudo`, confirmar interrupção do áudio de mapa em reprodução, fechar/reabrir o app e confirmar persistência dos três estados.
+- Abrir `Configurações` pelo popup e confirmar acesso à tela `Áudios e voz`, preservando áudios personalizados, TTS, fallback e slots individuais.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado**, `bash tool/verify_project.sh` **aprovado**, sintaxe shell e JSONs de identidade **aprovados**, somente `android-apk.yml` presente em `.github/workflows` e nenhum APK/AAB no código-fonte.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; análise, testes Flutter e build Android release precisam ser reconfirmados pelo workflow.
+
 
 ## 1.0.158+158 — cards superiores do mapa
 

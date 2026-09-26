@@ -2,15 +2,15 @@
   "product": "vigiaia",
   "name": "vigiaia",
   "displayName": "Vigia IA",
-  "version": "1.0.158",
-  "build": 158,
+  "version": "1.0.159",
+  "build": 159,
   "packageFormat": 2,
   "projectType": "mobile-app",
   "framework": "flutter",
   "language": "dart",
   "android": {
     "applicationId": "com.vigiaia.app",
-    "versionName": "1.0.158",
-    "versionCode": 158
+    "versionName": "1.0.159",
+    "versionCode": 159
   }
 }

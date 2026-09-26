@@ -1,3 +1,12 @@
+## 1.0.159+159 — 2026-09-26
+
+- Adicionado botão rápido de áudio ao dock lateral do mapa, disponível tanto no FlutterMap 2D quanto durante a navegação MapLibre 3D.
+- O popup compacto passa a controlar de forma independente Navegação, IA/Detecções e Pontos próximos, com ação `Silenciar tudo` e atalho para `Áudios e voz`.
+- A voz da navegação ganhou preferência persistente própria em `map_view_settings.json`, sem depender da chave global de voz do monitoramento.
+- `AlertDeliveryService` deixa os avisos de Pontos próximos respeitarem apenas a preferência própria do Route Explorer, sem serem bloqueados pela chave global da IA.
+- IA/Detecções continua usando o controle de voz do monitoramento e preserva áudios personalizados, TTS, slots individuais e demais configurações gerais existentes.
+- Mantidos rota, recálculo, GPS, POIs, perfis Bicicleta/Moto/Carro/A pé, fallback 3D → 2D, offline, câmeras e gravação.
+
 ## 1.0.158+158 — 2026-09-26
 
 - Reformulados os quatro cards superiores de Velocidade, Altitude, Bússola e GPS para priorizar o valor principal com fonte maior e leitura mais rápida.

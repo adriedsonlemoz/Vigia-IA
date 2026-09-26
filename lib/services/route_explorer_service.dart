@@ -32,7 +32,8 @@ class RouteExplorerService extends ChangeNotifier {
   static final RouteExplorerService instance = RouteExplorerService._();
 
   final MapRouteService _routeState = MapRouteService.instance;
-  final AlertDeliveryService _alerts = AlertDeliveryService();
+  final AlertDeliveryService _alerts =
+      AlertDeliveryService(respectGlobalVoice: false);
   final MapConnectivityService _connectivity = MapConnectivityService.instance;
   final RouteExplorerAlertPolicy _alertPolicy = const RouteExplorerAlertPolicy();
   final Distance _distance = const Distance();
@@ -654,7 +655,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.158');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.159');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );

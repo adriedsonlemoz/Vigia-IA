@@ -1305,13 +1305,13 @@ class MonitorController extends ChangeNotifier {
     } catch (_) {}
   }
 
-  void setVoiceEnabled(bool enabled) {
+  void setVoiceEnabled(bool enabled, {bool persist = true}) {
     _speech.setEnabled(enabled);
     _settings = _settings.copyWith(
       voiceEnabled: enabled,
       alertOutputs: _settings.alertOutputs.copyWith(voice: enabled),
     );
-    unawaited(_persistRuntime());
+    if (persist) unawaited(_persistRuntime());
     _notify();
   }
 

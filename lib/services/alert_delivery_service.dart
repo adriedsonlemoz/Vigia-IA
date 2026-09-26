@@ -3,10 +3,14 @@ import 'map_voice_service.dart';
 import 'native_platform_service.dart';
 
 class AlertDeliveryService {
-  AlertDeliveryService({MapVoiceService? voice})
-      : _voice = voice ?? MapVoiceService.instance;
+  AlertDeliveryService({
+    MapVoiceService? voice,
+    bool respectGlobalVoice = true,
+  })  : _voice = voice ?? MapVoiceService.instance,
+        _respectGlobalVoice = respectGlobalVoice;
 
   final MapVoiceService _voice;
+  final bool _respectGlobalVoice;
   final NativePlatformService _native = NativePlatformService.instance;
   AlertOutputs _outputs = const AlertOutputs();
 
@@ -22,7 +26,12 @@ class AlertDeliveryService {
   Future<void> deliver(String message, {String title = 'Vigia IA'}) async {
     final text = message.trim();
     if (text.isEmpty) return;
-    if (_outputs.voice) await _voice.deliver(text);
+    if (_outputs.voice) {
+      await _voice.deliver(
+        text,
+        respectGlobalVoice: _respectGlobalVoice,
+      );
+    }
     if (_outputs.androidNotification) {
       await _native.showAlertNotification(
         title: title,

@@ -23,6 +23,11 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
       bikeApproachEnabledProvider: () =>
           _controller.bikeModeConfig.enabled &&
           _controller.bikeModeConfig.approachAlertsEnabled,
+      aiVoiceEnabledProvider: () => _controller.voiceEnabled,
+      onAiVoiceChanged: (value) {
+        _controller.setVoiceEnabled(value, persist: false);
+        _secondaryController?.setVoiceEnabled(value, persist: false);
+      },
       initialPointOfInterest: focus,
     );
   }

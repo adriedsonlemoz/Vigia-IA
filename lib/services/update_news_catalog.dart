@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.159', build: 159),
+      changes: <String>[
+        '🔊 O mapa ganhou um botão rápido de áudio na lateral, acessível também durante a navegação 3D.',
+        '🧭 Navegação, IA/Detecções e Pontos próximos agora podem ser ligados ou silenciados de forma independente e persistente.',
+        '🔕 O popup inclui Silenciar tudo sem abrir outra tela e mantém um atalho discreto para as configurações completas de Áudios e voz.',
+        '💾 A voz da navegação é salva no mapa, Pontos próximos mantém sua preferência própria e os controles deixam de depender todos da mesma chave global.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.158', build: 158),
       changes: <String>[
         '🧭 Velocidade, altitude, bússola e GPS agora priorizam o valor principal com tipografia maior e leitura mais rápida durante o deslocamento.',

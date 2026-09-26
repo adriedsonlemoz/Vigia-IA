@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.158',
+          version: '1.0.159',
           current: true,
+          changes: [
+            'O mapa ganhou um botão de áudio rápido junto aos controles laterais, inclusive durante o 3D.',
+            'Navegação, IA/Detecções e Pontos próximos possuem controles separados e persistentes.',
+            'Navegação e avisos de POIs não dependem mais da chave global usada pelo monitoramento da IA.',
+            'O popup oferece Silenciar tudo e atalho para as configurações completas de Áudios e voz.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.158',
           changes: [
             'Velocidade, altitude, bússola e GPS ganharam hierarquia visual mais clara, com o valor principal maior.',
             'Ícone e título usam um cabeçalho compacto e as unidades ficam menores para liberar espaço interno.',
@@ -1465,8 +1475,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.158',
+          version: '1.0.159',
           current: true,
+          changes: [
+            'O mapa ganhou um botão de áudio rápido junto aos controles laterais, inclusive durante o 3D.',
+            'Navegação, IA/Detecções e Pontos próximos possuem controles separados e persistentes.',
+            'Navegação e avisos de POIs não dependem mais da chave global usada pelo monitoramento da IA.',
+            'O popup oferece Silenciar tudo e atalho para as configurações completas de Áudios e voz.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.158',
           changes: [
             'Velocidade, altitude, bússola e GPS ganharam hierarquia visual mais clara, com o valor principal maior.',
             'Ícone e título usam um cabeçalho compacto e as unidades ficam menores para liberar espaço interno.',
