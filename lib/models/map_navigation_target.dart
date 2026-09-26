@@ -1,3 +1,5 @@
+import 'map_travel_mode.dart';
+
 class MapNavigationTarget {
   const MapNavigationTarget({
     required this.latitude,
@@ -5,6 +7,7 @@ class MapNavigationTarget {
     required this.label,
     required this.startedAt,
     this.sourceId,
+    this.travelMode = MapTravelMode.bicycle,
   });
 
   final double latitude;
@@ -12,6 +15,7 @@ class MapNavigationTarget {
   final String label;
   final DateTime startedAt;
   final String? sourceId;
+  final MapTravelMode travelMode;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'latitude': latitude,
@@ -19,6 +23,7 @@ class MapNavigationTarget {
         'label': label,
         'startedAt': startedAt.toIso8601String(),
         'sourceId': sourceId,
+        'travelMode': travelMode.storageValue,
       };
 
   factory MapNavigationTarget.fromJson(Map<String, dynamic> json) =>
@@ -31,5 +36,6 @@ class MapNavigationTarget {
         startedAt: DateTime.tryParse(json['startedAt'] as String? ?? '') ??
             DateTime.now(),
         sourceId: json['sourceId'] as String?,
+        travelMode: MapTravelModeX.fromStorage(json['travelMode']),
       );
 }

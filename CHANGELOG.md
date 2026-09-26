@@ -1,3 +1,13 @@
+## 1.0.152+152 — 2026-09-25
+
+- Iniciada a navegação em perspectiva 3D sem migrar o mapa exploratório: rotas online ativas passam a usar `MapNavigation3DView` com MapLibre e pitch de 54°.
+- `Navegar` passa a solicitar o modo de transporte antes de iniciar: Bicicleta, Moto, Carro ou A pé.
+- Adicionado `MapTravelMode`; o modo escolhido é persistido em `MapNavigationTarget` e destinos legados continuam assumindo bicicleta.
+- O roteamento Valhalla deixa de ser fixo em bicicleta e envia o `costing` correspondente ao modo selecionado (`bicycle`, `motorcycle`, `auto` ou `pedestrian`).
+- O renderer 3D acompanha posição/rumo, desenha rota, usuário e destino e permite alternar de volta para o mapa 2D durante a navegação.
+- Offline mantém o renderer FlutterMap/MBTiles existente como fallback, evitando regressão no suporte a pacotes locais.
+- Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes e User-Agents sincronizados em `1.0.152+152`.
+
 ## 1.0.151+151 — 2026-09-25
 
 - Corrigido o Android-APK-114, que parava em `flutter analyze` por causa do campo `_offlineTileError` não utilizado em `map_monitoring_screen.dart`.

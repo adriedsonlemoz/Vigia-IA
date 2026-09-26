@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.151+151`
+> **Versão atual:** `1.0.152+152`
 
 ## Estado atual
 
-A `1.0.151+151` é uma **correção de build** após a reorganização do mapa: remove o estado `_offlineTileError` que era escrito mas nunca lido e fazia o `flutter analyze` encerrar o Android-APK-114 com código 1. O carregamento MBTiles continua igual e falhas de abertura permanecem registradas via `debugPrint`.
+A `1.0.152+152` inicia a implantação da navegação 3D sem substituir o mapa principal: ao escolher um POI e iniciar uma rota online, o usuário seleciona Bicicleta, Moto, Carro ou A pé, o Valhalla calcula o perfil correspondente e a rota ativa passa para um renderer MapLibre com câmera inclinada. Offline continua usando o renderer 2D existente.
+
+### Evolução 1.0.152 — primeira etapa da navegação 3D
+
+- `Navegar` agora abre um seletor de modo de transporte com Bicicleta, Moto, Carro e A pé, lembrando a escolha durante a sessão.
+- `MapNavigationTarget` persiste o modo selecionado e restaura destinos antigos como bicicleta para manter compatibilidade.
+- O serviço de rota passa a enviar `bicycle`, `motorcycle`, `auto` ou `pedestrian` ao Valhalla, sem perder alternativas, manobras, voz e recálculo existentes.
+- Rotas online carregadas entram automaticamente no `MapNavigation3DView`, baseado em MapLibre, com pitch de navegação, rotação por rumo, linha de rota, posição e destino.
+- Um controle permite alternar 3D/2D durante a rota. Em modo offline ou sem rede, o mapa continua no renderer 2D/MBTiles atual.
+- Esta etapa implementa perspectiva de navegação 3D; prédios/terreno extrudados ficam para uma etapa posterior.
 
 ### Correção 1.0.151 — Android-APK-114
 

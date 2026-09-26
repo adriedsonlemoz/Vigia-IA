@@ -14,3 +14,5 @@ O suporte a mapas offline raster usa `flutter_map_mbtiles` 1.0.4 (licença MIT),
 A 1.0.99 adiciona uso direto de `sqlite3` 2.9.4 (licença MIT) para gerar e ler a estrutura MBTiles raster no aparelho.
 
 O download direto de região/trajeto oferece integração opcional com **Stadia Maps**. A API key é fornecida pelo próprio usuário e não acompanha o projeto. O cache offline exige uma conta/plano do provedor que autorize esse uso. O uso, cache, atribuição e limites continuam sujeitos aos termos vigentes; o aplicativo controla o total do cache direto em até 100 MB por aparelho e mantém a atribuição da camada.
+
+A navegação em perspectiva adicionada na 1.0.152 usa `maplibre` 0.3.6 (licença BSD-3-Clause) como binding Flutter dos SDKs MapLibre. Nesta primeira etapa ele renderiza a rota online com câmera inclinada e uma base raster OpenStreetMap; a atribuição `© OpenStreetMap contributors` permanece visível. Dependências nativas/transitivas do MapLibre também devem ter suas licenças incluídas conforme a resolução final do `pub`.

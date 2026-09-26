@@ -4,9 +4,12 @@ import 'dart:io';
 import 'package:latlong2/latlong.dart';
 
 import '../models/map_cycling_route.dart';
+import '../models/map_travel_mode.dart';
 
-/// Busca rotas viárias para bicicleta. A tela mantém direção direta como
-/// fallback quando a rede ou o serviço de roteamento não estiver disponível.
+/// Busca rotas viárias para o perfil de deslocamento escolhido. A tela mantém
+/// direção direta como fallback quando a rede ou o serviço de roteamento não
+/// estiver disponível. O nome da classe é preservado nesta etapa para reduzir
+/// o risco de regressão durante a migração gradual do renderer de navegação.
 class MapCyclingRouteService {
   MapCyclingRouteService({HttpClient? client}) : _client = client ?? HttpClient();
 
@@ -15,11 +18,13 @@ class MapCyclingRouteService {
   Future<MapCyclingRoute> fetch({
     required LatLng origin,
     required LatLng destination,
+    MapTravelMode travelMode = MapTravelMode.bicycle,
   }) async {
     final routes = await fetchAlternatives(
       origin: origin,
       destination: destination,
       alternativeCount: 0,
+      travelMode: travelMode,
     );
     return routes.first;
   }
@@ -28,6 +33,7 @@ class MapCyclingRouteService {
     required LatLng origin,
     required LatLng destination,
     int alternativeCount = 2,
+    MapTravelMode travelMode = MapTravelMode.bicycle,
   }) async {
     final safeAlternativeCount = alternativeCount.clamp(0, 2).toInt();
     final payload = jsonEncode(<String, Object>{
@@ -35,7 +41,7 @@ class MapCyclingRouteService {
         <String, double>{'lat': origin.latitude, 'lon': origin.longitude},
         <String, double>{'lat': destination.latitude, 'lon': destination.longitude},
       ],
-      'costing': 'bicycle',
+      'costing': travelMode.valhallaCosting,
       'units': 'km',
       'language': 'pt-PT',
       'alternates': safeAlternativeCount,
@@ -46,7 +52,7 @@ class MapCyclingRouteService {
       <String, String>{'json': payload},
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.151');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.152');
     request.headers.set('X-Client-Id', 'com.vigiaia.app');
     final response = await request.close().timeout(const Duration(seconds: 12));
     final body = await utf8.decoder.bind(response).join();

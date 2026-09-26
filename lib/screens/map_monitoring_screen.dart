@@ -13,6 +13,7 @@ import '../models/bike_approach_status.dart';
 import '../models/camera_endpoint.dart';
 import '../models/map_connectivity_status.dart';
 import '../models/map_navigation_target.dart';
+import '../models/map_travel_mode.dart';
 import '../models/monitor_ai_pip_status.dart';
 import '../models/map_cycling_route.dart';
 import '../models/map_route_point.dart';
@@ -40,6 +41,7 @@ import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
 import '../services/system_ui_service.dart';
 import '../widgets/offline_map_manager_sheet.dart';
+import '../widgets/map_navigation_3d_view.dart';
 import '../widgets/map_poi_details_sheet.dart';
 import '../widgets/map_bike_approach_overlay.dart';
 import '../widgets/map_ai_status_overlay.dart';
@@ -146,6 +148,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
   String? _selectedPoiId;
   double _visibleMapZoom = MapViewPolicy.nearZoom;
+  bool _navigation3dEnabled = true;
+  MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
 
   @override
   void initState() {
@@ -844,6 +848,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
     final restoredTarget = _routeState.navigationTarget;
     final restoredPosition = _routeState.current;
+    if (restoredTarget != null) {
+      _lastTravelMode = restoredTarget.travelMode;
+      _navigation3dEnabled = true;
+    }
     if (restoredTarget != null && restoredPosition != null) {
       unawaited(
         _requestCyclingRoute(
@@ -879,7 +887,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _navigationProgress = _evaluateNavigationProgress(current);
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
     setState(() {});
-    if (_followPosition &&
+    final routeUses3d = _navigation3dEnabled &&
+        _routeState.navigationTarget != null &&
+        _cyclingRoute != null &&
+        !_connectivity.isOffline &&
+        _offlineMaps.mode != OfflineMapMode.offline;
+    if (!routeUses3d &&
+        _followPosition &&
         current != null &&
         current.recordedAt != _lastFollowCameraPointAt) {
       _applyFollowCamera(current);
@@ -1047,7 +1061,69 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
+  IconData _travelModeIcon(MapTravelMode mode) => switch (mode) {
+        MapTravelMode.bicycle => Icons.pedal_bike_rounded,
+        MapTravelMode.motorcycle => Icons.two_wheeler_rounded,
+        MapTravelMode.car => Icons.directions_car_filled_rounded,
+        MapTravelMode.walking => Icons.directions_walk_rounded,
+      };
+
+  Future<MapTravelMode?> _chooseTravelMode() async {
+    final scheme = Theme.of(context).colorScheme;
+    return showModalBottomSheet<MapTravelMode>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Como você vai até o destino?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'A rota e o tempo estimado serão calculados para o veículo escolhido.',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+            for (final mode in MapTravelMode.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: mode == _lastTravelMode
+                          ? scheme.primary
+                          : scheme.outlineVariant,
+                    ),
+                  ),
+                  selected: mode == _lastTravelMode,
+                  selectedTileColor: scheme.primaryContainer.withValues(alpha: 0.45),
+                  leading: Icon(_travelModeIcon(mode)),
+                  title: Text(
+                    mode.label,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  trailing: mode == _lastTravelMode
+                      ? Icon(Icons.check_circle_rounded, color: scheme.primary)
+                      : const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).pop(mode),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _navigateToPoi(RouteExplorerResult item) async {
+    final travelMode = await _chooseTravelMode();
+    if (!mounted || travelMode == null) return;
     final current = _routeState.current;
     _navigationVoice.resetRoute();
     final target = MapNavigationTarget(
@@ -1056,8 +1132,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       label: item.title,
       startedAt: DateTime.now(),
       sourceId: item.id,
+      travelMode: travelMode,
     );
     setState(() {
+      _lastTravelMode = travelMode;
+      _navigation3dEnabled = true;
       _followPosition = true;
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
@@ -1078,7 +1157,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         fitRoute: true,
         announceFailure: true,
       );
-      _applyFollowCamera(current, forceRotation: true);
+      final using3d = _navigation3dEnabled &&
+          _cyclingRoute != null &&
+          !_connectivity.isOffline &&
+          _offlineMaps.mode != OfflineMapMode.offline;
+      if (!using3d) {
+        _applyFollowCamera(current, forceRotation: true);
+      }
     }
   }
 
@@ -1108,6 +1193,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         origin: origin,
         destination: LatLng(target.latitude, target.longitude),
         alternativeCount: 2,
+        travelMode: target.travelMode,
       );
       if (!mounted || requestSerial != _cyclingRouteRequestSerial) return;
       final activeTarget = _routeState.navigationTarget;
@@ -1212,6 +1298,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _offRouteSamples = 0;
     _lastRouteRecalculatedAt = null;
     _lastNavigationProgressPointAt = null;
+    _navigation3dEnabled = true;
   }
 
   void _stopNavigation() {
@@ -1385,6 +1472,28 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return _primaryMapCamera?.aiPipStatus;
   }
 
+
+  void _toggleNavigation3d() {
+    final next = !_navigation3dEnabled;
+    setState(() {
+      _navigation3dEnabled = next;
+      if (!next) {
+        _followPosition = true;
+        _quickView = _MapQuickView.near;
+        _customFollowZoom = null;
+      }
+    });
+    if (!next) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final current = _routeState.current;
+        if (current != null) {
+          _applyFollowCamera(current, forceRotation: true);
+        }
+      });
+    }
+  }
+
   List<RouteExplorerResult> get _visiblePois => _routeExplorer.activeResults
       .where((item) => _matchesPoiFilter(item, _poiFilter))
       .toList(growable: false);
@@ -1433,6 +1542,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {});
     unawaited(persistChange);
 
+    if (_navigation3dEnabled &&
+        _routeState.navigationTarget != null &&
+        _cyclingRoute != null &&
+        !_connectivity.isOffline &&
+        _offlineMaps.mode != OfflineMapMode.offline) {
+      return;
+    }
     if (!_mapReady) return;
     final current = _routeState.current;
     if (next == MapOrientationMode.northUp) {
@@ -2527,6 +2643,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final useOnline = mode != OfflineMapMode.offline && !networkOffline;
     final useOfflineLayer = offlineProvider != null &&
         (mode != OfflineMapMode.online || networkOffline);
+    final canRenderNavigation3d = navigationTarget != null &&
+        _cyclingRoute != null &&
+        useOnline;
+    final navigation3dActive =
+        _navigation3dEnabled && canRenderNavigation3d;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
 
@@ -2562,7 +2683,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              FlutterMap(
+              if (navigation3dActive)
+                MapNavigation3DView(
+                  key: ValueKey<String>(
+                    'nav3d-${navigationTarget!.sourceId ?? navigationTarget!.label}-${navigationTarget!.travelMode.storageValue}',
+                  ),
+                  target: navigationTarget!,
+                  route: _cyclingRoute!,
+                  current: current,
+                  headingUp: _mapViewSettings.orientationMode ==
+                      MapOrientationMode.headingUp,
+                )
+              else
+                FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
@@ -2886,13 +3019,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                 child: Align(
                   alignment: Alignment.topCenter,
-                  child: _MapQuickViewBar(
-                    selected: _quickView,
-                    routeAvailable:
-                        _routeState.route.length >= 2 || navigationTarget != null,
-                    onSelected: _selectQuickView,
-                    compact: compactHud,
-                  ),
+                  child: navigation3dActive
+                      ? _Navigation3DModePill(
+                          mode: navigationTarget!.travelMode,
+                          compact: compactHud,
+                        )
+                      : _MapQuickViewBar(
+                          selected: _quickView,
+                          routeAvailable: _routeState.route.length >= 2 ||
+                              navigationTarget != null,
+                          onSelected: _selectQuickView,
+                          compact: compactHud,
+                        ),
                 ),
               ),
               Positioned(
@@ -2902,7 +3040,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   tooltip: 'Camadas e tipo do mapa',
                   icon: Icons.layers_rounded,
                   active: offlineProvider != null || networkOffline,
-                  onPressed: () => unawaited(_showLayerPicker()),
+                  onPressed: () {
+                    if (navigation3dActive) {
+                      setState(() => _navigation3dEnabled = false);
+                    }
+                    unawaited(_showLayerPicker());
+                  },
                 ),
               ),
               Positioned(
@@ -2967,32 +3110,47 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       horizontalControls ? Axis.horizontal : Axis.vertical,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _MapZoomCluster(
-                      horizontal: horizontalControls,
-                      onZoomIn: () => _zoomBy(1),
-                      onZoomOut: () => _zoomBy(-1),
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
-                      tooltip: _followPosition
-                          ? 'Posição sendo seguida'
-                          : 'Centralizar e seguir posição',
-                      icon: _followPosition
-                          ? Icons.navigation_rounded
-                          : Icons.my_location_rounded,
-                      active: _followPosition,
-                      onPressed: current == null ? null : _toggleFollow,
-                    ),
-                    _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
-                      tooltip: 'Próximos pontos',
-                      icon: Icons.location_on_rounded,
-                      badge: _routeExplorer.activeResults.isEmpty
-                          ? null
-                          : '${_routeExplorer.activeResults.length}',
-                      active: _routeExplorer.activeResults.isNotEmpty,
-                      onPressed: () => unawaited(_showNearbyPoints()),
-                    ),
+                    if (canRenderNavigation3d)
+                      _MapControlButton(
+                        tooltip: navigation3dActive
+                            ? 'Voltar ao mapa 2D'
+                            : 'Entrar na navegação 3D',
+                        icon: navigation3dActive
+                            ? Icons.map_rounded
+                            : Icons.view_in_ar_rounded,
+                        active: navigation3dActive,
+                        onPressed: _toggleNavigation3d,
+                      ),
+                    if (canRenderNavigation3d && !navigation3dActive)
+                      _MapControlGap(horizontal: horizontalControls),
+                    if (!navigation3dActive) ...[
+                      _MapZoomCluster(
+                        horizontal: horizontalControls,
+                        onZoomIn: () => _zoomBy(1),
+                        onZoomOut: () => _zoomBy(-1),
+                      ),
+                      _MapControlGap(horizontal: horizontalControls),
+                      _MapControlButton(
+                        tooltip: _followPosition
+                            ? 'Posição sendo seguida'
+                            : 'Centralizar e seguir posição',
+                        icon: _followPosition
+                            ? Icons.navigation_rounded
+                            : Icons.my_location_rounded,
+                        active: _followPosition,
+                        onPressed: current == null ? null : _toggleFollow,
+                      ),
+                      _MapControlGap(horizontal: horizontalControls),
+                      _MapControlButton(
+                        tooltip: 'Próximos pontos',
+                        icon: Icons.location_on_rounded,
+                        badge: _routeExplorer.activeResults.isEmpty
+                            ? null
+                            : '${_routeExplorer.activeResults.length}',
+                        active: _routeExplorer.activeResults.isNotEmpty,
+                        onPressed: () => unawaited(_showNearbyPoints()),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -3000,12 +3158,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 left: MapUxPolicy.controlEdge,
                 bottom: attributionBottom,
                 child: _MapAttribution(
-                  text: (mode == OfflineMapMode.offline ||
-                          (networkOffline && useOfflineLayer))
-                      ? (activeOffline?.providerId == 'stadia-alidade-smooth'
-                          ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
-                          : 'Mapa offline · licença do pacote')
-                      : onlineLayer.attribution,
+                  text: navigation3dActive
+                      ? '3D · © OpenStreetMap contributors'
+                      : (mode == OfflineMapMode.offline ||
+                              (networkOffline && useOfflineLayer))
+                          ? (activeOffline?.providerId == 'stadia-alidade-smooth'
+                              ? '© Stadia Maps · OpenMapTiles · OpenStreetMap'
+                              : 'Mapa offline · licença do pacote')
+                          : onlineLayer.attribution,
                 ),
               ),
               if (showSelectedPoiCard)
@@ -3588,6 +3748,79 @@ class _MapQuickViewBar extends StatelessWidget {
             compact: compact,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Navigation3DModePill extends StatelessWidget {
+  const _Navigation3DModePill({
+    required this.mode,
+    required this.compact,
+  });
+
+  final MapTravelMode mode;
+  final bool compact;
+
+  IconData get _modeIcon => switch (mode) {
+        MapTravelMode.bicycle => Icons.pedal_bike_rounded,
+        MapTravelMode.motorcycle => Icons.two_wheeler_rounded,
+        MapTravelMode.car => Icons.directions_car_filled_rounded,
+        MapTravelMode.walking => Icons.directions_walk_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 2,
+      color: scheme.surface.withValues(alpha: 0.93),
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 13,
+          vertical: compact ? 7 : 9,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.view_in_ar_rounded,
+              size: compact ? 18 : 20,
+              color: scheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Navegação 3D',
+              style: TextStyle(
+                fontSize: compact ? 12 : 13,
+                fontWeight: FontWeight.w900,
+                color: scheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 1,
+              height: compact ? 18 : 20,
+              color: scheme.outlineVariant,
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              _modeIcon,
+              size: compact ? 17 : 19,
+              color: scheme.secondary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              mode.label,
+              style: TextStyle(
+                fontSize: compact ? 11 : 12,
+                fontWeight: FontWeight.w800,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4503,6 +4736,7 @@ class _NavigationBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final travelLabel = target.travelMode.routeLabel;
     final progress = guidance;
     final route = roadRoute;
     final currentInstruction = progress?.arrived == true
@@ -4522,7 +4756,7 @@ class _NavigationBanner extends StatelessWidget {
       nextLine =
           'Em ${_distance(progress.distanceToNextManeuverMeters)}: ${progress.nextInstruction}';
     } else if (loadingRoadRoute) {
-      nextLine = 'Calculando rota de bicicleta…';
+      nextLine = 'Calculando rota de $travelLabel…';
     } else if (route != null) {
       nextLine = 'Siga pela rota destacada até o destino.';
     } else {
@@ -4542,7 +4776,7 @@ class _NavigationBanner extends StatelessWidget {
           ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
           : '';
       summaryLine =
-          '$routeLabel${_distance(route.distanceMeters)} · ${_duration(route.durationSeconds)} · bicicleta';
+          '$routeLabel${_distance(route.distanceMeters)} · ${_duration(route.durationSeconds)} · $travelLabel';
     } else {
       summaryLine = 'Destino: ${target.label}';
     }

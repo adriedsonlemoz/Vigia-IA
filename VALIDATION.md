@@ -1,4 +1,20 @@
-# Validação Vigia IA 1.0.151+151
+# Validação Vigia IA 1.0.152+152
+
+## 1.0.152+152 — primeira etapa da navegação 3D
+
+- Tocar em `Navegar` em um POI e confirmar que o app solicita Bicicleta, Moto, Carro ou A pé antes de criar o destino.
+- Confirmar que cada modo produz o `costing` correto no serviço de rota e que o banner deixa de rotular todas as rotas como bicicleta.
+- Com internet e rota carregada, confirmar troca automática para `MapNavigation3DView`, inclinação visual, linha da rota, marcador do destino e posição atual.
+- Em orientação `Acompanhar direção`, confirmar que o bearing da câmera segue o rumo do GPS; em norte fixo, o bearing volta a zero sem sair do modo 3D.
+- Confirmar que o botão 3D/2D retorna ao FlutterMap e que é possível voltar ao 3D durante a mesma rota.
+- Abrir Camadas durante o 3D e confirmar retorno ao mapa 2D antes do seletor, evitando aplicar opções do FlutterMap a um renderer diferente.
+- Cortar a internet ou forçar modo offline e confirmar que a navegação permanece no renderer 2D/MBTiles, sem tentar abrir MapLibre 3D.
+- Restaurar um destino salvo na versão anterior sem `travelMode` e confirmar fallback para Bicicleta.
+- Executar `test/map_navigation_target_test.dart`, `test/map_travel_mode_test.dart` e a suíte completa quando Flutter estiver disponível.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow, pois Flutter/Dart não estão instalados no ambiente local de edição.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado** e `bash tool/verify_project.sh` **aprovado**; workflow Android permanece com SHA-256 `7d8bb2c8b637425307698b42c658c78cca59cee36d48dfb435704446a9690d15`.
+
 
 ## 1.0.151+151 — correção Android-APK-114
 

@@ -65,8 +65,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.151',
+          version: '1.0.152',
           current: true,
+          changes: [
+            'Primeira etapa da navegação 3D: rotas online passam a usar um renderer MapLibre inclinado durante o acompanhamento.',
+            'Antes de navegar, é possível escolher Bicicleta, Moto, Carro ou A pé.',
+            'O perfil escolhido é enviado ao roteamento e persistido com o destino, preservando alternativas, voz e recálculo.',
+            'O usuário pode voltar ao mapa 2D a qualquer momento; offline continua usando o renderer 2D existente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.151',
           changes: [
             'Corrigido o aviso de análise estática que bloqueava o Android-APK-114.',
             'Removido o estado interno de erro offline que era gravado, mas nunca lido pela interface.',
@@ -1398,8 +1408,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.151',
+          version: '1.0.152',
           current: true,
+          changes: [
+            'Primeira etapa da navegação 3D: rotas online passam a usar um renderer MapLibre inclinado durante o acompanhamento.',
+            'Antes de navegar, é possível escolher Bicicleta, Moto, Carro ou A pé.',
+            'O perfil escolhido é enviado ao roteamento e persistido com o destino, preservando alternativas, voz e recálculo.',
+            'O usuário pode voltar ao mapa 2D a qualquer momento; offline continua usando o renderer 2D existente.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.151',
           changes: [
             'Corrigido o aviso de análise estática que bloqueava o Android-APK-114.',
             'Removido o estado interno de erro offline que era gravado, mas nunca lido pela interface.',

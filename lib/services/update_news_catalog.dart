@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.152', build: 152),
+      changes: <String>[
+        '🧭 Ao iniciar uma rota online, o Vigia IA entra automaticamente na primeira etapa da navegação em perspectiva 3D.',
+        '🚲 Antes de navegar, agora é possível escolher Bicicleta, Moto, Carro ou A pé; o perfil escolhido também é salvo no destino.',
+        '🛣️ O roteamento passa a solicitar ao Valhalla um caminho adequado ao modo de transporte selecionado, mantendo alternativas e recálculo.',
+        '🗺️ A navegação 3D acompanha posição e rumo, permite voltar ao mapa 2D e usa o renderer 2D atual como fallback offline.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.151', build: 151),
       changes: <String>[
         '🔧 Corrigido o bloqueio do build Android-APK-114 na análise estática.',

@@ -1,4 +1,16 @@
-# Arquitetura — Vigia IA 1.0.151+151
+# Arquitetura — Vigia IA 1.0.152+152
+
+## Navegação 3D híbrida — 1.0.152
+
+- O mapa exploratório permanece em `flutter_map`, preservando POIs, MBTiles, camadas, PiPs, gravação e controles já estabilizados.
+- Uma rota viária online ativa pode trocar apenas o renderer central para `MapNavigation3DView`, baseado no pacote `maplibre`, evitando uma migração completa do mapa nesta etapa.
+- `MapNavigation3DView` usa câmera com pitch de 54° (máximo 60°), acompanha centro/zoom/rumo do GPS e mantém a posição do usuário mais baixa pela câmera acolchoada para mostrar mais via à frente.
+- A geometria da rota, o destino e a posição atual são fontes GeoJSON atualizadas no estilo MapLibre. A base desta primeira etapa é raster OSM; prédios/terreno extrudados não fazem parte desta entrega.
+- `MapTravelMode` separa modo visual de perfil de roteamento. `MapNavigationTarget` persiste o modo e mantém compatibilidade retroativa assumindo bicicleta quando o campo não existe.
+- `MapCyclingRouteService` conserva o nome nesta etapa para reduzir mudança estrutural, mas deixa de fixar `costing: bicycle`: recebe o perfil e envia `bicycle`, `motorcycle`, `auto` ou `pedestrian` ao Valhalla.
+- Navegação 3D só é ativada com rota carregada e camada online disponível. Sem rede ou em modo offline, `FlutterMap` continua sendo o renderer e a rota conhecida/fallback existente permanece válida.
+- O botão 3D/2D permite saída explícita do renderer inclinado durante a rota; a seleção de camadas também retorna ao renderer 2D, já que as camadas configuráveis atuais pertencem ao FlutterMap.
+
 
 ## Buildfix Android-APK-114 — 1.0.151
 
