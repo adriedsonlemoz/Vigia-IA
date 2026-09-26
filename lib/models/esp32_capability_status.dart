@@ -83,8 +83,15 @@ Set<Esp32Capability> inferEsp32CapabilitiesFromTelemetry(
 ) {
   final inferred = <Esp32Capability>{};
   final bike = packet.bikePayload;
+  final environment = packet.environmentPayload;
 
-  if (bike['temperatureC'] is num) inferred.add(Esp32Capability.temperature);
+  if (bike['temperatureC'] is num || environment['temperatureC'] is num) {
+    inferred.add(Esp32Capability.temperature);
+  }
+  if (environment['humidityPercent'] is num ||
+      environment['pressureHpa'] is num) {
+    inferred.add(Esp32Capability.ambient);
+  }
   if (bike['speedKmh'] is num || bike['tripDistanceKm'] is num) {
     inferred.add(Esp32Capability.hallSpeed);
   }
@@ -106,8 +113,14 @@ bool capabilityHasLiveReading(
   Esp32TelemetryPacket packet,
 ) {
   final bike = packet.bikePayload;
+  final environment = packet.environmentPayload;
   return switch (capability) {
-    Esp32Capability.temperature => bike['temperatureC'] is num,
+    Esp32Capability.temperature =>
+      bike['temperatureC'] is num || environment['temperatureC'] is num,
+    Esp32Capability.ambient =>
+      environment['humidityPercent'] is num ||
+          environment['pressureHpa'] is num ||
+          environment['temperatureC'] is num,
     Esp32Capability.hallSpeed =>
       bike['speedKmh'] is num || bike['tripDistanceKm'] is num,
     Esp32Capability.tirePressure =>
@@ -126,8 +139,12 @@ String? capabilityValueLabel(
   Esp32TelemetryPacket packet,
 ) {
   final bike = packet.bikePayload;
+  final environment = packet.environmentPayload;
   return switch (capability) {
-    Esp32Capability.temperature => _temperatureLabel(bike['temperatureC']),
+    Esp32Capability.temperature => _temperatureLabel(
+      environment['temperatureC'] ?? bike['temperatureC'],
+    ),
+    Esp32Capability.ambient => _ambientLabel(environment),
     Esp32Capability.hallSpeed => _hallLabel(bike),
     Esp32Capability.tirePressure => _tireLabel(bike),
     Esp32Capability.battery => _moduleBatteryLabel(packet),
@@ -149,6 +166,20 @@ Esp32CapabilityActivity _activityFor({
   if (hasLiveReading) return Esp32CapabilityActivity.live;
   if (advertised) return Esp32CapabilityActivity.detected;
   return Esp32CapabilityActivity.waiting;
+}
+
+
+String? _ambientLabel(Map<String, dynamic> environment) {
+  final parts = <String>[];
+  final temperature = environment['temperatureC'];
+  final humidity = environment['humidityPercent'];
+  final pressure = environment['pressureHpa'];
+  if (temperature is num) {
+    parts.add('${temperature.toStringAsFixed(1)} °C');
+  }
+  if (humidity is num) parts.add('${humidity.toStringAsFixed(0)}% UR');
+  if (pressure is num) parts.add('${pressure.toStringAsFixed(1)} hPa');
+  return parts.isEmpty ? null : parts.join(' · ');
 }
 
 String? _temperatureLabel(Object? value) {

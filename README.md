@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.165+165`
+> **Versão atual:** `1.0.166+166`
 
 ## Estado atual
 
-A `1.0.165+165` preserva a telemetria compacta da etapa anterior e mantém o diagnóstico 3D sanitizado compatível com a análise estática do Dart, sem registrar chaves/API secrets.
+A `1.0.166+166` adiciona Clima Inteligente ao mapa, combinando sensores ESP32 reais com dados online do Open-Meteo somente quando necessário, com cache, origem explícita e voz integrada.
+
+### Etapa 3 — Clima Inteligente — 1.0.166
+- Novo mini-card de clima no topo do mapa, ao lado de Velocidade, Altitude, Bússola e GPS.
+- Temperatura, umidade e pressão priorizam sensores ESP32 reais quando disponíveis; campos ausentes podem ser complementados pelo serviço online.
+- Condição do céu, vento, chuva e probabilidade de precipitação nunca são inferidos apenas pela temperatura do ESP32.
+- Popup central mostra somente dados disponíveis, a origem de cada grupo, atualização manual, estado de cache e horário da última leitura.
+- Cache online de 15 minutos reduz consultas; dados com mais de 45 minutos são sinalizados como antigos.
+- Voz do clima foi integrada ao sistema de áudio existente e ganhou controle próprio no popup rápido de áudio do mapa.
+- Open-Meteo é a fonte online padrão, sem chave no modo gratuito; `OPEN_METEO_HOST` e `OPEN_METEO_API_KEY` permitem trocar para endpoint contratado sem embutir segredo no código.
+- A popup `Novidades da atualização` contém somente a entrada `1.0.166+166`; o histórico completo permanece em `Sobre > Mudanças`.
 
 ### Ajuste 1.0.165 — compatibilidade do diagnóstico 3D
 - O sanitizador do diagnóstico 3D usa `RegExp(..., caseSensitive: false)` em vez de modificador inline incompatível com o analisador Dart.

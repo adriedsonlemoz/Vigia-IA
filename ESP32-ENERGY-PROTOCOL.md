@@ -67,3 +67,32 @@ O Vigia IA apenas monitora o sistema de energia; ele não substitui o controlado
 ## Segurança elétrica
 
 12 V de bateria não devem ser aplicados diretamente a um pino do ESP32. O firmware/hardware deve usar interface adequada (por exemplo INA219/INA226, divisor dimensionado/protegido ou BMS compatível) e compartilhar terra somente quando o projeto elétrico exigir e for seguro.
+
+## Telemetria ambiental para o clima
+
+A partir da 1.0.166, um módulo ESP32 pode fornecer medições ambientais reais para o mini-card de clima. O bloco pode ser enviado como `telemetry.environment`, `environment`, `telemetry.weather`, `weather` ou `sensors.ambient`.
+
+Exemplo recomendado:
+
+```json
+{
+  "moduleId": "ambiente-bike",
+  "capabilities": ["ambient", "temperature"],
+  "environment": {
+    "temperatureC": 27.3,
+    "humidityPercent": 64,
+    "pressureHpa": 1008.7,
+    "capturedAt": "2026-09-26T15:00:00Z"
+  }
+}
+```
+
+Campos aceitos quando realmente medidos:
+
+- `temperatureC`: temperatura ambiente em graus Celsius;
+- `humidityPercent` ou `relativeHumidityPercent`: umidade relativa em porcentagem;
+- `pressureHpa`/`pressureHPa`/`pressureMb`: pressão já expressa em hPa/mbar;
+- `pressurePa`: pressão explicitamente em pascal; o app converte para hPa;
+- `capturedAt`: horário ISO-8601 da medição, quando o firmware possuir relógio confiável.
+
+O app não interpreta um campo genérico `pressure` sem unidade e não cria condição de céu, chuva, vento ou previsão a partir apenas da temperatura. Dados ausentes permanecem indisponíveis e, quando houver internet, podem ser complementados pelo provedor meteorológico online com a origem mostrada separadamente.

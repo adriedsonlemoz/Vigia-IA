@@ -867,7 +867,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     try {
       final uri = Uri.parse(styleUrl);
       final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.165 map-3d-style');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.166 map-3d-style');
       final response = await request.close().timeout(_stylePreflightTimeout);
       if (styleUrl != _activeVectorStyleUrl) return;
       _styleHttpStatus = response.statusCode;

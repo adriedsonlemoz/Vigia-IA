@@ -17,6 +17,7 @@ import '../models/map_travel_mode.dart';
 import '../models/monitor_ai_pip_status.dart';
 import '../models/map_cycling_route.dart';
 import '../models/map_route_point.dart';
+import '../models/map_weather.dart';
 import '../models/offline_map_package.dart';
 import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
@@ -37,6 +38,9 @@ import '../services/map_offline_navigation_policy.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
 import '../services/map_telemetry_policy.dart';
+import '../services/map_weather_policy.dart';
+import '../services/map_weather_service.dart';
+import '../services/map_voice_service.dart';
 import '../services/map_ux_policy.dart';
 import '../services/map_view_policy.dart';
 import '../services/map_view_settings_service.dart';
@@ -134,6 +138,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
   final MapCameraOverlaySettingsService _cameraOverlaySettings =
       MapCameraOverlaySettingsService.instance;
+  final MapWeatherService _weather = MapWeatherService.instance;
+  final MapVoiceService _mapVoice = MapVoiceService.instance;
 
   SecondaryCameraController? _primaryMapCamera;
   SecondaryCameraController? _secondaryMapCamera;
@@ -187,6 +193,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _routeState.addListener(_onRouteStateChanged);
     _routeExplorer.addListener(_onRouteExplorerChanged);
     _connectivity.addListener(_onMapConnectivityChanged);
+    _weather.addListener(_onWeatherChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     unawaited(_initializeOfflineMaps());
@@ -209,6 +216,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _routeState.removeListener(_onRouteStateChanged);
     _routeExplorer.removeListener(_onRouteExplorerChanged);
     _connectivity.removeListener(_onMapConnectivityChanged);
+    _weather.removeListener(_onWeatherChanged);
     _connectivity.release(this);
     _routeRecoveryTimer?.cancel();
     unawaited(_compassSubscription?.cancel());
@@ -861,6 +869,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     await Future.wait<void>([
       _mapViewSettings.initialize(),
       _appSettings.initialize().then((_) {}),
+      _weather.initialize(),
     ]);
     _quickView = switch (_mapViewSettings.followViewPreset) {
       MapFollowViewPreset.near => _MapQuickView.near,
@@ -873,6 +882,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
     if (MapTelemetryPolicy.isFresh(_routeState.current)) {
       _telemetrySession.add(_routeState.current);
+      final weatherPoint = _routeState.current!;
+      unawaited(
+        _weather.refreshForLocation(
+          latitude: weatherPoint.latitude,
+          longitude: weatherPoint.longitude,
+        ),
+      );
     }
     await Future.wait<void>([
       _routeExplorer.initialize(),
@@ -913,6 +929,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {});
   }
 
+  void _onWeatherChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
   void _onRouteStateChanged() {
     if (!mounted) return;
     final navigationStopped = _routeState.navigationTarget == null &&
@@ -930,6 +951,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final current = _routeState.current;
     if (MapTelemetryPolicy.isFresh(current)) {
       _telemetrySession.add(current);
+      unawaited(
+        _weather.refreshForLocation(
+          latitude: current!.latitude,
+          longitude: current.longitude,
+        ),
+      );
     }
     _navigationProgress = _evaluateNavigationProgress(current);
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
@@ -1880,6 +1907,215 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
+  String _weatherValueLabel(
+    MapWeatherValue<double> value,
+    String unit, {
+    int decimals = 0,
+  }) {
+    final detail = value.sourceDetail?.trim();
+    final source = detail == null || detail.isEmpty
+        ? value.source.label
+        : '${value.source.label} ($detail)';
+    return '${value.value.toStringAsFixed(decimals)} $unit · $source';
+  }
+
+  IconData _weatherIcon(int? code) => switch (code) {
+        0 || 1 => Icons.wb_sunny_rounded,
+        2 => Icons.wb_cloudy_rounded,
+        3 || 45 || 48 => Icons.cloud_rounded,
+        51 || 53 || 55 || 56 || 57 => Icons.grain_rounded,
+        61 || 63 || 65 || 66 || 67 || 80 || 81 || 82 =>
+          Icons.water_drop_rounded,
+        71 || 73 || 75 || 77 || 85 || 86 => Icons.ac_unit_rounded,
+        95 || 96 || 99 => Icons.thunderstorm_rounded,
+        _ => Icons.device_thermostat_rounded,
+      };
+
+  Future<void> _speakWeather() async {
+    if (!_mapViewSettings.weatherVoiceEnabled) return;
+    final message = MapWeatherPolicy.buildVoiceMessage(_weather.snapshot);
+    if (message.isEmpty) return;
+    await _mapVoice.deliver(message);
+  }
+
+  Future<void> _refreshWeatherManually() async {
+    final current = _routeState.current;
+    if (current == null) return;
+    await _weather.refreshForLocation(
+      latitude: current.latitude,
+      longitude: current.longitude,
+      force: true,
+    );
+  }
+
+  Future<void> _showWeatherDetails() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final snapshot = _weather.snapshot;
+          final condition =
+              MapWeatherPolicy.conditionLabel(snapshot.weatherCode?.value);
+          final voiceMessage = MapWeatherPolicy.buildVoiceMessage(snapshot);
+          final current = _routeState.current;
+          final rows = <Widget>[];
+
+          void add(String label, String value) {
+            rows.add(_TelemetryDetailRow(label: label, value: value));
+          }
+
+          final temperature = snapshot.temperatureC;
+          if (temperature != null) {
+            add(
+              'Temperatura',
+              _weatherValueLabel(temperature, '°C', decimals: 1),
+            );
+          }
+          final apparent = snapshot.apparentTemperatureC;
+          if (apparent != null) {
+            add(
+              'Sensação térmica',
+              _weatherValueLabel(apparent, '°C', decimals: 1),
+            );
+          }
+          final humidity = snapshot.humidityPercent;
+          if (humidity != null) {
+            add('Umidade', _weatherValueLabel(humidity, '%'));
+          }
+          final pressure = snapshot.surfacePressureHpa;
+          if (pressure != null) {
+            add(
+              'Pressão',
+              _weatherValueLabel(pressure, 'hPa', decimals: 1),
+            );
+          }
+          final wind = snapshot.windSpeedKmh;
+          if (wind != null) {
+            add('Vento', _weatherValueLabel(wind, 'km/h', decimals: 1));
+          }
+          final windDirection = snapshot.windDirectionDegrees;
+          if (windDirection != null) {
+            add(
+              'Direção do vento',
+              '${MapWeatherPolicy.windDirectionLabel(windDirection.value)} '
+                  '(${windDirection.value.toStringAsFixed(0)}°) · '
+                  '${windDirection.source.label}',
+            );
+          }
+          final weatherCode = snapshot.weatherCode;
+          if (weatherCode != null && condition != null) {
+            add('Condição', '$condition · ${weatherCode.source.label}');
+          }
+          final chance = snapshot.precipitationProbabilityPercent;
+          if (chance != null) {
+            add(
+              'Chuva nas próximas horas',
+              '${chance.value.toStringAsFixed(0)}% · ${chance.source.label}',
+            );
+          }
+          final precipitation = snapshot.precipitationMm;
+          if (precipitation != null) {
+            add(
+              'Precipitação atual',
+              _weatherValueLabel(precipitation, 'mm', decimals: 1),
+            );
+          }
+          final rain = snapshot.rainMm;
+          if (rain != null) {
+            add(
+              'Chuva atual',
+              _weatherValueLabel(rain, 'mm', decimals: 1),
+            );
+          }
+          if (snapshot.hasValues) {
+            add('Origem', snapshot.origin.label);
+          }
+          if (snapshot.origin == MapWeatherOrigin.online ||
+              snapshot.origin == MapWeatherOrigin.mixed) {
+            add('Fonte online', MapWeatherService.providerLabel);
+          }
+          if (snapshot.onlineUpdatedAt != null) {
+            add(
+              'Atualização online',
+              _formatTelemetryTimestamp(snapshot.onlineUpdatedAt),
+            );
+          }
+          final latest = snapshot.latestObservedAt;
+          if (latest != null) {
+            add('Última leitura', _formatTelemetryTimestamp(latest));
+          }
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(_weatherIcon(snapshot.weatherCode?.value)),
+                const SizedBox(width: 10),
+                const Text('Clima'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_weather.loading) const LinearProgressIndicator(),
+                  if (_weather.loading) const SizedBox(height: 10),
+                  if (!snapshot.hasValues)
+                    const Text(
+                      'Nenhum dado meteorológico real está disponível agora.',
+                    ),
+                  ...rows,
+                  if (snapshot.onlineStale) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Os dados online estão antigos. Os sensores ESP32, quando disponíveis, continuam sendo mostrados separadamente.',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                  if (_weather.lastError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _weather.lastError!,
+                      style: TextStyle(
+                        color: Theme.of(dialogContext).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton.icon(
+                onPressed: !_mapViewSettings.weatherVoiceEnabled ||
+                        voiceMessage.isEmpty
+                    ? null
+                    : () => unawaited(_speakWeather()),
+                icon: const Icon(Icons.volume_up_rounded),
+                label: const Text('Ouvir'),
+              ),
+              TextButton.icon(
+                onPressed: current == null || _weather.loading
+                    ? null
+                    : () => unawaited(
+                          _refreshWeatherManually().whenComplete(() {
+                            if (dialogContext.mounted) setDialogState(() {});
+                          }),
+                        ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Atualizar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Fechar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _showGpsDetails() async {
     if (!mounted) return;
     final current = _routeState.current;
@@ -2731,6 +2967,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     await _mapViewSettings.setNavigationVoiceEnabled(false);
     await _setAiVoiceEnabled(false);
     await _routeExplorer.setVoiceEnabled(false);
+    await _mapViewSettings.setWeatherVoiceEnabled(false);
     await _navigationVoice.stop();
     if (mounted) setState(() {});
   }
@@ -2740,6 +2977,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _mapViewSettings.initialize(),
       _routeExplorer.initialize(),
       _appSettings.initialize().then((_) {}),
+      _weather.initialize(),
     ]);
     if (!mounted) return;
     await showDialog<void>(
@@ -2750,8 +2988,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           final navigationEnabled = _mapViewSettings.navigationVoiceEnabled;
           final aiEnabled = _aiVoiceEnabled;
           final nearbyEnabled = _routeExplorer.settings.voiceEnabled;
-          final allMuted =
-              !navigationEnabled && !aiEnabled && !nearbyEnabled;
+          final weatherEnabled = _mapViewSettings.weatherVoiceEnabled;
+          final allMuted = !navigationEnabled &&
+              !aiEnabled &&
+              !nearbyEnabled &&
+              !weatherEnabled;
 
           Future<void> updateAndRefresh(Future<void> operation) async {
             await operation;
@@ -2828,6 +3069,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         onChanged: (value) => unawaited(
                           updateAndRefresh(
                             _routeExplorer.setVoiceEnabled(value),
+                          ),
+                        ),
+                      ),
+                      _QuickAudioSwitch(
+                        icon: Icons.cloud_rounded,
+                        title: 'Clima',
+                        subtitle: 'Leituras do sensor e previsão online',
+                        value: weatherEnabled,
+                        onChanged: (value) => unawaited(
+                          updateAndRefresh(
+                            _mapViewSettings.setWeatherVoiceEnabled(value),
                           ),
                         ),
                       ),
@@ -3756,10 +4008,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   gpsAccuracyMeters:
                       MapTelemetryPolicy.validAccuracyMeters(current?.accuracyMeters),
                   orientationMode: _mapViewSettings.orientationMode,
+                  weather: _weather.snapshot,
                   onSpeedTap: () => unawaited(_showSpeedDetails()),
                   onAltitudeTap: () => unawaited(_showAltitudeDetails()),
                   onCompassTap: () => unawaited(_showCompassDetails()),
                   onGpsTap: () => unawaited(_showGpsDetails()),
+                  onWeatherTap: () => unawaited(_showWeatherDetails()),
                   compact: compactHud,
                 ),
               ),
@@ -5299,10 +5553,12 @@ class _MapTelemetryStrip extends StatelessWidget {
     required this.headingDegrees,
     required this.gpsAccuracyMeters,
     required this.orientationMode,
+    required this.weather,
     required this.onSpeedTap,
     required this.onAltitudeTap,
     required this.onCompassTap,
     required this.onGpsTap,
+    required this.onWeatherTap,
     this.compact = false,
   });
 
@@ -5311,10 +5567,12 @@ class _MapTelemetryStrip extends StatelessWidget {
   final double? headingDegrees;
   final double? gpsAccuracyMeters;
   final MapOrientationMode orientationMode;
+  final MapWeatherSnapshot weather;
   final VoidCallback onSpeedTap;
   final VoidCallback onAltitudeTap;
   final VoidCallback onCompassTap;
   final VoidCallback onGpsTap;
+  final VoidCallback onWeatherTap;
   final bool compact;
 
   String _direction(double? degrees) {
@@ -5324,6 +5582,18 @@ class _MapTelemetryStrip extends StatelessWidget {
     final index = ((normalized + 22.5) ~/ 45) % 8;
     return labels[index];
   }
+
+  IconData _weatherIcon(int? code) => switch (code) {
+        0 || 1 => Icons.wb_sunny_rounded,
+        2 => Icons.wb_cloudy_rounded,
+        3 || 45 || 48 => Icons.cloud_rounded,
+        51 || 53 || 55 || 56 || 57 => Icons.grain_rounded,
+        61 || 63 || 65 || 66 || 67 || 80 || 81 || 82 =>
+          Icons.water_drop_rounded,
+        71 || 73 || 75 || 77 || 85 || 86 => Icons.ac_unit_rounded,
+        95 || 96 || 99 => Icons.thunderstorm_rounded,
+        _ => Icons.device_thermostat_rounded,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -5382,6 +5652,24 @@ class _MapTelemetryStrip extends StatelessWidget {
             label: 'GPS',
             onTap: onGpsTap,
             tooltip: 'GPS: toque para ver posição e qualidade da leitura.',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: _MapTelemetryCard(
+            icon: _weatherIcon(weather.weatherCode?.value),
+            value: weather.temperatureC == null
+                ? '--'
+                : weather.temperatureC!.value.toStringAsFixed(0),
+            unit: weather.temperatureC == null ? null : '°C',
+            label: weather.origin == MapWeatherOrigin.unavailable
+                ? 'Clima'
+                : 'Clima · ${weather.origin.label}',
+            emphasized: weather.onlineStale,
+            onTap: onWeatherTap,
+            tooltip:
+                'Clima: toque para ver sensores ESP32, dados online e fontes.',
             compact: compact,
           ),
         ),

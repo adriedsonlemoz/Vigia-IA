@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.165+165
+# Arquitetura — Vigia IA 1.0.166+166
+
+## Clima inteligente do mapa — 1.0.166
+
+- `MapWeatherService` é a fonte única do clima no mapa. Ele observa `Esp32TelemetryService`, lê cache local e consulta o Open-Meteo apenas quando o cache/localização exigem atualização.
+- `MapWeatherPolicy` define TTL de 15 minutos, estado antigo após 45 minutos, deslocamento mínimo para nova consulta e merge por campo.
+- ESP32 tem prioridade somente em medições físicas presentes: temperatura, umidade e pressão. Condição meteorológica, vento e precipitação permanecem online salvo futura telemetria explícita equivalente.
+- `Esp32TelemetryPacket.environmentPayload` preserva dados ambientais sem inventar unidade; `pressurePa` só é convertido para hPa quando a chave explicita a unidade.
+- O cache online persiste em `map_weather_cache.json`; a chave Open-Meteo opcional vem de `--dart-define` e não participa de diagnóstico/log.
+- `MapViewSettingsService.weatherVoiceEnabled` controla a fala do clima, que reutiliza `MapVoiceService` e as preferências globais de voz/TTS.
+
 
 ## Compatibilidade do sanitizador do diagnóstico 3D — 1.0.165
 

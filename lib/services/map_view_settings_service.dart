@@ -51,6 +51,7 @@ class MapViewSettingsService extends ChangeNotifier {
   MapStylePreset _stylePreset = MapStylePreset.standard;
   MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
   bool _navigationVoiceEnabled = true;
+  bool _weatherVoiceEnabled = true;
   bool _initialized = false;
   File? _file;
 
@@ -60,6 +61,7 @@ class MapViewSettingsService extends ChangeNotifier {
   MapStylePreset get stylePreset => _stylePreset;
   MapTravelMode get lastTravelMode => _lastTravelMode;
   bool get navigationVoiceEnabled => _navigationVoiceEnabled;
+  bool get weatherVoiceEnabled => _weatherVoiceEnabled;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -76,6 +78,7 @@ class MapViewSettingsService extends ChangeNotifier {
           final styleName = map['stylePreset'] as String?;
           final lastTravelMode = map['lastTravelMode'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
+          final weatherVoiceEnabled = map['weatherVoiceEnabled'];
           _orientationMode = orientationName == 'headingUp'
               ? MapOrientationMode.directionUp
               : MapOrientationMode.values.firstWhere(
@@ -92,6 +95,7 @@ class MapViewSettingsService extends ChangeNotifier {
           );
           _lastTravelMode = MapTravelModeX.fromStorage(lastTravelMode);
           _navigationVoiceEnabled = navigationVoiceEnabled as bool? ?? true;
+          _weatherVoiceEnabled = weatherVoiceEnabled as bool? ?? true;
         }
       } catch (_) {
         _orientationMode = MapOrientationMode.northUp;
@@ -99,6 +103,7 @@ class MapViewSettingsService extends ChangeNotifier {
         _stylePreset = MapStylePreset.standard;
         _lastTravelMode = MapTravelMode.bicycle;
         _navigationVoiceEnabled = true;
+        _weatherVoiceEnabled = true;
       }
     }
     _initialized = true;
@@ -136,6 +141,14 @@ class MapViewSettingsService extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setWeatherVoiceEnabled(bool value) async {
+    if (!_initialized) await initialize();
+    if (_weatherVoiceEnabled == value) return;
+    _weatherVoiceEnabled = value;
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setStylePreset(MapStylePreset value) async {
     if (!_initialized) await initialize();
     if (_stylePreset == value) return;
@@ -149,12 +162,13 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 5,
+        'version': 6,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,
         'lastTravelMode': _lastTravelMode.storageValue,
         'navigationVoiceEnabled': _navigationVoiceEnabled,
+        'weatherVoiceEnabled': _weatherVoiceEnabled,
       }),
       flush: true,
     );

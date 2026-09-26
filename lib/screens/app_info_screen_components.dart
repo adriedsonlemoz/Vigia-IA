@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.165',
+          version: '1.0.166',
           current: true,
+          changes: [
+            'O mapa ganhou um mini-card de clima com temperatura e origem ESP32, Online ou Misto.',
+            'O popup de clima combina sensores reais do ESP32 com previsão online apenas para os dados que o hardware não fornece.',
+            'Atualização manual, cache local e fala do clima foram integrados aos controles existentes do mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.165',
           changes: [
             'O diagnóstico exportado do mapa 3D mantém sanitização de URLs e segredos usando sintaxe compatível com o analisador Dart.',
             'A telemetria compacta e clicável da 1.0.164 permanece preservada sem alteração de dados ou fontes.',
@@ -1530,8 +1539,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.165',
+          version: '1.0.166',
           current: true,
+          changes: [
+            'O mapa ganhou um mini-card de clima com temperatura e origem ESP32, Online ou Misto.',
+            'O popup mostra somente dados meteorológicos realmente disponíveis e permite atualização manual.',
+            'A voz do clima usa as preferências do mapa e pode ser ativada ou silenciada junto aos outros canais de áudio.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.165',
           changes: [
             'O diagnóstico exportado do mapa 3D mantém sanitização de URLs e segredos sem expor chaves de acesso.',
             'A telemetria compacta e clicável da 1.0.164 permanece preservada sem alteração de dados ou fontes.',

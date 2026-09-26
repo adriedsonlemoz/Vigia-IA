@@ -155,4 +155,31 @@ void main() {
 
     expect(item.activity, Esp32CapabilityActivity.offline);
   });
+  test('telemetria ambiental infere capacidade ambient sem inventar sensores', () {
+    const module = Esp32Module(
+      id: 'weather',
+      name: 'ESP32 ambiente',
+      capabilities: <Esp32Capability>{},
+    );
+    final packet = Esp32TelemetryPacket.fromJson(
+      <String, dynamic>{
+        'moduleId': 'weather',
+        'environment': <String, dynamic>{
+          'humidityPercent': 65,
+          'pressureHpa': 1009.2,
+        },
+      },
+      fallbackModuleId: 'weather',
+    );
+
+    final items = buildEsp32CapabilityObservations(module, runtimeFor(packet));
+    final ambient = items.singleWhere(
+      (item) => item.capability == Esp32Capability.ambient,
+    );
+    expect(ambient.activity, Esp32CapabilityActivity.discovered);
+    expect(ambient.valueLabel, contains('65% UR'));
+    expect(ambient.valueLabel, contains('1009.2 hPa'));
+  });
+
+
 }

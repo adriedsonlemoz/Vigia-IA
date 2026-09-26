@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.165 preserva a telemetria compacta do mapa e mantém o diagnóstico 3D sanitizado compatível com a análise estática do Dart, sem expor chaves/API secrets.",
-  "version": "1.0.165",
-  "build": 165
+  "notes": "A 1.0.166 adiciona clima inteligente ao mapa, combinando sensores ESP32 reais com dados online quando necessários, com cache, origem explícita e voz integrada.",
+  "version": "1.0.166",
+  "build": 166
 }

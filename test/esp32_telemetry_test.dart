@@ -164,4 +164,26 @@ test('parser extrai bateria principal corrente e entrada solar', () {
     expect(packet.bikePayload['batteryPercent'], 88);
   });
 
+  test('parser extrai ambiente real com temperatura umidade e pressao', () {
+    final packet = Esp32TelemetryPacket.fromJson(
+      <String, dynamic>{
+        'moduleId': 'weather-node',
+        'sensors': <String, dynamic>{
+          'ambient': <String, dynamic>{
+            'temperatureC': 27.6,
+            'humidityPercent': 71,
+            'pressurePa': 100845,
+          },
+        },
+      },
+      fallbackModuleId: 'weather-node',
+    );
+
+    expect(packet.hasEnvironmentTelemetry, isTrue);
+    expect(packet.environmentPayload['temperatureC'], 27.6);
+    expect(packet.environmentPayload['humidityPercent'], 71);
+    expect(packet.environmentPayload['pressureHpa'], closeTo(1008.45, 0.001));
+  });
+
+
 }

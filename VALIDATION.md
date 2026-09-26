@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.165+165
+# Validação Vigia IA 1.0.166+166
+
+## 1.0.166+166 — Clima Inteligente
+- Confirmar quinto mini-card `Clima` no topo sem remover Velocidade, Altitude, Bússola ou GPS.
+- Com ESP32 fornecendo apenas temperatura, confirmar origem ESP32/Misto sem inferir céu, chuva ou vento.
+- Com ESP32 fornecendo umidade/pressão, confirmar que esses valores aparecem com origem ESP32 e substituem somente os mesmos campos online.
+- Sem ESP32, confirmar uso do Open-Meteo para os campos realmente retornados e `--`/ausência para qualquer campo não retornado.
+- Confirmar cache de 15 minutos, atualização manual e aviso de dado online antigo após 45 minutos.
+- Confirmar que o popup exibe temperatura, sensação, umidade, pressão, vento/direção, condição, probabilidade/chuva apenas quando cada dado existe.
+- Confirmar que `Clima` aparece no controle rápido de áudio e que a fala respeita a preferência desativada.
+- Confirmar que nenhuma chave Open-Meteo é escrita em logs ou diagnóstico; endpoint/chave opcionais devem vir de `--dart-define`.
+- Revalidar mapa 2D/3D, rota, orientação, telemetria superior, offline, POIs, câmeras e áudio para ausência de regressão.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: sincronização de versão, sintaxe shell/Python, `verify_project.sh`, JSONs de identidade, guardas de Novidades/clima, workflow único e ausência de APK/AAB **aprovados**.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android release precisam ser reconfirmados pelo workflow.
+
 
 ## 1.0.165+165 — compatibilidade do diagnóstico 3D
 

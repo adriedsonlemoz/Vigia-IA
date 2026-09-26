@@ -102,6 +102,7 @@ class Esp32TelemetryPacket {
     this.protocolVersion,
     this.firmwareVersion,
     this.reportedCapabilities = const <Esp32Capability>{},
+    this.environmentPayload = const <String, dynamic>{},
   });
 
   final String moduleId;
@@ -119,6 +120,9 @@ class Esp32TelemetryPacket {
   final String? firmwareVersion;
   final Set<Esp32Capability> reportedCapabilities;
   final Map<String, dynamic> bikePayload;
+  final Map<String, dynamic> environmentPayload;
+
+  bool get hasEnvironmentTelemetry => environmentPayload.isNotEmpty;
 
   bool get hasBikeTelemetry {
     const keys = <String>{
@@ -158,6 +162,7 @@ class Esp32TelemetryPacket {
         'capabilities': reportedCapabilities.map((item) => item.name).toList()
           ..sort(),
         'bikeTelemetry': bikePayload,
+        'environmentTelemetry': environmentPayload,
       };
 
   factory Esp32TelemetryPacket.fromJson(
@@ -194,6 +199,60 @@ class Esp32TelemetryPacket {
     final wifi = _stringMap(telemetry['wifi']) ??
         _stringMap(json['wifi']) ??
         const <String, dynamic>{};
+    final environmentRaw = _stringMap(telemetry['environment']) ??
+        _stringMap(json['environment']) ??
+        _stringMap(telemetry['weather']) ??
+        _stringMap(json['weather']) ??
+        const <String, dynamic>{};
+    final ambientRaw = _stringMap(sensors['ambient']) ??
+        _stringMap(telemetry['ambient']) ??
+        _stringMap(json['ambient']) ??
+        const <String, dynamic>{};
+    final environment = <String, dynamic>{};
+    _putNumber(
+      environment,
+      'temperatureC',
+      _firstNumber(<Object?>[
+        environmentRaw['temperatureC'],
+        ambientRaw['temperatureC'],
+        telemetry['ambientTemperatureC'],
+        sensors['ambientTemperatureC'],
+      ]),
+    );
+    _putNumber(
+      environment,
+      'humidityPercent',
+      _firstNumber(<Object?>[
+        environmentRaw['humidityPercent'],
+        environmentRaw['relativeHumidityPercent'],
+        ambientRaw['humidityPercent'],
+        ambientRaw['relativeHumidityPercent'],
+      ]),
+    );
+    final pressureHpa = _firstNumber(<Object?>[
+      environmentRaw['pressureHpa'],
+      environmentRaw['pressureHPa'],
+      environmentRaw['pressureMb'],
+      ambientRaw['pressureHpa'],
+      ambientRaw['pressureHPa'],
+      ambientRaw['pressureMb'],
+    ])?.toDouble();
+    final pressurePa = _firstNumber(<Object?>[
+      environmentRaw['pressurePa'],
+      ambientRaw['pressurePa'],
+    ])?.toDouble();
+    _putNumber(
+      environment,
+      'pressureHpa',
+      pressureHpa ?? (pressurePa == null ? null : pressurePa / 100),
+    );
+    final environmentCapturedAt = environmentRaw['capturedAt'] ??
+        ambientRaw['capturedAt'] ??
+        telemetry['capturedAt'] ??
+        json['capturedAt'];
+    if (environmentCapturedAt is String) {
+      environment['capturedAt'] = environmentCapturedAt;
+    }
 
     final bike = <String, dynamic>{};
     if (bikeSensors != null) {
@@ -473,6 +532,7 @@ class Esp32TelemetryPacket {
           ?.toString(),
       reportedCapabilities: Set<Esp32Capability>.unmodifiable(capabilities),
       bikePayload: Map<String, dynamic>.unmodifiable(bike),
+      environmentPayload: Map<String, dynamic>.unmodifiable(environment),
     );
   }
 }

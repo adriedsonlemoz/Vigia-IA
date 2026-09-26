@@ -1,3 +1,16 @@
+## 1.0.166+166 — 2026-09-26
+
+- ETAPA 3 do plano do mapa: Clima Inteligente com origem ESP32, Online ou Misto, sem antecipar o seletor de transporte ou etapas seguintes.
+- Novo modelo/serviço de clima combina por campo temperatura, umidade e pressão do ESP32 com condições, vento e precipitação do Open-Meteo quando disponíveis.
+- Telemetria ESP32 passa a preservar payload ambiental real (`temperatureC`, `humidityPercent`, `pressureHpa`) e a capacidade `ambient` pode ser inferida a partir dessas leituras.
+- Cache online de 15 minutos, limite de atualização automática por deslocamento e sinalização de dados online antigos após 45 minutos reduzem consultas e consumo.
+- Popup central exibe somente dados reais disponíveis, origem de cada medição, última atualização, atualização manual e estado de cache.
+- Voz do clima reutiliza `MapVoiceService`, respeita as preferências existentes e ganhou chave própria no controle rápido de áudio.
+- Open-Meteo é configurável por `OPEN_METEO_HOST`/`OPEN_METEO_API_KEY`, sem registrar ou expor a chave em logs.
+- Testes adicionados para merge ESP32/online, ausência de inferência meteorológica indevida, cache, fala, decoder online e telemetria ambiental ESP32.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION e verificadores sincronizados para `1.0.166+166`.
+- Popup automática de Novidades contém somente `1.0.166+166` e descreve apenas mudanças perceptíveis ao usuário.
+
 ## 1.0.165+165 — 2026-09-26
 
 - Sanitizador do diagnóstico 3D ajustado para usar `caseSensitive: false`, sintaxe válida do `RegExp` do Dart, mantendo a remoção de chaves/tokens/secrets dos registros.
