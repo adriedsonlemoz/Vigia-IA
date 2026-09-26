@@ -65,8 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.176',
+          changes: [
+            'O planejamento Bike ganhou uma média aprendida a partir de percursos válidos gravados no próprio aparelho.',
+            'O usuário escolhe se quer usar a média aprendida no ETA; a média manual continua preservada e o histórico pode ser apagado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.175',
-          current: true,
           changes: [
             'Rotas Bike longas agora podem ser divididas em dias conforme a média e o limite diário configurados.',
             'O plano prioriza cidades, comunidades e campings conhecidos próximos da rota e sinaliza claramente quando a parada é apenas aproximada.',
@@ -1615,8 +1622,47 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.171',
+          version: '1.0.176',
           current: true,
+          changes: [
+            'O Vigia IA passa a aprender uma média real de pedal a partir de percursos Bike válidos gravados no aparelho.',
+            'O planejamento permite usar a média aprendida no ETA sem apagar a média manual, e o histórico pode ser limpo quando quiser.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.175',
+          changes: [
+            'Rotas Bike longas podem ser divididas em dias conforme a média e o limite diário configurados.',
+            'O plano prioriza cidades, comunidades e campings conhecidos próximos da rota e sinaliza quando a parada é apenas aproximada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.174',
+          changes: [
+            'A navegação de bicicleta usa velocidade média e horas de pedal por dia configuradas para calcular o tempo.',
+            'As preferências ficam salvas e as alternativas de rota usam a mesma estimativa personalizada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.173',
+          changes: [
+            'A lupa do mapa pesquisa cidades, comunidades, endereços e pontos sem substituir Locais próximos.',
+            'A pesquisa também funciona offline com localidades indexadas e pontos já salvos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.172',
+          changes: [
+            'Manutenção interna do mapa 3D removeu um aviso do analisador sem mudar o comportamento da navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.171',
           changes: [
             'Manutenção do build 133 removeu avisos do analisador Dart sem alterar o comportamento do mapa 3D, clima ou navegação.',
             'A versão mantém integralmente câmera 3D, rota, prédios opcionais, fallback 2D e integração ESP32 da entrega anterior.',

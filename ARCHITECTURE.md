@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.175+175
+# Arquitetura — Vigia IA 1.0.176+176
+
+## Aprendizado local de ritmo Bike — 1.0.176
+
+`BikeRideHistoryService` mantém em `bike_ride_history.json` somente percursos classificados como Bike pelo contexto de navegação ou pelo Modo Bike ativo. `BikeRideHistoryAnalyzer` trabalha sobre os segmentos já filtrados por `MapRouteService`, ignora gaps longos, saltos de GPS, pouca distância/movimento e velocidades incompatíveis com bicicleta antes de aceitar uma amostra.
+
+O histórico é limitado às 20 amostras mais recentes. A velocidade aprendida usa agregação robusta das médias de movimento por percurso; com cinco ou mais entradas, os extremos são descartados antes da média. O resumo só é considerado confiável após pelo menos três percursos, 20 km acumulados e 90 minutos de movimento.
+
+`MapViewSettingsService` mantém separadamente `bikeAverageSpeedKmh` (manual) e `bikeUseHistoricalSpeed`. `MapMonitoringScreen` calcula `_effectiveBikeTravelPreferences`: se o usuário optou pelo histórico e o resumo é confiável, usa a média aprendida; em qualquer outro caso retorna imediatamente à média manual. Limpar o histórico também desativa a opção histórica, sem alterar a velocidade manual.
 
 ## Pesquisa e planejamento de cicloviagem — 1.0.173 a 1.0.175
 

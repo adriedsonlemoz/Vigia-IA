@@ -1,3 +1,12 @@
+## 1.0.176+176 — 2026-09-26
+
+- Adicionado histórico local de percursos Bike válidos para aprender a média real de deslocamento.
+- O aprendizado rejeita trajetos curtos, amostras com pouco movimento e velocidades incompatíveis com bicicleta antes de persistir qualquer dado.
+- Após 3 percursos válidos, 20 km acumulados e 1h30 de movimento, a média aprendida pode ser usada opcionalmente no ETA e no planejamento por dias.
+- A média manual continua preservada e o histórico Bike pode ser limpo na própria tela de planejamento.
+- Histórico limitado às 20 amostras mais recentes com agregação robusta para reduzir distorções por outliers.
+- Versionamento, identidades, User-Agents, documentação, testes e verificadores sincronizados em `1.0.176+176`.
+
 ## 1.0.175+175 — 2026-09-26
 
 - Planejamento de cicloviagem divide rotas Bike longas em dias usando velocidade média e horas máximas de pedal por dia.

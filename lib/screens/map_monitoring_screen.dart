@@ -25,6 +25,8 @@ import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
+import '../services/bike_mode_service.dart';
+import '../services/bike_ride_history_service.dart';
 import '../services/bike_trip_planner.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
@@ -67,6 +69,16 @@ enum _MapPoiQuickFilter { all, fuel, food, health, water, nature, travel, other 
 enum _MapQuickView { near, region, route }
 
 enum _CameraPipMenuAction { source, size, minimize, hide }
+
+class _BikeTravelSelection {
+  const _BikeTravelSelection({
+    required this.preferences,
+    required this.useHistoricalSpeed,
+  });
+
+  final BikeTravelPreferences preferences;
+  final bool useHistoricalSpeed;
+}
 
 class MapMonitoringScreen extends StatefulWidget {
   const MapMonitoringScreen({
@@ -122,6 +134,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
   final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
   final BikeTripPlanner _bikeTripPlanner = const BikeTripPlanner();
+  final BikeRideHistoryService _bikeRideHistory = BikeRideHistoryService.instance;
+  final BikeModeService _bikeMode = BikeModeService.instance;
   final MapNavigationVoiceService _navigationVoice = MapNavigationVoiceService();
   MapCyclingRoute? _cyclingRoute;
   List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
@@ -205,6 +219,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _routeExplorer.addListener(_onRouteExplorerChanged);
     _connectivity.addListener(_onMapConnectivityChanged);
     _weather.addListener(_onWeatherChanged);
+    _bikeRideHistory.addListener(_onBikeRideHistoryChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     unawaited(_initializeOfflineMaps());
@@ -229,6 +244,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _routeExplorer.removeListener(_onRouteExplorerChanged);
     _connectivity.removeListener(_onMapConnectivityChanged);
     _weather.removeListener(_onWeatherChanged);
+    _bikeRideHistory.removeListener(_onBikeRideHistoryChanged);
     _connectivity.release(this);
     _routeRecoveryTimer?.cancel();
     unawaited(_compassSubscription?.cancel());
@@ -882,6 +898,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _mapViewSettings.initialize(),
       _appSettings.initialize().then((_) {}),
       _weather.initialize(),
+      _bikeRideHistory.initialize(),
+      _bikeMode.initialize().then((_) {}),
     ]);
     _quickView = switch (_mapViewSettings.followViewPreset) {
       MapFollowViewPreset.near => _MapQuickView.near,
@@ -1185,6 +1203,31 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
+  void _onBikeRideHistoryChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final target = _routeState.navigationTarget;
+    final route = _cyclingRoute;
+    if (target != null &&
+        target.travelMode == MapTravelMode.bicycle &&
+        route != null) {
+      unawaited(_refreshBikeTripPlan(route: route, target: target));
+    }
+  }
+
+  BikeTravelPreferences get _effectiveBikeTravelPreferences {
+    final manual = _mapViewSettings.bikeTravelPreferences;
+    final history = _bikeRideHistory.summary;
+    final learnedSpeed = history.learnedMovingSpeedKmh;
+    if (!_mapViewSettings.bikeUseHistoricalSpeed ||
+        !history.reliable ||
+        learnedSpeed == null ||
+        !learnedSpeed.isFinite) {
+      return manual;
+    }
+    return manual.copyWith(averageSpeedKmh: learnedSpeed);
+  }
+
   Future<void> _startRecording() async {
     setState(() {
       _followPosition = true;
@@ -1210,8 +1253,38 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (current != null) _applyFollowCamera(current, forceRotation: true);
   }
 
-  void _finishRecording() {
-    unawaited(_routeState.finishRecording());
+  Future<void> _finishRecording() async {
+    final segments = _routeState.routeSegments;
+    final distanceMeters = _routeState.distanceMeters;
+    final elapsedDuration = _routeState.elapsed;
+    final startedAt = _routeState.routeStartedAt;
+    final navigationTarget = _routeState.navigationTarget;
+
+    await _routeState.finishRecording();
+    final bikeConfig = await _bikeMode.initialize();
+    final shouldLearn = navigationTarget?.travelMode == MapTravelMode.bicycle ||
+        (navigationTarget == null &&
+            bikeConfig.enabled &&
+            _lastTravelMode == MapTravelMode.bicycle);
+    if (!shouldLearn || startedAt == null || segments.isEmpty) return;
+    final accepted = await _bikeRideHistory.recordRide(
+      segments: segments,
+      distanceMeters: distanceMeters,
+      elapsedDuration: elapsedDuration,
+      startedAt: startedAt,
+      endedAt: _routeState.routeEndedAt ?? DateTime.now(),
+    );
+    if (!mounted || !accepted) return;
+    final summary = _bikeRideHistory.summary;
+    if (summary.reliable && summary.learnedMovingSpeedKmh != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Histórico Bike atualizado · média real ${summary.learnedMovingSpeedKmh!.toStringAsFixed(1)} km/h.',
+          ),
+        ),
+      );
+    }
   }
 
   void _togglePauseRecording() {
@@ -1282,11 +1355,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
-  Future<BikeTravelPreferences?> _chooseBikeTravelPreferences() async {
+  Future<_BikeTravelSelection?> _chooseBikeTravelPreferences() async {
     var speed = _mapViewSettings.bikeTravelPreferences.averageSpeedKmh;
     var hours = _mapViewSettings.bikeTravelPreferences.ridingHoursPerDay;
     var balance = _mapViewSettings.bikeTravelPreferences.balanceDays;
-    final selected = await showModalBottomSheet<BikeTravelPreferences>(
+    var history = _bikeRideHistory.summary;
+    var useHistory = _mapViewSettings.bikeUseHistoricalSpeed && history.reliable;
+    final selected = await showModalBottomSheet<_BikeTravelSelection>(
       context: context,
       useSafeArea: true,
       showDragHandle: true,
@@ -1314,12 +1389,67 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   'A rota continua usando as vias do roteador, mas o tempo da Bike será calculado pela sua média realista.',
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Média aprendida com seus percursos',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        history.rideCount == 0
+                            ? 'Ainda não há percursos Bike válidos no histórico.'
+                            : history.reliable && history.learnedMovingSpeedKmh != null
+                                ? '${history.learnedMovingSpeedKmh!.toStringAsFixed(1)} km/h em movimento · ${history.learnedOverallSpeedKmh?.toStringAsFixed(1) ?? '--'} km/h total · ${history.rideCount} percursos · ${history.totalDistanceKm.toStringAsFixed(0)} km analisados'
+                                : '${history.rideCount} percurso(s) · ${history.totalDistanceKm.toStringAsFixed(0)} km. A média aprendida fica disponível após 3 percursos válidos, 20 km e 1h30 de movimento.',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Usar média aprendida no ETA'),
+                        subtitle: const Text(
+                          'Sua média manual continua salva como alternativa.',
+                        ),
+                        value: useHistory && history.reliable,
+                        onChanged: history.reliable
+                            ? (value) => setSheetState(() => useHistory = value)
+                            : null,
+                      ),
+                      if (history.rideCount > 0)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              await _bikeRideHistory.clear();
+                              await _mapViewSettings.setBikeUseHistoricalSpeed(false);
+                              if (!sheetContext.mounted) return;
+                              setSheetState(() {
+                                history = _bikeRideHistory.summary;
+                                useHistory = false;
+                              });
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            label: const Text('Limpar histórico Bike'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     const Expanded(
                       child: Text(
-                        'Velocidade média',
+                        'Velocidade média manual',
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -1381,10 +1511,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(sheetContext).pop(
-                          BikeTravelPreferences(
-                            averageSpeedKmh: speed,
-                            ridingHoursPerDay: hours,
-                            balanceDays: balance,
+                          _BikeTravelSelection(
+                            preferences: BikeTravelPreferences(
+                              averageSpeedKmh: speed,
+                              ridingHoursPerDay: hours,
+                              balanceDays: balance,
+                            ),
+                            useHistoricalSpeed: useHistory && history.reliable,
                           ),
                         ),
                         child: const Text('Usar nesta rota'),
@@ -1403,9 +1536,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<bool> _prepareTravelPreferences(MapTravelMode travelMode) async {
     if (travelMode != MapTravelMode.bicycle) return true;
-    final preferences = await _chooseBikeTravelPreferences();
-    if (!mounted || preferences == null) return false;
-    await _mapViewSettings.setBikeTravelPreferences(preferences);
+    final selection = await _chooseBikeTravelPreferences();
+    if (!mounted || selection == null) return false;
+    await _mapViewSettings.setBikeTravelPreferences(selection.preferences);
+    await _mapViewSettings.setBikeUseHistoricalSpeed(
+      selection.useHistoricalSpeed,
+    );
     return true;
   }
 
@@ -1577,7 +1713,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _bikeTripEstimate = target.travelMode == MapTravelMode.bicycle
             ? _bikeTripPlanner.estimate(
                 distanceMeters: route.distanceMeters,
-                preferences: _mapViewSettings.bikeTravelPreferences,
+                preferences: _effectiveBikeTravelPreferences,
               )
             : null;
         _navigationProgress = current == null
@@ -1625,7 +1761,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               MapTravelMode.bicycle
           ? _bikeTripPlanner.estimate(
               distanceMeters: route.distanceMeters,
-              preferences: _mapViewSettings.bikeTravelPreferences,
+              preferences: _effectiveBikeTravelPreferences,
             )
           : null;
       _navigationProgress = current == null
@@ -1661,7 +1797,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       }
       return;
     }
-    final preferences = _mapViewSettings.bikeTravelPreferences;
+    final preferences = _effectiveBikeTravelPreferences;
     final estimate = _bikeTripPlanner.estimate(
       distanceMeters: route.distanceMeters,
       preferences: preferences,
@@ -1743,7 +1879,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     '${plan.estimate.distanceKm.toStringAsFixed(0)} km · '
                     '${_formatTripDuration(plan.estimate.ridingDuration)} pedalando · '
                     '${plan.estimate.dayCount} dia(s) · '
-                    '${plan.estimate.preferences.averageSpeedKmh.toStringAsFixed(0)} km/h',
+                    '${plan.estimate.preferences.averageSpeedKmh.toStringAsFixed(1)} km/h'
+                    '${_mapViewSettings.bikeUseHistoricalSpeed && _bikeRideHistory.summary.reliable ? ' · média aprendida' : ''}',
                   ),
                 ],
               ),
@@ -4441,7 +4578,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           const SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _finishRecording,
+                              onPressed: () => unawaited(_finishRecording()),
                               icon: const Icon(Icons.stop_rounded),
                               label: const Text('Finalizar'),
                             ),
@@ -5257,7 +5394,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   onToggleRecording: current == null
                       ? null
                       : _routeState.recording
-                          ? _finishRecording
+                          ? () => unawaited(_finishRecording())
                           : () => unawaited(_startRecording()),
                   onTogglePause:
                       _routeState.recording ? _togglePauseRecording : null,

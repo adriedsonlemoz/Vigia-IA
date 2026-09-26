@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.175', build: 175);
+      AppBuildVersion(version: '1.0.176', build: 176);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
       version: currentVersion,
       changes: <String>[
-        'Rotas de bicicleta longas agora podem ser organizadas em dias conforme sua média e o tempo diário de pedal.',
-        'O plano de viagem sugere cidades, comunidades ou campings conhecidos próximos da rota quando esses dados estão disponíveis.',
-        'A navegação mostra um acesso rápido ao plano por dias durante a cicloviagem.',
+        'O Vigia IA agora pode aprender sua média de pedal com percursos Bike válidos gravados no aparelho.',
+        'No planejamento de bicicleta, você pode usar a média aprendida no tempo estimado sem perder sua média manual.',
+        'O histórico Bike pode ser limpo a qualquer momento pela própria tela de planejamento.',
       ],
     ),
   ]);

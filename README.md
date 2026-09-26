@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.175+175`
+> **Versão atual:** `1.0.176+176`
 
 ## Estado atual
 
-A `1.0.175+175` conclui o ciclo de pesquisa e planejamento de cicloviagem: a nova lupa encontra destinos online e nos dados salvos, o tempo de Bike usa velocidade média/horas por dia configuradas e rotas longas recebem um plano por dias sem inventar serviços em pontos desconhecidos.
+A `1.0.176+176` acrescenta aprendizado local do ritmo de bicicleta: percursos Bike válidos formam uma média real opcional para o ETA e para o plano por dias, sem apagar a média manual configurada.
+
+### Ritmo aprendido da Bike — 1.0.176
+- Percursos Bike concluídos podem alimentar um histórico local quando passam pelos filtros de distância, duração, movimento e velocidade plausível.
+- A média aprendida só fica disponível após histórico suficiente: pelo menos 3 percursos válidos, 20 km acumulados e 1h30 de movimento.
+- A tela de planejamento permite escolher entre média manual e média aprendida; a opção manual permanece salva como fallback.
+- O histórico pode ser apagado pelo usuário e mantém no máximo 20 amostras recentes.
 
 ### Planejamento inteligente de cicloviagem — 1.0.175
 - Rotas Bike longas são divididas em dias conforme a média e o limite diário configurados.

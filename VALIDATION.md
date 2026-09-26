@@ -1,11 +1,22 @@
-# Validação Vigia IA 1.0.175+175
+# Validação Vigia IA 1.0.176+176
+
+## Aprendizado de ritmo Bike — 1.0.176
+
+- Confirmar `BikeRideHistoryService` e `BikeRideHistoryAnalyzer` com persistência local e limite de 20 amostras.
+- Confirmar que trajetos curtos, gaps de GPS e velocidades incompatíveis não entram no histórico.
+- Confirmar limiar de confiabilidade em 3 percursos, 20 km e 1h30 de movimento.
+- Confirmar opção `Usar média aprendida no ETA`, preservando a velocidade manual separadamente.
+- Confirmar botão `Limpar histórico Bike` e fallback imediato para a média manual.
+- Executar `test/bike_ride_history_test.dart` quando Flutter estiver disponível.
+- Confirmar User-Agent `VigiaIA/1.0.176` nos serviços de mapa.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
 
 ## Pesquisa + cicloviagem — 1.0.173 / 1.0.174 / 1.0.175
 
 - Confirmar botão `Pesquisar no mapa` independente de `Próximos pontos`.
 - Confirmar que `MapDestinationSearchService.searchSubmitted` é o único caminho da pesquisa Nominatim e que `TextField.onChanged` não dispara rede.
 - Confirmar busca offline sobre índice persistente e `offlinePackages` de POIs.
-- Confirmar User-Agent `VigiaIA/1.0.175` em Nominatim, Overpass, Valhalla, clima, offline e MapLibre.
+- Confirmar User-Agent `VigiaIA/1.0.176` em Nominatim, Overpass, Valhalla, clima, offline e MapLibre.
 - Confirmar que rota Bike pergunta média/horas por dia, persiste os valores e usa `BikeTripPlanner` para ETA.
 - Confirmar que rotas longas exibem quantidade de dias e botão de calendário.
 - Confirmar que paradas sem candidato real recebem o rótulo `Parada aproximada na rota` e não exibem alegação de água/comida/hospedagem.

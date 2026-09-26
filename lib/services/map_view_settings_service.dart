@@ -98,6 +98,7 @@ class MapViewSettingsService extends ChangeNotifier {
   double _bikeAverageSpeedKmh = 15;
   double _bikeRidingHoursPerDay = 5;
   bool _bikeBalanceDays = true;
+  bool _bikeUseHistoricalSpeed = false;
   bool _navigationVoiceEnabled = true;
   bool _weatherVoiceEnabled = true;
   bool _initialized = false;
@@ -115,6 +116,7 @@ class MapViewSettingsService extends ChangeNotifier {
         ridingHoursPerDay: _bikeRidingHoursPerDay,
         balanceDays: _bikeBalanceDays,
       );
+  bool get bikeUseHistoricalSpeed => _bikeUseHistoricalSpeed;
   bool get navigationVoiceEnabled => _navigationVoiceEnabled;
   bool get weatherVoiceEnabled => _weatherVoiceEnabled;
 
@@ -138,6 +140,7 @@ class MapViewSettingsService extends ChangeNotifier {
           final bikeRidingHoursPerDay =
               (map['bikeRidingHoursPerDay'] as num?)?.toDouble();
           final bikeBalanceDays = map['bikeBalanceDays'];
+          final bikeUseHistoricalSpeed = map['bikeUseHistoricalSpeed'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
           final weatherVoiceEnabled = map['weatherVoiceEnabled'];
           _orientationMode = orientationName == 'headingUp'
@@ -168,6 +171,7 @@ class MapViewSettingsService extends ChangeNotifier {
           _bikeRidingHoursPerDay =
               (bikeRidingHoursPerDay ?? 5).clamp(1.0, 12.0).toDouble();
           _bikeBalanceDays = bikeBalanceDays as bool? ?? true;
+          _bikeUseHistoricalSpeed = bikeUseHistoricalSpeed as bool? ?? false;
           _navigationVoiceEnabled = navigationVoiceEnabled as bool? ?? true;
           _weatherVoiceEnabled = weatherVoiceEnabled as bool? ?? true;
         }
@@ -181,6 +185,7 @@ class MapViewSettingsService extends ChangeNotifier {
         _bikeAverageSpeedKmh = 15;
         _bikeRidingHoursPerDay = 5;
         _bikeBalanceDays = true;
+        _bikeUseHistoricalSpeed = false;
         _navigationVoiceEnabled = true;
         _weatherVoiceEnabled = true;
       }
@@ -224,6 +229,14 @@ class MapViewSettingsService extends ChangeNotifier {
     _bikeAverageSpeedKmh = speed;
     _bikeRidingHoursPerDay = hours;
     _bikeBalanceDays = value.balanceDays;
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setBikeUseHistoricalSpeed(bool value) async {
+    if (!_initialized) await initialize();
+    if (_bikeUseHistoricalSpeed == value) return;
+    _bikeUseHistoricalSpeed = value;
     notifyListeners();
     await _persist();
   }
@@ -276,7 +289,7 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 8,
+        'version': 9,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,
@@ -286,6 +299,7 @@ class MapViewSettingsService extends ChangeNotifier {
         'bikeAverageSpeedKmh': _bikeAverageSpeedKmh,
         'bikeRidingHoursPerDay': _bikeRidingHoursPerDay,
         'bikeBalanceDays': _bikeBalanceDays,
+        'bikeUseHistoricalSpeed': _bikeUseHistoricalSpeed,
         'navigationVoiceEnabled': _navigationVoiceEnabled,
         'weatherVoiceEnabled': _weatherVoiceEnabled,
       }),

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.175 conclui o ciclo de pesquisa e planejamento de cicloviagem: lupa online/offline, ETA de Bike por média configurada e plano por dias com paradas baseadas em localidades reais quando disponíveis.",
-  "version": "1.0.175",
-  "build": 175
+  "notes": "A 1.0.176 adiciona aprendizado local de ritmo de bicicleta a partir de percursos válidos, com média aprendida opcional para o ETA e preservação da média manual.",
+  "version": "1.0.176",
+  "build": 176
 }

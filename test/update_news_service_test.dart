@@ -141,10 +141,10 @@ void main() {
     );
   });
 
-  test('popup 1.0.175 não acumula as etapas 1.0.173 e 1.0.174', () async {
+  test('popup 1.0.176 não acumula as etapas anteriores', () async {
     final store = _MemoryStore()..value = '1.0.172+172';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.175', build: 175),
+      const AppBuildVersion(version: '1.0.176', build: 176),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -156,8 +156,9 @@ void main() {
 
     expect(decision.shouldShow, isTrue);
     expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 175);
-    expect(decision.changes.join(' '), isNot(contains('lupa')));
+    expect(decision.releases.single.version.build, 176);
+    expect(decision.changes.join(' '), contains('média aprendida'));
+    expect(decision.changes.join(' '), isNot(contains('campings conhecidos')));
   });
 
 }
