@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.160+160
+# Validação Vigia IA 1.0.161+161
+
+## 1.0.161+161 — popup exclusiva da versão atual + MapLibre público
+
+- Instalar/abrir `1.0.161+161` sobre qualquer versão anterior e confirmar que `Novidades da atualização` mostra somente os três itens da 1.0.161; nenhum item de 1.0.160 ou anterior pode aparecer.
+- Fechar a popup e reabrir o aplicativo na mesma versão: ela não deve aparecer novamente.
+- Simular estado de Novidades ausente/corrompido: a popup continua exibindo somente a release atual, nunca o histórico acumulado.
+- Confirmar que a popup não lista bugs/correções; o histórico técnico permanece apenas em CHANGELOG/RELEASE/VALIDATION e a tela `Sobre > Mudanças` mantém o histórico funcional.
+- Confirmar que `MapNavigation3DView` não usa `getLayerIds()` e que a camada opcional de prédios continua sendo tentada via `addLayer()` sem afetar rota/fallback quando indisponível.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
 
 ## 1.0.160+160 — evolução real do mapa 3D
 

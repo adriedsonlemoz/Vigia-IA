@@ -1,5 +1,12 @@
-# Arquitetura — Vigia IA 1.0.160+160
+# Arquitetura — Vigia IA 1.0.161+161
 
+## Novidades isoladas por versão e API pública do renderer — 1.0.161
+
+- `UpdateNewsCatalog.current` representa somente a release empacotada na build atual. Ele não é mais um histórico de releases; o histórico permanece em `app_info_screen_components.dart` (`Sobre > Mudanças`).
+- `UpdateNewsService.evaluate()` resolve `catalog.releaseFor(installed)` e nunca calcula um intervalo desde `lastShownVersion`. O estado persistido continua servindo apenas para garantir exibição única por versão.
+- Se o catálogo não contiver exatamente a versão instalada, nenhuma release histórica é usada como fallback. Isso evita conteúdo incorreto após saltos de versão ou estado local ausente/corrompido.
+- `UpdateNewsDialog` assume uma única release e remove a UI de contagem de atualizações acumuladas.
+- A instalação da camada `vigia-3d-buildings` usa apenas `StyleController.addLayer()`. O renderer não consulta `getLayerIds()`, API documentada pelo MapLibre 0.3.6 como destinada a testes. `_buildings3dInstalled` evita repetição dentro da mesma instância e qualquer indisponibilidade continua não fatal.
 
 ## Navegação MapLibre vetorial e câmera adaptativa — 1.0.160
 

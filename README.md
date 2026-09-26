@@ -2,11 +2,20 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.160+160`
+> **Versão atual:** `1.0.161+161`
 
 ## Estado atual
 
-A `1.0.160+160` conclui a Etapa 5 do mapa: a navegação MapLibre passa a usar base vetorial, câmera adaptativa e acompanhamento retomável, mantendo o FlutterMap 2D como camada segura e fallback.
+A `1.0.161+161` consolida a navegação 3D e reformula o contrato da popup de atualização: ela agora apresenta somente as novidades da versão instalada atual, deixando o histórico completo exclusivamente em Sobre > Mudanças.
+
+### Ajuste 1.0.161 — Novidades da versão atual + API pública do MapLibre
+
+- A popup automática `Novidades da atualização` deixa de acumular versões não visualizadas e passa a carregar somente a entrada correspondente à versão instalada atual.
+- O catálogo embarcado da popup contém somente a release desta build; o histórico completo continua na tela `Sobre > Mudanças`.
+- O diálogo não exibe mais contador de atualizações acumuladas, pois o conteúdo nunca mistura versões diferentes.
+- `MapNavigation3DView` deixa de usar `StyleController.getLayerIds()`, documentado pelo MapLibre 0.3.6 como utilitário destinado a testes; a camada opcional de prédios usa estado interno e a API pública `addLayer()`.
+- A navegação vetorial, câmera adaptativa, pausa por gesto, `Centralizar`, gate 2D → 3D, timeout e fallback 2D permanecem preservados.
+- Testes e verificadores passam a rejeitar popup com mais de uma versão, conteúdo histórico, termos de bug/correção e retorno de `getLayerIds()` ao renderer de produção.
 
 ### Etapa 5 — evolução real do mapa 3D — 1.0.160
 

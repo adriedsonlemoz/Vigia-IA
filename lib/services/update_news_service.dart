@@ -97,11 +97,13 @@ class UpdateNewsService {
       );
     }
 
-    final unseen = catalog.unseenReleases(
-      installed: installed,
-      lastShown: lastShown,
+    final currentRelease = catalog.releaseFor(installed);
+    return UpdateNewsDecision(
+      installedVersion: installed,
+      releases: currentRelease == null
+          ? const <UpdateRelease>[]
+          : <UpdateRelease>[currentRelease],
     );
-    return UpdateNewsDecision(installedVersion: installed, releases: unseen);
   }
 
   Future<AppBuildVersion> _safeInstalledVersion() async {

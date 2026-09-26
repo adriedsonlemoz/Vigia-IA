@@ -1,3 +1,11 @@
+## 1.0.161+161 — 2026-09-26
+
+- Alterado o serviço de `Novidades da atualização` para selecionar exclusivamente a release que corresponde à versão instalada atual, sem agregar versões puladas ou não visualizadas.
+- O catálogo automático da build passa a conter somente `1.0.161+161`; o histórico completo permanece em `Sobre > Mudanças`.
+- Removida do diálogo a mensagem de múltiplas atualizações acumuladas e adicionados testes para garantir que versões antigas nunca reapareçam na popup.
+- `MapNavigation3DView` deixa de consultar `StyleController.getLayerIds()`, método documentado pelo MapLibre como destinado a testes, e mantém a instalação opcional de prédios 3D via API pública `addLayer()`.
+- Atualizados metadados, User-Agents, tela Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION e verificações preventivas para `1.0.161+161`.
+
 ## 1.0.160+160 — 2026-09-26
 
 - Evoluída a navegação MapLibre para estilo vetorial: Stadia Outdoors quando existe API key configurada e OpenFreeMap Liberty como fallback sem chave.

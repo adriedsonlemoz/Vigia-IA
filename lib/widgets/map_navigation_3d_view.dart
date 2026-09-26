@@ -212,10 +212,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
 
   Future<void> _install3dBuildingsBestEffort(ml.StyleController style) async {
     try {
-      if (style.getLayerIds().contains(_buildingsLayerId)) {
-        _buildings3dInstalled = true;
-        return;
-      }
+      if (_buildings3dInstalled) return;
       await style.addLayer(
         const ml.FillExtrusionStyleLayer(
           id: _buildingsLayerId,

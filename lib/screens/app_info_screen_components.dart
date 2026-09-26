@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.160',
+          version: '1.0.161',
           current: true,
+          changes: [
+            'A popup Novidades da atualização agora mostra somente o conteúdo da versão instalada atual, sem acumular versões anteriores.',
+            'O histórico completo continua disponível em Sobre > Mudanças, separado da popup automática de atualização.',
+            'A camada opcional de prédios 3D passa a usar somente APIs públicas de estilo do MapLibre.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.160',
           changes: [
             'O renderer 3D passa a usar mapa vetorial MapLibre, preferindo Stadia Outdoors quando configurado e usando OpenFreeMap Liberty sem chave.',
             'A câmera ajusta zoom e inclinação conforme velocidade e próxima manobra e mantém o usuário mais baixo na tela para mostrar mais rota à frente.',
@@ -1485,8 +1494,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.160',
+          version: '1.0.161',
           current: true,
+          changes: [
+            'A popup Novidades da atualização agora mostra somente o conteúdo da versão instalada atual, sem acumular versões anteriores.',
+            'O histórico completo continua disponível em Sobre > Mudanças, separado da popup automática de atualização.',
+            'A camada opcional de prédios 3D passa a usar somente APIs públicas de estilo do MapLibre.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.160',
           changes: [
             'O renderer 3D passa a usar mapa vetorial MapLibre, preferindo Stadia Outdoors quando configurado e usando OpenFreeMap Liberty sem chave.',
             'A câmera ajusta zoom e inclinação conforme velocidade e próxima manobra e mantém o usuário mais baixo na tela para mostrar mais rota à frente.',

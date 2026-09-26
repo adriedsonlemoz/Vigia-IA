@@ -36,10 +36,10 @@ const _catalog = UpdateNewsCatalog(<UpdateRelease>[
 ]);
 
 void main() {
-  test('primeira abertura da nova versao mostra novidades', () async {
+  test('primeira abertura mostra somente a versao instalada atual', () async {
     final store = _MemoryStore()..value = '1.0.142+142';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.143', build: 143),
+      const AppBuildVersion(version: '1.0.144', build: 144),
     );
     final service = UpdateNewsService(
       catalog: _catalog,
@@ -50,7 +50,10 @@ void main() {
     final decision = await service.evaluate();
 
     expect(decision.shouldShow, isTrue);
-    expect(decision.changes, contains('Mudança 143'));
+    expect(decision.releases, hasLength(1));
+    expect(decision.releases.single.version.build, 144);
+    expect(decision.changes, <String>['Mudança 144']);
+    expect(decision.changes, isNot(contains('Mudança 143')));
   });
 
   test('segunda abertura da mesma versao nao mostra novamente', () async {
@@ -72,10 +75,10 @@ void main() {
     expect(second.shouldShow, isFalse);
   });
 
-  test('atualizacao seguinte volta a mostrar e inclui versao pulada', () async {
-    final store = _MemoryStore()..value = '1.0.142+142';
+  test('pular versoes nao mistura novidades antigas', () async {
+    final store = _MemoryStore()..value = '1.0.100+100';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.143', build: 143),
+      const AppBuildVersion(version: '1.0.144', build: 144),
     );
     final service = UpdateNewsService(
       catalog: _catalog,
@@ -83,23 +86,34 @@ void main() {
       versionProvider: provider,
     );
 
-    final first = await service.evaluate();
-    await service.markShown(first);
-    provider.value = const AppBuildVersion(version: '1.0.144', build: 144);
-    final upgraded = await service.evaluate();
+    final decision = await service.evaluate();
 
-    expect(upgraded.shouldShow, isTrue);
-    expect(upgraded.changes, contains('Mudança 144'));
-
-    store.value = '1.0.142+142';
-    final skipped = await service.evaluate();
-    expect(skipped.releases.map((release) => release.version.build), [143, 144]);
+    expect(decision.releases, hasLength(1));
+    expect(decision.releases.single.version.build, 144);
+    expect(decision.changes, <String>['Mudança 144']);
   });
 
-  test('estado ausente ou corrompido falha de forma segura', () async {
+  test('sem entrada da versao atual nao mostra historico como fallback', () async {
+    final store = _MemoryStore()..value = '1.0.142+142';
+    final provider = _MutableVersionProvider(
+      const AppBuildVersion(version: '1.0.145', build: 145),
+    );
+    final service = UpdateNewsService(
+      catalog: _catalog,
+      store: store,
+      versionProvider: provider,
+    );
+
+    final decision = await service.evaluate();
+
+    expect(decision.shouldShow, isFalse);
+    expect(decision.releases, isEmpty);
+  });
+
+  test('estado ausente ou corrompido ainda usa somente a versao atual', () async {
     final store = _MemoryStore()..value = 'dados-corrompidos';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.143', build: 143),
+      const AppBuildVersion(version: '1.0.144', build: 144),
     );
     final service = UpdateNewsService(
       catalog: _catalog,
@@ -109,9 +123,11 @@ void main() {
 
     final corruptDecision = await service.evaluate();
     expect(corruptDecision.shouldShow, isTrue);
+    expect(corruptDecision.releases.single.version.build, 144);
 
     store.value = null;
     final missingDecision = await service.evaluate();
     expect(missingDecision.shouldShow, isTrue);
+    expect(missingDecision.releases.single.version.build, 144);
   });
 }

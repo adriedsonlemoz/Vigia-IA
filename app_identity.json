@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.160 conclui a evolução do mapa 3D com base vetorial MapLibre, câmera adaptativa, usuário deslocado para baixo da tela, pausa de acompanhamento por gesto, botão Centralizar e prédios 3D quando a fonte possui dados compatíveis.",
-  "version": "1.0.160",
-  "build": 160
+  "notes": "A 1.0.161 torna a popup de Novidades exclusiva da versão instalada atual e mantém a camada opcional de prédios 3D usando apenas APIs públicas de estilo do MapLibre.",
+  "version": "1.0.161",
+  "build": 161
 }

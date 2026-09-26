@@ -23,7 +23,7 @@ class UpdateNewsDialog extends StatelessWidget {
           child: Icon(Icons.auto_awesome_rounded, color: scheme.primary),
         ),
       ),
-      title: const Text('Novidades do Vigia IA'),
+      title: const Text('Novidades da atualização'),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: SingleChildScrollView(
@@ -39,14 +39,6 @@ class UpdateNewsDialog extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              if (decision.releases.length > 1) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '${decision.releases.length} atualizações desde a última visualização',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
               const SizedBox(height: 14),
               for (final change in changes.take(8))
                 Padding(
