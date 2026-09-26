@@ -1,4 +1,26 @@
-# Arquitetura — Vigia IA 1.0.166+166
+# Arquitetura — Vigia IA 1.0.168+168
+
+## HUD e aparência do mapa — 1.0.168
+
+- `MapUxPolicy.compactCountBadge()` centraliza a regra do badge do botão de locais e evita strings maiores que `99+` no dock.
+- `_MapControlButton` mantém o círculo e o ripple recortados, mas renderiza o badge como irmão externo em `Stack(clipBehavior: Clip.none)`, evitando clipping pelo `CircleBorder`.
+- `_NearbyPointsBanner` separa quantidade, origem Online/Offline e loading em um componente de altura menor; `_NavigationBanner` concentra instrução + resumo em duas linhas e usa uma barra fina de progresso.
+- `MapAppearancePreset` é independente de `MapStylePreset`: a primeira controla Padrão/Escuro/Alto contraste/Bike-Viagem, enquanto a segunda continua escolhendo OSM/Bike/Terreno/Topográfico/Satélite.
+- `MapAppearanceMode` oferece Manual, seguir Sistema e Dia/noite. `MapAppearancePolicy.resolve()` usa `Brightness` do Flutter ou o horário local e nunca precisa consultar um serviço externo.
+- `MapAppearancePolicy.palette()` define rota, casing, posição, destino, prédios 3D, style vetorial e matriz raster. Satélite ignora a matriz raster para preservar a imagem original.
+- No 3D, o tema compõe a chave do `MapNavigation3DView`, forçando reconstrução controlada do renderer quando o style muda. Dark usa Stadia Alidade Smooth Dark quando há chave ou OpenFreeMap Dark; alto contraste usa OpenFreeMap Bright; Bike/Viagem usa Stadia Outdoors quando disponível ou OpenFreeMap Fiord; Padrão preserva Liberty/Outdoors conforme disponibilidade.
+- No 2D, o tratamento visual é aplicado ao widget de tiles com `ColorFiltered`, sem sobreposição preta. A rota ativa recebe casing + linha principal e o marcador de posição usa a mesma paleta do tema.
+
+
+## UI compacta de transporte e configurações — 1.0.167
+
+- O seletor de `MapTravelMode` usa uma única linha com quatro opções e mantém `MapViewSettingsService.lastTravelMode` como persistência da última escolha.
+- O roteamento continua usando `MapTravelMode.valhallaCosting`: `bicycle`, `motorcycle`, `auto` e `pedestrian`; a reforma é exclusivamente de apresentação/organização.
+- `_showMapSettings()` passa a compor seções expansíveis para Busca, Categorias, Alertas, Áudio, Offline, Gravação e Navegação, reduzindo rolagem sem duplicar estado.
+- Categorias reutilizam `RouteExplorerService` e `RouteExplorerCategory`; alertas continuam persistidos no mesmo `RouteExplorerSettings`.
+- Controles de áudio reutilizam `MapViewSettingsService`, `RouteExplorerService` e `AppSettingsService`; gravação continua em `MapRouteService`.
+- Nenhuma nova fonte de dados, serviço de rota ou estado paralelo foi introduzido nesta versão.
+
 
 ## Clima inteligente do mapa — 1.0.166
 

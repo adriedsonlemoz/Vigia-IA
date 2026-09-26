@@ -1,4 +1,35 @@
-# Validação Vigia IA 1.0.166+166
+# Validação Vigia IA 1.0.168+168
+
+## 1.0.168+168 — HUD compacto + temas do mapa
+
+- Confirmar badge de locais sem clipping com 1 e 2 dígitos e `99+` para contagens acima de 99.
+- Confirmar dock lateral com câmera, 3D, áudio, zoom, centralizar e locais alinhados, com espaçamento consistente e sem aumento de área ocupada.
+- Confirmar `Locais próximos` em altura reduzida, com quantidade, origem Online/Offline e spinner pequeno durante atualização.
+- Confirmar banner inferior em duas linhas, preservando próxima instrução, distância, tempo/distância restante, percentual/progresso e botão de encerrar.
+- Validar temas Padrão, Escuro, Alto contraste e Bike/Viagem no 2D e no MapLibre 3D; rota e posição devem permanecer legíveis em todos.
+- Confirmar que Satélite não recebe matriz de cor e que Terreno/Topográfico/Satélite continuam sendo camadas base separadas dos temas.
+- Validar Manual, Sistema e Dia/noite; Sistema deve seguir `Brightness`, Dia/noite deve usar horário local sem rede.
+- Alternar tema com 3D ativo e confirmar reconstrução do renderer sem perder rota, fallback ou diagnóstico; o diagnóstico deve registrar `appearancePreset` sem secrets.
+- Revalidar clima, orientação, transporte, configurações, offline, POIs, câmeras e gravação para ausência de regressão.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: sincronização 1.0.168+168, `verify_project.sh`, catálogo de áudio, contratos legados, sintaxe shell/Python, JSONs, workflow Android único, Novidades current-only e ausência de APK/AAB **aprovados**.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android release precisam ser confirmados pelo workflow.
+
+
+## 1.0.167+167 — transporte compacto + configurações do mapa
+
+- Confirmar que Bicicleta, Moto, Carro e A pé aparecem na mesma linha e que a opção selecionada mantém destaque/check discreto.
+- Confirmar persistência da última escolha e costings reais `bicycle`, `motorcycle`, `auto`, `pedestrian`.
+- Abrir Configurações do mapa e confirmar seções Busca, Categorias, Alertas, Áudio, Mapas offline, Gravação de percurso e Navegação.
+- Validar raio 5/10/20/50 km e Ao redor/No caminho, sem alteração de comportamento do Route Explorer.
+- Validar todas as 11 categorias em grade adaptativa, com seleção legível e sem clipping em tela estreita.
+- Revalidar Ativar alertas, Falar aviso, Notificação Android e distâncias 1/3/5/10 km.
+- Revalidar áudio de Navegação, Pontos próximos, Clima e IA/Detecções, mapas offline, gravação/pausa/finalização, GPX e orientação Norte/Direção/Rota.
+- Confirmar que 2D/3D, clima, telemetria superior, POIs, câmeras e navegação por voz não regrediram.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Resultado local: sincronização de versão, `verify_project.sh`, `verify_audio_resource_catalog.py`, `verify_release_67.py`, sintaxe shell/Python, JSONs, workflow Android único e ausência de APK/AAB **aprovados**.
+- Limitação local: Flutter/Dart não estão instalados neste ambiente; `flutter analyze`, `flutter test` e build Android release precisam ser confirmados pelo workflow.
+
 
 ## 1.0.166+166 — Clima Inteligente
 - Confirmar quinto mini-card `Clima` no topo sem remover Velocidade, Altitude, Bússola ou GPS.

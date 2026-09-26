@@ -13,6 +13,8 @@ import '../models/map_travel_mode.dart';
 import '../services/error_log_service.dart';
 import '../services/performance_telemetry_service.dart';
 import '../services/map_view_policy.dart';
+import '../services/map_view_settings_service.dart';
+import '../services/map_appearance_policy.dart';
 
 /// Renderer dedicado ao modo de navegação em perspectiva.
 ///
@@ -31,6 +33,7 @@ class MapNavigation3DView extends StatefulWidget {
     required this.vectorStyleUrl,
     required this.fallbackVectorStyleUrl,
     required this.vectorAttribution,
+    required this.appearancePreset,
     required this.recenterRequest,
     required this.onReady,
     required this.onFallback,
@@ -46,6 +49,7 @@ class MapNavigation3DView extends StatefulWidget {
   final String vectorStyleUrl;
   final String? fallbackVectorStyleUrl;
   final String vectorAttribution;
+  final MapAppearancePreset appearancePreset;
   final int recenterRequest;
   final VoidCallback onReady;
   final ValueChanged<String> onFallback;
@@ -268,6 +272,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       final sourceId = _buildingSourceId ?? _defaultVectorSourceId;
       final sourceLayerId =
           _buildingSourceLayerId ?? _defaultBuildingSourceLayerId;
+      final palette = MapAppearancePolicy.palette(widget.appearancePreset);
       await style.addLayer(
         ml.FillExtrusionStyleLayer(
           id: _buildingsLayerId,
@@ -275,7 +280,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
           sourceLayerId: sourceLayerId,
           minZoom: 14.5,
           paint: <String, Object>{
-            'fill-extrusion-color': '#C7CDD3',
+            'fill-extrusion-color': palette.buildingColorHex,
             'fill-extrusion-opacity': 0.72,
             'fill-extrusion-height': <Object>[
               'coalesce',
@@ -324,34 +329,35 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
   }
 
   Future<void> _installRouteGeometry(ml.StyleController style) async {
+    final palette = MapAppearancePolicy.palette(widget.appearancePreset);
     await style.addSource(
       ml.GeoJsonSource(id: _routeSourceId, data: _routeGeoJson()),
     );
     await style.addLayer(
-      const ml.LineStyleLayer(
+      ml.LineStyleLayer(
         id: 'vigia-route-casing',
         sourceId: _routeSourceId,
-        layout: <String, Object>{
+        layout: const <String, Object>{
           'line-cap': 'round',
           'line-join': 'round',
         },
         paint: <String, Object>{
-          'line-color': '#10212B',
+          'line-color': palette.routeCasingColorHex,
           'line-width': 11.0,
-          'line-opacity': 0.90,
+          'line-opacity': 0.94,
         },
       ),
     );
     await style.addLayer(
-      const ml.LineStyleLayer(
+      ml.LineStyleLayer(
         id: 'vigia-route-line',
         sourceId: _routeSourceId,
-        layout: <String, Object>{
+        layout: const <String, Object>{
           'line-cap': 'round',
           'line-join': 'round',
         },
         paint: <String, Object>{
-          'line-color': '#00AEEF',
+          'line-color': palette.routeColorHex,
           'line-width': 7.0,
           'line-opacity': 0.99,
         },
@@ -368,12 +374,12 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       ),
     );
     await style.addLayer(
-      const ml.CircleStyleLayer(
+      ml.CircleStyleLayer(
         id: 'vigia-target-point',
         sourceId: _targetSourceId,
         paint: <String, Object>{
           'circle-radius': 8.0,
-          'circle-color': '#FF4D67',
+          'circle-color': palette.destinationColorHex,
           'circle-stroke-color': '#FFFFFF',
           'circle-stroke-width': 3.0,
         },
@@ -384,23 +390,23 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
       ml.GeoJsonSource(id: _currentSourceId, data: _currentGeoJson()),
     );
     await style.addLayer(
-      const ml.CircleStyleLayer(
+      ml.CircleStyleLayer(
         id: 'vigia-current-halo',
         sourceId: _currentSourceId,
         paint: <String, Object>{
           'circle-radius': 14.0,
-          'circle-color': '#00AEEF',
+          'circle-color': palette.currentPositionColorHex,
           'circle-opacity': 0.20,
         },
       ),
     );
     await style.addLayer(
-      const ml.CircleStyleLayer(
+      ml.CircleStyleLayer(
         id: 'vigia-current-point',
         sourceId: _currentSourceId,
         paint: <String, Object>{
           'circle-radius': 8.5,
-          'circle-color': '#00AEEF',
+          'circle-color': palette.currentPositionColorHex,
           'circle-stroke-color': '#FFFFFF',
           'circle-stroke-width': 3.0,
         },
@@ -867,7 +873,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
     try {
       final uri = Uri.parse(styleUrl);
       final request = await client.getUrl(uri).timeout(_stylePreflightTimeout);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.166 map-3d-style');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.168 map-3d-style');
       final response = await request.close().timeout(_stylePreflightTimeout);
       if (styleUrl != _activeVectorStyleUrl) return;
       _styleHttpStatus = response.statusCode;
@@ -995,6 +1001,7 @@ class _MapNavigation3DViewState extends State<MapNavigation3DView> {
         'vectorAttribution': widget.vectorAttribution,
         'following': _following,
         'orientationMode': widget.orientationMode.name,
+        'appearancePreset': widget.appearancePreset.name,
         'headingSource': _cameraHeadingDecision(widget.current).source.name,
         'buildings3dInstalled': _buildings3dInstalled,
         'buildingSourceId': _buildingSourceId,

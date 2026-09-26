@@ -65,8 +65,26 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.166',
+          version: '1.0.168',
           current: true,
+          changes: [
+            'O HUD do mapa ficou mais compacto, com badge de locais legível, dock lateral uniforme e card de locais próximos menor.',
+            'A navegação inferior agora usa duas linhas e uma barra fina de progresso, preservando próxima manobra, distância, tempo restante e encerramento.',
+            'Foram adicionados os temas Padrão, Escuro, Alto contraste e Bike/Viagem, com modos Manual, Sistema e Dia/noite.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.167',
+          changes: [
+            'Bicicleta, Moto, Carro e A pé agora aparecem em uma única linha compacta antes de calcular a rota.',
+            'Configurações do mapa foram reorganizadas em blocos expansíveis de Busca, Categorias, Alertas, Áudio, Mapas offline, Gravação de percurso e Navegação.',
+            'Categorias usam uma grade uniforme e os controles de raio, busca no caminho e distância de alerta ficaram mais compactos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.166',
           changes: [
             'O mapa ganhou um mini-card de clima com temperatura e origem ESP32, Online ou Misto.',
             'O popup de clima combina sensores reais do ESP32 com previsão online apenas para os dados que o hardware não fornece.',
@@ -1539,8 +1557,26 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.166',
+          version: '1.0.168',
           current: true,
+          changes: [
+            'O HUD do mapa ficou mais compacto, com badge de locais legível, dock lateral uniforme e card de locais próximos menor.',
+            'A navegação inferior agora usa duas linhas e uma barra fina de progresso, preservando próxima manobra, distância, tempo restante e encerramento.',
+            'Foram adicionados os temas Padrão, Escuro, Alto contraste e Bike/Viagem, com modos Manual, Sistema e Dia/noite.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.167',
+          changes: [
+            'Bicicleta, Moto, Carro e A pé agora aparecem em uma única linha compacta antes de calcular a rota.',
+            'Configurações do mapa foram reorganizadas em seções expansíveis para ocupar menos espaço e exigir menos rolagem.',
+            'Categorias, alertas, áudio, offline, percurso e navegação ficaram mais rápidos de localizar e ajustar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.166',
           changes: [
             'O mapa ganhou um mini-card de clima com temperatura e origem ESP32, Online ou Misto.',
             'O popup mostra somente dados meteorológicos realmente disponíveis e permite atualização manual.',

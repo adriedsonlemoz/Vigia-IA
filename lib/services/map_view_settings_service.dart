@@ -7,6 +7,48 @@ import 'package:path_provider/path_provider.dart';
 import '../models/map_travel_mode.dart';
 import 'map_view_policy.dart';
 
+
+enum MapAppearancePreset {
+  standard,
+  dark,
+  highContrast,
+  bikeTravel,
+}
+
+extension MapAppearancePresetX on MapAppearancePreset {
+  String get label => switch (this) {
+        MapAppearancePreset.standard => 'Padrão',
+        MapAppearancePreset.dark => 'Escuro',
+        MapAppearancePreset.highContrast => 'Alto contraste',
+        MapAppearancePreset.bikeTravel => 'Bike/Viagem',
+      };
+
+  String get description => switch (this) {
+        MapAppearancePreset.standard =>
+          'Cores equilibradas para uso geral e leitura natural do mapa.',
+        MapAppearancePreset.dark =>
+          'Style vetorial escuro e sobreposições claras para uso noturno.',
+        MapAppearancePreset.highContrast =>
+          'Aumenta a separação visual de vias, rota, posição e pontos.',
+        MapAppearancePreset.bikeTravel =>
+          'Realça rota, natureza e referências úteis durante deslocamentos.',
+      };
+}
+
+enum MapAppearanceMode {
+  manual,
+  followSystem,
+  dayNight,
+}
+
+extension MapAppearanceModeX on MapAppearanceMode {
+  String get label => switch (this) {
+        MapAppearanceMode.manual => 'Manual',
+        MapAppearanceMode.followSystem => 'Sistema',
+        MapAppearanceMode.dayNight => 'Dia/noite',
+      };
+}
+
 enum MapStylePreset {
   standard,
   bikeTravel,
@@ -49,6 +91,8 @@ class MapViewSettingsService extends ChangeNotifier {
   MapOrientationMode _orientationMode = MapOrientationMode.northUp;
   MapFollowViewPreset _followViewPreset = MapFollowViewPreset.near;
   MapStylePreset _stylePreset = MapStylePreset.standard;
+  MapAppearancePreset _appearancePreset = MapAppearancePreset.standard;
+  MapAppearanceMode _appearanceMode = MapAppearanceMode.manual;
   MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
   bool _navigationVoiceEnabled = true;
   bool _weatherVoiceEnabled = true;
@@ -59,6 +103,8 @@ class MapViewSettingsService extends ChangeNotifier {
   MapOrientationMode get orientationMode => _orientationMode;
   MapFollowViewPreset get followViewPreset => _followViewPreset;
   MapStylePreset get stylePreset => _stylePreset;
+  MapAppearancePreset get appearancePreset => _appearancePreset;
+  MapAppearanceMode get appearanceMode => _appearanceMode;
   MapTravelMode get lastTravelMode => _lastTravelMode;
   bool get navigationVoiceEnabled => _navigationVoiceEnabled;
   bool get weatherVoiceEnabled => _weatherVoiceEnabled;
@@ -76,6 +122,8 @@ class MapViewSettingsService extends ChangeNotifier {
           final orientationName = map['orientationMode'] as String?;
           final presetName = map['followViewPreset'] as String?;
           final styleName = map['stylePreset'] as String?;
+          final appearanceName = map['appearancePreset'] as String?;
+          final appearanceModeName = map['appearanceMode'] as String?;
           final lastTravelMode = map['lastTravelMode'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
           final weatherVoiceEnabled = map['weatherVoiceEnabled'];
@@ -93,6 +141,14 @@ class MapViewSettingsService extends ChangeNotifier {
             (value) => value.name == styleName,
             orElse: () => MapStylePreset.standard,
           );
+          _appearancePreset = MapAppearancePreset.values.firstWhere(
+            (value) => value.name == appearanceName,
+            orElse: () => MapAppearancePreset.standard,
+          );
+          _appearanceMode = MapAppearanceMode.values.firstWhere(
+            (value) => value.name == appearanceModeName,
+            orElse: () => MapAppearanceMode.manual,
+          );
           _lastTravelMode = MapTravelModeX.fromStorage(lastTravelMode);
           _navigationVoiceEnabled = navigationVoiceEnabled as bool? ?? true;
           _weatherVoiceEnabled = weatherVoiceEnabled as bool? ?? true;
@@ -101,6 +157,8 @@ class MapViewSettingsService extends ChangeNotifier {
         _orientationMode = MapOrientationMode.northUp;
         _followViewPreset = MapFollowViewPreset.near;
         _stylePreset = MapStylePreset.standard;
+        _appearancePreset = MapAppearancePreset.standard;
+        _appearanceMode = MapAppearanceMode.manual;
         _lastTravelMode = MapTravelMode.bicycle;
         _navigationVoiceEnabled = true;
         _weatherVoiceEnabled = true;
@@ -149,6 +207,25 @@ class MapViewSettingsService extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setAppearancePreset(MapAppearancePreset value) async {
+    if (!_initialized) await initialize();
+    if (_appearancePreset == value && _appearanceMode == MapAppearanceMode.manual) {
+      return;
+    }
+    _appearancePreset = value;
+    _appearanceMode = MapAppearanceMode.manual;
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setAppearanceMode(MapAppearanceMode value) async {
+    if (!_initialized) await initialize();
+    if (_appearanceMode == value) return;
+    _appearanceMode = value;
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setStylePreset(MapStylePreset value) async {
     if (!_initialized) await initialize();
     if (_stylePreset == value) return;
@@ -162,10 +239,12 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 6,
+        'version': 7,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,
+        'appearancePreset': _appearancePreset.name,
+        'appearanceMode': _appearanceMode.name,
         'lastTravelMode': _lastTravelMode.storageValue,
         'navigationVoiceEnabled': _navigationVoiceEnabled,
         'weatherVoiceEnabled': _weatherVoiceEnabled,

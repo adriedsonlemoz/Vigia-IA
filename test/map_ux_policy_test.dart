@@ -24,7 +24,7 @@ void main() {
         hasSelectedPoi: true,
         hasNavigation: true,
       ),
-      280,
+      256,
     );
   });
 
@@ -90,6 +90,15 @@ void main() {
       MapUxPolicy.travelModeSheetBottomPadding(viewPaddingBottom: 48),
       60,
     );
+  });
+
+
+  test('badge de locais nao estoura com contagens grandes', () {
+    expect(MapUxPolicy.compactCountBadge(0), isNull);
+    expect(MapUxPolicy.compactCountBadge(7), '7');
+    expect(MapUxPolicy.compactCountBadge(36), '36');
+    expect(MapUxPolicy.compactCountBadge(100), '99+');
+    expect(MapUxPolicy.compactCountBadge(999), '99+');
   });
 
   test('normalizacao de posicao respeita minimo diferente de zero', () {

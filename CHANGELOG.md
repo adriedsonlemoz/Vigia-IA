@@ -1,3 +1,26 @@
+## 1.0.168+168 — 2026-09-26
+
+- Etapas 6 e 7 do plano do mapa agrupadas por solicitação: polimento visual do HUD e temas/cores do mapa.
+- Badge do botão de locais foi movido para fora da área recortada do círculo, ganhou largura adaptativa e usa `99+` para contagens grandes.
+- Dock lateral recebeu espaçamento uniforme e sombras menores; o card `Locais próximos` foi reduzido e separa quantidade, origem Online/Offline e estado de atualização.
+- Banner inferior de navegação passou para duas linhas com barra fina de progresso, preservando instrução, distância da manobra, restante, tempo e encerramento.
+- Nova aparência independente da camada base: Padrão, Escuro, Alto contraste e Bike/Viagem, persistidos em `MapViewSettingsService`.
+- Modos Manual, Sistema e Dia/noite resolvem o tema sem depender de consulta online; Dia/noite usa o relógio local.
+- MapLibre 3D usa styles vetoriais OpenFreeMap/Stadia por aparência; o 2D aplica matriz de cor aos tiles e não altera imagens de Satélite.
+- Rota, contorno, posição, destino e prédios 3D usam paleta própria por tema para conservar contraste.
+- Testes e verificadores cobrem resolução de tema, contraste da rota, `99+`, persistência estrutural e popup de Novidades exclusiva da versão atual.
+
+## 1.0.167+167 — 2026-09-26
+
+- Etapas 4 e 5 do plano do mapa agrupadas por solicitação do usuário: seletor de transporte ultracompacto e reforma das Configurações do mapa.
+- Seletor Bicicleta/Moto/Carro/A pé passa de grade 2×2 para uma única linha com quatro opções, mantendo Safe Area, última seleção e os costings reais `bicycle`, `motorcycle`, `auto` e `pedestrian`.
+- Configurações do mapa reorganizadas em seções expansíveis: Busca, Categorias, Alertas, Áudio, Mapas offline, Gravação de percurso e Navegação.
+- Raio 5/10/20/50 km e modo Ao redor/No caminho foram compactados; categorias passaram para grade uniforme adaptativa de 2/3 colunas.
+- Alertas preservam ativação, fala, notificação Android e distância; áudio reúne Navegação, Pontos próximos, Clima e IA/Detecções sem remover controles existentes.
+- Mapas offline, iniciar/pausar/finalizar gravação, exportação GPX e orientação Norte/Direção/Rota continuam acessíveis no mesmo painel.
+- Popup automática de Novidades contém somente `1.0.167+167`, com mudanças perceptíveis ao usuário e sem histórico técnico.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados para `1.0.167+167`.
+
 ## 1.0.166+166 — 2026-09-26
 
 - ETAPA 3 do plano do mapa: Clima Inteligente com origem ESP32, Online ou Misto, sem antecipar o seletor de transporte ou etapas seguintes.

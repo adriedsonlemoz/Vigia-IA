@@ -2,11 +2,31 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.166+166`
+> **Versão atual:** `1.0.168+168`
 
 ## Estado atual
 
-A `1.0.166+166` adiciona Clima Inteligente ao mapa, combinando sensores ESP32 reais com dados online do Open-Meteo somente quando necessário, com cache, origem explícita e voz integrada.
+A `1.0.168+168` reúne as etapas de polimento visual do HUD e temas/cores do mapa, preservando 2D/3D, clima, transporte, configurações, rotas, offline e câmeras.
+
+### Etapas 6 e 7 — HUD + Temas do mapa — 1.0.168
+- O badge de locais não é mais recortado pelo botão e compacta contagens acima de 99 para `99+`.
+- O dock lateral usa espaçamento uniforme, sombra reduzida e controles consistentes para câmera, 3D, áudio, zoom, centralizar e locais.
+- `Locais próximos` ficou menor e separa quantidade, origem Online/Offline e carregamento.
+- A navegação inferior foi condensada para duas linhas e barra fina de progresso, mantendo próxima manobra, distância, tempo restante e encerramento.
+- A aparência do mapa é independente da camada base e oferece Padrão, Escuro, Alto contraste e Bike/Viagem.
+- O MapLibre 3D usa style vetorial coerente com o tema; o 2D aplica tratamento de cor aos tiles sem usar uma camada preta. Satélite permanece sem filtro destrutivo.
+- Rota, contorno, posição atual, destino e prédios 3D recebem paleta específica por tema para manter contraste.
+- Modos Manual, Sistema e Dia/noite podem controlar a aparência; Dia/noite usa somente o horário local do aparelho.
+- A popup `Novidades da atualização` contém somente `1.0.168+168`; o histórico completo permanece em `Sobre > Mudanças`.
+
+### Etapas 4 e 5 — Transporte compacto + Configurações do mapa — 1.0.167
+- Bicicleta, Moto, Carro e A pé ficam em uma única linha compacta com ícone, nome e seleção atual destacada.
+- Perfis reais permanecem `bicycle`, `motorcycle`, `auto` e `pedestrian`; a última escolha continua persistida.
+- Configurações do mapa foram agrupadas em Busca, Categorias, Alertas, Áudio, Mapas offline, Gravação de percurso e Navegação.
+- Raio 5/10/20/50 km e Ao redor/No caminho usam controles compactos.
+- As 11 categorias usam grade uniforme de 2 colunas em telas comuns e 3 colunas quando há espaço.
+- Alertas preservam Ativar alertas, Falar aviso e Notificação Android, além da distância do primeiro aviso.
+- A popup `Novidades da atualização` contém somente `1.0.167+167`; o histórico completo permanece em `Sobre > Mudanças`.
 
 ### Etapa 3 — Clima Inteligente — 1.0.166
 - Novo mini-card de clima no topo do mapa, ao lado de Velocidade, Altitude, Bússola e GPS.

@@ -13,7 +13,14 @@ class MapUxPolicy {
 
   static const double controlEdge = 6;
   static const double controlSize = 40;
-  static const double controlGap = 5;
+  static const double controlGap = 4;
+
+
+  static String? compactCountBadge(int count) {
+    if (count <= 0) return null;
+    if (count > 99) return '99+';
+    return '$count';
+  }
 
   static bool compactLandscape({
     required double width,
@@ -39,8 +46,8 @@ class MapUxPolicy {
     required bool hasNavigation,
   }) {
     var reserve = safeBottom + 56;
-    if (hasNavigation) reserve += 86;
-    if (hasSelectedPoi) reserve += 118;
+    if (hasNavigation) reserve += 72;
+    if (hasSelectedPoi) reserve += 108;
     return reserve;
   }
 
@@ -114,8 +121,8 @@ class MapUxPolicy {
     required bool hasNavigation,
   }) {
     var offset = safeBottom + 8;
-    if (hasNavigation) offset += 82;
-    if (hasSelectedPoi) offset += 126;
+    if (hasNavigation) offset += 68;
+    if (hasSelectedPoi) offset += 116;
     return offset;
   }
 }

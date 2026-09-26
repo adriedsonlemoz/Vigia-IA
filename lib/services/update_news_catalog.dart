@@ -9,11 +9,11 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.166', build: 166),
+      version: AppBuildVersion(version: '1.0.168', build: 168),
       changes: <String>[
-        '🌦️ O mapa ganhou um mini-card de clima que combina sensores ESP32 e dados online conforme a disponibilidade.',
-        '🌡️ A tela de clima mostra somente medições disponíveis, com origem ESP32, Online ou Misto e atualização manual.',
-        '🔊 O clima pode ser ouvido pelo mesmo sistema de voz do mapa e respeita o controle de áudio do aplicativo.',
+        '🗺️ O HUD do mapa ocupa menos espaço, com locais próximos, controles laterais e navegação mais compactos.',
+        '🎨 O mapa ganhou os temas Padrão, Escuro, Alto contraste e Bike/Viagem, mantendo rota e posição bem visíveis.',
+        '🌗 A aparência pode ser escolhida manualmente, seguir o tema do Android ou alternar entre dia e noite pelo horário local.',
       ],
     ),
   ]);

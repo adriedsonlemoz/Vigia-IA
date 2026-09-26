@@ -28,6 +28,7 @@ import '../services/location_tracking_service.dart';
 import '../services/error_log_service.dart';
 import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_bike_consolidation_policy.dart';
+import '../services/map_appearance_policy.dart';
 import '../services/map_connectivity_service.dart';
 import '../services/map_compass_service.dart';
 import '../services/map_cycling_route_service.dart';
@@ -1245,28 +1246,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 'A rota e o tempo estimado serão calculados para o veículo escolhido.',
                 style: TextStyle(color: scheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 14),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.04,
-                    children: [
-                      for (final mode in MapTravelMode.values)
-                        _TravelModeChoiceCard(
-                          mode: mode,
-                          icon: _travelModeIcon(mode),
-                          selected: mode == _lastTravelMode,
-                          onTap: () => Navigator.of(sheetContext).pop(mode),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  for (var index = 0; index < MapTravelMode.values.length; index++) ...[
+                    if (index > 0) const SizedBox(width: 6),
+                    Expanded(
+                      child: _TravelModeChoiceCard(
+                        mode: MapTravelMode.values[index],
+                        icon: _travelModeIcon(MapTravelMode.values[index]),
+                        selected: MapTravelMode.values[index] == _lastTravelMode,
+                        onTap: () => Navigator.of(sheetContext).pop(
+                          MapTravelMode.values[index],
                         ),
-                    ],
-                  ),
-                ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -2474,6 +2470,52 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return null;
   }
 
+  MapAppearancePreset _resolvedMapAppearance(Brightness brightness) =>
+      MapAppearancePolicy.resolve(
+        mode: _mapViewSettings.appearanceMode,
+        manualPreset: _mapViewSettings.appearancePreset,
+        platformBrightness: brightness,
+        now: DateTime.now(),
+      );
+
+  Widget _applyRasterAppearance(
+    Widget layer,
+    MapAppearancePreset appearance,
+  ) {
+    if (_mapViewSettings.stylePreset == MapStylePreset.satellite) return layer;
+    final matrix = MapAppearancePolicy.palette(appearance).rasterColorMatrix;
+    if (matrix == null) return layer;
+    return ColorFiltered(
+      colorFilter: ColorFilter.matrix(matrix),
+      child: layer,
+    );
+  }
+
+  IconData _mapAppearanceIcon(MapAppearancePreset preset) => switch (preset) {
+        MapAppearancePreset.standard => Icons.light_mode_outlined,
+        MapAppearancePreset.dark => Icons.dark_mode_outlined,
+        MapAppearancePreset.highContrast => Icons.contrast_rounded,
+        MapAppearancePreset.bikeTravel => Icons.directions_bike_rounded,
+      };
+
+  Future<void> _selectMapAppearance(MapAppearancePreset preset) async {
+    await _mapViewSettings.setAppearancePreset(preset);
+    if (!mounted) return;
+    setState(() {
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
+    });
+  }
+
+  Future<void> _selectMapAppearanceMode(MapAppearanceMode mode) async {
+    await _mapViewSettings.setAppearanceMode(mode);
+    if (!mounted) return;
+    setState(() {
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
+    });
+  }
+
   IconData _mapStyleIcon(MapStylePreset style) => switch (style) {
         MapStylePreset.standard => Icons.map_outlined,
         MapStylePreset.bikeTravel => Icons.directions_bike_rounded,
@@ -2554,68 +2596,175 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) {
-        final selected = _mapViewSettings.stylePreset;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    'Camadas e tipo do mapa',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                for (final style in MapStylePreset.values)
-                  ListTile(
-                    leading: Icon(_mapStyleIcon(style)),
-                    title: Text(style.label),
-                    subtitle: Text(
-                      style == MapStylePreset.bikeTravel &&
-                              !_offlineMaps.hasStadiaApiKey
-                          ? '${style.description} Usando OSM até configurar Stadia.'
-                          : style.description,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final selectedLayer = _mapViewSettings.stylePreset;
+          final resolvedAppearance = _resolvedMapAppearance(
+            Theme.of(sheetContext).brightness,
+          );
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Aparência e camadas',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
                     ),
-                    trailing: style.needsStadiaKey &&
-                            !_offlineMaps.hasStadiaApiKey
-                        ? const Icon(Icons.lock_outline_rounded)
-                        : selected == style
-                            ? const Icon(Icons.check_circle_rounded)
-                            : null,
-                    selected: selected == style,
-                    enabled: !style.needsStadiaKey ||
-                        _offlineMaps.hasStadiaApiKey,
-                    onTap: !style.needsStadiaKey ||
-                            _offlineMaps.hasStadiaApiKey
-                        ? () {
-                            Navigator.of(sheetContext).pop();
-                            unawaited(_selectMapStyle(style));
-                          }
-                        : null,
                   ),
-                if (!_offlineMaps.hasStadiaApiKey)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(sheetContext).pop();
-                        unawaited(_openOfflineMaps());
-                      },
-                      icon: const Icon(Icons.key_rounded),
-                      label: const Text('Configurar Stadia para Terreno/Satélite'),
+                    padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
+                    child: Text(
+                      'Tema ativo: ${resolvedAppearance.label}',
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
                     ),
                   ),
-              ],
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Tema visual',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final preset in MapAppearancePreset.values)
+                        ChoiceChip(
+                          avatar: Icon(_mapAppearanceIcon(preset), size: 17),
+                          label: Text(preset.label),
+                          selected: _mapViewSettings.appearanceMode ==
+                                  MapAppearanceMode.manual &&
+                              _mapViewSettings.appearancePreset == preset,
+                          showCheckmark: false,
+                          visualDensity: VisualDensity.compact,
+                          onSelected: (_) => unawaited(
+                            _selectMapAppearance(preset).then((_) {
+                              if (sheetContext.mounted) setSheetState(() {});
+                            }),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Modo automático',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SegmentedButton<MapAppearanceMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: MapAppearanceMode.manual,
+                        icon: Icon(Icons.tune_rounded, size: 16),
+                        label: Text('Manual'),
+                      ),
+                      ButtonSegment(
+                        value: MapAppearanceMode.followSystem,
+                        icon: Icon(Icons.phone_android_rounded, size: 16),
+                        label: Text('Sistema'),
+                      ),
+                      ButtonSegment(
+                        value: MapAppearanceMode.dayNight,
+                        icon: Icon(Icons.brightness_6_outlined, size: 16),
+                        label: Text('Dia/noite'),
+                      ),
+                    ],
+                    selected: <MapAppearanceMode>{
+                      _mapViewSettings.appearanceMode,
+                    },
+                    showSelectedIcon: false,
+                    onSelectionChanged: (selection) => unawaited(
+                      _selectMapAppearanceMode(selection.first).then((_) {
+                        if (sheetContext.mounted) setSheetState(() {});
+                      }),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+                    child: Text(
+                      _mapViewSettings.appearanceMode == MapAppearanceMode.dayNight
+                          ? 'Dia/noite usa somente o horário local do aparelho; não depende da internet.'
+                          : _mapViewSettings.appearanceMode == MapAppearanceMode.followSystem
+                              ? 'Segue o tema claro/escuro configurado no Android.'
+                              : _mapViewSettings.appearancePreset.description,
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 3, 8, 0),
+                    child: Text(
+                      'No 3D, o tema troca o style vetorial de fundo, água, parques, vias, prédios, nomes e limites. No 2D, adapta os tiles e mantém rota e posição com contraste próprio.',
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ),
+                  const Divider(height: 22),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Base do mapa',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  for (final style in MapStylePreset.values)
+                    ListTile(
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                      leading: Icon(_mapStyleIcon(style)),
+                      title: Text(style.label),
+                      subtitle: Text(
+                        style == MapStylePreset.bikeTravel &&
+                                !_offlineMaps.hasStadiaApiKey
+                            ? '${style.description} Usando OSM até configurar Stadia.'
+                            : style.description,
+                      ),
+                      trailing: style.needsStadiaKey &&
+                              !_offlineMaps.hasStadiaApiKey
+                          ? const Icon(Icons.lock_outline_rounded)
+                          : selectedLayer == style
+                              ? const Icon(Icons.check_circle_rounded)
+                              : null,
+                      selected: selectedLayer == style,
+                      enabled: !style.needsStadiaKey ||
+                          _offlineMaps.hasStadiaApiKey,
+                      onTap: !style.needsStadiaKey ||
+                              _offlineMaps.hasStadiaApiKey
+                          ? () {
+                              Navigator.of(sheetContext).pop();
+                              unawaited(_selectMapStyle(style));
+                            }
+                          : null,
+                    ),
+                  if (!_offlineMaps.hasStadiaApiKey)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          unawaited(_openOfflineMaps());
+                        },
+                        icon: const Icon(Icons.key_rounded),
+                        label: const Text('Configurar Stadia para Terreno/Satélite'),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -3336,163 +3485,388 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _showMapSettings() async {
-    await _routeExplorer.initialize();
+    await Future.wait<void>([
+      _routeExplorer.initialize(),
+      _mapViewSettings.initialize(),
+      _appSettings.initialize().then((_) {}),
+      _weather.initialize(),
+    ]);
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: FractionallySizedBox(
-          heightFactor: 0.88,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => FractionallySizedBox(
+          heightFactor: 0.90,
           child: ListenableBuilder(
-            listenable: _routeExplorer,
-            builder: (context, _) {
-              final settings = _routeExplorer.settings;
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
-                children: [
-                  const Text(
-                    'Configurações do mapa',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Busca de locais, avisos de aproximação, gravação de percurso e mapas offline.',
-                  ),
-                  const SizedBox(height: 18),
-                  const _MapSettingsTitle('Raio de busca'),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
+          listenable: Listenable.merge([
+            _routeExplorer,
+            _mapViewSettings,
+            _routeState,
+          ]),
+          builder: (context, _) {
+            final settings = _routeExplorer.settings;
+            final orientationMode = _mapViewSettings.orientationMode;
+            final navigationVoice = _mapViewSettings.navigationVoiceEnabled;
+            final weatherVoice = _mapViewSettings.weatherVoiceEnabled;
+            final aiVoice = _aiVoiceEnabled;
+            final recording = _routeState.recording;
+            final paused = _routeState.paused;
+            final hasRoutePoints = _routeState.route.length >= 2;
+            const radiusOptions = <int>[5, 10, 20, 50];
+            const alertDistanceOptions = <int>[1000, 3000, 5000, 10000];
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final value in const <int>[5, 10, 20, 50])
-                        ChoiceChip(
-                          label: Text('$value km'),
-                          selected: settings.radiusKm == value,
-                          onSelected: (_) => unawaited(
-                            _routeExplorer.setRadiusKm(value),
-                          ),
+                      Text(
+                        'Configurações do mapa',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const _MapSettingsTitle('Busca durante o deslocamento'),
-                  SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment<bool>(
-                        value: false,
-                        icon: Icon(Icons.my_location_rounded),
-                        label: Text('Ao redor'),
                       ),
-                      ButtonSegment<bool>(
-                        value: true,
-                        icon: Icon(Icons.route_rounded),
-                        label: Text('No caminho'),
+                      SizedBox(height: 2),
+                      Text(
+                        'Busca, categorias, alertas, áudio, offline, percurso e navegação.',
                       ),
                     ],
-                    selected: <bool>{settings.searchAheadWhenMoving},
-                    showSelectedIcon: false,
-                    onSelectionChanged: (selection) => unawaited(
-                      _routeExplorer
-                          .setSearchAheadWhenMoving(selection.first),
-                    ),
                   ),
-                  const SizedBox(height: 16),
-                  const _MapSettingsTitle('Categorias'),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final category in RouteExplorerCategory.values)
-                        FilterChip(
-                          avatar: Icon(_poiIcon(category), size: 16),
-                          label: Text(category.label),
-                          selected: settings.categories.contains(category),
-                          showCheckmark: false,
-                          onSelected: (_) => unawaited(
-                            _routeExplorer.toggleCategory(category),
+                ),
+                _MapSettingsSection(
+                  icon: Icons.search_rounded,
+                  title: 'Busca',
+                  initiallyExpanded: true,
+                  children: [
+                    const _MapSettingsTitle('Raio de busca'),
+                    Row(
+                      children: [
+                        for (var index = 0; index < radiusOptions.length; index++) ...[
+                          if (index > 0) const SizedBox(width: 6),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: Center(
+                                child: Text('${radiusOptions[index]} km'),
+                              ),
+                              selected: settings.radiusKm == radiusOptions[index],
+                              showCheckmark: false,
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              onSelected: (_) => unawaited(
+                                _routeExplorer.setRadiusKm(radiusOptions[index]),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const _MapSettingsTitle('Busca durante o deslocamento'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment<bool>(
+                            value: false,
+                            icon: Icon(Icons.my_location_rounded, size: 17),
+                            label: Text('Ao redor'),
+                          ),
+                          ButtonSegment<bool>(
+                            value: true,
+                            icon: Icon(Icons.route_rounded, size: 17),
+                            label: Text('No caminho'),
+                          ),
+                        ],
+                        selected: <bool>{settings.searchAheadWhenMoving},
+                        showSelectedIcon: false,
+                        onSelectionChanged: (selection) => unawaited(
+                          _routeExplorer.setSearchAheadWhenMoving(selection.first),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.category_outlined,
+                  title: 'Categorias',
+                  initiallyExpanded: true,
+                  trailingText: '${settings.categories.length}/${RouteExplorerCategory.values.length}',
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth >= 520 ? 3 : 2;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: RouteExplorerCategory.values.length,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
+                            mainAxisExtent: 42,
+                          ),
+                          itemBuilder: (context, index) {
+                            final category = RouteExplorerCategory.values[index];
+                            return _MapCategoryOption(
+                              icon: _poiIcon(category),
+                              label: category.label,
+                              selected: settings.categories.contains(category),
+                              onTap: () => unawaited(
+                                _routeExplorer.toggleCategory(category),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Alertas',
+                  trailingText: settings.alertsEnabled ? 'Ativos' : 'Desativados',
+                  children: [
+                    _MapCompactSwitch(
+                      icon: Icons.notifications_active_outlined,
+                      title: 'Ativar alertas',
+                      subtitle: 'Avisos de aproximação das categorias selecionadas.',
+                      value: settings.alertsEnabled,
+                      onChanged: (value) => unawaited(
+                        _routeExplorer.setAlertsEnabled(value),
+                      ),
+                    ),
+                    _MapCompactSwitch(
+                      icon: Icons.record_voice_over_outlined,
+                      title: 'Falar aviso',
+                      value: settings.voiceEnabled,
+                      onChanged: settings.alertsEnabled
+                          ? (value) => unawaited(
+                                _routeExplorer.setVoiceEnabled(value),
+                              )
+                          : null,
+                    ),
+                    _MapCompactSwitch(
+                      icon: Icons.phone_android_rounded,
+                      title: 'Notificação Android',
+                      value: settings.notificationEnabled,
+                      onChanged: settings.alertsEnabled
+                          ? (value) => unawaited(
+                                _routeExplorer.setNotificationEnabled(value),
+                              )
+                          : null,
+                    ),
+                    const SizedBox(height: 8),
+                    const _MapSettingsTitle('Distância do primeiro aviso'),
+                    Row(
+                      children: [
+                        for (var index = 0; index < alertDistanceOptions.length; index++) ...[
+                          if (index > 0) const SizedBox(width: 6),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: Center(
+                                child: Text(
+                                  '${alertDistanceOptions[index] ~/ 1000} km',
+                                ),
+                              ),
+                              selected: settings.alertDistanceMeters == alertDistanceOptions[index],
+                              showCheckmark: false,
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              onSelected: settings.alertsEnabled
+                                  ? (_) => unawaited(
+                                        _routeExplorer.setAlertDistanceMeters(
+                                          alertDistanceOptions[index],
+                                        ),
+                                      )
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.volume_up_outlined,
+                  title: 'Áudio',
+                  trailingText: navigationVoice ||
+                          settings.voiceEnabled ||
+                          weatherVoice ||
+                          aiVoice
+                      ? 'Personalizado'
+                      : 'Mudo',
+                  children: [
+                    _MapCompactSwitch(
+                      icon: Icons.navigation_rounded,
+                      title: 'Navegação',
+                      subtitle: 'Manobras, recálculo e orientação.',
+                      value: navigationVoice,
+                      onChanged: (value) => unawaited(
+                        _mapViewSettings.setNavigationVoiceEnabled(value),
+                      ),
+                    ),
+                    _MapCompactSwitch(
+                      icon: Icons.location_on_outlined,
+                      title: 'Pontos próximos',
+                      value: settings.voiceEnabled,
+                      onChanged: (value) => unawaited(
+                        _routeExplorer.setVoiceEnabled(value),
+                      ),
+                    ),
+                    _MapCompactSwitch(
+                      icon: Icons.cloud_outlined,
+                      title: 'Clima',
+                      value: weatherVoice,
+                      onChanged: (value) => unawaited(
+                        _mapViewSettings.setWeatherVoiceEnabled(value),
+                      ),
+                    ),
+                    _MapCompactSwitch(
+                      icon: Icons.visibility_outlined,
+                      title: 'IA / Detecções',
+                      value: aiVoice,
+                      onChanged: (value) => unawaited(
+                        _setAiVoiceEnabled(value).then((_) {
+                          if (sheetContext.mounted) setSheetState(() {});
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.download_for_offline_outlined,
+                  title: 'Mapas offline',
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonalIcon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          unawaited(_openOfflineMaps());
+                        },
+                        icon: const Icon(Icons.download_for_offline_outlined),
+                        label: const Text('Gerenciar mapas offline'),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Pacotes MBTiles e mapas baixados continuam disponíveis como fallback sem internet.',
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.timeline_rounded,
+                  title: 'Gravação de percurso',
+                  trailingText: recording ? (paused ? 'Pausada' : 'Gravando') : 'Parada',
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            onPressed: recording
+                                ? _togglePauseRecording
+                                : () => unawaited(_startRecording()),
+                            icon: Icon(
+                              recording
+                                  ? (paused
+                                      ? Icons.play_arrow_rounded
+                                      : Icons.pause_rounded)
+                                  : Icons.fiber_manual_record_rounded,
+                            ),
+                            label: Text(
+                              recording
+                                  ? (paused ? 'Continuar' : 'Pausar')
+                                  : 'Iniciar',
+                            ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const _MapSettingsTitle('Alertas de aproximação'),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Ativar alertas'),
-                    subtitle: const Text(
-                      'Avisa sobre postos, comida, saúde, água e demais categorias selecionadas.',
+                        if (recording) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _finishRecording,
+                              icon: const Icon(Icons.stop_rounded),
+                              label: const Text('Finalizar'),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    value: settings.alertsEnabled,
-                    onChanged: (value) => unawaited(
-                      _routeExplorer.setAlertsEnabled(value),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: hasRoutePoints
+                            ? () => unawaited(_exportGpx())
+                            : null,
+                        icon: const Icon(Icons.file_upload_outlined),
+                        label: const Text('Exportar percurso em GPX'),
+                      ),
                     ),
-                  ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Falar aviso'),
-                    value: settings.voiceEnabled,
-                    onChanged: settings.alertsEnabled
-                        ? (value) => unawaited(
-                              _routeExplorer.setVoiceEnabled(value),
-                            )
-                        : null,
-                  ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Notificação Android'),
-                    value: settings.notificationEnabled,
-                    onChanged: settings.alertsEnabled
-                        ? (value) => unawaited(
-                              _routeExplorer.setNotificationEnabled(value),
-                            )
-                        : null,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      for (final distance in const <int>[1000, 3000, 5000, 10000])
-                        ChoiceChip(
-                          label: Text('${distance ~/ 1000} km'),
-                          selected:
-                              settings.alertDistanceMeters == distance,
-                          onSelected: settings.alertsEnabled
-                              ? (_) => unawaited(
-                                    _routeExplorer
-                                        .setAlertDistanceMeters(distance),
-                                  )
-                              : null,
+                  ],
+                ),
+                _MapSettingsSection(
+                  icon: Icons.navigation_outlined,
+                  title: 'Navegação',
+                  trailingText: orientationMode.label,
+                  children: [
+                    const _MapSettingsTitle('Orientação do mapa'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<MapOrientationMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: MapOrientationMode.northUp,
+                            icon: Icon(Icons.north_rounded, size: 17),
+                            label: Text('Norte'),
+                          ),
+                          ButtonSegment(
+                            value: MapOrientationMode.directionUp,
+                            icon: Icon(Icons.explore_rounded, size: 17),
+                            label: Text('Direção'),
+                          ),
+                          ButtonSegment(
+                            value: MapOrientationMode.routeUp,
+                            icon: Icon(Icons.alt_route_rounded, size: 17),
+                            label: Text('Rota'),
+                          ),
+                        ],
+                        selected: <MapOrientationMode>{orientationMode},
+                        showSelectedIcon: false,
+                        onSelectionChanged: (selection) => unawaited(
+                          _setOrientationMode(
+                            selection.first,
+                            showUnavailableNotice: false,
+                          ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const _MapSettingsTitle('Offline e percurso'),
-                  FilledButton.tonalIcon(
-                    onPressed: () {
-                      Navigator.of(sheetContext).pop();
-                      unawaited(_openOfflineMaps());
-                    },
-                    icon: const Icon(Icons.download_for_offline_outlined),
-                    label: const Text('Mapas offline'),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _routeState.route.length >= 2
-                        ? () => unawaited(_exportGpx())
-                        : null,
-                    icon: const Icon(Icons.file_upload_outlined),
-                    label: const Text('Exportar percurso em GPX'),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'A busca “No caminho” pode se atualizar durante o deslocamento mesmo sem gravar percurso: considera distância, tempo em movimento, mudança de direção e saída da área pesquisada. Se a rede falhar, usa o pacote offline mais adequado.',
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'O modo de transporte continua sendo escolhido antes de iniciar cada rota e a última opção fica salva.',
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                  child: Text(
+                    'A busca “No caminho” pode se atualizar durante o deslocamento mesmo sem gravar percurso. Se a rede falhar, o mapa usa o conteúdo offline disponível.',
                     style: Theme.of(sheetContext).textTheme.bodySmall,
                   ),
-                ],
-              );
+                ),
+              ],
+            );
             },
           ),
         ),
@@ -3510,7 +3884,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       return _buildUnavailable(context);
     }
 
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final mapAppearance = _resolvedMapAppearance(theme.brightness);
+    final mapPalette = MapAppearancePolicy.palette(mapAppearance);
     final safePadding = MediaQuery.paddingOf(context);
     final current = _routeState.current;
     final navigationTarget = _routeState.navigationTarget;
@@ -3556,9 +3933,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         !_navigation3dRendererFailed;
     final navigation3dActive =
         navigation3dRequested && _navigation3dRendererReady;
-    final stadiaVectorStyle = _offlineMaps.stadiaVectorStyleUrl('outdoors');
+    final stadiaVectorStyle = switch (mapAppearance) {
+      MapAppearancePreset.dark =>
+        _offlineMaps.stadiaVectorStyleUrl('alidade_smooth_dark'),
+      MapAppearancePreset.bikeTravel =>
+        _offlineMaps.stadiaVectorStyleUrl('outdoors'),
+      MapAppearancePreset.standard =>
+        _offlineMaps.stadiaVectorStyleUrl('outdoors'),
+      MapAppearancePreset.highContrast => null,
+    };
     final navigation3dStyleUrl =
-        stadiaVectorStyle ?? _openFreeMapVectorStyleUrl;
+        stadiaVectorStyle ?? mapPalette.vectorStyleUrl;
+    final navigation3dFallbackStyleUrl = stadiaVectorStyle != null
+        ? mapPalette.vectorStyleUrl
+        : mapPalette.vectorStyleUrl != _openFreeMapVectorStyleUrl
+            ? _openFreeMapVectorStyleUrl
+            : null;
     final navigation3dAttribution = stadiaVectorStyle != null
         ? '© Stadia Maps · © OpenMapTiles · © OpenStreetMap contributors'
         : _openFreeMapAttribution;
@@ -3597,7 +3987,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           final telemetryTop = topInset + MapUxPolicy.controlSize + 8;
           final telemetryHeight = compactHud ? 42.0 : 48.0;
           final nearbyTop = telemetryTop + telemetryHeight + 8;
-          final nearbyHeight = compactHud ? 52.0 : 58.0;
+          final nearbyHeight = compactHud ? 44.0 : 48.0;
           final cameraButtonTop = nearbyTop + nearbyHeight + 8;
           final controlDockTop = cameraButtonTop;
           final attributionBottom = MapUxPolicy.attributionBottom(
@@ -3662,24 +4052,30 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 ),
                 children: [
                   if (useOfflineLayer)
-                    TileLayer(
-                      key: ValueKey<String>(
-                        'offline-${_offlineTilePackageId ?? 'active'}',
+                    _applyRasterAppearance(
+                      TileLayer(
+                        key: ValueKey<String>(
+                          'offline-${_offlineTilePackageId ?? 'active'}',
+                        ),
+                        tileProvider: offlineProvider,
+                        tileDisplay: TileDisplay.instantaneous(opacity: 1),
+                        minNativeZoom: _offlineMinNativeZoom,
+                        maxNativeZoom: _offlineMaxNativeZoom,
                       ),
-                      tileProvider: offlineProvider,
-                      tileDisplay: TileDisplay.instantaneous(opacity: 1),
-                      minNativeZoom: _offlineMinNativeZoom,
-                      maxNativeZoom: _offlineMaxNativeZoom,
+                      mapAppearance,
                     ),
                   if (useOnline)
-                    TileLayer(
-                      key: ValueKey<String>(
-                        'online-${_mapViewSettings.stylePreset.name}',
+                    _applyRasterAppearance(
+                      TileLayer(
+                        key: ValueKey<String>(
+                          'online-${_mapViewSettings.stylePreset.name}-${mapAppearance.name}',
+                        ),
+                        urlTemplate: onlineLayer.urlTemplate,
+                        userAgentPackageName: 'com.vigiaia.app',
+                        maxNativeZoom: onlineLayer.maxNativeZoom,
+                        subdomains: onlineLayer.subdomains,
                       ),
-                      urlTemplate: onlineLayer.urlTemplate,
-                      userAgentPackageName: 'com.vigiaia.app',
-                      maxNativeZoom: onlineLayer.maxNativeZoom,
-                      subdomains: onlineLayer.subdomains,
+                      mapAppearance,
                     ),
                   if (_cyclingRouteAlternatives.isNotEmpty)
                     PolylineLayer(
@@ -3691,13 +4087,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             Polyline(
                               points: _cyclingRouteAlternatives[index].points,
                               strokeWidth: 4,
-                              color: scheme.outline.withValues(alpha: 0.55),
+                              color: mapPalette.routeCasingColor.withValues(
+                                alpha: 0.46,
+                              ),
                             ),
                         if (_cyclingRoute != null)
                           Polyline(
                             points: _cyclingRoute!.points,
+                            strokeWidth: 10,
+                            color: mapPalette.routeCasingColor.withValues(
+                              alpha: 0.92,
+                            ),
+                          ),
+                        if (_cyclingRoute != null)
+                          Polyline(
+                            points: _cyclingRoute!.points,
                             strokeWidth: 6,
-                            color: scheme.tertiary,
+                            color: mapPalette.routeColor,
                           ),
                       ],
                     ),
@@ -3708,7 +4114,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             (segment) => Polyline(
                               points: segment,
                               strokeWidth: 5,
-                              color: scheme.primary,
+                              color: mapPalette.routeColor,
                             ),
                           )
                           .toList(growable: false),
@@ -3812,9 +4218,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: scheme.tertiaryContainer,
+                                color: mapPalette.destinationColor.withValues(alpha: 0.18),
                                 border: Border.all(
-                                  color: scheme.tertiary,
+                                  color: mapPalette.destinationColor,
                                   width: 3,
                                 ),
                                 boxShadow: const [
@@ -3827,7 +4233,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               alignment: Alignment.center,
                               child: Icon(
                                 Icons.flag_circle_rounded,
-                                color: scheme.onTertiaryContainer,
+                                color: mapPalette.destinationColor,
                                 size: 28,
                               ),
                             ),
@@ -3842,7 +4248,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: scheme.primary.withValues(alpha: 0.18),
+                              color: mapPalette.currentPositionColor.withValues(alpha: 0.18),
                             ),
                             alignment: Alignment.center,
                             child: Container(
@@ -3850,7 +4256,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               height: 31,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: scheme.primary,
+                                color: mapPalette.currentPositionColor,
                                 border: Border.all(color: Colors.white, width: 3),
                                 boxShadow: const [
                                   BoxShadow(
@@ -3891,7 +4297,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       curve: Curves.easeOutCubic,
                       child: MapNavigation3DView(
                         key: ValueKey<String>(
-                          'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}-${stadiaVectorStyle != null ? 'stadia' : 'openfreemap'}',
+                          'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}-${mapAppearance.name}-${stadiaVectorStyle != null ? 'stadia' : 'openfreemap'}',
                         ),
                         target: navigationTarget,
                         route: _cyclingRoute!,
@@ -3901,9 +4307,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         distanceToNextManeuverMeters:
                             _navigationProgress?.distanceToNextManeuverMeters,
                         vectorStyleUrl: navigation3dStyleUrl,
-                        fallbackVectorStyleUrl: stadiaVectorStyle != null
-                            ? _openFreeMapVectorStyleUrl
-                            : null,
+                        fallbackVectorStyleUrl: navigation3dFallbackStyleUrl,
+                        appearancePreset: mapAppearance,
                         vectorAttribution: navigation3dAttribution,
                         recenterRequest: _navigation3dRecenterRequest,
                         onReady: _handleNavigation3dReady,
@@ -3985,9 +4390,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 top: topInset,
                 right: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
-                  tooltip: 'Camadas e tipo do mapa',
+                  tooltip: 'Aparência e camadas do mapa',
                   icon: Icons.layers_rounded,
-                  active: offlineProvider != null || networkOffline,
+                  active: offlineProvider != null ||
+                      networkOffline ||
+                      mapAppearance != MapAppearancePreset.standard,
                   onPressed: () {
                     if (navigation3dActive) {
                       setState(() => _navigation3dEnabled = false);
@@ -4116,9 +4523,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       _MapControlButton(
                         tooltip: 'Próximos pontos',
                         icon: Icons.location_on_rounded,
-                        badge: _routeExplorer.activeResults.isEmpty
-                            ? null
-                            : '${_routeExplorer.activeResults.length}',
+                        badge: MapUxPolicy.compactCountBadge(
+                          _routeExplorer.activeResults.length,
+                        ),
                         active: _routeExplorer.activeResults.isNotEmpty,
                         onPressed: () => unawaited(_showNearbyPoints()),
                       ),
@@ -4747,49 +5154,59 @@ class _TravelModeChoiceCard extends StatelessWidget {
         : scheme.surfaceContainerLow;
     final foreground = selected ? scheme.onPrimaryContainer : scheme.onSurface;
 
-    return Material(
-      color: background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: borderColor,
-          width: selected ? 1.7 : 1,
+    return SizedBox(
+      height: 76,
+      child: Material(
+        color: background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: borderColor,
+            width: selected ? 1.6 : 1,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 38, color: foreground),
-                  const SizedBox(height: 9),
-                  Text(
-                    mode.label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      color: foreground,
-                    ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 27, color: foreground),
+                      const SizedBox(height: 5),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          mode.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            if (selected)
-              Positioned(
-                top: 9,
-                right: 9,
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 20,
-                  color: scheme.primary,
                 ),
               ),
-          ],
+              if (selected)
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    size: 15,
+                    color: scheme.primary,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -4978,58 +5395,106 @@ class _NearbyPointsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final subtitle = loading
-        ? 'Atualizando pontos próximos...'
-        : count > 0
-            ? '$count ponto${count == 1 ? '' : 's'} · ${offline ? 'dados offline' : 'dados online'}'
-            : 'Postos, comida, saúde, água, mirantes e outros.';
+    final badge = MapUxPolicy.compactCountBadge(count) ?? '0';
+    final sourceLabel = offline ? 'Offline' : 'Online';
+    final subtitle = count > 0
+        ? (offline ? 'Pontos disponíveis sem rede' : 'Pontos atualizados pela rede')
+        : 'Postos, comida, saúde, água e outros';
 
     return Material(
-      elevation: 4,
+      elevation: 2,
       color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             children: [
               Icon(
                 Icons.location_on_rounded,
-                size: 24,
+                size: 20,
                 color: scheme.primary,
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: 7),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Locais próximos',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Row(
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'Locais próximos',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (loading) ...[
+                          const SizedBox(width: 6),
+                          const SizedBox(
+                            width: 11,
+                            height: 11,
+                            child: CircularProgressIndicator(strokeWidth: 1.6),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 1),
                     Text(
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 10.5,
+                            fontSize: 9.5,
                           ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 6),
+              Container(
+                constraints: const BoxConstraints(minWidth: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  badge,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scheme.onPrimaryContainer,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.82),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  sourceLabel,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
               Icon(
                 Icons.chevron_right_rounded,
+                size: 19,
                 color: scheme.onSurfaceVariant,
               ),
             ],
@@ -5073,8 +5538,8 @@ class _MapZoomCluster extends StatelessWidget {
         onPressed: onZoomIn,
       ),
       SizedBox(
-        width: horizontal ? 1 : 28,
-        height: horizontal ? 28 : 1,
+        width: horizontal ? 1 : 24,
+        height: horizontal ? 24 : 1,
         child: ColoredBox(
           color: scheme.outlineVariant.withValues(alpha: 0.65),
         ),
@@ -5086,9 +5551,9 @@ class _MapZoomCluster extends StatelessWidget {
       ),
     ];
     return Material(
-      elevation: 4,
+      elevation: 2,
       color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: Flex(
         direction: horizontal ? Axis.horizontal : Axis.vertical,
@@ -5221,49 +5686,59 @@ class _MapControlButton extends StatelessWidget {
             : scheme.onSurface.withValues(alpha: 0.38);
     return Tooltip(
       message: tooltip,
-      child: Material(
-        elevation: enabled ? 4 : 1,
-        color: background,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: MapUxPolicy.controlSize,
-            height: MapUxPolicy.controlSize,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, color: foreground, size: 20),
-                if (badge != null)
-                  Positioned(
-                    right: 2,
-                    top: 2,
-                    child: Container(
-                      constraints: const BoxConstraints(minWidth: 17),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.error,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        badge!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: scheme.onError,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                        ),
+      child: SizedBox(
+        width: MapUxPolicy.controlSize,
+        height: MapUxPolicy.controlSize,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: Material(
+                elevation: enabled ? 2 : 0,
+                color: background,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onPressed,
+                  customBorder: const CircleBorder(),
+                  child: Center(
+                    child: Icon(icon, color: foreground, size: 20),
+                  ),
+                ),
+              ),
+            ),
+            if (badge != null)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: IgnorePointer(
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 16,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: scheme.error,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: scheme.surface, width: 1.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      badge!,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: scheme.onError,
+                        fontSize: badge!.length >= 3 ? 8 : 9,
+                        height: 1.05,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -5312,6 +5787,162 @@ class _MapEmptyState extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MapSettingsSection extends StatelessWidget {
+  const _MapSettingsSection({
+    required this.icon,
+    required this.title,
+    required this.children,
+    this.trailingText,
+    this.initiallyExpanded = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? trailingText;
+  final bool initiallyExpanded;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 7),
+      clipBehavior: Clip.antiAlias,
+      color: scheme.surfaceContainerLow,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          minTileHeight: 46,
+          leading: Icon(icon, size: 20, color: scheme.primary),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (trailingText != null) ...[
+                Text(
+                  trailingText!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
+              const Icon(Icons.expand_more_rounded),
+            ],
+          ),
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _MapCategoryOption extends StatelessWidget {
+  const _MapCategoryOption({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = selected ? scheme.onPrimaryContainer : scheme.onSurface;
+    return Material(
+      color: selected ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? scheme.primary : scheme.outlineVariant,
+          width: selected ? 1.4 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 17, color: foreground),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: foreground,
+                  ),
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: 3),
+                Icon(Icons.check_rounded, size: 15, color: scheme.primary),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapCompactSwitch extends StatelessWidget {
+  const _MapCompactSwitch({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -3),
+      secondary: Icon(icon, size: 19, color: scheme.onSurfaceVariant),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle!,
+              style: const TextStyle(fontSize: 10.5),
+            ),
+      value: value,
+      onChanged: onChanged,
     );
   }
 }
@@ -5945,17 +6576,20 @@ class _NavigationBanner extends StatelessWidget {
     final foreground = warning
         ? scheme.onSecondaryContainer
         : scheme.onTertiaryContainer;
+    final progressFraction = progress?.progressFraction.clamp(0.0, 1.0).toDouble();
+    final detailLine = '$nextLine · $summaryLine';
     return Center(
       child: Material(
-        elevation: 6,
+        elevation: 3,
         color: background,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-            compact ? 9 : 11,
-            compact ? 6 : 7,
-            4,
-            compact ? 6 : 7,
+            compact ? 8 : 10,
+            compact ? 5 : 6,
+            2,
+            compact ? 4 : 5,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -5966,10 +6600,10 @@ class _NavigationBanner extends StatelessWidget {
                     : progress?.offRoute == true
                         ? Icons.alt_route_rounded
                         : Icons.navigation_rounded,
-                size: compact ? 18 : 20,
+                size: compact ? 17 : 19,
                 color: foreground,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               Flexible(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -5981,30 +6615,35 @@ class _NavigationBanner extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: foreground,
-                        fontSize: compact ? 12 : 14,
+                        fontSize: compact ? 11.5 : 13,
+                        height: 1.05,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      nextLine,
+                      detailLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: foreground,
-                        fontSize: compact ? 10 : 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      summaryLine,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: foreground.withValues(alpha: 0.82),
+                        color: foreground.withValues(alpha: 0.86),
                         fontSize: compact ? 9 : 10,
+                        height: 1.05,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (progressFraction != null) ...[
+                      const SizedBox(height: 3),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progressFraction,
+                          minHeight: 2,
+                          backgroundColor: foreground.withValues(alpha: 0.16),
+                          valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -6037,13 +6676,14 @@ class _NavigationBanner extends StatelessWidget {
                         ),
                       ),
                   ],
-                  icon: const Icon(Icons.alt_route_rounded),
+                  icon: const Icon(Icons.alt_route_rounded, size: 20),
                 ),
               IconButton(
                 tooltip: 'Parar navegação',
                 onPressed: onStop,
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.close_rounded),
+                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                icon: const Icon(Icons.close_rounded, size: 20),
               ),
             ],
           ),
@@ -6051,6 +6691,7 @@ class _NavigationBanner extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class _RouteButtonBar extends StatelessWidget {
