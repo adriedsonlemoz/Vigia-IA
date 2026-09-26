@@ -65,8 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.171',
+          version: '1.0.172',
           current: true,
+          changes: [
+            'Manutenção do build 134 removeu o último aviso restante do analisador Dart sem alterar o comportamento da navegação 3D.',
+            'Mapa, rota, clima, ESP32, fallback 2D e demais recursos permanecem funcionalmente iguais à versão anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.171',
           changes: [
             'Manutenção do build 133 removeu avisos do analisador Dart sem alterar o comportamento do mapa 3D, clima ou navegação.',
             'A versão mantém integralmente câmera 3D, rota, prédios opcionais, fallback 2D e integração ESP32 da entrega anterior.',

@@ -1,3 +1,11 @@
+## 1.0.172+172 — 2026-09-26
+
+- Corrigido o único apontamento restante do `flutter analyze` no build 134: variável local `recordedAt` declarada e não utilizada em `MapNavigation3DView._syncCamera`.
+- Remoção estritamente interna, sem mudança no comportamento da câmera 3D, rota, heading, zoom, pitch, clima, ESP32 ou fallback 2D.
+- `verify_project.sh` passa a bloquear a reintrodução da variável local órfã que causou o build 134.
+- Release técnica sem mudança visível: o catálogo de Novidades identifica `1.0.172+172`, mas não exibe popup vazia nem reutiliza conteúdo anterior.
+- Versionamento, AppMetadata, identidades, User-Agents, README, ARCHITECTURE, RELEASE, VALIDATION, testes e verificadores sincronizados em `1.0.172+172`.
+
 ## 1.0.171+171 — 2026-09-26
 
 - Corrigidos os seis apontamentos que fizeram o `flutter analyze` do build 133 encerrar com código 1: quatro `prefer_final_locals`, um import `dart:math` não usado e um campo `_lastCameraPointAt` somente escrito.

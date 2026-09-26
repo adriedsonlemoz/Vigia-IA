@@ -140,7 +140,7 @@ void main() {
   test('catálogo vazio não mostra popup de novidades', () async {
     final store = _MemoryStore()..value = '1.0.170+170';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.171', build: 171),
+      const AppBuildVersion(version: '1.0.172', build: 172),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,

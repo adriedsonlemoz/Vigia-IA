@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.171+171
+# Arquitetura — Vigia IA 1.0.172+172
+
+## Manutenção de análise estática — 1.0.172
+
+A release 1.0.172 remove somente a variável local `recordedAt` sem leitura em `MapNavigation3DView._syncCamera`, apontada pelo analyzer no build 134. A fonte temporal real continua disponível no próprio `MapNavigationPoint` para as partes que a utilizam; nenhuma política de câmera, heading, rota, MapLibre, clima ou fallback foi modificada.
 
 
 ## Manutenção de análise estática — 1.0.171

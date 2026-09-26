@@ -9,7 +9,7 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   /// Releases somente tecnicas nao fabricam uma mudanca visivel para exibir.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.171', build: 171);
+      AppBuildVersion(version: '1.0.172', build: 172);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[]);
 

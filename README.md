@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.171+171`
+> **Versão atual:** `1.0.172+172`
 
 ## Estado atual
 
-A `1.0.171+171` é uma manutenção do build 133: limpa seis avisos do `flutter analyze` sem alterar o comportamento funcional do mapa 3D, clima, navegação, ESP32 ou fallbacks.
+A `1.0.172+172` é uma manutenção do build 134: remove o último warning restante do `flutter analyze` sem alterar o comportamento funcional do mapa 3D, clima, navegação, ESP32 ou fallbacks.
+
+
+### Manutenção 1.0.172 — build 134
+- Removida a variável local `recordedAt` que era criada em `MapNavigation3DView._syncCamera` e nunca utilizada.
+- A alteração é estritamente de análise estática; câmera 3D, heading, zoom, pitch, rota e suavização mantêm a mesma lógica.
+- O verificador passa a bloquear a reintrodução desse padrão específico.
+- Como não há mudança visível nesta release técnica, a popup `Novidades da atualização` continua sem conteúdo inventado.
 
 
 ### Manutenção 1.0.171 — análise estática limpa

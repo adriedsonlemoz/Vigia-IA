@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.171 limpa os avisos de análise estática encontrados no build 133 sem alterar o comportamento funcional do mapa 3D, clima, navegação ou fallbacks.",
-  "version": "1.0.171",
-  "build": 171
+  "notes": "A 1.0.172 remove o ultimo warning de analise estatica encontrado no build 134 sem alterar o comportamento funcional do mapa 3D, clima, navegacao ou fallbacks.",
+  "version": "1.0.172",
+  "build": 172
 }
