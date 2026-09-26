@@ -1,3 +1,10 @@
+## 1.0.153+153 — 2026-09-25
+
+- Corrigido o Android-APK-116, que parava em `flutter analyze` por cinco ocorrências de `unnecessary_non_null_assertion` em `lib/screens/map_monitoring_screen.dart`.
+- Removidos operadores `!` redundantes de `navigationTarget` nos trechos em que `navigation3dActive` já garante destino não nulo.
+- Mantidos sem alteração funcional o renderer MapLibre 3D, roteamento por Bicicleta/Moto/Carro/A pé, POIs, câmeras, voz, recálculo e fallback FlutterMap/MBTiles.
+- Sincronizados versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão e User-Agents em `1.0.153+153`.
+
 ## 1.0.152+152 — 2026-09-25
 
 - Iniciada a navegação em perspectiva 3D sem migrar o mapa exploratório: rotas online ativas passam a usar `MapNavigation3DView` com MapLibre e pitch de 54°.

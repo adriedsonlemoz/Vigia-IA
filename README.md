@@ -2,11 +2,17 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.152+152`
+> **Versão atual:** `1.0.153+153`
 
 ## Estado atual
 
-A `1.0.152+152` inicia a implantação da navegação 3D sem substituir o mapa principal: ao escolher um POI e iniciar uma rota online, o usuário seleciona Bicicleta, Moto, Carro ou A pé, o Valhalla calcula o perfil correspondente e a rota ativa passa para um renderer MapLibre com câmera inclinada. Offline continua usando o renderer 2D existente.
+A `1.0.153+153` corrige o bloqueio do Android-APK-116 no `flutter analyze` sem avançar a implementação funcional: a primeira etapa da navegação 3D da 1.0.152 permanece intacta, incluindo seleção de modo de transporte, roteamento por perfil, MapLibre inclinado e fallback 2D/offline.
+
+### Correção 1.0.153 — Android-APK-116
+
+- Corrigidos os cinco avisos `unnecessary_non_null_assertion` apontados pelo `flutter analyze` em `map_monitoring_screen.dart`.
+- O destino já estava promovido para não nulo pelo fluxo `navigation3dActive`; os operadores `!` redundantes foram removidos.
+- Nenhuma regra de rota, MapLibre, modos de transporte, POIs, câmera ou fallback offline foi alterada.
 
 ### Evolução 1.0.152 — primeira etapa da navegação 3D
 

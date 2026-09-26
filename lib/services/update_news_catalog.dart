@@ -7,6 +7,14 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.153', build: 153),
+      changes: <String>[
+        '🔧 Corrigido o bloqueio do Android-APK-116 na análise estática da primeira etapa do mapa 3D.',
+        '🗺️ Removidas assertions de nulabilidade redundantes no destino de navegação 3D, sem mudar rota, câmera, POIs ou fallback 2D.',
+        '🧪 A correção preserva seleção de Bicicleta/Moto/Carro/A pé e a entrada automática no renderer 3D durante rotas online.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.152', build: 152),
       changes: <String>[
         '🧭 Ao iniciar uma rota online, o Vigia IA entra automaticamente na primeira etapa da navegação em perspectiva 3D.',

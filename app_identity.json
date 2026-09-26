@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.152 inicia a navegação 3D: seleção de Bicicleta/Moto/Carro/A pé, roteamento por perfil e renderer MapLibre inclinado durante rotas online, com fallback 2D/offline.",
-  "version": "1.0.152",
-  "build": 152
+  "notes": "A 1.0.153 corrige o bloqueio do Android-APK-116 no flutter analyze, removendo assertions ! redundantes introduzidas na primeira etapa da navegação 3D, sem alterar o comportamento do mapa ou do roteamento.",
+  "version": "1.0.153",
+  "build": 153
 }

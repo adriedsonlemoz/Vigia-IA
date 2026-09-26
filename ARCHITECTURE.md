@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.152+152
+# Arquitetura — Vigia IA 1.0.153+153
+
+## Buildfix Android-APK-116 — 1.0.153
+
+- `MapMonitoringScreen` mantém a mesma decisão `navigation3dActive`, que só é verdadeira com destino, rota e camada online disponíveis.
+- Dentro desse fluxo, `navigationTarget` já é promovido pelo analisador de fluxo do Dart; foram removidas cinco assertions `!` sem efeito que faziam o workflow falhar com `unnecessary_non_null_assertion`.
+- A correção é estritamente de nulabilidade/análise estática e não modifica o contrato do renderer 3D, perfil de transporte, roteamento ou fallback 2D/offline.
+
 
 ## Navegação 3D híbrida — 1.0.152
 

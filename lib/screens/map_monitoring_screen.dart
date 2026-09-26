@@ -2686,9 +2686,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               if (navigation3dActive)
                 MapNavigation3DView(
                   key: ValueKey<String>(
-                    'nav3d-${navigationTarget!.sourceId ?? navigationTarget!.label}-${navigationTarget!.travelMode.storageValue}',
+                    'nav3d-${navigationTarget.sourceId ?? navigationTarget.label}-${navigationTarget.travelMode.storageValue}',
                   ),
-                  target: navigationTarget!,
+                  target: navigationTarget,
                   route: _cyclingRoute!,
                   current: current,
                   headingUp: _mapViewSettings.orientationMode ==
@@ -3021,7 +3021,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   alignment: Alignment.topCenter,
                   child: navigation3dActive
                       ? _Navigation3DModePill(
-                          mode: navigationTarget!.travelMode,
+                          mode: navigationTarget.travelMode,
                           compact: compactHud,
                         )
                       : _MapQuickViewBar(

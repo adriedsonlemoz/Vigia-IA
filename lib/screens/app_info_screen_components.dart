@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.152',
+          version: '1.0.153',
           current: true,
+          changes: [
+            'Corrigido o bloqueio do Android-APK-116 no flutter analyze.',
+            'Removidas assertions ! redundantes no destino da navegação 3D.',
+            'A correção não altera o comportamento do mapa 3D, roteamento, modos de transporte ou fallback 2D.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.152',
           changes: [
             'Primeira etapa da navegação 3D: rotas online passam a usar um renderer MapLibre inclinado durante o acompanhamento.',
             'Antes de navegar, é possível escolher Bicicleta, Moto, Carro ou A pé.',
@@ -1408,8 +1417,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.152',
+          version: '1.0.153',
           current: true,
+          changes: [
+            'Corrigido o bloqueio do Android-APK-116 no flutter analyze.',
+            'Removidas assertions ! redundantes no destino da navegação 3D.',
+            'A correção não altera o comportamento do mapa 3D, roteamento, modos de transporte ou fallback 2D.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.152',
           changes: [
             'Primeira etapa da navegação 3D: rotas online passam a usar um renderer MapLibre inclinado durante o acompanhamento.',
             'Antes de navegar, é possível escolher Bicicleta, Moto, Carro ou A pé.',

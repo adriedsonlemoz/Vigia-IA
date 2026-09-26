@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.152+152
+# Validação Vigia IA 1.0.153+153
+
+## 1.0.153+153 — correção Android-APK-116
+
+- Log analisado: `flutter analyze` falhou com cinco avisos `unnecessary_non_null_assertion` em `lib/screens/map_monitoring_screen.dart`, nas linhas reportadas 2689, 2691 e 3024.
+- Remover os `!` redundantes de `navigationTarget` e confirmar que o fluxo continua protegido por `navigation3dActive`.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e build Android no workflow; o ambiente local de edição não possui Flutter/Dart instalados.
+
 
 ## 1.0.152+152 — primeira etapa da navegação 3D
 
