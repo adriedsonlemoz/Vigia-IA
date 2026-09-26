@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.153 corrige o bloqueio do Android-APK-116 no flutter analyze, removendo assertions ! redundantes introduzidas na primeira etapa da navegação 3D, sem alterar o comportamento do mapa ou do roteamento.",
-  "version": "1.0.153",
-  "build": 153
+  "notes": "A 1.0.154 corrige o Android-APK-117: o MapLibre Android 0.3.6 requisita org.jlleitschuh.gradle.ktlint sem versão no subprojeto publicado; o projeto agora fornece uma versão padrão do plugin no pluginManagement do Gradle.",
+  "version": "1.0.154",
+  "build": 154
 }

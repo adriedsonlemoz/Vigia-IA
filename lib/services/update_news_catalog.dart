@@ -7,6 +7,14 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.154', build: 154),
+      changes: <String>[
+        '🔧 Corrigido o Android-APK-117, que falhava ao configurar o MapLibre Android durante o build release.',
+        '🧩 O Gradle agora resolve explicitamente a versão do plugin ktlint exigido pelo maplibre_android 0.3.6.',
+        '🗺️ A navegação 3D, os modos Bicicleta/Moto/Carro/A pé e o fallback 2D/offline permanecem sem alteração funcional.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.153', build: 153),
       changes: <String>[
         '🔧 Corrigido o bloqueio do Android-APK-116 na análise estática da primeira etapa do mapa 3D.',

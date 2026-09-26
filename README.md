@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.153+153`
+> **Versão atual:** `1.0.154+154`
 
 ## Estado atual
 
-A `1.0.153+153` corrige o bloqueio do Android-APK-116 no `flutter analyze` sem avançar a implementação funcional: a primeira etapa da navegação 3D da 1.0.152 permanece intacta, incluindo seleção de modo de transporte, roteamento por perfil, MapLibre inclinado e fallback 2D/offline.
+A `1.0.154+154` corrige o Android-APK-117 no build release: o `maplibre_android 0.3.6` aplica o plugin `org.jlleitschuh.gradle.ktlint` sem informar versão, e o projeto agora fornece essa versão pelo `pluginManagement` do Gradle. A navegação 3D da 1.0.152 permanece intacta.
+
+### Correção 1.0.154 — Android-APK-117
+
+- O workflow chegava ao build release, mas o Gradle parava ao avaliar `maplibre_android-0.3.6/android/build.gradle.kts`.
+- Causa: o pacote aplica `org.jlleitschuh.gradle.ktlint` sem versão; fora do repositório original do plugin, o Gradle não tinha como resolver essa dependência de build.
+- `android/settings.gradle.kts` agora define `org.jlleitschuh.gradle.ktlint` `14.2.0` em `pluginManagement`, mantendo `gradlePluginPortal()` como repositório.
+- Nenhuma lógica de mapa, rota, câmera, POI, voz ou fallback offline foi modificada.
 
 ### Correção 1.0.153 — Android-APK-116
 

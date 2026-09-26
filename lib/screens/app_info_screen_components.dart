@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.153',
+          version: '1.0.154',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-117 no build release do MapLibre Android.',
+            'O plugin Gradle ktlint exigido pelo maplibre_android 0.3.6 agora recebe uma versão explícita pelo pluginManagement.',
+            'A correção é de infraestrutura de build e preserva a navegação 3D e o fallback 2D/offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.153',
           changes: [
             'Corrigido o bloqueio do Android-APK-116 no flutter analyze.',
             'Removidas assertions ! redundantes no destino da navegação 3D.',
@@ -1417,8 +1426,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.153',
+          version: '1.0.154',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-117 no build release do MapLibre Android.',
+            'O plugin Gradle ktlint exigido pelo maplibre_android 0.3.6 agora recebe uma versão explícita pelo pluginManagement.',
+            'A correção é de infraestrutura de build e preserva a navegação 3D e o fallback 2D/offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.153',
           changes: [
             'Corrigido o bloqueio do Android-APK-116 no flutter analyze.',
             'Removidas assertions ! redundantes no destino da navegação 3D.',

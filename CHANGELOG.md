@@ -1,3 +1,10 @@
+## 1.0.154+154 — 2026-09-25
+
+- Corrigido o Android-APK-117, que passava por `flutter analyze` e testes, mas falhava no build release ao avaliar `maplibre_android-0.3.6/android/build.gradle.kts`.
+- A falha `Plugin [id: 'org.jlleitschuh.gradle.ktlint'] was not found` foi tratada fornecendo `org.jlleitschuh.gradle.ktlint` `14.2.0` no `pluginManagement` de `android/settings.gradle.kts`.
+- Mantidos sem alteração funcional o renderer MapLibre 3D, seleção Bicicleta/Moto/Carro/A pé, roteamento, voz, recálculo, POIs, câmeras e fallback FlutterMap/MBTiles.
+- Sincronizados versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão, User-Agents e verificador preventivo em `1.0.154+154`.
+
 ## 1.0.153+153 — 2026-09-25
 
 - Corrigido o Android-APK-116, que parava em `flutter analyze` por cinco ocorrências de `unnecessary_non_null_assertion` em `lib/screens/map_monitoring_screen.dart`.

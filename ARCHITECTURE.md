@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.153+153
+# Arquitetura — Vigia IA 1.0.154+154
+
+## Buildfix Android-APK-117 — 1.0.154
+
+- O `maplibre_android 0.3.6` publicado no pub.dev aplica `org.jlleitschuh.gradle.ktlint` no próprio subprojeto Android sem declarar versão na chamada do plugin.
+- Como o subprojeto é carregado dentro do build Android do Vigia IA, `android/settings.gradle.kts` fornece a versão padrão `14.2.0` por `pluginManagement.plugins`, usando o `gradlePluginPortal()` já configurado.
+- O ajuste fica restrito à resolução de plugin do Gradle e não altera a API Dart, o renderer MapLibre, o roteamento ou a política de fallback 2D/offline.
+
 
 ## Buildfix Android-APK-116 — 1.0.153
 

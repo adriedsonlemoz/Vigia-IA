@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.153+153
+# Validação Vigia IA 1.0.154+154
+
+## 1.0.154+154 — correção Android-APK-117
+
+- Log analisado: `flutter analyze` e testes passaram; o build release falhou em `maplibre_android-0.3.6/android/build.gradle.kts` com `Plugin [id: 'org.jlleitschuh.gradle.ktlint'] was not found`.
+- Confirmar em `android/settings.gradle.kts` a versão padrão `14.2.0` do plugin `org.jlleitschuh.gradle.ktlint` dentro de `pluginManagement`.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Reconfirmar `flutter analyze`, `flutter test` e o build Android no workflow. Este ambiente não possui Flutter/Gradle instalados para reproduzir a compilação release localmente.
+
 
 ## 1.0.153+153 — correção Android-APK-116
 
