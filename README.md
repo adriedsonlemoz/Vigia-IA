@@ -2,11 +2,19 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.161+161`
+> **Versão atual:** `1.0.162+162`
 
 ## Estado atual
 
-A `1.0.161+161` consolida a navegação 3D e reformula o contrato da popup de atualização: ela agora apresenta somente as novidades da versão instalada atual, deixando o histórico completo exclusivamente em Sobre > Mudanças.
+A `1.0.162+162` mantém a navegação 3D e os canais de áudio independentes, alinha o controle de voz da IA ao pipeline que realmente possui alertas e preserva a popup automática exclusiva da versão instalada atual.
+
+### Ajuste 1.0.162 — áudio do mapa e câmera secundária
+
+- O controle de `IA/Detecções` do mapa atua apenas no `MonitorController`, que é o pipeline real de IA e voz do monitoramento.
+- `SecondaryCameraController` permanece dedicado à segunda visualização e não recebe métodos de voz que não fazem parte de seu contrato.
+- `AlertDeliveryService` mantém o parâmetro público `respectGlobalVoice` com inicialização direta, eliminando o aviso `prefer_initializing_formals` sem alterar o comportamento do Route Explorer.
+- A popup `Novidades da atualização` contém somente a entrada `1.0.162+162`; versões anteriores continuam disponíveis apenas em `Sobre > Mudanças`.
+- A verificação preventiva rejeita retorno de chamadas de voz ao controlador secundário e também rejeita catálogo de Novidades com mais de uma versão.
 
 ### Ajuste 1.0.161 — Novidades da versão atual + API pública do MapLibre
 

@@ -9,11 +9,11 @@ class UpdateNewsCatalog {
   /// O historico completo continua na tela Sobre > Mudancas.
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.161', build: 161),
+      version: AppBuildVersion(version: '1.0.162', build: 162),
       changes: <String>[
-        '✨ Novidades da atualização agora mostra somente o que chegou nesta versão, sem misturar conteúdo de versões anteriores.',
-        '🧾 O histórico completo continua disponível em Sobre > Mudanças, enquanto a popup fica curta e específica da atualização instalada.',
-        '🗺️ A camada opcional de prédios da navegação 3D passa a usar somente APIs públicas de estilo do MapLibre, preservando o mapa vetorial e o acompanhamento.',
+        '🎙️ O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
+        '📷 A segunda câmera permanece como visualização auxiliar, enquanto os alertas de IA continuam centralizados no pipeline principal de monitoramento.',
+        '✨ Novidades da atualização continua mostrando somente o conteúdo desta versão instalada, sem misturar o histórico de versões anteriores.',
       ],
     ),
   ]);

@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.161+161
+# Validação Vigia IA 1.0.162+162
+
+## 1.0.162+162 — áudio do mapa + analyzer
+
+- Executar `flutter analyze` no workflow e confirmar ausência de `undefined_method` em `monitor_screen_map_explorer.dart`.
+- Abrir o mapa com uma segunda câmera ativa, alternar `IA/Detecções` no controle rápido de áudio e confirmar que o pipeline principal muda o estado sem tentar chamar API de voz no controlador secundário.
+- Confirmar que Navegação e Pontos próximos continuam independentes do canal `IA/Detecções`.
+- Confirmar que a popup `Novidades da atualização` mostra somente os três itens de `1.0.162+162`, sem itens de versões anteriores.
+- Fechar e abrir novamente a mesma versão e confirmar que a popup não reaparece.
+- Confirmar em `Sobre > Mudanças` que o histórico 1.0.161 e anteriores permanece disponível.
 
 ## 1.0.161+161 — popup exclusiva da versão atual + MapLibre público
 

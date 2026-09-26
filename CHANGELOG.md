@@ -1,3 +1,11 @@
+## 1.0.162+162 — 2026-09-26
+
+- Ajustado o controle de voz `IA/Detecções` do mapa para atuar somente no pipeline principal de monitoramento; a segunda câmera permanece como visualização auxiliar sem pipeline próprio de IA/voz.
+- `AlertDeliveryService` passa a usar inicialização direta de `respectGlobalVoice`, mantendo a API pública e eliminando o aviso de lint do analyzer.
+- A popup automática de Novidades contém somente a release `1.0.162+162`, sem histórico antigo e sem itens de bugs/correções.
+- Adicionada verificação preventiva contra chamadas de `setVoiceEnabled()` em `SecondaryCameraController`.
+- Metadados, User-Agents, Sobre > Mudanças, README, ARCHITECTURE, RELEASE e VALIDATION sincronizados para `1.0.162+162`.
+
 ## 1.0.161+161 — 2026-09-26
 
 - Alterado o serviço de `Novidades da atualização` para selecionar exclusivamente a release que corresponde à versão instalada atual, sem agregar versões puladas ou não visualizadas.

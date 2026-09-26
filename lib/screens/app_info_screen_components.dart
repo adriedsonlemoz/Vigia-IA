@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.161',
+          version: '1.0.162',
           current: true,
+          changes: [
+            'O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
+            'A segunda câmera permanece como visualização auxiliar; os alertas de IA continuam centralizados no pipeline principal de monitoramento.',
+            'A popup Novidades da atualização continua exclusiva da versão instalada atual, sem acumular histórico.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.161',
           changes: [
             'A popup Novidades da atualização agora mostra somente o conteúdo da versão instalada atual, sem acumular versões anteriores.',
             'O histórico completo continua disponível em Sobre > Mudanças, separado da popup automática de atualização.',
@@ -1494,8 +1503,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.161',
+          version: '1.0.162',
           current: true,
+          changes: [
+            'O controle rápido de áudio mantém Navegação, IA/Detecções e Pontos próximos independentes e persistentes no mapa.',
+            'A segunda câmera permanece como visualização auxiliar; os alertas de IA continuam centralizados no pipeline principal de monitoramento.',
+            'A popup Novidades da atualização continua exclusiva da versão instalada atual, sem acumular histórico.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.161',
           changes: [
             'A popup Novidades da atualização agora mostra somente o conteúdo da versão instalada atual, sem acumular versões anteriores.',
             'O histórico completo continua disponível em Sobre > Mudanças, separado da popup automática de atualização.',

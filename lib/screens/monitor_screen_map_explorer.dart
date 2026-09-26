@@ -25,8 +25,9 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
           _controller.bikeModeConfig.approachAlertsEnabled,
       aiVoiceEnabledProvider: () => _controller.voiceEnabled,
       onAiVoiceChanged: (value) {
+        // A segunda câmera é apenas uma visualização auxiliar e não possui
+        // pipeline próprio de IA/voz. O canal de IA pertence ao monitor principal.
         _controller.setVoiceEnabled(value, persist: false);
-        _secondaryController?.setVoiceEnabled(value, persist: false);
       },
       initialPointOfInterest: focus,
     );

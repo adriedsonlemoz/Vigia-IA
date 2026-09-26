@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.161+161
+# Arquitetura — Vigia IA 1.0.162+162
+
+## Contrato de voz do mapa e câmera secundária — 1.0.162
+
+- `MapMonitoringScreen.onAiVoiceChanged` controla o `MonitorController`, único pipeline de IA/alertas do monitoramento principal.
+- `SecondaryCameraController` continua responsável apenas pela segunda prévia e telemetria de fonte; não mantém `SpeechService` nem estado de voz próprio.
+- `AlertDeliveryService.respectGlobalVoice` é um campo final inicializado diretamente pelo construtor, preservando chamadas como `AlertDeliveryService(respectGlobalVoice: false)`.
+- `UpdateNewsCatalog.current` contém somente a versão empacotada atual, enquanto `Sobre > Mudanças` preserva o histórico completo.
 
 ## Novidades isoladas por versão e API pública do renderer — 1.0.161
 

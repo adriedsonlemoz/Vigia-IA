@@ -11,32 +11,39 @@ fail() {
 python3 tool/check_version_sync.py || fail 'Metadados de versao nao estao sincronizados.'
 
 grep -q '^name: vigiaia$' pubspec.yaml || fail 'Nome tecnico Dart esperado vigiaia nao encontrado.'
-grep -Fxq 'version: 1.0.161+161' pubspec.yaml || fail 'Versao esperada 1.0.161+161 nao encontrada.'
+grep -Fxq 'version: 1.0.162+162' pubspec.yaml || fail 'Versao esperada 1.0.162+162 nao encontrada.'
 grep -q 'class Esp32CapabilityObservation' lib/models/esp32_capability_status.dart || fail 'Modelo de estado por sensor ESP32 1.0.124 ausente.'
 grep -q 'Esp32CapabilityActivity.live' lib/screens/esp32_settings_screen.dart || fail 'Tela ESP32 nao renderiza estado de leitura ativa 1.0.124.'
 grep -q 'Detectado · não configurado' lib/models/esp32_capability_status.dart || fail 'Estado de sensor novo ESP32 1.0.124 ausente.'
 grep -q 'firmware legado' test/esp32_capability_status_test.dart || fail 'Teste de inferencia ESP32 legado 1.0.124 ausente.'
-grep -Fq '## 1.0.161+161' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.161.'
-[[ -f RELEASE-1.0.161.md ]] || fail 'Notas da entrega 1.0.161 ausentes.'
-grep -q "version: '1.0.161'" lib/screens/app_info_screen_components.dart || fail 'Tela Mudancas nao marca a versao 1.0.161.'
-grep -q "version: AppBuildVersion(version: '1.0.161', build: 161)" lib/services/update_news_catalog.dart || fail 'Novidades 1.0.161 ausentes do catalogo.'
-# Popup de Novidades exclusiva da versao atual - 1.0.161
+grep -Fq '## 1.0.162+162' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.162.'
+[[ -f RELEASE-1.0.162.md ]] || fail 'Notas da entrega 1.0.162 ausentes.'
+grep -q "version: '1.0.162'" lib/screens/app_info_screen_components.dart || fail 'Tela Mudancas nao marca a versao 1.0.162.'
+grep -q "version: AppBuildVersion(version: '1.0.162', build: 162)" lib/services/update_news_catalog.dart || fail 'Novidades 1.0.162 ausentes do catalogo.'
+# Popup de Novidades exclusiva da versao atual - 1.0.162
 [[ $(grep -c '^    UpdateRelease(' lib/services/update_news_catalog.dart) -eq 1 ]] || fail 'Popup de Novidades deve conter somente uma versao por build.'
-if grep -Eq "version: AppBuildVersion\(version: '1\.0\.(160|159|158|157|156|155)'" lib/services/update_news_catalog.dart; then
-  fail 'Popup de Novidades 1.0.161 mistura versoes anteriores.'
+if grep -Eq "version: AppBuildVersion\(version: '1\.0\.(161|160|159|158|157|156|155)'" lib/services/update_news_catalog.dart; then
+  fail 'Popup de Novidades 1.0.162 mistura versoes anteriores.'
 fi
 if grep -Eqi "bug|erro|falha|corrigid" lib/services/update_news_catalog.dart; then
-  fail 'Popup de Novidades 1.0.161 nao deve listar bugs/correcoes.'
+  fail 'Popup de Novidades 1.0.162 nao deve listar bugs/correcoes.'
 fi
 grep -q 'catalog.releaseFor(installed)' lib/services/update_news_service.dart || fail 'Servico de Novidades nao esta restrito a versao instalada atual.'
 if grep -q 'unseenReleases' lib/services/update_news_service.dart lib/services/update_news_catalog.dart; then
   fail 'Servico de Novidades voltou a acumular versoes anteriores.'
 fi
-grep -q "title: const Text('Novidades da atualização')" lib/widgets/update_news_dialog.dart || fail 'Titulo da popup de Novidades 1.0.161 ausente.'
+grep -q "title: const Text('Novidades da atualização')" lib/widgets/update_news_dialog.dart || fail 'Titulo da popup de Novidades 1.0.162 ausente.'
 if grep -q 'atualizações desde a última visualização' lib/widgets/update_news_dialog.dart; then
   fail 'Popup de Novidades ainda informa acumulacao de versoes antigas.'
 fi
-# MapLibre 3D usa apenas API publica de estilo em producao - 1.0.161
+if grep -q '_secondaryController?.setVoiceEnabled' lib/screens/monitor_screen_map_explorer.dart; then
+  fail 'Android-APK-125: controle de voz voltou a chamar metodo inexistente no SecondaryCameraController.'
+fi
+if grep -q 'void setVoiceEnabled' lib/controllers/secondary_camera_controller.dart; then
+  fail 'SecondaryCameraController nao deve ganhar pipeline de voz artificial para contornar Android-APK-125.'
+fi
+grep -q 'this.respectGlobalVoice = true' lib/services/alert_delivery_service.dart || fail 'AlertDeliveryService nao usa inicializacao direta de respectGlobalVoice.'
+# MapLibre 3D usa apenas API publica de estilo em producao - 1.0.162
 if grep -q 'getLayerIds()' lib/widgets/map_navigation_3d_view.dart; then
   fail 'Renderer 3D usa getLayerIds(), API documentada pelo MapLibre apenas para testes.'
 fi
@@ -61,8 +68,8 @@ grep -q 'navigationVoiceEnabled' lib/services/map_view_settings_service.dart || 
 grep -q "'navigationVoiceEnabled': _navigationVoiceEnabled" lib/services/map_view_settings_service.dart || fail 'Voz da navegacao 1.0.159 nao e salva no mapa.'
 grep -q 'setNavigationVoiceEnabled' lib/screens/map_monitoring_screen.dart || fail 'Popup de audio 1.0.159 nao controla Navegacao.'
 grep -q "title: 'IA / Detecções'" lib/screens/map_monitoring_screen.dart || fail 'Canal IA/Deteccoes 1.0.159 ausente.'
-grep -q 'setVoiceEnabled(bool enabled, {bool persist = true})' lib/controllers/monitor_controller.dart || fail 'Canal IA 1.0.159 nao permite sincronizar controlador secundario sem sobrescrever perfil.'
-[[ $(grep -c 'setVoiceEnabled(value, persist: false)' lib/screens/monitor_screen_map_explorer.dart) -ge 2 ]] || fail 'Mapa 1.0.159 deve sincronizar voz nas cameras sem persistencia concorrente dos controladores.'
+grep -q 'setVoiceEnabled(bool enabled, {bool persist = true})' lib/controllers/monitor_controller.dart || fail 'Canal IA 1.0.159 nao permite aplicar estado sem persistencia imediata.'
+[[ $(grep -c 'setVoiceEnabled(value, persist: false)' lib/screens/monitor_screen_map_explorer.dart) -eq 1 ]] || fail 'Mapa 1.0.162 deve aplicar voz da IA somente ao pipeline principal.'
 grep -q "title: 'Pontos próximos'" lib/screens/map_monitoring_screen.dart || fail 'Canal Pontos proximos 1.0.159 ausente.'
 grep -q "label: const Text('Silenciar tudo')" lib/screens/map_monitoring_screen.dart || fail 'Acao Silenciar tudo 1.0.159 ausente.'
 grep -q 'await _navigationVoice.stop();' lib/screens/map_monitoring_screen.dart || fail 'Silenciar tudo 1.0.159 nao interrompe a voz ativa do mapa.'
@@ -130,9 +137,9 @@ grep -Fq "import '../models/map_travel_mode.dart';" lib/widgets/map_navigation_3
 if grep -q 'catch (_) {}' lib/widgets/map_navigation_3d_view.dart; then
   fail 'Renderer MapLibre voltou a conter catch silencioso.'
 fi
-[[ -f github-manager.json ]] || fail 'github-manager.json ausente em 1.0.161.'
-grep -q '"version": "1.0.161"' github-manager.json || fail 'github-manager.json nao esta na versao 1.0.161.'
-grep -q '"versionCode": 161' github-manager.json || fail 'github-manager.json nao esta no versionCode 161.'
+[[ -f github-manager.json ]] || fail 'github-manager.json ausente em 1.0.162.'
+grep -q '"version": "1.0.162"' github-manager.json || fail 'github-manager.json nao esta na versao 1.0.162.'
+grep -q '"versionCode": 162' github-manager.json || fail 'github-manager.json nao esta no versionCode 162.'
 [[ -f test/map_travel_mode_test.dart ]] || fail 'Teste de perfis de transporte 1.0.152 ausente.'
 if grep -q 'String? _offlineTileError' lib/screens/map_monitoring_screen.dart; then
   fail 'Android-APK-114: estado _offlineTileError sem uso voltou ao mapa.'
@@ -292,7 +299,7 @@ grep -q 'recalculationCooldown = Duration(seconds: 45)' lib/services/map_navigat
 grep -q '_maybeRecalculateCyclingRoute' lib/screens/map_monitoring_screen.dart || fail 'Recalculo automatico 1.0.136 nao esta ligado ao GPS.'
 grep -q 'Rota recalculada a partir da posição atual' lib/screens/map_monitoring_screen.dart || fail 'Feedback de recalculo 1.0.136 ausente.'
 grep -q 'guidance: _navigationProgress' lib/screens/map_monitoring_screen.dart || fail 'HUD de navegacao 1.0.136 nao recebe progresso.'
-grep -q 'VigiaIA/1.0.161' lib/services/map_cycling_route_service.dart || fail 'User-Agent do roteamento ciclavel nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.162' lib/services/map_cycling_route_service.dart || fail 'User-Agent do roteamento ciclavel nao acompanha a versao atual.'
 
 grep -q 'extendBody: true' lib/screens/map_monitoring_screen.dart || fail 'Mapa 1.0.125 nao usa superficie edge-to-edge.'
 grep -q "tooltip: 'Aumentar zoom'" lib/screens/map_monitoring_screen.dart || fail 'Controle flutuante de zoom 1.0.125 ausente.'
@@ -722,9 +729,9 @@ grep -q 'velocityY = instantY;' lib/services/object_tracker.dart \
 [[ -f app_identity.json ]] || fail 'Arquivo central de identidade futura nao encontrado.'
 grep -q '"displayName": "Vigia IA"' app_identity.json \
   || fail 'Nome atual nao esta registrado em app_identity.json.'
-grep -q "static const String version = '1.0.161';" lib/core/app_metadata.dart \
-  || fail 'AppMetadata nao esta em 1.0.161.'
-grep -q 'static const int build = 161;' lib/core/app_metadata.dart \
+grep -q "static const String version = '1.0.162';" lib/core/app_metadata.dart \
+  || fail 'AppMetadata nao esta em 1.0.162.'
+grep -q 'static const int build = 162;' lib/core/app_metadata.dart \
   || fail 'Build de AppMetadata nao esta em 161.'
 grep -q "version: '1.0.123'" lib/screens/app_info_screen*.dart \
   || fail 'Tela Mudancas nao marca a versao 1.0.123.'
@@ -893,17 +900,17 @@ grep -q 'flutter test --reporter expanded --coverage' .github/workflows/android-
   || fail 'Workflow nao gera cobertura expandida dos testes.'
 grep -q 'flutter-test-coverage' .github/workflows/android-apk.yml \
   || fail 'Artifact de cobertura nao encontrado no workflow.'
-grep -Fq 'version: 1.0.161+161' pubspec.yaml \
-  || fail 'pubspec.yaml nao esta em 1.0.161+161.'
+grep -Fq 'version: 1.0.162+162' pubspec.yaml \
+  || fail 'pubspec.yaml nao esta em 1.0.162+162.'
 
 # Identidade tecnica 1.0.28
 grep -q '^name: vigiaia$' pubspec.yaml \
   || fail 'Pacote Dart nao usa vigiaia.'
 grep -q '"projectName": "vigiaia"' app_identity.json \
   || fail 'app_identity.json nao usa projectName vigiaia.'
-grep -q '"version": "1.0.161"' app_identity.json \
-  || fail 'app_identity.json nao esta na versao 1.0.161.'
-grep -q '"build": 161' app_identity.json \
+grep -q '"version": "1.0.162"' app_identity.json \
+  || fail 'app_identity.json nao esta na versao 1.0.162.'
+grep -q '"build": 162' app_identity.json \
   || fail 'app_identity.json nao esta no build 161.'
 grep -q '"applicationId": "com.vigiaia.app"' app_identity.json \
   || fail 'applicationId vigiaia nao esta registrado.'
@@ -1221,7 +1228,7 @@ grep -q 'lite-model_efficientdet_lite0_detection_metadata_1.tflite' tool/fetch_m
 [[ -f test/detection_merger_test.dart ]] || fail 'Teste da segunda passagem nao encontrado.'
 grep -q '^## 1.0.34+34' CHANGELOG.md || fail 'CHANGELOG nao documenta 1.0.34.'
 grep -q 'Evolução 1.0.34' README.md || fail 'README nao documenta 1.0.34.'
-grep -Fq 'Vigia IA 1.0.161+161' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.161+161.'
+grep -Fq 'Vigia IA 1.0.162+162' ARCHITECTURE.md || fail 'ARCHITECTURE nao esta em 1.0.162+162.'
 
 # Evolucao da deteccao 1.0.36
 [[ -f lib/services/detection_scan_planner.dart ]] \
@@ -2750,7 +2757,7 @@ grep -q 'this.dense = false' lib/widgets/vigia_ui.dart || fail 'VigiaStatusPill 
 grep -q 'dense: compact' lib/widgets/vigia_ui.dart || fail 'Card compacto nao usa pills densas.'
 grep -q 'padding: EdgeInsets.all(compact ? 9 : 18)' lib/widgets/vigia_ui.dart || fail 'Card compacto nao recebeu padding seguro do Android-APK-84.'
 grep -q 'final compact = constraints.maxWidth < 66' lib/widgets/vigia_ui.dart || fail 'Acesso rapido nao possui compactacao adaptativa.'
-grep -q 'VigiaIA/1.0.161' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
+grep -q 'VigiaIA/1.0.162' lib/services/route_explorer_service.dart || fail 'User-Agent do RouteExplorer nao acompanha a versao atual.'
 grep -q "modo compacto cabe em celula estreita da Home" test/vigia_ui_test.dart || fail 'Teste de overflow do card compacto ausente.'
 grep -q "acao rapida Diagnostico cabe na grade responsiva" test/vigia_ui_test.dart || fail 'Teste de overflow do acesso rapido ausente.'
 

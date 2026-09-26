@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.161 torna a popup de Novidades exclusiva da versão instalada atual e mantém a camada opcional de prédios 3D usando apenas APIs públicas de estilo do MapLibre.",
-  "version": "1.0.161",
-  "build": 161
+  "notes": "A 1.0.162 mantém os canais de áudio independentes no mapa, alinha o controle de IA ao pipeline principal e preserva a popup de Novidades exclusiva da versão instalada.",
+  "version": "1.0.162",
+  "build": 162
 }

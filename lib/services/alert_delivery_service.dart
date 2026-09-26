@@ -5,12 +5,11 @@ import 'native_platform_service.dart';
 class AlertDeliveryService {
   AlertDeliveryService({
     MapVoiceService? voice,
-    bool respectGlobalVoice = true,
-  })  : _voice = voice ?? MapVoiceService.instance,
-        _respectGlobalVoice = respectGlobalVoice;
+    this.respectGlobalVoice = true,
+  }) : _voice = voice ?? MapVoiceService.instance;
 
   final MapVoiceService _voice;
-  final bool _respectGlobalVoice;
+  final bool respectGlobalVoice;
   final NativePlatformService _native = NativePlatformService.instance;
   AlertOutputs _outputs = const AlertOutputs();
 
@@ -29,7 +28,7 @@ class AlertDeliveryService {
     if (_outputs.voice) {
       await _voice.deliver(
         text,
-        respectGlobalVoice: _respectGlobalVoice,
+        respectGlobalVoice: respectGlobalVoice,
       );
     }
     if (_outputs.androidNotification) {
