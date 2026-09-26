@@ -182,7 +182,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   int _offlineMaxNativeZoom = 19;
   Offset? _primaryCameraOffset;
   Offset? _secondaryCameraOffset;
-  bool _camerasVisible = true;
+  bool _camerasVisible = false;
+  bool _stopMapOwnedSourcesWhenHidden = true;
+  bool? _fullscreenCameraSecondary;
 
   bool _followPosition = true;
   bool _mapReady = false;
@@ -256,6 +258,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   static const String _mapLocalBackCameraId = '__map_local_back__';
 
+  bool get _openedFromMonitor =>
+      widget.cameraPreviewBuilder != null ||
+      widget.secondaryCameraPreviewBuilder != null;
+
   void _applyOfflineUiState(VoidCallback update) {
     if (!mounted) return;
     setState(update);
@@ -268,7 +274,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     ]);
     if (!mounted) return;
     setState(() {
-      _camerasVisible = _cameraOverlaySettings.visible;
+      // Entrada direta no mapa começa sem câmera. Câmeras herdadas só existem
+      // quando o mapa foi aberto pelo Monitoramento.
+      _camerasVisible = _openedFromMonitor
+          ? _cameraOverlaySettings.visible
+          : false;
+      _stopMapOwnedSourcesWhenHidden =
+          _cameraOverlaySettings.stopMapOwnedSourcesWhenHidden;
       _primaryCameraLayout = _cameraOverlaySettings.primary;
       _secondaryCameraLayout = _cameraOverlaySettings.secondary;
     });
@@ -292,18 +304,28 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
+  bool _shouldRunMapOwnedCamera(bool secondary) {
+    if (!_appActive) return false;
+    if (secondary ? _secondaryUsesExternal : _primaryUsesExternal) return false;
+    if (!_slotHasCamera(secondary)) return false;
+    if (!_stopMapOwnedSourcesWhenHidden) return true;
+    final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+    return _camerasVisible && !layout.hidden && !layout.minimized;
+  }
+
+  Future<void> _syncMapOwnedCameraRuntime(bool secondary) async {
+    final controller = secondary ? _secondaryMapCamera : _primaryMapCamera;
+    if (controller == null) return;
+    if (_shouldRunMapOwnedCamera(secondary)) {
+      await controller.resume();
+    } else {
+      await controller.suspend();
+    }
+  }
+
   Future<void> _resumeVisibleInternalCameras() async {
-    if (!_appActive || !_camerasVisible) return;
-    if (!_primaryUsesExternal &&
-        !_primaryCameraLayout.hidden &&
-        !_primaryCameraLayout.minimized) {
-      await _primaryMapCamera?.resume();
-    }
-    if (!_secondaryUsesExternal &&
-        !_secondaryCameraLayout.hidden &&
-        !_secondaryCameraLayout.minimized) {
-      await _secondaryMapCamera?.resume();
-    }
+    await _syncMapOwnedCameraRuntime(false);
+    await _syncMapOwnedCameraRuntime(true);
   }
 
   VideoSourceConfig _sourceForEndpoint(CameraEndpoint camera) =>
@@ -437,6 +459,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       return;
     }
 
+    if (source == null && !useExternal && _fullscreenCameraSecondary == secondary) {
+      _fullscreenCameraSecondary = null;
+    }
     final previous = secondary ? _secondaryMapCamera : _primaryMapCamera;
     await previous?.suspend();
     previous?.dispose();
@@ -482,33 +507,28 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       }
       await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
     }
+    if (source != null || useExternal) {
+      _camerasVisible = true;
+      await _cameraOverlaySettings.saveVisible(true);
+    }
     if (mounted) setState(() {});
-    if (next != null && _appActive && _camerasVisible) {
-      await next.start();
+    if (next != null) {
+      await _syncMapOwnedCameraRuntime(secondary);
     }
   }
 
   Future<void> _setCameraSlotHidden(bool secondary, bool hidden) async {
+    if (hidden && _fullscreenCameraSecondary == secondary) {
+      _fullscreenCameraSecondary = null;
+    }
     if (secondary) {
       _secondaryCameraLayout = _secondaryCameraLayout.copyWith(hidden: hidden);
       await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
-      if (!_secondaryUsesExternal) {
-        if (hidden) {
-          await _secondaryMapCamera?.suspend();
-        } else if (!_secondaryCameraLayout.minimized && _appActive) {
-          await _secondaryMapCamera?.resume();
-        }
-      }
+      await _syncMapOwnedCameraRuntime(true);
     } else {
       _primaryCameraLayout = _primaryCameraLayout.copyWith(hidden: hidden);
       await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
-      if (!_primaryUsesExternal) {
-        if (hidden) {
-          await _primaryMapCamera?.suspend();
-        } else if (!_primaryCameraLayout.minimized && _appActive) {
-          await _primaryMapCamera?.resume();
-        }
-      }
+      await _syncMapOwnedCameraRuntime(false);
     }
     if (mounted) setState(() {});
   }
@@ -519,23 +539,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (secondary) {
       _secondaryCameraLayout = layout.copyWith(minimized: minimized, hidden: false);
       await _cameraOverlaySettings.saveSecondary(_secondaryCameraLayout);
-      if (!_secondaryUsesExternal) {
-        if (minimized) {
-          await _secondaryMapCamera?.suspend();
-        } else if (_appActive && _camerasVisible) {
-          await _secondaryMapCamera?.resume();
-        }
-      }
+      await _syncMapOwnedCameraRuntime(true);
     } else {
       _primaryCameraLayout = layout.copyWith(minimized: minimized, hidden: false);
       await _cameraOverlaySettings.savePrimary(_primaryCameraLayout);
-      if (!_primaryUsesExternal) {
-        if (minimized) {
-          await _primaryMapCamera?.suspend();
-        } else if (_appActive && _camerasVisible) {
-          await _primaryMapCamera?.resume();
-        }
-      }
+      await _syncMapOwnedCameraRuntime(false);
     }
     if (mounted) setState(() {});
   }
@@ -549,12 +557,26 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _secondaryCameraLayout = updated;
       _secondaryCameraOffset = null;
       await _cameraOverlaySettings.saveSecondary(updated);
+      await _syncMapOwnedCameraRuntime(true);
     } else {
       _primaryCameraLayout = updated;
       _primaryCameraOffset = null;
       await _cameraOverlaySettings.savePrimary(updated);
+      await _syncMapOwnedCameraRuntime(false);
     }
     if (mounted) setState(() {});
+  }
+
+  void _openCameraFullscreen(bool secondary) {
+    if (!_slotHasCamera(secondary)) return;
+    final layout = secondary ? _secondaryCameraLayout : _primaryCameraLayout;
+    if (layout.hidden || layout.minimized || !_camerasVisible) return;
+    setState(() => _fullscreenCameraSecondary = secondary);
+  }
+
+  void _closeCameraFullscreen() {
+    if (_fullscreenCameraSecondary == null) return;
+    setState(() => _fullscreenCameraSecondary = null);
   }
 
   Future<void> _swapInternalCameraSlots() async {
@@ -610,7 +632,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _showCameraSourcePicker(bool secondary) async {
-    await _cameraRegistry.initialize();
+    await Future.wait<void>([
+      _cameraOverlaySettings.initialize(),
+      _cameraRegistry.initialize(),
+    ]);
     if (!mounted) return;
     final options = <VideoSourceConfig>[
       _localBackSource,
@@ -704,7 +729,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       };
 
   Future<void> _showCameraManager() async {
-    await _cameraRegistry.initialize();
+    await Future.wait<void>([
+      _cameraOverlaySettings.initialize(),
+      _cameraRegistry.initialize(),
+    ]);
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
@@ -721,13 +749,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ListTile(
                     leading: Icon(secondary ? Icons.filter_2_rounded : Icons.filter_1_rounded),
                     title: Text(hasCamera ? _activeCameraLabel(secondary) : (secondary ? 'Câmera 2' : 'Câmera 1')),
-                    subtitle: Text(hasCamera
-                        ? (layout.hidden
-                            ? 'Oculta'
-                            : layout.minimized
-                                ? 'Minimizada · fonte suspensa quando possível'
-                                : 'Visível sobre o mapa')
-                        : 'Nenhuma fonte selecionada'),
+                    subtitle: Text(
+                      hasCamera
+                          ? (layout.hidden
+                              ? ((secondary ? _secondaryUsesExternal : _primaryUsesExternal)
+                                  ? 'Oculta · fonte controlada pelo Monitoramento'
+                                  : _stopMapOwnedSourcesWhenHidden
+                                      ? 'Oculta · fonte encerrada para economizar bateria'
+                                      : 'Oculta · fonte mantida ativa')
+                              : layout.minimized
+                                  ? ((secondary ? _secondaryUsesExternal : _primaryUsesExternal)
+                                      ? 'Minimizada · fonte controlada pelo Monitoramento'
+                                      : _stopMapOwnedSourcesWhenHidden
+                                          ? 'Minimizada · fonte encerrada para economizar bateria'
+                                          : 'Minimizada · fonte mantida ativa')
+                                  : 'Visível sobre o mapa')
+                          : 'Nenhuma fonte selecionada',
+                    ),
                     trailing: IconButton(
                       tooltip: 'Trocar fonte',
                       icon: const Icon(Icons.cameraswitch_outlined),
@@ -791,7 +829,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Escolha fontes e organize os PiPs. Arraste para encaixar, dê dois toques para mudar o tamanho e minimize para virar uma bolha; posição e tamanho ficam salvos.',
+                    'Escolha fontes e organize os PiPs. Arraste para encaixar, toque na imagem para abrir em tela inteira e use Tamanho para alternar o porte; posição e tamanho ficam salvos.',
                   ),
                   const SizedBox(height: 12),
                   slotTile(false),
@@ -800,17 +838,33 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   SwitchListTile(
                     value: _camerasVisible,
                     title: const Text('Mostrar PiPs no mapa'),
-                    subtitle: const Text('Desligar pausa apenas as fontes abertas pelo próprio mapa.'),
+                    subtitle: Text(
+                      _openedFromMonitor
+                          ? 'As câmeras herdadas do Monitor continuam sob controle do Monitoramento.'
+                          : 'Ao entrar diretamente no mapa, nenhuma câmera é iniciada automaticamente.',
+                    ),
                     onChanged: (value) async {
-                      setState(() => _camerasVisible = value);
+                      setState(() {
+                        _camerasVisible = value;
+                        if (!value) _fullscreenCameraSecondary = null;
+                      });
                       setSheetState(() {});
                       await _cameraOverlaySettings.saveVisible(value);
-                      if (value) {
-                        await _resumeVisibleInternalCameras();
-                      } else {
-                        await _primaryMapCamera?.suspend();
-                        await _secondaryMapCamera?.suspend();
-                      }
+                      await _resumeVisibleInternalCameras();
+                    },
+                  ),
+                  SwitchListTile(
+                    value: _stopMapOwnedSourcesWhenHidden,
+                    title: const Text('Economizar bateria ao ocultar câmera'),
+                    subtitle: const Text(
+                      'Encerra a fonte aberta pelo mapa ao ocultar ou minimizar o PiP. Fontes herdadas do Monitoramento não são encerradas pelo mapa.',
+                    ),
+                    onChanged: (value) async {
+                      setState(() => _stopMapOwnedSourcesWhenHidden = value);
+                      setSheetState(() {});
+                      await _cameraOverlaySettings
+                          .saveStopMapOwnedSourcesWhenHidden(value);
+                      await _resumeVisibleInternalCameras();
                     },
                   ),
                   const SizedBox(height: 4),
@@ -4124,7 +4178,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           suffixIcon: IconButton(
                             tooltip: 'Pesquisar',
                             icon: const Icon(Icons.arrow_forward_rounded),
-                            onPressed: service.loading
+                            onPressed: service.searchLoading
                                 ? null
                                 : () async {
                                     final submitted = controller.text.trim();
@@ -4145,7 +4199,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             setSheetState(() => query = '');
                           }
                         },
-                        onSubmitted: service.loading
+                        onSubmitted: service.searchLoading
                             ? null
                             : (value) async {
                                 final submitted = value.trim();
@@ -4161,10 +4215,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               },
                       ),
                     ),
-                    if (service.loading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: LinearProgressIndicator(minHeight: 2),
+                    if (service.searchLoading || service.suggestionsLoading)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(
+                          minHeight: service.searchLoading ? 3 : 2,
+                        ),
                       ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 9, 16, 6),
@@ -4187,22 +4243,31 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         ],
                       ),
                     ),
-                    if (service.statusMessage != null)
+                    if ((showingSuggestions
+                            ? service.suggestionsStatusMessage
+                            : service.searchStatusMessage) !=
+                        null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 7),
                         child: Text(
-                          service.statusMessage!,
+                          (showingSuggestions
+                              ? service.suggestionsStatusMessage
+                              : service.searchStatusMessage)!,
                           style: Theme.of(sheetContext).textTheme.bodySmall,
                         ),
                       ),
                     Expanded(
-                      child: items.isEmpty && !service.loading
+                      child: items.isEmpty
                           ? _MapEmptyState(
-                              message: showingSuggestions
-                                  ? 'Ainda não há sugestões salvas para esta região.'
-                                  : offlineOnly
-                                      ? 'Nada encontrado nos dados offline salvos.'
-                                      : 'Nenhum resultado encontrado.',
+                              message: showingSuggestions && service.suggestionsLoading
+                                  ? 'Buscando cidades e comunidades próximas… Você já pode pesquisar acima.'
+                                  : showingSuggestions
+                                      ? 'Ainda não há sugestões salvas para esta região.'
+                                      : service.searchLoading
+                                          ? 'Pesquisando…'
+                                          : offlineOnly
+                                              ? 'Nada encontrado nos dados offline salvos.'
+                                              : 'Nenhum resultado encontrado.',
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
@@ -5427,11 +5492,158 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   fallbackAspectRatio: _cameraFallbackAspectRatioFor(true),
                   secondary: true,
                 ),
+              if (_fullscreenCameraSecondary != null)
+                _buildFullscreenCamera(
+                  context,
+                  secondary: _fullscreenCameraSecondary!,
+                ),
             ],
           );
         },
       ),
     ),
+    );
+  }
+
+  Widget _buildFullscreenCamera(
+    BuildContext context, {
+    required bool secondary,
+  }) {
+    final previewBuilder = _cameraPreviewBuilderFor(secondary);
+    if (previewBuilder == null) {
+      return const SizedBox.shrink();
+    }
+    final listenable = _cameraListenableFor(secondary);
+
+    Widget buildFullscreen(BuildContext context) {
+      final safePadding = MediaQuery.paddingOf(context);
+      final label = _activeCameraLabel(secondary);
+      final aiStatus = _aiStatusForPip(secondary);
+      final bikeApproach = _bikeApproachForPip(secondary);
+
+      return Positioned.fill(
+        child: Material(
+          color: Colors.black,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: _closeCameraFullscreen,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                RepaintBoundary(child: previewBuilder(context)),
+                Positioned(
+                  left: 12,
+                  top: safePadding.top + 10,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.58),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              secondary
+                                  ? Icons.filter_2_rounded
+                                  : Icons.videocam_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 10,
+                  top: safePadding.top + 6,
+                  child: Material(
+                    color: Colors.black.withValues(alpha: 0.58),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: 'Voltar ao mapa',
+                      onPressed: _closeCameraFullscreen,
+                      icon: const Icon(
+                        Icons.fullscreen_exit_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                if (aiStatus != null)
+                  Positioned(
+                    left: 12,
+                    right: 72,
+                    bottom: safePadding.bottom +
+                        (bikeApproach == null ? 46 : 82),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: MapAiStatusOverlay(status: aiStatus),
+                    ),
+                  ),
+                if (bikeApproach != null)
+                  Positioned(
+                    left: 12,
+                    right: 72,
+                    bottom: safePadding.bottom + 44,
+                    child: MapBikeApproachOverlay(status: bikeApproach),
+                  ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: safePadding.bottom + 8,
+                  child: const IgnorePointer(
+                    child: Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0x99000000),
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          child: Text(
+                            'Toque duas vezes para voltar ao mapa',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (listenable == null) return buildFullscreen(context);
+    return ListenableBuilder(
+      listenable: listenable,
+      builder: (context, _) => buildFullscreen(context),
     );
   }
 
@@ -5604,9 +5816,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           onTap: minimized
               ? () => unawaited(_toggleCameraSlotMinimized(secondary))
               : null,
-          onDoubleTap: minimized
-              ? null
-              : () => unawaited(_cycleCameraSlotSize(secondary)),
           onPanUpdate: (details) {
             setState(() {
               final next = position + details.delta;
@@ -5641,7 +5850,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 : Stack(
                     fit: StackFit.expand,
                     children: [
-                      RepaintBoundary(child: previewBuilder(context)),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _openCameraFullscreen(secondary),
+                        child: RepaintBoundary(child: previewBuilder(context)),
+                      ),
                       Positioned(
                         left: 6,
                         top: 6,

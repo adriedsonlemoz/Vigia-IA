@@ -66,6 +66,7 @@ class MapCameraOverlaySettingsService {
   File? _file;
   bool _initialized = false;
   bool _visible = true;
+  bool _stopMapOwnedSourcesWhenHidden = true;
   MapCameraSlotLayout _primary = const MapCameraSlotLayout(yFraction: 0.08);
   MapCameraSlotLayout _secondary = const MapCameraSlotLayout(
     xFraction: 0,
@@ -73,6 +74,7 @@ class MapCameraOverlaySettingsService {
   );
 
   bool get visible => _visible;
+  bool get stopMapOwnedSourcesWhenHidden => _stopMapOwnedSourcesWhenHidden;
   MapCameraSlotLayout get primary => _primary;
   MapCameraSlotLayout get secondary => _secondary;
 
@@ -91,6 +93,8 @@ class MapCameraOverlaySettingsService {
             (key, value) => MapEntry(key.toString(), value),
           );
           _visible = map['visible'] as bool? ?? true;
+          _stopMapOwnedSourcesWhenHidden =
+              map['stopMapOwnedSourcesWhenHidden'] as bool? ?? true;
           final primary = map['primary'];
           final secondary = map['secondary'];
           if (primary is Map) {
@@ -114,6 +118,13 @@ class MapCameraOverlaySettingsService {
   Future<void> saveVisible(bool value) async {
     await initialize();
     _visible = value;
+    await _persist();
+  }
+
+
+  Future<void> saveStopMapOwnedSourcesWhenHidden(bool value) async {
+    await initialize();
+    _stopMapOwnedSourcesWhenHidden = value;
     await _persist();
   }
 
@@ -146,8 +157,9 @@ class MapCameraOverlaySettingsService {
     await file.parent.create(recursive: true);
     await file.writeAsString(
       const JsonEncoder.withIndent('  ').convert(<String, Object?>{
-        'schema': 2,
+        'schema': 3,
         'visible': _visible,
+        'stopMapOwnedSourcesWhenHidden': _stopMapOwnedSourcesWhenHidden,
         'primary': _primary.toJson(),
         'secondary': _secondary.toJson(),
       }),

@@ -2,11 +2,25 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.177+177`
+> **Versão atual:** `1.0.179+179`
 
 ## Estado atual
 
-A `1.0.177+177` é uma manutenção da pesquisa do mapa: corrige a resolução dos rótulos de categorias usada nos resultados offline, preservando integralmente a pesquisa online/offline, o planejamento Bike e o aprendizado de ritmo da 1.0.176.
+A `1.0.179+179` torna a pesquisa do mapa mais responsiva e fecha o ciclo de energia das câmeras: sugestões locais aparecem primeiro, a busca digitada não fica bloqueada pela atualização de cidades próximas e a entrada direta no mapa começa sem câmera automática.
+
+### Pesquisa rápida + energia das câmeras — 1.0.179
+- A lupa mostra imediatamente o índice/cache já salvo e separa o carregamento das sugestões do carregamento da pesquisa digitada.
+- Cidades/comunidades próximas são consultadas primeiro em um raio curto; se ainda faltarem sugestões, o raio maior é atualizado em segundo plano sem bloquear o campo de pesquisa.
+- Ao abrir o mapa diretamente pela tela inicial, nenhum PiP/câmera é iniciado automaticamente.
+- Fontes abertas pelo próprio mapa são encerradas ao ocultar/minimizar por padrão, liberando câmera/stream para reduzir consumo.
+- A opção persistente `Economizar bateria ao ocultar câmera` permite manter ou não fontes abertas pelo mapa; fontes herdadas do Monitoramento continuam sob controle do Monitoramento.
+
+### Câmera do mapa em tela inteira — 1.0.178
+- Um toque diretamente na imagem de um PiP expandido abre essa câmera sobre toda a área do mapa.
+- Dois toques na visualização em tela inteira retornam imediatamente ao mapa.
+- Um botão discreto de sair da tela inteira oferece a mesma ação para quem não quiser usar gesto.
+- O menu do PiP continua oferecendo `Tamanho`, `Minimizar`, `Ocultar` e `Trocar fonte`; o antigo duplo toque para tamanho foi removido para evitar conflito com o novo gesto.
+- A mesma fonte/controlador permanece ativa durante a troca de layout, evitando abrir uma segunda câmera física ou outro stream.
 
 ### Ritmo aprendido da Bike — 1.0.176
 - Percursos Bike concluídos podem alimentar um histórico local quando passam pelos filtros de distância, duração, movimento e velocidade plausível.

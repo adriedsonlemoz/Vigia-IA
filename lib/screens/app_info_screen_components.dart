@@ -65,6 +65,23 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.179',
+          changes: [
+            'A pesquisa do mapa mostra dados salvos imediatamente e usa uma consulta curta para cidades próximas antes de ampliar a região em segundo plano.',
+            'Ao entrar diretamente no mapa, nenhuma câmera inicia sozinha; câmeras abertas pelo mapa podem ser encerradas ao ocultar ou minimizar para poupar bateria.',
+            'Uma opção fixa controla a economia de bateria das fontes abertas pelo mapa, enquanto câmeras herdadas do Monitoramento continuam sob controle do Monitoramento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.178',
+          changes: [
+            'No mapa, um toque na imagem de qualquer PiP abre a mesma câmera em tela inteira sem trocar a fonte.',
+            'Dois toques na visualização cheia ou o botão de minimizar retornam ao mapa e preservam o estado dos PiPs.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.177',
           changes: [
             'Manutenção dos builds 136 e 137 restaura os rótulos das categorias na pesquisa do mapa sem mudar o comportamento da busca, dos POIs ou da navegação.',
@@ -1629,8 +1646,25 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.177',
+          version: '1.0.179',
           current: true,
+          changes: [
+            'Pesquisa do mapa mais responsiva: dados locais aparecem primeiro e a busca de localidades amplia a região sem bloquear a pesquisa digitada.',
+            'Entrada direta no mapa começa sem câmera; ao ocultar/minimizar uma fonte aberta pelo próprio mapa, o app pode encerrá-la para reduzir consumo.',
+            'A economia de bateria das câmeras do mapa agora tem opção persistente; fontes herdadas do Monitoramento permanecem sob controle do Monitoramento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.178',
+          changes: [
+            'Toque na imagem de um PiP do mapa para abrir a câmera em tela inteira, mantendo a mesma fonte ativa.',
+            'Dois toques na câmera cheia ou o botão de minimizar voltam ao mapa com os PiPs preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.177',
           changes: [
             'Manutenção da pesquisa do mapa após os builds 136 e 137, preservando busca online/offline, POIs e planejamento Bike.',
           ],

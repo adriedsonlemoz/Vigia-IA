@@ -1,4 +1,25 @@
-# Validação Vigia IA 1.0.177+177
+# Validação Vigia IA 1.0.179+179
+
+## Pesquisa rápida + energia das câmeras — 1.0.179
+
+- Confirmar que abrir a lupa publica cache/índice local antes da rede e que `suggestionsLoading` não desabilita o envio da pesquisa (`searchLoading`).
+- Confirmar consulta curta de localidades em ~65 km e ampliação até 180 km apenas em best-effort quando faltarem sugestões.
+- Confirmar que entrada direta em `MapMonitoringScreen` inicia com `_camerasVisible=false` e não cria fonte até escolha explícita.
+- Confirmar que ocultar/minimizar uma fonte aberta pelo mapa chama `suspend()` quando `Economizar bateria ao ocultar câmera` está ativo.
+- Confirmar que desativar a economia mantém fontes abertas pelo mapa ativas mesmo sem PiP e que a preferência é persistida.
+- Confirmar que fontes herdadas do Monitoramento não são encerradas pelo mapa.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; executar `flutter analyze`, `flutter test` e build Android quando Flutter/Dart estiverem disponíveis.
+
+## Câmera do mapa em tela inteira — 1.0.178
+
+- Confirmar que um toque na imagem de um PiP expandido abre exatamente aquele slot em tela inteira.
+- Confirmar que dois toques na visualização cheia retornam ao mapa e que o botão `fullscreen_exit` executa a mesma ação.
+- Confirmar que arrastar o PiP continua funcionando e que `Tamanho` permanece disponível no menu, sem duplo toque concorrente no PiP.
+- Confirmar comportamento independente para câmera 1 e câmera 2 e preservação da fonte/controlador durante a troca de layout.
+- Confirmar que IA/aproximação Bike continuam sobrepostas quando disponíveis e que ocultar/remover/desativar PiPs fecha a tela cheia com segurança.
+- Executar `test/update_news_service_test.dart`, `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
+- Executar `flutter analyze`, `flutter test` e build Android quando Flutter/Dart estiverem disponíveis.
+
 
 ## Aprendizado de ritmo Bike — 1.0.176
 
@@ -8,7 +29,7 @@
 - Confirmar opção `Usar média aprendida no ETA`, preservando a velocidade manual separadamente.
 - Confirmar botão `Limpar histórico Bike` e fallback imediato para a média manual.
 - Executar `test/bike_ride_history_test.dart` quando Flutter estiver disponível.
-- Confirmar User-Agent `VigiaIA/1.0.176` nos serviços de mapa.
+- Confirmar que os User-Agents dos serviços de mapa acompanham a versão atual (`VigiaIA/1.0.179`).
 - Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
 
 ## Pesquisa + cicloviagem — 1.0.173 / 1.0.174 / 1.0.175
@@ -16,7 +37,7 @@
 - Confirmar botão `Pesquisar no mapa` independente de `Próximos pontos`.
 - Confirmar que `MapDestinationSearchService.searchSubmitted` é o único caminho da pesquisa Nominatim e que `TextField.onChanged` não dispara rede.
 - Confirmar busca offline sobre índice persistente e `offlinePackages` de POIs.
-- Confirmar User-Agent `VigiaIA/1.0.176` em Nominatim, Overpass, Valhalla, clima, offline e MapLibre.
+- Confirmar User-Agent `VigiaIA/1.0.179` em Nominatim, Overpass, Valhalla, clima, offline e MapLibre.
 - Confirmar que rota Bike pergunta média/horas por dia, persiste os valores e usa `BikeTripPlanner` para ETA.
 - Confirmar que rotas longas exibem quantidade de dias e botão de calendário.
 - Confirmar que paradas sem candidato real recebem o rótulo `Parada aproximada na rota` e não exibem alegação de água/comida/hospedagem.

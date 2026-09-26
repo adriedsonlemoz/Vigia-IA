@@ -1,4 +1,22 @@
-# Arquitetura — Vigia IA 1.0.177+177
+# Arquitetura — Vigia IA 1.0.179+179
+
+## Pesquisa responsiva e ciclo de vida da câmera — 1.0.179
+
+- `MapDestinationSearchService` mantém estados independentes para atualização de sugestões e pesquisa submetida. O cache local é publicado primeiro; a descoberta de localidades usa uma consulta curta de nós `place` e amplia o raio em best-effort sem bloquear a pesquisa textual.
+- `MapMonitoringScreen` distingue entrada direta e entrada pelo Monitoramento. A entrada direta inicia com PiPs desligados e não cria `SecondaryCameraController` até seleção explícita de uma fonte.
+- Câmeras criadas pelo mapa obedecem `stopMapOwnedSourcesWhenHidden`: quando ativo, ocultar/minimizar/globalmente esconder chama `suspend()`, que libera o `VideoSource`; ao mostrar novamente, `resume()` recria a fonte.
+- Câmeras externas herdadas do Monitoramento permanecem fora desse ciclo e continuam pertencendo ao `MonitorController`/`SecondaryCameraController` de origem.
+- `MapCameraOverlaySettingsService` persiste a política de energia no schema 3.
+
+## Câmera do mapa em tela inteira — 1.0.178
+
+- `MapMonitoringScreen` mantém o controlador/fonte existente e altera apenas a composição visual entre PiP e `Positioned.fill`; nenhuma segunda captura é aberta.
+- `_fullscreenCameraSecondary` identifica qual slot (primário/secundário) ocupa a tela cheia; `null` mantém o mapa no layout normal.
+- Um toque na área de vídeo do PiP chama `_openCameraFullscreen`; controles sobrepostos e arraste continuam independentes.
+- Em tela cheia, `onDoubleTap` e o botão `fullscreen_exit` chamam `_closeCameraFullscreen`, restaurando o mapa com os mesmos layouts persistidos.
+- `Tamanho` permanece no menu do PiP e o gesto de duplo toque deixa de competir com a entrada em tela cheia.
+- Ocultar/remover a câmera ou desligar globalmente os PiPs limpa o slot em tela cheia antes de suspender a fonte.
+
 
 ## Aprendizado local de ritmo Bike — 1.0.176
 

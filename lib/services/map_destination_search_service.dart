@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,6 +20,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       MapDestinationSearchService._();
 
   static const double nearbyRadiusKm = 180;
+  static const double quickNearbyRadiusKm = 65;
   static const Duration nearbyRefreshAge = Duration(days: 3);
   static const Duration cacheRetention = Duration(days: 60);
   static const int maximumSuggestions = 18;
@@ -31,8 +33,11 @@ class MapDestinationSearchService extends ChangeNotifier {
 
   File? _file;
   bool _initialized = false;
-  bool _loading = false;
-  String? _statusMessage;
+  bool _suggestionsLoading = false;
+  bool _searchLoading = false;
+  bool _nearbyRefreshInFlight = false;
+  String? _suggestionsStatusMessage;
+  String? _searchStatusMessage;
   List<MapDestinationSearchResult> _knownPlaces =
       const <MapDestinationSearchResult>[];
   List<MapDestinationSearchResult> _suggestions =
@@ -43,8 +48,12 @@ class MapDestinationSearchService extends ChangeNotifier {
   LatLng? _nearbyOrigin;
   DateTime? _lastNominatimRequestAt;
 
-  bool get loading => _loading;
-  String? get statusMessage => _statusMessage;
+  bool get loading => _suggestionsLoading || _searchLoading;
+  bool get suggestionsLoading => _suggestionsLoading;
+  bool get searchLoading => _searchLoading;
+  String? get statusMessage => _searchStatusMessage ?? _suggestionsStatusMessage;
+  String? get suggestionsStatusMessage => _suggestionsStatusMessage;
+  String? get searchStatusMessage => _searchStatusMessage;
   List<MapDestinationSearchResult> get suggestions =>
       List<MapDestinationSearchResult>.unmodifiable(_suggestions);
   List<MapDestinationSearchResult> get results =>
@@ -74,34 +83,77 @@ class MapDestinationSearchService extends ChangeNotifier {
     notifyListeners();
 
     if (!onlineAllowed || !_needsNearbyRefresh(current)) {
-      _statusMessage = onlineAllowed
+      _suggestionsStatusMessage = onlineAllowed
           ? 'Sugestões locais prontas.'
           : 'Offline · pesquisando somente dados salvos.';
       notifyListeners();
       return;
     }
+    if (_nearbyRefreshInFlight) {
+      _suggestionsStatusMessage = _suggestions.isEmpty
+          ? 'Atualizando cidades próximas em segundo plano…'
+          : 'Sugestões salvas prontas · atualização regional em andamento.';
+      notifyListeners();
+      return;
+    }
 
-    _setLoading(true);
+    _nearbyRefreshInFlight = true;
+    _setSuggestionsLoading(true);
     try {
-      final fetched = await _fetchNearbyPlaces(current);
-      _mergeKnownPlaces(fetched);
-      _nearbyUpdatedAt = DateTime.now();
-      _nearbyOrigin = LatLng(current.latitude, current.longitude);
+      final quick = await _fetchNearbyPlaces(
+        current,
+        radiusKm: quickNearbyRadiusKm,
+        timeout: const Duration(seconds: 5),
+        maximumItems: 80,
+      ).timeout(const Duration(seconds: 5));
+      _mergeKnownPlaces(quick);
       _suggestions = _buildLocalSuggestions(
         current: current,
         offlineMaps: offlineMaps,
         onlyDownloaded: false,
       );
-      _statusMessage = fetched.isEmpty
-          ? 'Nenhuma cidade/comunidade nova encontrada nesta região.'
-          : 'Cidades e comunidades próximas atualizadas.';
+      _suggestionsStatusMessage = quick.isEmpty
+          ? (_suggestions.isEmpty
+              ? 'Buscando uma região maior em segundo plano…'
+              : 'Sugestões salvas prontas · ampliando a região em segundo plano…')
+          : 'Sugestões próximas prontas.';
+      notifyListeners();
+      _setSuggestionsLoading(false);
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (_suggestions.length < maximumSuggestions && !_searchLoading) {
+        try {
+          final expanded = await _fetchNearbyPlaces(
+            current,
+            radiusKm: nearbyRadiusKm,
+            timeout: const Duration(seconds: 9),
+            maximumItems: 120,
+          );
+          _mergeKnownPlaces(expanded);
+          _suggestions = _buildLocalSuggestions(
+            current: current,
+            offlineMaps: offlineMaps,
+            onlyDownloaded: false,
+          );
+        } catch (_) {
+          // A fase curta já liberou a interface. A ampliação é best-effort.
+        }
+      }
+      _nearbyUpdatedAt = DateTime.now();
+      _nearbyOrigin = LatLng(current.latitude, current.longitude);
+      _suggestionsStatusMessage = _suggestions.isEmpty
+          ? 'Nenhuma cidade/comunidade encontrada nesta região.'
+          : 'Cidades e comunidades próximas prontas.';
       await _persist();
+      notifyListeners();
     } catch (_) {
-      _statusMessage = _suggestions.isEmpty
+      _suggestionsStatusMessage = _suggestions.isEmpty
           ? 'Não foi possível atualizar cidades próximas agora.'
           : 'Usando sugestões já salvas.';
+      notifyListeners();
     } finally {
-      _setLoading(false);
+      _nearbyRefreshInFlight = false;
+      _setSuggestionsLoading(false);
     }
   }
 
@@ -184,7 +236,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final text = query.trim();
     if (text.length < 2) {
       _results = const <MapDestinationSearchResult>[];
-      _statusMessage = 'Digite pelo menos 2 caracteres.';
+      _searchStatusMessage = 'Digite pelo menos 2 caracteres.';
       notifyListeners();
       return;
     }
@@ -197,38 +249,41 @@ class MapDestinationSearchService extends ChangeNotifier {
       onlyDownloaded: !onlineAllowed,
     );
     _results = local;
-    _statusMessage = onlineAllowed
+    _searchStatusMessage = onlineAllowed
         ? 'Pesquisando também online…'
         : 'Offline · resultados limitados ao que está salvo.';
     notifyListeners();
 
     if (!onlineAllowed) return;
-    _setLoading(true);
+    _setSearchLoading(true);
     try {
-      final remote = await _fetchNominatim(text, current);
+      final remote = await _fetchNominatim(
+        text,
+        current,
+      ).timeout(const Duration(seconds: 10));
       _mergeKnownPlaces(remote.where((item) => item.kind != MapDestinationKind.pointOfInterest));
       _results = _dedupeAndSort(<MapDestinationSearchResult>[
         ...local,
         ...remote,
       ]).take(maximumResults).toList(growable: false);
-      _statusMessage = _results.isEmpty
+      _searchStatusMessage = _results.isEmpty
           ? 'Nenhum resultado encontrado.'
           : '${_results.length} resultado(s) · online + dados salvos.';
       await _persist();
     } on TimeoutException {
-      _statusMessage = local.isEmpty
+      _searchStatusMessage = local.isEmpty
           ? 'A pesquisa online demorou demais.'
           : 'Pesquisa online indisponível · mostrando dados salvos.';
     } on SocketException {
-      _statusMessage = local.isEmpty
+      _searchStatusMessage = local.isEmpty
           ? 'Sem internet e sem resultado offline para esta busca.'
           : 'Sem internet · mostrando dados salvos.';
     } catch (_) {
-      _statusMessage = local.isEmpty
+      _searchStatusMessage = local.isEmpty
           ? 'Não foi possível concluir a pesquisa.'
           : 'Mostrando resultados salvos.';
     } finally {
-      _setLoading(false);
+      _setSearchLoading(false);
     }
   }
 
@@ -332,7 +387,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.177');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.179');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -408,7 +463,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.177');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.179');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -458,25 +513,29 @@ class MapDestinationSearchService extends ChangeNotifier {
   }
 
   Future<List<MapDestinationSearchResult>> _fetchNearbyPlaces(
-    MapRoutePoint current,
-  ) async {
-    final radiusMeters = (nearbyRadiusKm * 1000).round();
-    final query = '[out:json][timeout:18];('
-        'nwr(around:$radiusMeters,${current.latitude},${current.longitude})'
-        '["place"~"city|town|village|hamlet"];'
-        ');out center 100;';
+    MapRoutePoint current, {
+    required double radiusKm,
+    required Duration timeout,
+    required int maximumItems,
+  }) async {
+    final radiusMeters = (radiusKm * 1000).round();
+    final queryTimeout = math.max(4, timeout.inSeconds - 1);
+    final query = '[out:json][timeout:$queryTimeout];'
+        'node(around:$radiusMeters,${current.latitude},${current.longitude})'
+        '["place"~"city|town|village|hamlet"]["name"];'
+        'out body $maximumItems;';
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
-        .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.177');
+        .timeout(const Duration(seconds: 5));
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.179');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
       charset: 'utf-8',
     );
     request.write('data=${Uri.encodeQueryComponent(query)}');
-    final response = await request.close().timeout(const Duration(seconds: 20));
-    final body = await utf8.decoder.bind(response).join();
+    final response = await request.close().timeout(timeout);
+    final body = await utf8.decoder.bind(response).join().timeout(timeout);
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Overpass HTTP ${response.statusCode}');
     }
@@ -542,7 +601,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.177 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.179 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
@@ -709,9 +768,15 @@ class MapDestinationSearchService extends ChangeNotifier {
     _knownPlaces = merged.values.take(600).toList(growable: false);
   }
 
-  void _setLoading(bool value) {
-    if (_loading == value) return;
-    _loading = value;
+  void _setSuggestionsLoading(bool value) {
+    if (_suggestionsLoading == value) return;
+    _suggestionsLoading = value;
+    notifyListeners();
+  }
+
+  void _setSearchLoading(bool value) {
+    if (_searchLoading == value) return;
+    _searchLoading = value;
     notifyListeners();
   }
 

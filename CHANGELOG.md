@@ -1,3 +1,21 @@
+## 1.0.179+179 — 2026-09-26
+
+- Pesquisa do mapa separa atualização de sugestões e busca digitada, evitando que a consulta de cidades próximas bloqueie o botão de pesquisar.
+- Sugestões usam cache/índice local imediatamente e uma consulta Overpass curta (~65 km) antes de ampliar até 180 km em segundo plano quando necessário.
+- Entrada direta no mapa começa sem câmera automática; a câmera só é aberta após ação explícita do usuário.
+- Fontes abertas pelo mapa são encerradas ao ocultar/minimizar por padrão; uma opção persistente permite desativar essa economia.
+- Fontes herdadas do Monitoramento permanecem sob controle do Monitoramento e não são encerradas pelo mapa.
+- Versionamento, identidades, User-Agents, Novidades, Sobre > Mudanças, documentação e verificadores sincronizados em `1.0.179+179`.
+
+## 1.0.178+178 — 2026-09-26
+
+- PiPs de câmera do mapa passam a abrir a mesma fonte em tela inteira com um toque direto na imagem.
+- A visualização em tela inteira retorna ao mapa com duplo toque ou pelo botão `fullscreen_exit`, sem trocar a fonte nem alterar a posição/tamanho persistidos dos PiPs.
+- O antigo duplo toque do PiP para alternar tamanho foi removido; `Tamanho` continua disponível no menu do próprio PiP.
+- Estados de IA e aproximação Bike permanecem visíveis sobre a câmera cheia quando disponíveis.
+- Ocultar/remover a fonte ou desativar os PiPs encerra com segurança o estado de tela inteira.
+- Versionamento, identidades, User-Agents, Novidades, Sobre > Mudanças, documentação, testes e verificadores sincronizados em `1.0.178+178`.
+
 ## 1.0.177+177 — 2026-09-26
 
 - Corrigidos os builds 136 e 137, que falhavam no `flutter analyze` porque `MapDestinationSearchService` usava o getter de extensão `RouteExplorerCategory.label` sem importar `route_explorer_models.dart`.
