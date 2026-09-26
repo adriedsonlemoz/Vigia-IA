@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.181',
+          changes: [
+            'Próximos pontos aplica automaticamente mudanças de raio, categorias e busca ao redor/no caminho.',
+            'Pesquisa de destinos mostra Navegar; toque livre no mapa abre informações, Navegar e Adicionar parada.',
+            'POIs já anunciados por voz permanecem lembrados durante a sessão e Categorias ocupa menos altura.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.180',
           changes: [
             'O painel de navegação ficou maior e mais visual, com próxima manobra, distância, tempo, média e progresso em destaque.',
@@ -1654,8 +1663,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.180',
+          version: '1.0.181',
           current: true,
+          changes: [
+            'Filtros de Próximos pontos agora atualizam a lista automaticamente e a tela de configurações volta diretamente para os pontos.',
+            'Resultados de pesquisa têm botão Navegar e qualquer ponto tocado no mapa pode virar destino ou parada manual.',
+            'Anúncios de POIs são deduplicados por sessão e a grade de categorias ficou mais compacta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.180',
           changes: [
             'Painel de navegação redesenhado e ampliado, com a próxima manobra em destaque e leitura rápida para uso na bicicleta.',
             'O card reúne distância restante, ETA, média usada, progresso e pontos úteis reais já carregados no mapa.',

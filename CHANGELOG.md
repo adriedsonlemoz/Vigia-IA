@@ -1,3 +1,13 @@
+## 1.0.181+181 — 2026-09-26
+- Próximos pontos aplica automaticamente mudanças de raio, categorias e busca ao redor/no caminho, mantendo Atualizar como ação manual.
+- Configurações abertas a partir de Próximos pontos retornam diretamente para a lista atualizada.
+- Pesquisa de destinos exibe ação Navegar explícita; toque no resultado continua apenas centralizando o mapa.
+- Toque livre no mapa identifica local/POI/endereço quando possível e oferece Navegar, Adicionar parada e Fechar, com coordenadas como fallback offline.
+- Paradas manuais são integradas aos candidatos do planejamento de cicloviagem.
+- Avisos por voz mantêm memória estável dos POIs já anunciados durante a sessão, evitando repetição após novas consultas.
+- Categorias passa a usar grade compacta de 3/4 colunas para reduzir rolagem.
+- Versão, metadados, User-Agents, documentação, testes e verificadores sincronizados em `1.0.181+181`.
+
 ## 1.0.180+180 — 2026-09-26
 
 - Painel de navegação do mapa redesenhado para um card maior, mais legível e mais próximo do conceito visual aprovado.

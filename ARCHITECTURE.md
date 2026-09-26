@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.180+180
+# Arquitetura — Vigia IA 1.0.181+181
+
+## Próximos pontos, seleção livre e memória de anúncios — 1.0.181
+- `RouteExplorerService` agenda nova consulta após alterações de raio/categorias/direção, com debounce para evitar múltiplas requisições em sequência.
+- A memória de anúncios usa ID estável do POI e fallback categoria+coordenadas+título; ela não é podada quando o item sai temporariamente dos resultados e é reiniciada ao iniciar uma nova navegação/gravação.
+- `MapDestinationSearchService.reverseLookup` resolve o ponto tocado por POI offline/cache, Nominatim reverso quando online ou coordenadas quando não houver dado melhor.
+- A seleção livre reutiliza `MapDestinationSearchResult` e o mesmo fluxo de navegação da pesquisa, evitando modelos paralelos.
+- Paradas manuais são mescladas aos candidatos do `BikeTripPlanner` nas rotas Bike de vários dias.
+
 
 ## Pesquisa responsiva e ciclo de vida da câmera — 1.0.180
 

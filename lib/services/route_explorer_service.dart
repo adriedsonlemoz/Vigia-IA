@@ -54,6 +54,8 @@ class RouteExplorerService extends ChangeNotifier {
   DateTime? _resultsUpdatedAt;
   DateTime? _offlineUpdatedAt;
   final Map<String, Set<int>> _deliveredThresholds = <String, Set<int>>{};
+  final Set<String> _announcedPoiKeys = <String>{};
+  Timer? _settingsRefreshDebounce;
   DateTime? _lastAlertDeliveredAt;
   MapRoutePoint? _lastSearchOrigin;
   DateTime? _lastAutomaticSearchAt;
@@ -133,6 +135,7 @@ class RouteExplorerService extends ChangeNotifier {
     _settings = _settings.copyWith(radiusKm: value);
     notifyListeners();
     await _persistNow();
+    _scheduleSettingsRefresh();
   }
 
   Future<void> toggleCategory(RouteExplorerCategory category) async {
@@ -147,6 +150,7 @@ class RouteExplorerService extends ChangeNotifier {
     _settings = _settings.copyWith(categories: categories);
     notifyListeners();
     await _persistNow();
+    _scheduleSettingsRefresh();
   }
 
   Future<void> setAlertsEnabled(bool value) async {
@@ -181,6 +185,7 @@ class RouteExplorerService extends ChangeNotifier {
     _settings = _settings.copyWith(searchAheadWhenMoving: value);
     notifyListeners();
     await _persistNow();
+    _scheduleSettingsRefresh();
   }
 
   Future<void> setAlertDistanceMeters(int value) async {
@@ -191,6 +196,29 @@ class RouteExplorerService extends ChangeNotifier {
     _lastAlertDeliveredAt = null;
     notifyListeners();
     await _persistNow();
+  }
+
+  void _scheduleSettingsRefresh() {
+    _settingsRefreshDebounce?.cancel();
+    _settingsRefreshDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (_loading || _routeState.current == null) return;
+      unawaited(searchNow(requestPermission: false));
+    });
+  }
+
+  void resetAnnouncementSession() {
+    _announcedPoiKeys.clear();
+    _deliveredThresholds.clear();
+    _lastAlertDeliveredAt = null;
+  }
+
+  String _stablePoiAnnouncementKey(RouteExplorerResult item) {
+    final id = item.id.trim();
+    if (id.isNotEmpty) return '${item.category.name}:$id';
+    final lat = item.latitude.toStringAsFixed(5);
+    final lon = item.longitude.toStringAsFixed(5);
+    final normalizedTitle = item.title.trim().toLowerCase();
+    return '${item.category.name}:$lat:$lon:$normalizedTitle';
   }
 
   Future<void> clearOfflineResults() async {
@@ -655,7 +683,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.180');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.181');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
@@ -848,9 +876,9 @@ class RouteExplorerService extends ChangeNotifier {
     return List<RouteExplorerResult>.unmodifiable(selected);
   }
 
-  void _pruneDeliveredAlerts(List<RouteExplorerResult> results) {
-    final activeIds = results.map((item) => item.id).toSet();
-    _deliveredThresholds.removeWhere((id, _) => !activeIds.contains(id));
+  void _pruneDeliveredAlerts(List<RouteExplorerResult> _) {
+    // Mantém a memória de anúncios durante toda a sessão. Um POI pode sair
+    // temporariamente da consulta e voltar depois sem ser anunciado novamente.
   }
 
   void _evaluateAlerts(MapRoutePoint current) {
@@ -869,6 +897,8 @@ class RouteExplorerService extends ChangeNotifier {
           : null,
     );
     if (decision == null) return;
+    final announcementKey = _stablePoiAnnouncementKey(decision.item);
+    if (_announcedPoiKeys.contains(announcementKey)) return;
 
     final delivered = _deliveredThresholds.putIfAbsent(
       decision.item.id,
@@ -876,6 +906,7 @@ class RouteExplorerService extends ChangeNotifier {
     );
     delivered.addAll(decision.consumedThresholds);
     _lastAlertDeliveredAt = DateTime.now();
+    _announcedPoiKeys.add(announcementKey);
     unawaited(
       _alerts.deliver(
         _buildAlertMessage(decision.item, decision.item.distanceMeters),

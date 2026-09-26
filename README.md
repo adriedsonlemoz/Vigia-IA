@@ -2,9 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.180+180`
+> **Versão atual:** `1.0.181+181`
 
 ## Estado atual
+
+
+A `1.0.181+181` aprimora o mapa e Próximos pontos com filtros automáticos, navegação explícita nos resultados, seleção livre de locais no mapa, paradas manuais e deduplicação de avisos por voz durante a sessão.
+
+### Próximos pontos e navegação contextual — 1.0.181
+- Alterações de raio, categorias e busca ao redor/no caminho atualizam os pontos automaticamente; `Atualizar` permanece para forçar uma consulta.
+- A engrenagem aberta por Próximos pontos retorna para a lista ao fechar, já com as novas configurações aplicadas.
+- A pesquisa de destinos mostra `Navegar` em cada resultado; tocar no resultado apenas centraliza/inspeciona o local.
+- Toque livre no mapa identifica POI/endereço quando possível e sempre preserva as coordenadas como fallback, com ações `Navegar`, `Adicionar parada` e `Fechar`.
+- Paradas manuais entram como candidatos explícitos no planejamento da cicloviagem.
+- POIs anunciados por voz permanecem lembrados durante a sessão/viagem, mesmo que saiam temporariamente da lista e reapareçam.
+- Categorias usa grade compacta de 3 colunas em telas comuns e 4 em telas largas.
 
 A `1.0.180+180` amplia o painel de navegação do mapa para leitura rápida durante a cicloviagem e corrige a validação de Novidades que interrompeu o build 139.
 

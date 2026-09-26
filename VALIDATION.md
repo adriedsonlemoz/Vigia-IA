@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.180+180
+# Validação Vigia IA 1.0.181+181
+
+## Próximos pontos e navegação contextual — 1.0.181
+- Alterar raio/categoria/direção e confirmar atualização automática sem tocar em Atualizar.
+- Abrir Configurações pela lista de Próximos pontos e retornar à lista atualizada.
+- Pesquisar destino e validar ações distintas de centralizar e Navegar.
+- Tocar em rua/local sem POI e confirmar card com coordenadas/endereço quando disponível, Navegar e Adicionar parada.
+- Reexecutar consultas e confirmar que um POI já falado não é anunciado novamente durante a mesma sessão.
+- Iniciar nova navegação/gravação e confirmar reinício da memória de anúncios.
+- Confirmar grade de categorias em 3 colunas no telefone e 4 em largura maior, sem overflow.
+
 
 ## Pesquisa rápida + energia das câmeras — 1.0.180
 

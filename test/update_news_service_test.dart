@@ -138,10 +138,10 @@ void main() {
     expect(UpdateNewsCatalog.current.releases.single.version, UpdateNewsCatalog.currentVersion);
   });
 
-  test('versão atual exibe somente as novidades visíveis da 1.0.180', () async {
+  test('versão atual exibe somente as novidades visíveis da 1.0.181', () async {
     final store = _MemoryStore()..value = '1.0.179+179';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.180', build: 180),
+      const AppBuildVersion(version: '1.0.181', build: 181),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -153,7 +153,7 @@ void main() {
 
     expect(decision.shouldShow, isTrue);
     expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 180);
+    expect(decision.releases.single.version.build, 181);
     expect(decision.changes, hasLength(2));
     expect(decision.changes.join(' '), contains('painel de navegação'));
   });

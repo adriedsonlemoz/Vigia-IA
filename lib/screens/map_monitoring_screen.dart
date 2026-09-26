@@ -202,6 +202,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   double? _smoothedSensorHeading;
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
   String? _selectedPoiId;
+  MapDestinationSearchResult? _selectedMapLocation;
+  final List<MapDestinationSearchResult> _manualTripStops =
+      <MapDestinationSearchResult>[];
+  int _mapTapLookupSerial = 0;
   double _visibleMapZoom = MapViewPolicy.nearZoom;
   bool _navigation3dEnabled = true;
   bool _navigation3dRendererReady = false;
@@ -1283,6 +1287,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _startRecording() async {
+    _routeExplorer.resetAnnouncementSession();
     setState(() {
       _followPosition = true;
       if (_quickView == _MapQuickView.route) {
@@ -1604,6 +1609,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted || travelMode == null) return;
     if (!await _prepareTravelPreferences(travelMode)) return;
     if (!mounted) return;
+    _routeExplorer.resetAnnouncementSession();
     final current = _routeState.current;
     _navigationVoice.resetRoute();
     final target = MapNavigationTarget(
@@ -1624,6 +1630,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
       _selectedPoiId = null;
+      _selectedMapLocation = null;
       _cyclingRoute = null;
       _cyclingRouteAlternatives = const <MapCyclingRoute>[];
       _selectedCyclingRouteIndex = 0;
@@ -1665,6 +1672,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       setState(() {
         _followPosition = false;
         _selectedPoiId = null;
+        _selectedMapLocation = item;
       });
     } catch (_) {}
   }
@@ -1674,6 +1682,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted || travelMode == null) return;
     if (!await _prepareTravelPreferences(travelMode)) return;
     if (!mounted) return;
+    _routeExplorer.resetAnnouncementSession();
     final current = _routeState.current;
     _navigationVoice.resetRoute();
     final target = MapNavigationTarget(
@@ -1694,6 +1703,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _quickView = _MapQuickView.near;
       _customFollowZoom = null;
       _selectedPoiId = item.id;
+      _selectedMapLocation = null;
       _cyclingRoute = null;
       _cyclingRouteAlternatives = const <MapCyclingRoute>[];
       _selectedCyclingRouteIndex = 0;
@@ -1875,6 +1885,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         offlineMaps: _offlineMaps.packages,
         offlinePoiPackages: _routeExplorer.offlinePackages,
       );
+      if (_manualTripStops.isNotEmpty) {
+        candidates = <MapDestinationSearchResult>[
+          ..._manualTripStops,
+          ...candidates.where(
+            (candidate) => !_manualTripStops.any(
+              (manual) => manual.id == candidate.id,
+            ),
+          ),
+        ];
+      }
     }
     if (!mounted) return;
     final activeTarget = _routeState.navigationTarget;
@@ -1904,6 +1924,61 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
     return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
+  }
+
+  Future<void> _selectFreeMapPoint(LatLng point) async {
+    final current = _routeState.current;
+    if (current == null) return;
+    final serial = ++_mapTapLookupSerial;
+    setState(() {
+      _selectedPoiId = null;
+      _selectedMapLocation = MapDestinationSearchResult(
+        id: 'coordinate:${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}',
+        title: 'Identificando local…',
+        subtitle:
+            '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+        latitude: point.latitude,
+        longitude: point.longitude,
+        distanceMeters: const Distance().as(
+          LengthUnit.Meter,
+          LatLng(current.latitude, current.longitude),
+          point,
+        ),
+        kind: MapDestinationKind.place,
+        source: 'coordinate',
+      );
+      _followPosition = false;
+      _quickView = null;
+    });
+    final offlineOnly = _connectivity.isOffline ||
+        _offlineMaps.mode == OfflineMapMode.offline;
+    final resolved = await _destinationSearch.reverseLookup(
+      point: point,
+      current: current,
+      onlineAllowed: !offlineOnly,
+      offlinePoiPackages: _routeExplorer.offlinePackages,
+    );
+    if (!mounted || serial != _mapTapLookupSerial) return;
+    setState(() => _selectedMapLocation = resolved);
+  }
+
+  void _addManualTripStop(MapDestinationSearchResult item) {
+    final alreadyAdded = _manualTripStops.any((candidate) => candidate.id == item.id);
+    if (!alreadyAdded) _manualTripStops.add(item);
+    final route = _cyclingRoute;
+    final target = _routeState.navigationTarget;
+    if (route != null && target?.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshBikeTripPlan(route: route, target: target!));
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          alreadyAdded
+              ? 'Esse local já está no planejamento.'
+              : 'Parada adicionada ao planejamento da cicloviagem.',
+        ),
+      ),
+    );
   }
 
   Future<void> _showBikeTripPlan() async {
@@ -3944,7 +4019,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             tooltip: 'Configurações do mapa',
                             onPressed: () {
                               Navigator.of(sheetContext).pop();
-                              unawaited(_showMapSettings());
+                              unawaited(_showMapSettings(returnToNearby: true));
                             },
                             icon: const Icon(Icons.settings_rounded),
                           ),
@@ -4299,9 +4374,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                       Navigator.of(sheetContext).pop();
                                       _focusSearchResult(item);
                                     },
-                                    trailing: IconButton(
-                                      tooltip: 'Criar rota',
-                                      icon: const Icon(Icons.route_rounded),
+                                    trailing: FilledButton.tonalIcon(
+                                      icon: const Icon(Icons.navigation_rounded, size: 17),
+                                      label: const Text('Navegar'),
                                       onPressed: () {
                                         Navigator.of(sheetContext).pop();
                                         unawaited(_navigateToSearchResult(item));
@@ -4333,7 +4408,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
-  Future<void> _showMapSettings() async {
+  Future<void> _showMapSettings({bool returnToNearby = false}) async {
     await Future.wait<void>([
       _routeExplorer.initialize(),
       _mapViewSettings.initialize(),
@@ -4370,21 +4445,36 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             return ListView(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
-                  child: Column(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 4, 8),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Configurações do mapa',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
+                      IconButton(
+                        tooltip: returnToNearby
+                            ? 'Voltar para Próximos pontos'
+                            : 'Fechar configurações',
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        onPressed: () => Navigator.of(sheetContext).pop(),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Busca, categorias, alertas, áudio, offline, percurso e navegação.',
+                      const SizedBox(width: 2),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Configurações do mapa',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Alterações de busca e categorias são aplicadas automaticamente.',
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -4451,7 +4541,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   children: [
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final columns = constraints.maxWidth >= 520 ? 3 : 2;
+                        final columns = constraints.maxWidth >= 620 ? 4 : 3;
                         return GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -4460,7 +4550,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             crossAxisCount: columns,
                             crossAxisSpacing: 6,
                             mainAxisSpacing: 6,
-                            mainAxisExtent: 42,
+                            mainAxisExtent: 46,
                           ),
                           itemBuilder: (context, index) {
                             final category = RouteExplorerCategory.values[index];
@@ -4721,6 +4811,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         ),
       ),
     );
+    if (returnToNearby && mounted) {
+      unawaited(_showNearbyPoints());
+    }
   }
 
   @override
@@ -4767,6 +4860,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final navigationMatchesSelectedPoi =
         _navigationMatchesSelectedPoi(selectedPoi, navigationTarget);
     final showSelectedPoiCard = selectedPoi != null && !navigationMatchesSelectedPoi;
+    final selectedMapLocation = _selectedMapLocation;
+    final showSelectedMapLocationCard = selectedMapLocation != null &&
+        navigationTarget?.sourceId != selectedMapLocation.id;
 
     final offlineProvider = _offlineTileProvider;
     final mode = _offlineMaps.mode;
@@ -4893,10 +4989,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       }
                     });
                   },
-                  onTap: (_, _) {
-                    if (_selectedPoiId != null) {
-                      setState(() => _selectedPoiId = null);
-                    }
+                  onTap: (_, point) {
+                    unawaited(_selectFreeMapPoint(point));
                   },
                 ),
                 children: [
@@ -5036,6 +5130,33 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                   );
                                 },
                               ),
+                            ),
+                          ),
+                        ),
+                      if (selectedMapLocation != null &&
+                          navigationTarget?.sourceId != selectedMapLocation.id)
+                        Marker(
+                          point: LatLng(
+                            selectedMapLocation.latitude,
+                            selectedMapLocation.longitude,
+                          ),
+                          width: 46,
+                          height: 46,
+                          rotate: true,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: scheme.primaryContainer.withValues(alpha: 0.95),
+                              border: Border.all(color: scheme.primary, width: 2.5),
+                              boxShadow: const [
+                                BoxShadow(blurRadius: 6, color: Color(0x40000000)),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.place_rounded,
+                              color: scheme.onPrimaryContainer,
+                              size: 25,
                             ),
                           ),
                         ),
@@ -5404,6 +5525,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           : onlineLayer.attribution,
                 ),
               ),
+              if (showSelectedMapLocationCard)
+                Positioned(
+                  left: compactHud ? 10 : 36,
+                  right: compactHud ? 10 : 36,
+                  bottom: bottomInset + (navigationTarget == null ? 82 : 330),
+                  child: _SelectedMapLocationCard(
+                    item: selectedMapLocation!,
+                    distanceLabel: _formatSearchDistance(
+                      selectedMapLocation!.distanceMeters,
+                    ),
+                    onClose: () => setState(() => _selectedMapLocation = null),
+                    onNavigate: () => _navigateToSearchResult(selectedMapLocation!),
+                    onAddStop: () => _addManualTripStop(selectedMapLocation!),
+                  ),
+                ),
               if (showSelectedPoiCard)
                 Positioned(
                   left: compactHud ? 10 : 36,
@@ -7119,6 +7255,137 @@ class _SelectedPoiCard extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedMapLocationCard extends StatelessWidget {
+  const _SelectedMapLocationCard({
+    required this.item,
+    required this.distanceLabel,
+    required this.onClose,
+    required this.onNavigate,
+    required this.onAddStop,
+  });
+
+  final MapDestinationSearchResult item;
+  final String distanceLabel;
+  final VoidCallback onClose;
+  final VoidCallback onNavigate;
+  final VoidCallback onAddStop;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final identifying = item.title == 'Identificando local…';
+    return Material(
+      elevation: 9,
+      color: scheme.surface.withValues(alpha: 0.97),
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 21,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(
+                    item.poiCategory == null
+                        ? Icons.place_rounded
+                        : Icons.location_on_rounded,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.subtitle.trim().isEmpty
+                            ? '${item.latitude.toStringAsFixed(5)}, ${item.longitude.toStringAsFixed(5)}'
+                            : item.subtitle.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$distanceLabel · ${item.kind.label}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (identifying)
+                  const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else
+                  IconButton(
+                    tooltip: 'Fechar',
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 34,
+                      height: 34,
+                    ),
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+              ],
+            ),
+            if (!identifying) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onAddStop,
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                      label: const Text('Adicionar parada'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onNavigate,
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.navigation_rounded, size: 18),
+                      label: const Text('Navegar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.180 amplia e moderniza o painel de navegação do mapa, mantém POIs úteis visíveis com dados reais e ajusta o teste de Novidades à versão instalada atual.",
-  "version": "1.0.180",
-  "build": 180
+  "notes": "A 1.0.181 melhora Próximos pontos e navegação: filtros automáticos, busca com Navegar, toque livre no mapa, paradas manuais e avisos de POI sem repetição na sessão.",
+  "version": "1.0.181",
+  "build": 181
 }

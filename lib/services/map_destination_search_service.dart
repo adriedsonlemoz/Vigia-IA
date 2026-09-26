@@ -387,7 +387,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.180');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.181');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -463,7 +463,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.180');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.181');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -527,7 +527,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 5));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.180');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.181');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -584,6 +584,142 @@ class MapDestinationSearchService extends ChangeNotifier {
     return _dedupeAndSort(results);
   }
 
+  Future<MapDestinationSearchResult> reverseLookup({
+    required LatLng point,
+    required MapRoutePoint current,
+    required bool onlineAllowed,
+    required List<OfflinePoiPackage> offlinePoiPackages,
+  }) async {
+    await initialize();
+    final localCandidates = <MapDestinationSearchResult>[
+      ..._knownPlaces,
+      for (final package in offlinePoiPackages)
+        for (final poi in package.items)
+          MapDestinationSearchResult(
+            id: 'poi:${poi.id}',
+            title: poi.title,
+            subtitle: poi.address?.trim().isNotEmpty == true
+                ? poi.address!.trim()
+                : poi.subtitle,
+            latitude: poi.latitude,
+            longitude: poi.longitude,
+            distanceMeters: _meters(
+              current.latitude,
+              current.longitude,
+              poi.latitude,
+              poi.longitude,
+            ),
+            kind: MapDestinationKind.pointOfInterest,
+            source: 'offline',
+            poiCategory: poi.category,
+          ),
+    ];
+    MapDestinationSearchResult? nearest;
+    double nearestToTap = double.infinity;
+    for (final item in localCandidates) {
+      final distance = _meters(
+        point.latitude,
+        point.longitude,
+        item.latitude,
+        item.longitude,
+      );
+      if (distance < nearestToTap) {
+        nearestToTap = distance;
+        nearest = item;
+      }
+    }
+    if (nearest != null && nearestToTap <= 120) {
+      return nearest.copyWith(
+        distanceMeters: _meters(
+          current.latitude,
+          current.longitude,
+          nearest.latitude,
+          nearest.longitude,
+        ),
+      );
+    }
+
+    if (onlineAllowed) {
+      try {
+        await _respectNominatimRateLimit();
+        final uri = Uri.https(
+          'nominatim.openstreetmap.org',
+          '/reverse',
+          <String, String>{
+            'lat': point.latitude.toString(),
+            'lon': point.longitude.toString(),
+            'format': 'jsonv2',
+            'addressdetails': '1',
+            'zoom': '18',
+            'accept-language': 'pt-BR,pt,en',
+          },
+        );
+        final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
+        request.headers.set(
+          HttpHeaders.userAgentHeader,
+          'VigiaIA/1.0.181 map-reverse-search',
+        );
+        request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+        final response = await request.close().timeout(const Duration(seconds: 8));
+        final body = await utf8.decoder.bind(response).join();
+        _lastNominatimRequestAt = DateTime.now();
+        if (response.statusCode == HttpStatus.ok) {
+          final decoded = jsonDecode(body);
+          if (decoded is Map) {
+            final item = decoded.cast<String, dynamic>();
+            final displayName = item['display_name']?.toString().trim() ?? '';
+            final addressRaw = item['address'];
+            final address = addressRaw is Map
+                ? addressRaw.map(
+                    (key, value) => MapEntry(key.toString(), value.toString()),
+                  )
+                : const <String, String>{};
+            final title = _bestTitle(address, displayName);
+            final type = item['type']?.toString();
+            final category = item['category']?.toString();
+            final kind = category == 'place'
+                ? MapDestinationKindX.fromOsmType(type)
+                : MapDestinationKind.place;
+            return MapDestinationSearchResult(
+              id: 'reverse:${item['osm_type']}:${item['osm_id']}',
+              title: title.isEmpty ? 'Local selecionado' : title,
+              subtitle: displayName.isEmpty ? 'Endereço aproximado indisponível' : displayName,
+              latitude: point.latitude,
+              longitude: point.longitude,
+              distanceMeters: _meters(
+                current.latitude,
+                current.longitude,
+                point.latitude,
+                point.longitude,
+              ),
+              kind: kind,
+              source: 'online',
+            );
+          }
+        }
+      } catch (_) {
+        // Coordenadas continuam utilizáveis mesmo sem geocodificação reversa.
+      }
+    }
+
+    return MapDestinationSearchResult(
+      id: 'coordinate:${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}',
+      title: 'Local selecionado',
+      subtitle:
+          '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+      latitude: point.latitude,
+      longitude: point.longitude,
+      distanceMeters: _meters(
+        current.latitude,
+        current.longitude,
+        point.latitude,
+        point.longitude,
+      ),
+      kind: MapDestinationKind.place,
+      source: onlineAllowed ? 'coordinate' : 'offline',
+    );
+  }
+
   Future<List<MapDestinationSearchResult>> _fetchNominatim(
     String query,
     MapRoutePoint current,
@@ -601,7 +737,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.180 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.181 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
