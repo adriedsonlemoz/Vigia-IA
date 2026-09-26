@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.172+172
+# Validação Vigia IA 1.0.175+175
+
+## Pesquisa + cicloviagem — 1.0.173 / 1.0.174 / 1.0.175
+
+- Confirmar botão `Pesquisar no mapa` independente de `Próximos pontos`.
+- Confirmar que `MapDestinationSearchService.searchSubmitted` é o único caminho da pesquisa Nominatim e que `TextField.onChanged` não dispara rede.
+- Confirmar busca offline sobre índice persistente e `offlinePackages` de POIs.
+- Confirmar User-Agent `VigiaIA/1.0.175` em Nominatim, Overpass, Valhalla, clima, offline e MapLibre.
+- Confirmar que rota Bike pergunta média/horas por dia, persiste os valores e usa `BikeTripPlanner` para ETA.
+- Confirmar que rotas longas exibem quantidade de dias e botão de calendário.
+- Confirmar que paradas sem candidato real recebem o rótulo `Parada aproximada na rota` e não exibem alegação de água/comida/hospedagem.
+- Executar testes de `MapDestinationSearchResult` e `BikeTripPlanner`.
+- Executar `python3 tool/check_version_sync.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`.
+- Validar JSONs, scripts, workflow Android único, ausência de APK/AAB e caches temporários.
+- Executar `flutter analyze`, `flutter test` e build Android quando Flutter/Dart estiverem disponíveis.
+
 
 ## Build 134 / 1.0.172
 

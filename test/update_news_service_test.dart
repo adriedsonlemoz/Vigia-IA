@@ -131,16 +131,20 @@ void main() {
     expect(missingDecision.shouldShow, isTrue);
     expect(missingDecision.releases.single.version.build, 144);
   });
-  test('release técnica atual não fabrica popup sem mudança visível', () {
+  test('catálogo atual contém somente a versão instalada visível', () {
     expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
     expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
-    expect(UpdateNewsCatalog.current.releases, isEmpty);
+    expect(UpdateNewsCatalog.current.releases, hasLength(1));
+    expect(
+      UpdateNewsCatalog.current.releases.single.version,
+      UpdateNewsCatalog.currentVersion,
+    );
   });
 
-  test('catálogo vazio não mostra popup de novidades', () async {
-    final store = _MemoryStore()..value = '1.0.170+170';
+  test('popup 1.0.175 não acumula as etapas 1.0.173 e 1.0.174', () async {
+    final store = _MemoryStore()..value = '1.0.172+172';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.172', build: 172),
+      const AppBuildVersion(version: '1.0.175', build: 175),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -150,9 +154,10 @@ void main() {
 
     final decision = await service.evaluate();
 
-    expect(decision.shouldShow, isFalse);
-    expect(decision.releases, isEmpty);
-    expect(decision.changes, isEmpty);
+    expect(decision.shouldShow, isTrue);
+    expect(decision.releases, hasLength(1));
+    expect(decision.releases.single.version.build, 175);
+    expect(decision.changes.join(' '), isNot(contains('lupa')));
   });
 
 }

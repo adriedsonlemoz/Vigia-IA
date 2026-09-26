@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../models/offline_map_package.dart';
+import 'map_destination_search_service.dart';
 import 'native_platform_service.dart';
 
 class OfflineMapDownloadEstimate {
@@ -274,7 +275,7 @@ class OfflineMapService extends ChangeNotifier {
         'https://tiles.stadiamaps.com/tiles/alidade_smooth/0/0/0.png',
       );
       final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.172 key-test');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.175 key-test');
       request.headers.set(HttpHeaders.authorizationHeader, 'Stadia-Auth $key');
       final response = await request.close().timeout(const Duration(seconds: 12));
       final status = response.statusCode;
@@ -600,6 +601,9 @@ class OfflineMapService extends ChangeNotifier {
       _activeId = item.id;
       _mode = OfflineMapMode.automatic;
       await _persist();
+      unawaited(
+        MapDestinationSearchService.instance.indexOfflineMapPackage(item),
+      );
       return item;
     } catch (_) {
       if (await temporary.exists()) await temporary.delete();
@@ -623,7 +627,7 @@ class OfflineMapService extends ChangeNotifier {
       '${tile.z}/${tile.x}/${tile.y}.png',
     );
     final request = await client.getUrl(uri);
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.172 offline-map');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.175 offline-map');
     request.headers.set(HttpHeaders.authorizationHeader, 'Stadia-Auth $apiKey');
     final response = await request.close().timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -730,7 +734,7 @@ class OfflineMapService extends ChangeNotifier {
       ..idleTimeout = const Duration(seconds: 30);
     try {
       final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.172 offline-map');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.175 offline-map');
       final response = await request.close().timeout(const Duration(seconds: 30));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
@@ -781,6 +785,9 @@ class OfflineMapService extends ChangeNotifier {
       _activeId = item.id;
       _mode = OfflineMapMode.automatic;
       await _persist();
+      unawaited(
+        MapDestinationSearchService.instance.indexOfflineMapPackage(item),
+      );
       return item;
     } catch (_) {
       if (await temporary.exists()) await temporary.delete();

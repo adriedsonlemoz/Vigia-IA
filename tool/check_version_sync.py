@@ -88,6 +88,7 @@ for user_agent_file in (
     root / "lib/services/offline_map_service.dart",
     root / "lib/widgets/map_navigation_3d_view.dart",
     root / "lib/services/map_weather_service.dart",
+    root / "lib/services/map_destination_search_service.dart",
 ):
     content = user_agent_file.read_text(encoding="utf-8")
     for agent in re.findall(r"VigiaIA/[0-9]+(?:\.[0-9]+){1,2}[^'\"]*", content):

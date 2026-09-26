@@ -1,3 +1,26 @@
+## 1.0.175+175 — 2026-09-26
+
+- Planejamento de cicloviagem divide rotas Bike longas em dias usando velocidade média e horas máximas de pedal por dia.
+- Paradas intermediárias priorizam cidades, vilas, comunidades e campings reais próximos da rota; sem candidato confiável, o app mostra somente uma parada aproximada e não presume serviços.
+- Consulta de localidades ao longo da rota é consolidada e cacheada; em modo offline usa apenas dados já salvos.
+- Banner da navegação ganhou acesso ao plano por dias e mantém tempo em movimento separado da quantidade estimada de dias.
+- Versionamento e metadados sincronizados em `1.0.175+175`.
+
+## 1.0.174+174 — 2026-09-26
+
+- Rotas de Bicicleta passam a solicitar média desejada e horas de pedal por dia antes de iniciar a navegação.
+- ETA da Bike é calculado pela distância real da rota e pela velocidade configurada, sem substituir o Valhalla como roteador.
+- Preferências de Bike são persistidas em `MapViewSettingsService`; alternativas de rota também usam o ETA personalizado.
+- Estimativa informa múltiplos dias quando a duração de pedal ultrapassa o limite diário configurado.
+
+## 1.0.173+173 — 2026-09-26
+
+- Adicionada lupa de pesquisa ao mapa, independente de `Locais próximos`.
+- Busca enviada pelo usuário consulta OpenStreetMap/Nominatim; sugestões de cidades/comunidades usam Overpass e são cacheadas localmente.
+- Não existe autocomplete remoto por tecla, respeitando a política de uso do provedor público.
+- Pesquisa offline combina localidades já indexadas com POIs dos pacotes offline salvos e marca a origem do resultado.
+- Resultados permitem focar o mapa ou iniciar uma rota no modo de transporte escolhido.
+
 ## 1.0.172+172 — 2026-09-26
 
 - Corrigido o único apontamento restante do `flutter analyze` no build 134: variável local `recordedAt` declarada e não utilizada em `MapNavigation3DView._syncCamera`.

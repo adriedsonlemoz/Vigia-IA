@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.172 remove o ultimo warning de analise estatica encontrado no build 134 sem alterar o comportamento funcional do mapa 3D, clima, navegacao ou fallbacks.",
-  "version": "1.0.172",
-  "build": 172
+  "notes": "A 1.0.175 conclui o ciclo de pesquisa e planejamento de cicloviagem: lupa online/offline, ETA de Bike por média configurada e plano por dias com paradas baseadas em localidades reais quando disponíveis.",
+  "version": "1.0.175",
+  "build": 175
 }

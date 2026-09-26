@@ -65,8 +65,32 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.172',
+          version: '1.0.175',
           current: true,
+          changes: [
+            'Rotas Bike longas agora podem ser divididas em dias conforme a média e o limite diário configurados.',
+            'O plano prioriza cidades, comunidades e campings conhecidos próximos da rota e sinaliza claramente quando a parada é apenas aproximada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.174',
+          changes: [
+            'A navegação de bicicleta passou a usar velocidade média e horas de pedal por dia configuradas para calcular o tempo.',
+            'As preferências ficam salvas e as alternativas de rota usam a mesma estimativa personalizada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.173',
+          changes: [
+            'Nova lupa pesquisa cidades, comunidades, endereços e pontos sem substituir Locais próximos.',
+            'A pesquisa também funciona offline com localidades indexadas e pontos já salvos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.172',
           changes: [
             'Manutenção do build 134 removeu o último aviso restante do analisador Dart sem alterar o comportamento da navegação 3D.',
             'Mapa, rota, clima, ESP32, fallback 2D e demais recursos permanecem funcionalmente iguais à versão anterior.',

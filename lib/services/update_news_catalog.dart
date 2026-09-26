@@ -7,11 +7,19 @@ class UpdateNewsCatalog {
 
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
-  /// Releases somente tecnicas nao fabricam uma mudanca visivel para exibir.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.172', build: 172);
+      AppBuildVersion(version: '1.0.175', build: 175);
 
-  static const current = UpdateNewsCatalog(<UpdateRelease>[]);
+  static const current = UpdateNewsCatalog(<UpdateRelease>[
+    UpdateRelease(
+      version: currentVersion,
+      changes: <String>[
+        'Rotas de bicicleta longas agora podem ser organizadas em dias conforme sua média e o tempo diário de pedal.',
+        'O plano de viagem sugere cidades, comunidades ou campings conhecidos próximos da rota quando esses dados estão disponíveis.',
+        'A navegação mostra um acesso rápido ao plano por dias durante a cicloviagem.',
+      ],
+    ),
+  ]);
 
   UpdateRelease? releaseFor(AppBuildVersion installed) {
     for (final release in releases) {

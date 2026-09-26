@@ -2,12 +2,28 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.172+172`
+> **Versão atual:** `1.0.175+175`
 
 ## Estado atual
 
-A `1.0.172+172` é uma manutenção do build 134: remove o último warning restante do `flutter analyze` sem alterar o comportamento funcional do mapa 3D, clima, navegação, ESP32 ou fallbacks.
+A `1.0.175+175` conclui o ciclo de pesquisa e planejamento de cicloviagem: a nova lupa encontra destinos online e nos dados salvos, o tempo de Bike usa velocidade média/horas por dia configuradas e rotas longas recebem um plano por dias sem inventar serviços em pontos desconhecidos.
 
+### Planejamento inteligente de cicloviagem — 1.0.175
+- Rotas Bike longas são divididas em dias conforme a média e o limite diário configurados.
+- O planejador procura cidades, comunidades e campings reais próximos do ponto ideal de parada usando o índice salvo e, quando online, uma consulta consolidada ao OpenStreetMap.
+- Quando não existe um local confiável perto do ponto ideal, a interface mostra `Parada aproximada na rota` e deixa explícito que não presume água, comida ou hospedagem.
+- Um botão de calendário no banner da navegação abre o plano completo por dia.
+
+### ETA personalizado da Bike — 1.0.174
+- Ao iniciar uma rota de bicicleta, o usuário escolhe a velocidade média desejada e quantas horas pretende pedalar por dia.
+- O Valhalla continua responsável pela geometria/vias, mas o tempo exibido para Bike passa a usar a média configurada.
+- As preferências são lembradas e podem equilibrar o esforço entre os dias.
+
+### Pesquisa de destinos — 1.0.173
+- Nova lupa no mapa para buscar cidades, comunidades, endereços e pontos sem substituir `Locais próximos`.
+- Sugestões cobrem uma área maior e usam localidades reais do OpenStreetMap com cache local.
+- Offline, a busca consulta localidades cobertas pelos mapas baixados e todos os POIs dos pacotes offline existentes; downloads com limites geográficos tentam criar o índice de localidades em segundo plano.
+- A pesquisa externa só é enviada quando o usuário confirma o texto; não há autocomplete remoto por tecla.
 
 ### Manutenção 1.0.172 — build 134
 - Removida a variável local `recordedAt` que era criada em `MapNavigation3DView._syncCamera` e nunca utilizada.

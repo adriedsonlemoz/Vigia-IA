@@ -10,8 +10,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../controllers/secondary_camera_controller.dart';
 import '../models/bike_approach_status.dart';
+import '../models/bike_trip_plan.dart';
 import '../models/camera_endpoint.dart';
 import '../models/map_connectivity_status.dart';
+import '../models/map_destination_search.dart';
 import '../models/map_navigation_target.dart';
 import '../models/map_travel_mode.dart';
 import '../models/monitor_ai_pip_status.dart';
@@ -23,6 +25,7 @@ import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
+import '../services/bike_trip_planner.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/error_log_service.dart';
@@ -30,6 +33,7 @@ import '../services/map_camera_overlay_settings_service.dart';
 import '../services/map_bike_consolidation_policy.dart';
 import '../services/map_appearance_policy.dart';
 import '../services/map_connectivity_service.dart';
+import '../services/map_destination_search_service.dart';
 import '../services/map_compass_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
@@ -117,11 +121,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final MapRouteService _routeState = MapRouteService.instance;
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
   final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
+  final BikeTripPlanner _bikeTripPlanner = const BikeTripPlanner();
   final MapNavigationVoiceService _navigationVoice = MapNavigationVoiceService();
   MapCyclingRoute? _cyclingRoute;
   List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
   int _selectedCyclingRouteIndex = 0;
   MapNavigationProgress? _navigationProgress;
+  BikeTripEstimate? _bikeTripEstimate;
+  BikeTripPlan? _bikeTripPlan;
+  bool _bikeTripPlanLoading = false;
   bool _cyclingRouteLoading = false;
   int _cyclingRouteRequestSerial = 0;
   int _offRouteSamples = 0;
@@ -131,6 +139,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final AppSettingsService _appSettings = AppSettingsService.instance;
   final RouteExplorerService _routeExplorer = RouteExplorerService.instance;
   final MapConnectivityService _connectivity = MapConnectivityService.instance;
+  final MapDestinationSearchService _destinationSearch =
+      MapDestinationSearchService.instance;
   final ErrorLogService _logs = ErrorLogService.instance;
   final MapCompassService _compass = const MapCompassService();
   final MapTelemetrySessionTracker _telemetrySession =
@@ -200,6 +210,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     unawaited(_initializeOfflineMaps());
     unawaited(_initializeCameraOverlays());
     unawaited(_connectivity.acquire(this));
+    unawaited(_destinationSearch.initialize());
     _compassSubscription = _compass.readings().listen(
       _onCompassReading,
       onError: _onCompassError,
@@ -1271,9 +1282,208 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
+  Future<BikeTravelPreferences?> _chooseBikeTravelPreferences() async {
+    var speed = _mapViewSettings.bikeTravelPreferences.averageSpeedKmh;
+    var hours = _mapViewSettings.bikeTravelPreferences.ridingHoursPerDay;
+    var balance = _mapViewSettings.bikeTravelPreferences.balanceDays;
+    final selected = await showModalBottomSheet<BikeTravelPreferences>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final scheme = Theme.of(sheetContext).colorScheme;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              0,
+              16,
+              MediaQuery.viewPaddingOf(sheetContext).bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Planejar tempo de bicicleta',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'A rota continua usando as vias do roteador, mas o tempo da Bike será calculado pela sua média realista.',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Velocidade média',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(
+                      '${speed.toStringAsFixed(0)} km/h',
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: speed,
+                  min: 8,
+                  max: 30,
+                  divisions: 22,
+                  label: '${speed.toStringAsFixed(0)} km/h',
+                  onChanged: (value) => setSheetState(() => speed = value),
+                ),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Tempo máximo pedalando por dia',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(
+                      '${hours.toStringAsFixed(hours % 1 == 0 ? 0 : 1)} h/dia',
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: hours,
+                  min: 1,
+                  max: 12,
+                  divisions: 22,
+                  label: '${hours.toStringAsFixed(1)} h/dia',
+                  onChanged: (value) => setSheetState(() => hours = value),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Equilibrar os dias'),
+                  subtitle: const Text(
+                    'Distribui o pedal de forma parecida entre os dias em rotas longas.',
+                  ),
+                  value: balance,
+                  onChanged: (value) => setSheetState(() => balance = value),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(
+                          BikeTravelPreferences(
+                            averageSpeedKmh: speed,
+                            ridingHoursPerDay: hours,
+                            balanceDays: balance,
+                          ),
+                        ),
+                        child: const Text('Usar nesta rota'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    return selected;
+  }
+
+  Future<bool> _prepareTravelPreferences(MapTravelMode travelMode) async {
+    if (travelMode != MapTravelMode.bicycle) return true;
+    final preferences = await _chooseBikeTravelPreferences();
+    if (!mounted || preferences == null) return false;
+    await _mapViewSettings.setBikeTravelPreferences(preferences);
+    return true;
+  }
+
+  Future<void> _navigateToSearchResult(MapDestinationSearchResult item) async {
+    final travelMode = await _chooseTravelMode();
+    if (!mounted || travelMode == null) return;
+    if (!await _prepareTravelPreferences(travelMode)) return;
+    if (!mounted) return;
+    final current = _routeState.current;
+    _navigationVoice.resetRoute();
+    final target = MapNavigationTarget(
+      latitude: item.latitude,
+      longitude: item.longitude,
+      label: item.title,
+      startedAt: DateTime.now(),
+      sourceId: item.id,
+      travelMode: travelMode,
+    );
+    setState(() {
+      _lastTravelMode = travelMode;
+      _navigation3dEnabled = true;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
+      _followPosition = true;
+      _quickView = _MapQuickView.near;
+      _customFollowZoom = null;
+      _selectedPoiId = null;
+      _cyclingRoute = null;
+      _cyclingRouteAlternatives = const <MapCyclingRoute>[];
+      _selectedCyclingRouteIndex = 0;
+      _navigationProgress = null;
+      _bikeTripEstimate = null;
+      _bikeTripPlan = null;
+      _bikeTripPlanLoading = false;
+      _offRouteSamples = 0;
+      _lastRouteRecalculatedAt = null;
+      _lastNavigationProgressPointAt = null;
+    });
+    unawaited(_mapViewSettings.setLastTravelMode(travelMode));
+    await _routeState.navigateTo(target);
+    if (current != null) {
+      await _requestCyclingRoute(
+        origin: LatLng(current.latitude, current.longitude),
+        target: target,
+        fitRoute: true,
+        announceFailure: true,
+      );
+      final using3d = _navigation3dEnabled &&
+          _navigation3dRendererReady &&
+          !_navigation3dRendererFailed &&
+          _cyclingRoute != null &&
+          !_connectivity.isOffline &&
+          _offlineMaps.mode != OfflineMapMode.offline;
+      if (!using3d) {
+        _applyFollowCamera(current, forceRotation: true);
+      }
+    }
+  }
+
+  void _focusSearchResult(MapDestinationSearchResult item) {
+    try {
+      _mapController.move(
+        LatLng(item.latitude, item.longitude),
+        math.max(_visibleMapZoom, 13.5),
+      );
+      setState(() {
+        _followPosition = false;
+        _selectedPoiId = null;
+      });
+    } catch (_) {}
+  }
+
   Future<void> _navigateToPoi(RouteExplorerResult item) async {
     final travelMode = await _chooseTravelMode();
     if (!mounted || travelMode == null) return;
+    if (!await _prepareTravelPreferences(travelMode)) return;
+    if (!mounted) return;
     final current = _routeState.current;
     _navigationVoice.resetRoute();
     final target = MapNavigationTarget(
@@ -1298,6 +1508,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _cyclingRouteAlternatives = const <MapCyclingRoute>[];
       _selectedCyclingRouteIndex = 0;
       _navigationProgress = null;
+      _bikeTripEstimate = null;
+      _bikeTripPlan = null;
+      _bikeTripPlanLoading = false;
       _offRouteSamples = 0;
       _lastRouteRecalculatedAt = null;
       _lastNavigationProgressPointAt = null;
@@ -1361,10 +1574,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _selectedCyclingRouteIndex = 0;
         _cyclingRoute = route;
         _routeFallback = null;
+        _bikeTripEstimate = target.travelMode == MapTravelMode.bicycle
+            ? _bikeTripPlanner.estimate(
+                distanceMeters: route.distanceMeters,
+                preferences: _mapViewSettings.bikeTravelPreferences,
+              )
+            : null;
         _navigationProgress = current == null
             ? null
             : _navigationGuidance.evaluate(route: route, position: current);
       });
+      if (target.travelMode == MapTravelMode.bicycle) {
+        unawaited(_refreshBikeTripPlan(route: route, target: target));
+      }
       _cancelRouteRecovery();
       if (fitRoute) _fitCyclingRoutes(routes);
       if (recalculation) {
@@ -1399,6 +1621,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {
       _selectedCyclingRouteIndex = index;
       _cyclingRoute = route;
+      _bikeTripEstimate = _routeState.navigationTarget?.travelMode ==
+              MapTravelMode.bicycle
+          ? _bikeTripPlanner.estimate(
+              distanceMeters: route.distanceMeters,
+              preferences: _mapViewSettings.bikeTravelPreferences,
+            )
+          : null;
       _navigationProgress = current == null
           ? null
           : _navigationGuidance.evaluate(route: route, position: current);
@@ -1407,7 +1636,173 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     });
     _navigationVoice.resetRoute();
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
+    final target = _routeState.navigationTarget;
+    if (target?.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshBikeTripPlan(route: route, target: target!));
+    } else {
+      setState(() {
+        _bikeTripPlan = null;
+        _bikeTripPlanLoading = false;
+      });
+    }
     if (!_followPosition) _fitCyclingRoute(route.points);
+  }
+
+  Future<void> _refreshBikeTripPlan({
+    required MapCyclingRoute route,
+    required MapNavigationTarget target,
+  }) async {
+    if (target.travelMode != MapTravelMode.bicycle || route.points.length < 2) {
+      if (mounted) {
+        setState(() {
+          _bikeTripPlan = null;
+          _bikeTripPlanLoading = false;
+        });
+      }
+      return;
+    }
+    final preferences = _mapViewSettings.bikeTravelPreferences;
+    final estimate = _bikeTripPlanner.estimate(
+      distanceMeters: route.distanceMeters,
+      preferences: preferences,
+    );
+    if (mounted) {
+      setState(() {
+        _bikeTripEstimate = estimate;
+        _bikeTripPlanLoading = estimate.dayCount > 1;
+      });
+    }
+    final current = _routeState.current;
+    List<MapDestinationSearchResult> candidates =
+        const <MapDestinationSearchResult>[];
+    if (estimate.dayCount > 1 && current != null) {
+      final offlineOnly = _connectivity.isOffline ||
+          _offlineMaps.mode == OfflineMapMode.offline;
+      candidates = await _destinationSearch.placesAlongRoute(
+        route: route.points,
+        current: current,
+        onlineAllowed: !offlineOnly,
+        offlineMaps: _offlineMaps.packages,
+        offlinePoiPackages: _routeExplorer.offlinePackages,
+      );
+    }
+    if (!mounted) return;
+    final activeTarget = _routeState.navigationTarget;
+    final activeRoute = _cyclingRoute;
+    if (!_sameNavigationTarget(activeTarget, target) ||
+        activeRoute == null ||
+        activeRoute.points != route.points) {
+      return;
+    }
+    final plan = _bikeTripPlanner.buildPlan(
+      routePoints: route.points,
+      routeDistanceMeters: route.distanceMeters,
+      preferences: preferences,
+      destinationLabel: target.label,
+      candidates: candidates,
+    );
+    setState(() {
+      _bikeTripEstimate = plan.estimate;
+      _bikeTripPlan = plan;
+      _bikeTripPlanLoading = false;
+    });
+  }
+
+  String _formatTripDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    final rest = minutes % 60;
+    return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
+  }
+
+  Future<void> _showBikeTripPlan() async {
+    final plan = _bikeTripPlan;
+    if (plan == null || plan.days.isEmpty || !mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: 0.82,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Plano da cicloviagem',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${plan.estimate.distanceKm.toStringAsFixed(0)} km · '
+                    '${_formatTripDuration(plan.estimate.ridingDuration)} pedalando · '
+                    '${plan.estimate.dayCount} dia(s) · '
+                    '${plan.estimate.preferences.averageSpeedKmh.toStringAsFixed(0)} km/h',
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                itemCount: plan.days.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final day = plan.days[index];
+                  final km = day.distanceMeters / 1000;
+                  return Card(
+                    margin: EdgeInsets.zero,
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        child: Text('${day.day}'),
+                      ),
+                      title: Text(
+                        'Dia ${day.day} · ${km.toStringAsFixed(km < 100 ? 1 : 0)} km · ${_formatTripDuration(day.ridingDuration)}',
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      subtitle: Text(
+                        '${day.stopLabel} · ${day.stopKind}\n'
+                        '${day.usesKnownPlace ? 'Local conhecido nos dados disponíveis.' : 'Ponto aproximado da rota; não presume água, comida ou hospedagem.'}',
+                      ),
+                      isThreeLine: true,
+                      trailing: Icon(
+                        day.usesKnownPlace
+                            ? Icons.place_rounded
+                            : Icons.route_rounded,
+                      ),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        try {
+                          _mapController.move(
+                            LatLng(day.stopLatitude, day.stopLongitude),
+                            math.max(_visibleMapZoom, 12.5),
+                          );
+                          setState(() => _followPosition = false);
+                        } catch (_) {}
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                'As paradas usam cidades, comunidades ou campings conhecidos quando disponíveis. Pontos aproximados não garantem serviços no local.',
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _fitCyclingRoutes(List<MapCyclingRoute> routes) {
@@ -1450,6 +1845,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _cyclingRouteAlternatives = const <MapCyclingRoute>[];
     _selectedCyclingRouteIndex = 0;
     _navigationProgress = null;
+    _bikeTripEstimate = null;
+    _bikeTripPlan = null;
+    _bikeTripPlanLoading = false;
     _cyclingRouteLoading = false;
     _offRouteSamples = 0;
     _lastRouteRecalculatedAt = null;
@@ -3484,6 +3882,255 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
   }
 
+  String _formatSearchDistance(double meters) {
+    if (meters < 1000) return '~${meters.round()} m';
+    final km = meters / 1000;
+    return '~${km.toStringAsFixed(km < 10 ? 1 : 0)} km';
+  }
+
+  String _searchSourceLabel(MapDestinationSearchResult item) {
+    if (item.offline) return 'Offline';
+    if (item.storedLocally) return 'Salvo';
+    return 'Online';
+  }
+
+  IconData _destinationKindIcon(MapDestinationSearchResult item) {
+    if (item.poiCategory != null) return _poiIcon(item.poiCategory!);
+    return switch (item.kind) {
+      MapDestinationKind.city => Icons.location_city_rounded,
+      MapDestinationKind.town => Icons.location_city_outlined,
+      MapDestinationKind.village => Icons.holiday_village_outlined,
+      MapDestinationKind.community => Icons.home_work_outlined,
+      MapDestinationKind.pointOfInterest => Icons.place_rounded,
+      MapDestinationKind.place => Icons.place_outlined,
+    };
+  }
+
+  Future<void> _showDestinationSearch() async {
+    await Future.wait<void>([
+      _destinationSearch.initialize(),
+      _offlineMaps.initialize(),
+      _routeExplorer.initialize(),
+    ]);
+    if (!mounted) return;
+    final current = _routeState.current;
+    if (current == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aguardando GPS para pesquisar destinos.')),
+      );
+      return;
+    }
+
+    final offlineOnly = _connectivity.isOffline ||
+        _offlineMaps.mode == OfflineMapMode.offline;
+    unawaited(
+      _destinationSearch.prepareSuggestions(
+        current: current,
+        onlineAllowed: !offlineOnly,
+        offlineMaps: _offlineMaps.packages,
+      ),
+    );
+
+    final controller = TextEditingController();
+    var query = '';
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, setSheetState) => FractionallySizedBox(
+            heightFactor: 0.88,
+            child: ListenableBuilder(
+              listenable: _destinationSearch,
+              builder: (context, _) {
+                final service = _destinationSearch;
+                final showingSuggestions = query.trim().isEmpty;
+                final items = showingSuggestions
+                    ? service.suggestions
+                    : service.results;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pesquisar no mapa',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            offlineOnly
+                                ? 'Offline · cidades, comunidades e pontos já salvos.'
+                                : 'Pesquise cidades, comunidades, endereços e pontos. A busca online ocorre somente ao enviar.',
+                            style: Theme.of(sheetContext).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextField(
+                        controller: controller,
+                        textInputAction: TextInputAction.search,
+                        autofocus: false,
+                        decoration: InputDecoration(
+                          hintText: 'Ex.: Divinópolis, mercado, camping…',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: IconButton(
+                            tooltip: 'Pesquisar',
+                            icon: const Icon(Icons.arrow_forward_rounded),
+                            onPressed: service.loading
+                                ? null
+                                : () async {
+                                    final submitted = controller.text.trim();
+                                    setSheetState(() => query = submitted);
+                                    await service.searchSubmitted(
+                                      query: submitted,
+                                      current: current,
+                                      onlineAllowed: !offlineOnly,
+                                      offlineMaps: _offlineMaps.packages,
+                                      offlinePoiPackages:
+                                          _routeExplorer.offlinePackages,
+                                    );
+                                  },
+                          ),
+                        ),
+                        onChanged: (value) {
+                          if (query.isNotEmpty && value.trim().isEmpty) {
+                            setSheetState(() => query = '');
+                          }
+                        },
+                        onSubmitted: service.loading
+                            ? null
+                            : (value) async {
+                                final submitted = value.trim();
+                                setSheetState(() => query = submitted);
+                                await service.searchSubmitted(
+                                  query: submitted,
+                                  current: current,
+                                  onlineAllowed: !offlineOnly,
+                                  offlineMaps: _offlineMaps.packages,
+                                  offlinePoiPackages:
+                                      _routeExplorer.offlinePackages,
+                                );
+                              },
+                      ),
+                    ),
+                    if (service.loading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 9, 16, 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              showingSuggestions
+                                  ? 'Cidades e comunidades próximas'
+                                  : 'Resultados para “$query”',
+                              style: const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          if (offlineOnly)
+                            const Chip(
+                              visualDensity: VisualDensity.compact,
+                              avatar: Icon(Icons.offline_bolt_rounded, size: 16),
+                              label: Text('Offline'),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (service.statusMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 7),
+                        child: Text(
+                          service.statusMessage!,
+                          style: Theme.of(sheetContext).textTheme.bodySmall,
+                        ),
+                      ),
+                    Expanded(
+                      child: items.isEmpty && !service.loading
+                          ? _MapEmptyState(
+                              message: showingSuggestions
+                                  ? 'Ainda não há sugestões salvas para esta região.'
+                                  : offlineOnly
+                                      ? 'Nada encontrado nos dados offline salvos.'
+                                      : 'Nenhum resultado encontrado.',
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                              itemCount: items.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 5),
+                              itemBuilder: (context, index) {
+                                final item = items[index];
+                                return Card(
+                                  margin: EdgeInsets.zero,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      child: Icon(
+                                        _destinationKindIcon(item),
+                                        size: 19,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      item.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      '${item.kind.label} · ${_searchSourceLabel(item)} · ${_formatSearchDistance(item.distanceMeters)}\n${item.subtitle}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onTap: () {
+                                      Navigator.of(sheetContext).pop();
+                                      _focusSearchResult(item);
+                                    },
+                                    trailing: IconButton(
+                                      tooltip: 'Criar rota',
+                                      icon: const Icon(Icons.route_rounded),
+                                      onPressed: () {
+                                        Navigator.of(sheetContext).pop();
+                                        unawaited(_navigateToSearchResult(item));
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    if (!offlineOnly)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Text(
+                          'Distâncias da lista são aproximadas em linha reta; ao criar a rota, o app calcula percurso e tempo. Busca: OpenStreetMap/Nominatim · localidades: OpenStreetMap/Overpass.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(sheetContext).textTheme.labelSmall,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
   Future<void> _showMapSettings() async {
     await Future.wait<void>([
       _routeExplorer.initialize(),
@@ -4491,6 +5138,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       active: enabledAudioChannels > 0,
                       onPressed: () => unawaited(_showAudioQuickControls()),
                     ),
+                    _MapControlGap(horizontal: horizontalControls),
+                    _MapControlButton(
+                      tooltip: 'Pesquisar no mapa',
+                      icon: Icons.search_rounded,
+                      onPressed: current == null
+                          ? null
+                          : () => unawaited(_showDestinationSearch()),
+                    ),
                     if (navigation3dActive && !_navigation3dFollowing) ...[
                       _MapControlGap(horizontal: horizontalControls),
                       _MapControlButton(
@@ -4576,11 +5231,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     routeAlternatives: _cyclingRouteAlternatives,
                     selectedRouteIndex: _selectedCyclingRouteIndex,
                     guidance: _navigationProgress,
+                    bikeEstimate: _bikeTripEstimate,
+                    bikeTripPlan: _bikeTripPlan,
+                    bikeTripPlanLoading: _bikeTripPlanLoading,
                     loadingRoadRoute: _cyclingRouteLoading,
                     fallbackMessage: _routeFallback?.message,
                     networkOffline: networkOffline,
                     compact: compactHud,
                     onRouteSelected: _selectCyclingRoute,
+                    onTripPlan: _bikeTripPlan == null
+                        ? null
+                        : () => unawaited(_showBikeTripPlan()),
                     onStop: _stopNavigation,
                   ),
                 ),
@@ -6477,11 +7138,15 @@ class _NavigationBanner extends StatelessWidget {
     required this.routeAlternatives,
     required this.selectedRouteIndex,
     required this.guidance,
+    required this.bikeEstimate,
+    required this.bikeTripPlan,
+    required this.bikeTripPlanLoading,
     required this.loadingRoadRoute,
     required this.fallbackMessage,
     required this.networkOffline,
     required this.compact,
     required this.onRouteSelected,
+    required this.onTripPlan,
     required this.onStop,
   });
 
@@ -6492,11 +7157,15 @@ class _NavigationBanner extends StatelessWidget {
   final List<MapCyclingRoute> routeAlternatives;
   final int selectedRouteIndex;
   final MapNavigationProgress? guidance;
+  final BikeTripEstimate? bikeEstimate;
+  final BikeTripPlan? bikeTripPlan;
+  final bool bikeTripPlanLoading;
   final bool loadingRoadRoute;
   final String? fallbackMessage;
   final bool networkOffline;
   final bool compact;
   final ValueChanged<int> onRouteSelected;
+  final VoidCallback? onTripPlan;
   final VoidCallback onStop;
 
   String _distance(double? meters) {
@@ -6511,6 +7180,26 @@ class _NavigationBanner extends StatelessWidget {
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
     return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
+  }
+
+  String _bikeDurationForDistance(double meters) {
+    final estimate = bikeEstimate;
+    if (estimate == null) return '--';
+    final speed = estimate.preferences.averageSpeedKmh;
+    if (speed <= 0) return '--';
+    final seconds = (meters / 1000 / speed * 3600).round();
+    return _duration(seconds.toDouble());
+  }
+
+  String _bikeDaysForDistance(double meters) {
+    final estimate = bikeEstimate;
+    if (estimate == null) return '';
+    final speed = estimate.preferences.averageSpeedKmh;
+    final hoursPerDay = estimate.preferences.ridingHoursPerDay;
+    if (speed <= 0 || hoursPerDay <= 0) return '';
+    final hours = meters / 1000 / speed;
+    final days = (hours / hoursPerDay).ceil().clamp(1, 999);
+    return days > 1 ? ' · ~$days dias' : '';
   }
 
   String _bearing(double? degrees) {
@@ -6557,14 +7246,26 @@ class _NavigationBanner extends StatelessWidget {
       final routeLabel = routeAlternatives.length > 1
           ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
           : '';
+      final remainingTime = bikeEstimate == null
+          ? _duration(progress.remainingDurationSeconds)
+          : _bikeDurationForDistance(progress.remainingDistanceMeters);
+      final dayLabel = bikeEstimate == null
+          ? ''
+          : _bikeDaysForDistance(progress.remainingDistanceMeters);
       summaryLine =
-          '$routeLabel${_distance(progress.remainingDistanceMeters)} · ${_duration(progress.remainingDurationSeconds)} restantes · ${(progress.progressFraction * 100).round()}%';
+          '$routeLabel${_distance(progress.remainingDistanceMeters)} · $remainingTime restantes$dayLabel · ${(progress.progressFraction * 100).round()}%';
     } else if (route != null) {
       final routeLabel = routeAlternatives.length > 1
           ? 'Rota ${selectedRouteIndex + 1}/${routeAlternatives.length} · '
           : '';
+      final routeTime = bikeEstimate == null
+          ? _duration(route.durationSeconds)
+          : _bikeDurationForDistance(route.distanceMeters);
+      final dayLabel = bikeEstimate == null
+          ? ''
+          : _bikeDaysForDistance(route.distanceMeters);
       summaryLine =
-          '$routeLabel${_distance(route.distanceMeters)} · ${_duration(route.durationSeconds)} · $travelLabel';
+          '$routeLabel${_distance(route.distanceMeters)} · $routeTime$dayLabel · $travelLabel';
     } else {
       summaryLine = 'Destino: ${target.label}';
     }
@@ -6647,6 +7348,24 @@ class _NavigationBanner extends StatelessWidget {
                   ],
                 ),
               ),
+              if (bikeTripPlanLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (bikeTripPlan != null &&
+                  bikeTripPlan!.estimate.dayCount > 1)
+                IconButton(
+                  tooltip: 'Ver plano por dias',
+                  onPressed: onTripPlan,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  icon: const Icon(Icons.calendar_month_rounded, size: 20),
+                ),
               if (routeAlternatives.length > 1)
                 PopupMenuButton<int>(
                   tooltip: 'Escolher rota alternativa',
@@ -6669,7 +7388,7 @@ class _NavigationBanner extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)} · ${_duration(routeAlternatives[index].durationSeconds)}',
+                                'Rota ${index + 1} · ${_distance(routeAlternatives[index].distanceMeters)} · ${bikeEstimate == null ? _duration(routeAlternatives[index].durationSeconds) : _bikeDurationForDistance(routeAlternatives[index].distanceMeters)}${bikeEstimate == null ? '' : _bikeDaysForDistance(routeAlternatives[index].distanceMeters)}',
                               ),
                             ),
                           ],

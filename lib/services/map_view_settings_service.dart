@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/bike_trip_plan.dart';
 import '../models/map_travel_mode.dart';
 import 'map_view_policy.dart';
 
@@ -94,6 +95,9 @@ class MapViewSettingsService extends ChangeNotifier {
   MapAppearancePreset _appearancePreset = MapAppearancePreset.standard;
   MapAppearanceMode _appearanceMode = MapAppearanceMode.manual;
   MapTravelMode _lastTravelMode = MapTravelMode.bicycle;
+  double _bikeAverageSpeedKmh = 15;
+  double _bikeRidingHoursPerDay = 5;
+  bool _bikeBalanceDays = true;
   bool _navigationVoiceEnabled = true;
   bool _weatherVoiceEnabled = true;
   bool _initialized = false;
@@ -106,6 +110,11 @@ class MapViewSettingsService extends ChangeNotifier {
   MapAppearancePreset get appearancePreset => _appearancePreset;
   MapAppearanceMode get appearanceMode => _appearanceMode;
   MapTravelMode get lastTravelMode => _lastTravelMode;
+  BikeTravelPreferences get bikeTravelPreferences => BikeTravelPreferences(
+        averageSpeedKmh: _bikeAverageSpeedKmh,
+        ridingHoursPerDay: _bikeRidingHoursPerDay,
+        balanceDays: _bikeBalanceDays,
+      );
   bool get navigationVoiceEnabled => _navigationVoiceEnabled;
   bool get weatherVoiceEnabled => _weatherVoiceEnabled;
 
@@ -125,6 +134,10 @@ class MapViewSettingsService extends ChangeNotifier {
           final appearanceName = map['appearancePreset'] as String?;
           final appearanceModeName = map['appearanceMode'] as String?;
           final lastTravelMode = map['lastTravelMode'];
+          final bikeAverageSpeedKmh = (map['bikeAverageSpeedKmh'] as num?)?.toDouble();
+          final bikeRidingHoursPerDay =
+              (map['bikeRidingHoursPerDay'] as num?)?.toDouble();
+          final bikeBalanceDays = map['bikeBalanceDays'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
           final weatherVoiceEnabled = map['weatherVoiceEnabled'];
           _orientationMode = orientationName == 'headingUp'
@@ -150,6 +163,11 @@ class MapViewSettingsService extends ChangeNotifier {
             orElse: () => MapAppearanceMode.manual,
           );
           _lastTravelMode = MapTravelModeX.fromStorage(lastTravelMode);
+          _bikeAverageSpeedKmh =
+              (bikeAverageSpeedKmh ?? 15).clamp(5.0, 40.0).toDouble();
+          _bikeRidingHoursPerDay =
+              (bikeRidingHoursPerDay ?? 5).clamp(1.0, 12.0).toDouble();
+          _bikeBalanceDays = bikeBalanceDays as bool? ?? true;
           _navigationVoiceEnabled = navigationVoiceEnabled as bool? ?? true;
           _weatherVoiceEnabled = weatherVoiceEnabled as bool? ?? true;
         }
@@ -160,6 +178,9 @@ class MapViewSettingsService extends ChangeNotifier {
         _appearancePreset = MapAppearancePreset.standard;
         _appearanceMode = MapAppearanceMode.manual;
         _lastTravelMode = MapTravelMode.bicycle;
+        _bikeAverageSpeedKmh = 15;
+        _bikeRidingHoursPerDay = 5;
+        _bikeBalanceDays = true;
         _navigationVoiceEnabled = true;
         _weatherVoiceEnabled = true;
       }
@@ -187,6 +208,22 @@ class MapViewSettingsService extends ChangeNotifier {
     if (!_initialized) await initialize();
     if (_lastTravelMode == value) return;
     _lastTravelMode = value;
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setBikeTravelPreferences(BikeTravelPreferences value) async {
+    if (!_initialized) await initialize();
+    final speed = value.averageSpeedKmh.clamp(5.0, 40.0).toDouble();
+    final hours = value.ridingHoursPerDay.clamp(1.0, 12.0).toDouble();
+    if (_bikeAverageSpeedKmh == speed &&
+        _bikeRidingHoursPerDay == hours &&
+        _bikeBalanceDays == value.balanceDays) {
+      return;
+    }
+    _bikeAverageSpeedKmh = speed;
+    _bikeRidingHoursPerDay = hours;
+    _bikeBalanceDays = value.balanceDays;
     notifyListeners();
     await _persist();
   }
@@ -239,13 +276,16 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 7,
+        'version': 8,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,
         'appearancePreset': _appearancePreset.name,
         'appearanceMode': _appearanceMode.name,
         'lastTravelMode': _lastTravelMode.storageValue,
+        'bikeAverageSpeedKmh': _bikeAverageSpeedKmh,
+        'bikeRidingHoursPerDay': _bikeRidingHoursPerDay,
+        'bikeBalanceDays': _bikeBalanceDays,
         'navigationVoiceEnabled': _navigationVoiceEnabled,
         'weatherVoiceEnabled': _weatherVoiceEnabled,
       }),

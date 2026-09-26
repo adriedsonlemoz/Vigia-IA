@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.172+172
+# Arquitetura — Vigia IA 1.0.175+175
+
+## Pesquisa e planejamento de cicloviagem — 1.0.173 a 1.0.175
+
+`MapDestinationSearchService` separa a busca de destino da busca de proximidade existente. A lupa usa Nominatim somente quando o usuário envia uma consulta; sugestões de cidades/comunidades usam uma consulta Overpass cacheada. O índice persistente `map_destination_search_index.json` permite reutilizar localidades sem rede e `RouteExplorerService.offlinePackages` fornece POIs offline já existentes. Quando um pacote de mapa com bounds é baixado, `OfflineMapService` dispara em best-effort a indexação das cidades/comunidades dentro daquela área; falha de Overpass nunca invalida o MBTiles. No modo offline, localidades só entram nos resultados quando estão cobertas por um pacote de mapa baixado. Resultados cacheados nunca são tratados como garantia de serviços.
+
+`BikeTravelPreferences`, persistido em `MapViewSettingsService`, guarda velocidade média, horas máximas de pedal por dia e política de equilíbrio. `BikeTripPlanner` usa a distância da geometria roteada para calcular o tempo Bike; o tempo genérico retornado pelo Valhalla continua disponível para outros transportes e o Valhalla continua escolhendo as vias.
+
+Para viagens de vários dias, o planejador projeta os candidatos reais sobre a geometria da rota, favorece localidades/campings próximos do ponto ideal e mantém progressão monotônica. Se não houver candidato dentro dos limites de distância/proximidade, utiliza a própria geometria como ponto aproximado e a UI explicita que o local não confirma água, comida ou hospedagem. A descoberta online de paradas amostra no máximo oito pontos da rota em uma única consulta Overpass, evitando consultas em grade ou por tecla.
+
 
 ## Manutenção de análise estática — 1.0.172
 
