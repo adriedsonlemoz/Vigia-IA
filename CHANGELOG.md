@@ -1,3 +1,11 @@
+## 1.0.156+156 — 2026-09-26
+
+- Corrigido o Android-APK-119, que falhava em `flutter analyze` com `undefined_getter` em `lib/widgets/map_navigation_3d_view.dart:506`.
+- `MapNavigation3DView` agora importa diretamente `map_travel_mode.dart`, tornando a extensão `MapTravelModeX.storageValue` visível no arquivo que registra o perfil de transporte no contexto de diagnóstico.
+- Adicionada verificação preventiva para exigir o import explícito sempre que o renderer 3D usar `travelMode.storageValue`.
+- Nenhuma funcionalidade da Etapa 2 foi implementada; navegação 3D resiliente, fallback 2D, perfis Bicicleta/Moto/Carro/A pé, GPS, voz, POIs, gravação e offline permanecem inalterados.
+- Sincronizados versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE, VALIDATION, metadados, testes de versão e User-Agents em `1.0.156+156`.
+
 ## 1.0.155+155 — 2026-09-26
 
 - Corrigida a tela preta ao iniciar a navegação MapLibre 3D: o `FlutterMap` 2D permanece montado e visível durante toda a inicialização do renderer nativo.

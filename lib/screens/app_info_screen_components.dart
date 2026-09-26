@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.155',
+          version: '1.0.156',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-119 no flutter analyze.',
+            'O renderer MapLibre 3D agora importa diretamente a extensão usada para serializar o modo de transporte no diagnóstico.',
+            'A correção preserva integralmente a estabilização e o fallback 2D → 3D da etapa anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.155',
           changes: [
             'Corrigida a tela preta ao entrar na navegação MapLibre 3D.',
             'O FlutterMap 2D permanece visível até mapa, estilo, rota, câmera e primeiro render do 3D estarem prontos.',
@@ -1436,8 +1445,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.155',
+          version: '1.0.156',
           current: true,
+          changes: [
+            'Corrigido o Android-APK-119 no flutter analyze.',
+            'O renderer MapLibre 3D agora importa diretamente a extensão usada para serializar o modo de transporte no diagnóstico.',
+            'A correção preserva integralmente a estabilização e o fallback 2D → 3D da etapa anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.155',
           changes: [
             'Corrigida a tela preta ao entrar na navegação MapLibre 3D.',
             'O FlutterMap 2D permanece visível até mapa, estilo, rota, câmera e primeiro render do 3D estarem prontos.',

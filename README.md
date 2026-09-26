@@ -2,11 +2,18 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.155+155`
+> **Versão atual:** `1.0.156+156`
 
 ## Estado atual
 
-A `1.0.155+155` estabiliza a entrada na navegação MapLibre 3D. O `FlutterMap` 2D permanece montado e visível até o renderer 3D comprovar criação do mapa, carregamento do estilo, instalação da rota, sincronização da câmera e primeiro ciclo de render. Se qualquer etapa falhar ou ultrapassar 9 segundos, a navegação retorna automaticamente ao 2D sem perder rota, GPS, voz, POIs ou o perfil de transporte.
+A `1.0.156+156` é um buildfix do Android-APK-119. O renderer MapLibre 3D passa a importar diretamente `map_travel_mode.dart`, tornando a extensão `MapTravelModeX.storageValue` visível ao analyzer. Nenhuma funcionalidade da Etapa 2 foi antecipada; a estabilização 2D → 3D da `1.0.155` permanece inalterada.
+
+### Correção 1.0.156 — Android-APK-119
+
+- Corrigido `undefined_getter` em `lib/widgets/map_navigation_3d_view.dart` durante `flutter analyze`.
+- A causa era de escopo de extensão Dart: `MapTravelModeX` está em `map_travel_mode.dart`, e o import indireto por `map_navigation_target.dart` não disponibiliza extensões de forma transitiva.
+- `map_navigation_3d_view.dart` agora importa explicitamente `map_travel_mode.dart` antes de usar `travelMode.storageValue`.
+- A correção é restrita ao build/analyzer e ao diagnóstico do 3D; transição segura, timeout, fallback 2D, rota, recálculo, GPS, voz, POIs, gravação e offline foram preservados.
 
 ### Correção 1.0.155 — estabilidade do renderer 3D
 

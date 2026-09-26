@@ -1,4 +1,15 @@
-# Validação Vigia IA 1.0.155+155
+# Validação Vigia IA 1.0.156+156
+
+## 1.0.156+156 — correção Android-APK-119
+
+- Log analisado: o workflow chegou a `flutter analyze` e falhou em `lib/widgets/map_navigation_3d_view.dart:506:48` com `undefined_getter` para `MapTravelMode.storageValue`.
+- Causa confirmada: `storageValue` pertence à extensão `MapTravelModeX` em `lib/models/map_travel_mode.dart`; extensões não são reexportadas por um import indireto de `map_navigation_target.dart`.
+- Correção aplicada: import explícito de `../models/map_travel_mode.dart` em `MapNavigation3DView`.
+- Confirmar no próximo workflow que `flutter analyze` ultrapassa a etapa 13 e que o build Android continua até as etapas de testes/build release.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`; o verificador local deve também exigir o import explícito do arquivo da extensão.
+- Nenhuma funcionalidade da Etapa 2 foi incluída nesta correção.
+- Resultado local: `python3 tool/check_version_sync.py` **aprovado**; `bash tool/verify_project.sh` **aprovado**; varredura focada do renderer 3D **aprovada**; nenhum APK/AAB encontrado no fonte.
+- Limitação do ambiente: Flutter/Dart não estão instalados localmente, portanto `flutter analyze`, `flutter test` e o build release precisam ser reconfirmados no workflow.
 
 ## 1.0.155+155 — estabilidade do MapLibre 3D
 

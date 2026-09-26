@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.155+155
+# Arquitetura — Vigia IA 1.0.156+156
+
+## Buildfix Android-APK-119 — 1.0.156
+
+- `MapTravelModeX` é uma extensão declarada em `lib/models/map_travel_mode.dart`; extensões Dart só ficam disponíveis no arquivo consumidor quando a biblioteca que as declara está importada diretamente.
+- `MapNavigation3DView` usa `widget.target.travelMode.storageValue` para enriquecer logs/telemetria do renderer. Importar apenas `map_navigation_target.dart` não torna `MapTravelModeX` transitivamente visível ao analyzer.
+- O renderer 3D passa a importar explicitamente `map_travel_mode.dart`. Não há alteração no contrato de `MapNavigationTarget`, no valor serializado, no roteamento nem no gate de prontidão/fallback do MapLibre.
+- `tool/verify_project.sh` passa a conferir esse import para evitar regressão do `undefined_getter` antes do próximo build Android.
 
 ## Inicialização resiliente do MapLibre 3D — 1.0.155
 

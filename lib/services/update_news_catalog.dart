@@ -7,6 +7,14 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.156', build: 156),
+      changes: <String>[
+        '🔧 Corrigido o Android-APK-119, que parava no flutter analyze ao preparar o diagnóstico da navegação MapLibre 3D.',
+        '🧩 O renderer 3D agora importa diretamente a extensão MapTravelModeX usada para registrar o perfil Bicicleta/Moto/Carro/A pé.',
+        '🗺️ A correção é somente de compilação/análise estática e preserva a estabilização 2D → 3D, fallback, rota, GPS, voz, POIs e offline da versão anterior.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.155', build: 155),
       changes: <String>[
         '🗺️ O mapa 2D agora permanece visível enquanto o renderer MapLibre 3D inicializa, eliminando a troca prematura que podia deixar a navegação preta.',

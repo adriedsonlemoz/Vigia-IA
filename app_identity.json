@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.155 estabiliza a entrada no MapLibre 3D: o FlutterMap permanece visível até mapa, estilo, rota e câmera estarem prontos; falhas ou timeout acionam fallback automático 3D → 2D com diagnóstico e telemetria.",
-  "version": "1.0.155",
-  "build": 155
+  "notes": "A 1.0.156 corrige o Android-APK-119: o renderer MapLibre 3D agora importa diretamente MapTravelModeX, permitindo ao analyzer resolver storageValue sem alterar o comportamento da Etapa 1.",
+  "version": "1.0.156",
+  "build": 156
 }

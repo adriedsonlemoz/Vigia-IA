@@ -6,6 +6,7 @@ import 'package:maplibre/maplibre.dart' as ml;
 
 import '../models/map_cycling_route.dart';
 import '../models/map_navigation_target.dart';
+import '../models/map_travel_mode.dart';
 import '../models/map_route_point.dart';
 import '../services/error_log_service.dart';
 import '../services/performance_telemetry_service.dart';
