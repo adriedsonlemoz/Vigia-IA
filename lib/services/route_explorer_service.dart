@@ -14,6 +14,7 @@ import '../models/route_explorer_models.dart';
 import 'alert_delivery_service.dart';
 import 'location_tracking_service.dart';
 import 'map_connectivity_service.dart';
+import 'map_performance_policy.dart';
 import 'map_route_service.dart';
 import 'route_explorer_alert_policy.dart';
 import 'route_explorer_poi_catalog.dart';
@@ -54,6 +55,9 @@ class RouteExplorerService extends ChangeNotifier {
   DateTime? _lastAlertDeliveredAt;
   MapRoutePoint? _lastSearchOrigin;
   DateTime? _lastAutomaticSearchAt;
+  DateTime? _lastAutomaticAttemptAt;
+  MapRoutePoint? _lastPoiUiOrigin;
+  DateTime? _lastPoiUiRefreshAt;
   double? _lastSearchHeadingDegrees;
   DateTime? _lastHandledRoutePointAt;
   bool _automaticRefreshScheduled = false;
@@ -292,6 +296,8 @@ class RouteExplorerService extends ChangeNotifier {
       _lastSearchOrigin = current;
       _lastAutomaticSearchAt = _resultsUpdatedAt;
       _lastSearchHeadingDegrees = current.headingDegrees;
+      _lastPoiUiOrigin = current;
+      _lastPoiUiRefreshAt = _resultsUpdatedAt;
       _lastSource = 'online';
       _statusMessage = onlineResults.isEmpty
           ? 'Nenhum local compatível encontrado neste raio.'
@@ -374,6 +380,8 @@ class RouteExplorerService extends ChangeNotifier {
     _lastSearchOrigin = current;
     _lastAutomaticSearchAt = _resultsUpdatedAt;
     _lastSearchHeadingDegrees = current.headingDegrees;
+    _lastPoiUiOrigin = current;
+    _lastPoiUiRefreshAt = _resultsUpdatedAt;
     _lastSource = 'offline';
     final package = activeOfflinePackage;
     if (explicitOfflineMode) {
@@ -539,13 +547,15 @@ class RouteExplorerService extends ChangeNotifier {
     final point = _routeState.current;
     if (point == null || point.recordedAt == _lastHandledRoutePointAt) return;
     _lastHandledRoutePointAt = point.recordedAt;
+
+    var changed = false;
     if (_results.isNotEmpty) {
       _results = _recalculateDistances(
         _results,
         point,
         source: _lastSource == 'offline' ? 'offline' : 'online',
       );
-      notifyListeners();
+      changed = true;
     } else {
       _selectBestOfflinePackage(point);
       if (_offlineResults.isNotEmpty) {
@@ -554,8 +564,21 @@ class RouteExplorerService extends ChangeNotifier {
           point,
           source: 'offline',
         );
-        notifyListeners();
+        changed = true;
       }
+    }
+
+    // Distâncias continuam atualizadas a cada ponto para alertas precisos, mas
+    // a lista visual não força rebuild a cada amostra do GPS.
+    if (changed &&
+        MapPerformancePolicy.shouldRefreshPoiUi(
+          current: point,
+          lastPresented: _lastPoiUiOrigin,
+          lastPresentedAt: _lastPoiUiRefreshAt,
+        )) {
+      _lastPoiUiOrigin = point;
+      _lastPoiUiRefreshAt = DateTime.now();
+      notifyListeners();
     }
     _evaluateAlerts(point);
     _maybeRefreshAutomatically(point);
@@ -586,7 +609,14 @@ class RouteExplorerService extends ChangeNotifier {
     if (!moved && !coverageEdge && !(stale && moving) && !(headingChanged && moving)) {
       return;
     }
+    if (!MapPerformancePolicy.canAttemptAutomaticPoiRequest(
+      lastAttemptAt: _lastAutomaticAttemptAt,
+      now: now,
+    )) {
+      return;
+    }
 
+    _lastAutomaticAttemptAt = now;
     _automaticRefreshScheduled = true;
     unawaited(_runAutomaticRefresh());
   }
@@ -619,7 +649,7 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.147');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.148');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );

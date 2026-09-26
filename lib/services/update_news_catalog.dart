@@ -7,6 +7,15 @@ class UpdateNewsCatalog {
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
+      version: AppBuildVersion(version: '1.0.148', build: 148),
+      changes: <String>[
+        '⚡ Mapa e Bike fazem menos atualizações e reconstruções desnecessárias.',
+        '📍 GPS e POIs foram ajustados para reduzir CPU e bateria sem perder alertas.',
+        '🌐 Buscas automáticas evitam consultas repetidas em sequência.',
+        '📷 PiPs remotos deixam de reconstruir quando o estado da câmera não mudou.',
+      ],
+    ),
+    UpdateRelease(
       version: AppBuildVersion(version: '1.0.147', build: 147),
       changes: <String>[
         '🔧 Buildfix do Android-APK-110 para restaurar a análise estática do projeto.',

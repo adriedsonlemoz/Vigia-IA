@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.147',
+          version: '1.0.148',
           current: true,
+          changes: [
+            'GPS do mapa reduz amostras redundantes sem perder a precisão necessária para navegação Bike.',
+            'POIs continuam precisos para alertas, mas a interface deixa de reconstruir a cada ponto do GPS.',
+            'Buscas automáticas de POIs ganham cooldown e câmeras remotas deduplicam estados repetidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.147',
           changes: [
             'Buildfix do Android-APK-110: corrigida a nulabilidade na política de voz que bloqueava o flutter analyze.',
             'Suporte offline deixa de chamar setState diretamente pela extension, eliminando avisos de membro protegido.',
@@ -1360,8 +1369,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.147',
+          version: '1.0.148',
           current: true,
+          changes: [
+            'GPS do mapa reduz amostras redundantes sem perder a precisão necessária para navegação Bike.',
+            'POIs continuam precisos para alertas, mas a interface deixa de reconstruir a cada ponto do GPS.',
+            'Buscas automáticas de POIs ganham cooldown e câmeras remotas deduplicam estados repetidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.147',
           changes: [
             'Buildfix do Android-APK-110: corrigida a nulabilidade na política de voz que bloqueava o flutter analyze.',
             'Suporte offline deixa de chamar setState diretamente pela extension, eliminando avisos de membro protegido.',

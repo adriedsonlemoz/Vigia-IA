@@ -1,3 +1,12 @@
+## 1.0.148+148 — 2026-09-25
+
+- Otimizado o GPS do mapa com filtro de deslocamento de 8 m para reduzir trabalho e consumo sem comprometer navegação Bike.
+- Distâncias de POIs continuam precisas para alertas, mas rebuilds visuais agora são limitados por distância/tempo.
+- Consultas automáticas de POIs passam a respeitar cooldown de 90 s entre tentativas, evitando rajadas após falhas ou mudanças de rumo.
+- Câmeras remotas deixam de reenviar estados de streaming idênticos a cada frame, reduzindo notificações dos PiPs.
+- Adicionada política testável `MapPerformancePolicy` e testes de regressão para limites de GPS, POIs e consultas automáticas.
+- Versionamento, Novidades, Sobre/Mudanças, README, ARCHITECTURE, RELEASE e VALIDATION sincronizados em `1.0.148+148`.
+
 ## 1.0.147+147 — 2026-09-25
 
 - Buildfix do Android-APK-110: corrigido erro de análise estática em `map_navigation_voice_policy.dart`, onde um `int?` era capturado por closure e enviado a uma comparação que exigia `num`.

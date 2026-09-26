@@ -35,6 +35,8 @@ class RemotePhoneCameraSource implements VideoSource {
   bool _disposed = false;
   bool _hasConnected = false;
   int _consecutiveFailures = 0;
+  VideoSourceState? _lastPublishedState;
+  String? _lastPublishedMessage;
   int? _lastFrameSequence;
   DateTime? _lastRemoteCapturedAt;
   int? _frameNetworkLatencyMs;
@@ -61,7 +63,7 @@ class RemotePhoneCameraSource implements VideoSource {
       throw ArgumentError('Endereço do $deviceLabel inválido.');
     }
     _client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
-    _statuses.add(VideoSourceStatus(
+    _publishStatus(VideoSourceStatus(
       VideoSourceState.connecting,
       message: 'Conectando ao $deviceLabel…',
     ));
@@ -107,12 +109,10 @@ class RemotePhoneCameraSource implements VideoSource {
             DateTime.now().difference(startedAt).inMilliseconds;
         _hasConnected = true;
         _consecutiveFailures = 0;
-        if (!_statuses.isClosed) {
-          _statuses.add(VideoSourceStatus(
-            VideoSourceState.streaming,
-            message: '${_sentenceCase(deviceLabel)} online',
-          ));
-        }
+        _publishStatus(VideoSourceStatus(
+          VideoSourceState.streaming,
+          message: '${_sentenceCase(deviceLabel)} online',
+        ));
         return;
       }
       if (response.statusCode != HttpStatus.ok) {
@@ -147,12 +147,10 @@ class RemotePhoneCameraSource implements VideoSource {
       if (isDuplicateSequence || isDuplicateTimestamp) {
         _hasConnected = true;
         _consecutiveFailures = 0;
-        if (!_statuses.isClosed) {
-          _statuses.add(VideoSourceStatus(
-            VideoSourceState.streaming,
-            message: '${_sentenceCase(deviceLabel)} online',
-          ));
-        }
+        _publishStatus(VideoSourceStatus(
+          VideoSourceState.streaming,
+          message: '${_sentenceCase(deviceLabel)} online',
+        ));
         return;
       }
       final frameCapturedAt = capturedAt ?? receivedAt;
@@ -175,27 +173,34 @@ class RemotePhoneCameraSource implements VideoSource {
       }
       _hasConnected = true;
       _consecutiveFailures = 0;
-      if (!_statuses.isClosed) {
-        _statuses.add(VideoSourceStatus(
-          VideoSourceState.streaming,
-          message: '${_sentenceCase(deviceLabel)} online',
-        ));
-      }
+      _publishStatus(VideoSourceStatus(
+        VideoSourceState.streaming,
+        message: '${_sentenceCase(deviceLabel)} online',
+      ));
     } catch (error) {
       _consecutiveFailures++;
-      if (!_statuses.isClosed) {
-        final state = _hasConnected || _consecutiveFailures <= 3
-            ? VideoSourceState.reconnecting
-            : VideoSourceState.error;
-        final prefix = state == VideoSourceState.reconnecting
-            ? 'Reconectando ao $deviceLabel'
-            : '${_sentenceCase(deviceLabel)} offline';
-        _statuses.add(VideoSourceStatus(state, message: '$prefix: $error'));
-      }
+      final state = _hasConnected || _consecutiveFailures <= 3
+          ? VideoSourceState.reconnecting
+          : VideoSourceState.error;
+      final prefix = state == VideoSourceState.reconnecting
+          ? 'Reconectando ao $deviceLabel'
+          : '${_sentenceCase(deviceLabel)} offline';
+      _publishStatus(VideoSourceStatus(state, message: '$prefix: $error'));
     } finally {
       _busy = false;
       _scheduleNextPoll();
     }
+  }
+
+  void _publishStatus(VideoSourceStatus status) {
+    if (_statuses.isClosed) return;
+    if (_lastPublishedState == status.state &&
+        _lastPublishedMessage == status.message) {
+      return;
+    }
+    _lastPublishedState = status.state;
+    _lastPublishedMessage = status.message;
+    _statuses.add(status);
   }
 
   Future<void> _pollStatus() async {
@@ -254,9 +259,7 @@ class RemotePhoneCameraSource implements VideoSource {
     _previewAspectRatio = null;
     _statusBusy = false;
     remoteStatusNotifier.value = null;
-    if (!_statuses.isClosed) {
-      _statuses.add(const VideoSourceStatus(VideoSourceState.stopped));
-    }
+    _publishStatus(const VideoSourceStatus(VideoSourceState.stopped));
   }
 
   @override

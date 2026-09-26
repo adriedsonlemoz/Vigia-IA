@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.147+147
+# Arquitetura — Vigia IA 1.0.148+148
+
+## Desempenho e estabilidade 1.0.148
+
+- `MapPerformancePolicy` centraliza limites de economia do mapa: filtro GPS, cadência visual de POIs e cooldown de consultas automáticas.
+- `LocationTrackingService` mantém alta precisão, mas solicita deslocamentos a partir de 8 m para reduzir amostras redundantes.
+- `RouteExplorerService` recalcula distâncias para alertas em cada ponto aceito, porém desacopla esse cálculo da notificação visual; a UI só reconstrói por distância/tempo definidos pela política.
+- Tentativas automáticas de consulta online são espaçadas em 90 s, sem alterar buscas manuais ou recuperação explícita após reconexão.
+- `RemotePhoneCameraSource` deduplica `VideoSourceStatus` idênticos, evitando que o PiP reconstrua o chrome/estado a cada frame quando nada mudou.
+- O pipeline de IA, TTC, recálculo de rota e voz permanece funcionalmente inalterado.
 
 ## Buildfix Android-APK-110 — 1.0.147
 

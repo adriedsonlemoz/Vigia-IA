@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/map_route_point.dart';
+import 'map_performance_policy.dart';
 
 enum LocationTrackingAvailability {
   ready,
@@ -39,7 +40,7 @@ class LocationTrackingService {
   Stream<MapRoutePoint> positionStream() {
     const settings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
+      distanceFilter: MapPerformancePolicy.gpsDistanceFilterMeters,
     );
     return Geolocator.getPositionStream(locationSettings: settings).map(_toPoint);
   }

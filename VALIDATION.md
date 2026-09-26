@@ -1,4 +1,17 @@
-# Validação Vigia IA 1.0.147+147
+# Validação Vigia IA 1.0.148+148
+
+## 1.0.148+148 — desempenho e estabilidade
+
+- `MapPerformancePolicy` adicionada com teste unitário para GPS, refresh visual de POIs e cooldown de consultas automáticas.
+- GPS do mapa usa `distanceFilter` de 8 m.
+- POIs mantêm cálculo de distância para alertas, mas limitam `notifyListeners` por distância/tempo.
+- Buscas automáticas respeitam intervalo mínimo de 90 s entre tentativas.
+- Câmera remota deduplica estados idênticos de streaming para reduzir rebuilds de PiP.
+- `python3 tool/check_version_sync.py`: **aprovado**.
+- `bash tool/verify_project.sh`: **aprovado**.
+- `.github/workflows/android-apk.yml`: SHA-256 idêntico ao da 1.0.147 (`7d8bb2c8b637425307698b42c658c78cca59cee36d48dfb435704446a9690d15`).
+- Nenhum APK/AAB presente no fonte antes do empacotamento.
+- Flutter/Dart não estão disponíveis no ambiente local; `flutter analyze`, `flutter test` e build Android dependem do workflow.
 
 ## 1.0.147+147 — buildfix Android-APK-110
 

@@ -2,11 +2,15 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.147+147`
+> **Versão atual:** `1.0.148+148`
 
 ## Estado atual
 
-A `1.0.147+147` é um **buildfix do Android-APK-110**. Corrige a nulabilidade na política de voz e os avisos estáticos introduzidos pelo módulo offline, sem alterar as funcionalidades entregues na 1.0.146.
+A `1.0.148+148` é a etapa de **desempenho e estabilidade** do bloco mapa + Bike, reduzindo atualizações, consultas e rebuilds redundantes sem afrouxar navegação, alertas ou IA.
+
+### Evolução 1.0.148 — desempenho e estabilidade
+
+A `1.0.148+148` reduz trabalho repetido no bloco mapa + Bike: GPS menos ruidoso, POIs sem rebuild por amostra, cooldown para buscas automáticas e deduplicação dos estados de câmera remota. Navegação, alertas, IA e TTC mantêm a mesma lógica funcional.
 
 ### Correção 1.0.147 — Android-APK-110
 

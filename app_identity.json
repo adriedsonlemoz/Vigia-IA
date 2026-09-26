@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.147 é um buildfix do Android-APK-110: corrige a nulabilidade da política de voz e elimina avisos estáticos introduzidos pelo suporte offline, sem alterar funcionalidades.",
-  "version": "1.0.147",
-  "build": 147
+  "notes": "A 1.0.148 otimiza GPS, atualização visual de POIs e estados de câmera remota para reduzir rebuilds, consultas repetidas, CPU e bateria sem atrasar navegação ou alertas.",
+  "version": "1.0.148",
+  "build": 148
 }
