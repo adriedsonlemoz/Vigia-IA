@@ -65,11 +65,11 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.190',
+          version: '1.0.191',
           changes: [
-            'A próxima instrução da rota minimizada pode ficar ao lado do botão Gravar no rodapé.',
-            'Novas navegações entram minimizadas por padrão no layout compacto para liberar mapa visível.',
-            'Tocar no resumo inferior ou no card superior expande novamente o painel completo da rota.',
+            'A próxima instrução da rota minimizada agora fica ao lado do botão Gravar no rodapé.',
+            'Novas navegações entram compactas por padrão para liberar mais área útil do mapa.',
+            'Tocar no resumo inferior ou no card superior expande novamente o painel completo.',
           ],
         ),
         SizedBox(height: 10),
@@ -1735,12 +1735,12 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.190',
+          version: '1.0.191',
           current: true,
           changes: [
-            'A próxima instrução da rota minimizada pode ficar ao lado do botão Gravar no rodapé.',
-            'Novas navegações entram minimizadas por padrão no layout compacto para liberar mapa visível.',
-            'Tocar no resumo inferior ou no card superior expande novamente o painel completo da rota.',
+            'A próxima instrução da rota minimizada agora fica ao lado do botão Gravar no rodapé.',
+            'Novas navegações entram compactas por padrão para liberar mais área útil do mapa.',
+            'Tocar no resumo inferior ou no card superior expande novamente o painel completo.',
           ],
         ),
         SizedBox(height: 10),

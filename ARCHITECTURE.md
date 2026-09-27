@@ -1,11 +1,10 @@
-# Arquitetura — Vigia IA 1.0.190+190
+# Arquitetura — Vigia IA 1.0.191+191
 
+## Navegação compacta e integridade do mapa — 1.0.191
 
-## Navegação compacta no rodapé — 1.0.190
+`MapMonitoringScreen` usa `showDockedNavigationBanner` para encaixar `_NavigationBanner` minimizado no lado esquerdo do rodapé quando o HUD é compacto, existe uma rota ativa e a gravação de percurso ainda não está em andamento. `_RouteButtonBar` permanece à direita, permitindo que manobra, distância/tempo e **Gravar** ocupem a mesma faixa inferior. Ao iniciar uma rota por pesquisa ou POI, `_navigationPanelMinimized` começa em `true`; tocar no banner dockado ou no resumo superior expande o painel completo.
 
-`MapMonitoringScreen` passa a calcular `showDockedNavigationBanner` quando o HUD compacto está ativo, há destino de navegação e o painel está minimizado sem gravação em andamento. Nesse estado, `_NavigationBanner` usa o novo modo `docked`, fica expandido horizontalmente no lado esquerdo do rodapé e compartilha a faixa inferior com `_RouteButtonBar`, economizando altura sem perder a ação de expandir o painel.
-
-Ao iniciar uma navegação por busca ou POI, `_navigationPanelMinimized` passa a iniciar em `true` para privilegiar área útil do mapa. Um toque no banner dockado ou no resumo superior expande o painel completo; no modo completo permanecem disponíveis encerramento, métricas, progresso e alternativas de rota. Os cartões de POI/localidade usam um `floatingCardBottomInset` específico para não colidirem com o novo rodapé.
+A correção desta entrega foi reconstruída sobre a base íntegra `1.0.189` porque o pacote `1.0.190` havia perdido classes auxiliares do mapa durante uma edição estrutural. O seletor `_TravelModeChoiceCard` (76 px), `_Navigation3DModePill`, `_MapQuickViewBar`, `_NearbyPointsBanner` e demais componentes permanecem presentes, evitando falhas do verificador e referências Dart sem definição.
 
 ## Abertura resiliente — 1.0.189
 

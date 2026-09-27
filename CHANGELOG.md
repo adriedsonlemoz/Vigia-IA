@@ -1,10 +1,10 @@
-## 1.0.190+190 — 2026-09-27
+## 1.0.191+191 — 2026-09-27
 
-- A instrução minimizada de navegação agora pode ficar encaixada ao lado do botão **Gravar** no rodapé, liberando espaço vertical do mapa em retrato.
-- Novas navegações entram minimizadas por padrão no layout compacto; tocar no resumo inferior ou no card superior expande o painel completo.
-- O estado dockado preserva leitura rápida de manobra, distância e tempo restante, enquanto o painel completo continua disponível para métricas, rotas alternativas e encerramento da navegação.
-- Ajustados offsets dos cards flutuantes para respeitar o novo rodapé compacto sem sobreposição.
-- Versão, catálogo de novidades, tela Mudanças, User-Agents, documentação, verificadores e empacotador sincronizados em `1.0.190+190`.
+- Corrigido o build preventivo que parava em **Seletor de transporte compacto 1.0.167 ausente**; o `_TravelModeChoiceCard` e os widgets auxiliares do mapa foram preservados a partir da base íntegra `1.0.189`.
+- A instrução minimizada de navegação passa a compartilhar o rodapé com **Gravar** no HUD compacto, liberando espaço vertical do mapa.
+- Novas rotas iniciam minimizadas no layout compacto; tocar no resumo inferior ou no card superior expande o painel completo.
+- Cards de POI/localidade usam offset compatível com o novo rodapé e a gravação mantém o layout completo quando seus controles precisam de mais largura.
+- Versão, metadados, User-Agents, Novidades, Mudanças, documentação, verificadores e empacotador sincronizados em `1.0.191+191`.
 
 ## 1.0.189+189 — 2026-09-27
 

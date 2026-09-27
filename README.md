@@ -2,11 +2,13 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.190+190`
+> **Versão atual:** `1.0.191+191`
 
 ## Estado atual
 
-A `1.0.190+190` compacta a navegação minimizada do mapa e encaixa a próxima instrução ao lado do botão **Gravar** no rodapé. A rota agora abre já minimizada no modo compacto, preserva o card completo ao tocar para expandir e libera mais área útil do mapa durante o uso em bicicleta.
+A `1.0.191+191` entrega a navegação minimizada encaixada ao lado do botão **Gravar** no rodapé do mapa, reduzindo a área ocupada sobre a rota. A implementação parte novamente da base íntegra `1.0.189`, preserva o seletor compacto de transporte, o HUD 3D, atalhos do mapa e demais widgets que o verificador preventivo exige.
+
+A `1.0.189+189` estabiliza a abertura após atualização. `_StartupGate` decide somente onboarding e modo inicial; ESP32, sensores Bike e alertas passam a ser preparados depois do primeiro frame, sem bloquear a interface. As etapas obrigatórias e opcionais possuem limites de espera, a inicialização compartilhada de sensores evita concorrência duplicada e o TTS também tem limite próprio para não manter o carregamento preso indefinidamente.
 
 A `1.0.188+188` aplica o visual de navegação do mockup ao mapa: cabeçalho escuro, mapa com cores mais vivas, cartões de instrumentos, próximos pontos e resumo da rota com ETA. A ficha de local aceita toque no nome, detalhes, parada e navegação. Subidas permanecem como `--` até existir um perfil real de elevação; os estilos de mapa e a origem dos pontos continuam configuráveis. A janela de novidades agora espera o fluxo inicial e só registra a versão após tocar **Entendi**.
 

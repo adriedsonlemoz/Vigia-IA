@@ -1,13 +1,13 @@
-# Validação Vigia IA 1.0.190+190
+# Validação Vigia IA 1.0.191+191
 
+## Build preventivo e navegação compacta — 1.0.191
 
-## Navegação compacta ao lado do Gravar — 1.0.190
-
-- Em retrato com HUD compacto, iniciar uma navegação sem gravar percurso: a instrução minimizada deve aparecer ao lado do botão **Gravar** no rodapé, deixando mais mapa visível.
-- Tocar no banner dockado ou no card superior de resumo deve expandir o painel completo da navegação; minimizar novamente deve voltar ao encaixe lateral.
-- Verificar que POIs selecionados e fichas de localidades sobem o suficiente para não sobrepor o novo rodapé compacto.
-- Iniciar gravação de percurso durante a navegação: o layout pode voltar ao rodapé tradicional mais largo, preservando os controles completos de gravação.
-- Pressionar e segurar o banner dockado deve continuar permitindo acesso rápido ao encerramento da navegação via expansão do painel completo, sem perder a rota.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`; o verificador deve ultrapassar a antiga parada **Seletor de transporte compacto 1.0.167 ausente** e terminar com sucesso.
+- Abrir o seletor de transporte e confirmar os quatro cartões compactos (Bike, Moto, Carro e A pé), com a última opção marcada.
+- Em retrato com rota ativa e sem gravação, confirmar que a próxima manobra aparece ao lado de **Gravar** no rodapé e que o mapa ganhou área vertical.
+- Tocar no banner inferior ou no resumo superior deve expandir o painel completo; minimizar deve retornar ao rodapé compartilhado.
+- Iniciar gravação durante a navegação e confirmar que os controles de pausa/encerrar não colidem com a instrução da rota.
+- Conferir PiPs, modo 3D, atalhos de visualização, banner de próximos pontos e cards de POI para garantir que nenhum widget auxiliar do mapa foi removido.
 
 ## Abertura após atualização — 1.0.189
 

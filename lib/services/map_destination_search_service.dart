@@ -435,7 +435,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.190');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.191');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -511,7 +511,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.190');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.191');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -575,7 +575,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 5));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.190');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.191');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -705,7 +705,7 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.190 map-reverse-search',
+          'VigiaIA/1.0.191 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
@@ -785,7 +785,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.190 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.191 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
