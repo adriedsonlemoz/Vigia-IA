@@ -22,15 +22,21 @@ class MapRoadOverlayService {
   void dispose() => _client.close(force: true);
 
   static String? classify(Map<String, String> tags) {
-    if (tags['waterway'] == 'river' || tags['waterway'] == 'stream') return 'water';
+    if (tags['waterway'] == 'river' || tags['waterway'] == 'stream') {
+      return 'water';
+    }
     final surface = tags['surface']?.toLowerCase();
     if (<String>{'unpaved','gravel','ground','dirt','earth','sand','mud',
-        'grass','fine_gravel','compacted','pebblestone'}.contains(surface)) return 'earth';
+        'grass','fine_gravel','compacted','pebblestone'}.contains(surface)) {
+      return 'earth';
+    }
     if (<String>{'motorway','trunk','primary'}.contains(tags['highway'])) {
       return 'highway';
     }
     if (<String>{'asphalt','paved','concrete','concrete:plates','paving_stones'}
-        .contains(surface)) return 'asphalt';
+        .contains(surface)) {
+      return 'asphalt';
+    }
     return null;
   }
 

@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.193+193
+# Arquitetura — Vigia IA 1.0.194+194
+
+## Estabilização do analyzer — 1.0.194
+
+O build 155 chegou ao `flutter analyze`, mas o pipeline encerrou com código 1 por cinco ocorrências de `curly_braces_in_flow_control_structures`. A correção adiciona blocos explícitos aos condicionais apontados em `MapMonitoringScreen`, `MapRoadOverlayService` e `MapSpeedAlertPolicy`, sem alterar as condições, retornos ou efeitos existentes. A arquitetura funcional do mapa Bike da 1.0.193 permanece inalterada.
 
 ## Escopo do HUD compacto — 1.0.192
 

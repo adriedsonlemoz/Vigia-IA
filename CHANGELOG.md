@@ -1,3 +1,10 @@
+## 1.0.194+194 — 2026-09-27
+
+- Corrigidos os cinco avisos `curly_braces_in_flow_control_structures` registrados pelo build 155.
+- Os retornos e desvios condicionais no mapa, na camada OSM e na política de velocidade agora usam blocos explícitos.
+- Preservados mapa Bike, rádio online, ETA, alertas, seleção livre e abertura protegida da tela de Novidades.
+- Versão, metadados, Novidades, Mudanças, documentação, verificadores e empacotador sincronizados em `1.0.194+194`.
+
 ## 1.0.193+193 — 2026-09-27
 
 - Seleção livre e toque longo para navegar, adicionar parada e salvar coordenada na pesquisa local.

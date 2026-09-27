@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.193+193
+# Validação Vigia IA 1.0.194+194
+
+## Correção do build 155 — 1.0.194
+
+- Executar `flutter analyze`: deve retornar `No issues found!`, sem ocorrências de `curly_braces_in_flow_control_structures`.
+- Confirmar que iniciar/parar a navegação, atualizar a notificação, abrir a rádio e classificar vias continuam com o mesmo comportamento.
+- Atualizar 1.0.193 → 1.0.194: a tela de Novidades deve aparecer uma vez após a abertura e registrar a confirmação ao tocar **Entendi**.
+- Executar `flutter test` e o workflow Android completo para confirmar a geração do APK.
 
 ## Mapa Bike — 1.0.193
 

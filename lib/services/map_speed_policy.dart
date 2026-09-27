@@ -32,15 +32,23 @@ class MapSpeedAlertPolicy {
   DateTime? _lastAlertAt;
 
   int? observe(double? speedKmh, List<int> limits, {DateTime? now}) {
-    if (speedKmh == null || !speedKmh.isFinite) return null;
+    if (speedKmh == null || !speedKmh.isFinite) {
+      return null;
+    }
     final instant = now ?? DateTime.now();
     for (final limit in limits) {
-      if (speedKmh < limit - 2) _crossed.remove(limit);
+      if (speedKmh < limit - 2) {
+        _crossed.remove(limit);
+      }
     }
     for (final limit in limits.toList()..sort()) {
-      if (speedKmh < limit || _crossed.contains(limit)) continue;
+      if (speedKmh < limit || _crossed.contains(limit)) {
+        continue;
+      }
       if (_lastAlertAt != null && instant.difference(_lastAlertAt!) <
-          const Duration(seconds: 20)) continue;
+          const Duration(seconds: 20)) {
+        continue;
+      }
       _crossed.add(limit);
       _lastAlertAt = instant;
       return limit;

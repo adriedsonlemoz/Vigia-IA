@@ -394,10 +394,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         statusText: 'Navegação Bike ativa · abrir mapa',
       );
     }
-    if (!_navigationLeaseActive) return;
+    if (!_navigationLeaseActive) {
+      return;
+    }
     final now = DateTime.now();
     if (_lastNavigationStatusAt != null &&
-        now.difference(_lastNavigationStatusAt!) < const Duration(seconds: 12)) return;
+        now.difference(_lastNavigationStatusAt!) < const Duration(seconds: 12)) {
+      return;
+    }
     _lastNavigationStatusAt = now;
     final target = _routeState.navigationTarget!;
     final speed = _speedReading;
@@ -4724,8 +4728,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         await _refreshRadioStatus();
         refresh(() {});
       } catch (error) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Rádio indisponível: $error')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Rádio indisponível: $error')),
+          );
+        }
       }
     }
     try {

@@ -65,6 +65,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.194',
+          current: true,
+          changes: [
+            'Corrigidos os cinco avisos de controle de fluxo que bloqueavam o flutter analyze.',
+            'Preservados o mapa Bike, rádio online, alertas, ETA e seleção livre.',
+            'Novidades e metadados sincronizados com o build 194.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.193',
           changes: [
             'Modo foco, relógio e bateria na tela inteira do mapa.',

@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.193 amplia o mapa Bike e preserva as correções da abertura de Novidades e do HUD compacto.",
-  "version": "1.0.193",
-  "build": 193
+  "notes": "A 1.0.194 corrige os avisos do analyzer que bloqueavam o APK e preserva o mapa Bike da 1.0.193.",
+  "version": "1.0.194",
+  "build": 194
 }

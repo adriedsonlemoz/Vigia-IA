@@ -8,16 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.193', build: 193);
+      AppBuildVersion(version: '1.0.194', build: 194);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.193', build: 193),
+      version: AppBuildVersion(version: '1.0.194', build: 194),
       changes: <String>[
-        'Mapa em tela inteira com relógio, bateria e modos de foco para pedalar.',
-        'Selecione qualquer ponto no mapa, salve locais e veja a chegada prevista durante a rota.',
-        'Velocidade do sensor da bike ou GPS, alertas configuráveis e painel dos pneus.',
-        'Destaque opcional de vias e rios, vista de relevo e rádio online com estações salvas.',
+        'A geração do APK foi estabilizada para concluir a atualização.',
+        'Mapa Bike, rádio online, alertas e seleção livre continuam preservados.',
+        'A tela de Novidades acompanha corretamente a versão 1.0.194 instalada.',
       ],
     ),
   ]);
