@@ -136,13 +136,16 @@ void main() {
     expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
     expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
     expect(UpdateNewsCatalog.current.releases, hasLength(1));
-    expect(UpdateNewsCatalog.current.releases.single.version.build, 185);
+    expect(UpdateNewsCatalog.current.releases.single.version.build, AppMetadata.build);
   });
 
-  test('versão 1.0.186 abre popup com mudanças visíveis somente uma vez', () async {
+  test('versão instalada abre popup com mudanças visíveis somente uma vez', () async {
     final store = _MemoryStore()..value = '1.0.182+182';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.186', build: 186),
+      const AppBuildVersion(
+        version: AppMetadata.version,
+        build: AppMetadata.build,
+      ),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,
@@ -154,7 +157,7 @@ void main() {
 
     expect(decision.shouldShow, isTrue);
     expect(decision.releases, hasLength(1));
-    expect(decision.releases.single.version.build, 185);
+    expect(decision.releases.single.version.build, AppMetadata.build);
     expect(decision.changes, isNotEmpty);
   });
 

@@ -1,3 +1,10 @@
+## 1.0.187+187 — 2026-09-26
+
+- Corrigidos dois testes de `UpdateNewsCatalog` que ainda esperavam o build 185 durante a execução do build 147.
+- Os testes da versão instalada agora derivam versão/build de `AppMetadata`, evitando que fiquem desatualizados no próximo incremento.
+- Mantido o resultado limpo do `flutter analyze` observado no build 147 (`No issues found!`).
+- Versionamento, User-Agents, metadados, Novidades, documentação, verificador e empacotador sincronizados em `1.0.187+187`.
+
 ## 1.0.186+186 — 2026-09-26
 
 - Corrigidos os cinco apontamentos que faziam `flutter analyze` encerrar o pipeline com código 1 nos builds 145/146.

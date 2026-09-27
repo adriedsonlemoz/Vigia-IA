@@ -2,11 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.186+186`
+> **Versão atual:** `1.0.187+187`
 
 ## Estado atual
 
-A `1.0.186+186` estabiliza a entrega dos painéis de instrumentos da 1.0.185 para o pipeline de produção, eliminando avisos da análise estática sem alterar o comportamento de mapa, Bike/ESP32, IA ou funcionamento offline.
+A `1.0.187+187` estabiliza a validação de Novidades no pipeline de produção. Os testes da versão instalada agora usam `AppMetadata` como fonte de verdade, evitando expectativas antigas após cada incremento, sem alterar o comportamento de mapa, Bike/ESP32, IA ou funcionamento offline.
 
 ### Painéis de instrumentos do mapa — 1.0.185
 

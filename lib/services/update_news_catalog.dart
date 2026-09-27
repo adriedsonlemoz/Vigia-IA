@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.186', build: 186);
+      AppBuildVersion(version: '1.0.187', build: 187);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.186', build: 186),
+      version: AppBuildVersion(version: '1.0.187', build: 187),
       changes: <String>[
-        'A versão 1.0.186 melhora a estabilidade da entrega dos novos painéis de instrumentos do mapa.',
-        'Clima, GPS, Velocidade, Altitude, Bússola e Bike mantêm o mesmo comportamento visual da 1.0.185.',
-        'A base foi ajustada para passar pela análise estática do pipeline sem avisos pendentes.',
+        'A tela de novidades agora acompanha corretamente a versão instalada.',
+        'A validação da atualização ficou mais consistente entre desenvolvimento e entrega.',
+        'Mapa, Bike/ESP32, IA e recursos offline mantêm o mesmo comportamento da versão anterior.',
       ],
     ),
   ]);

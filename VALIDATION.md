@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.186+186
+# Validação Vigia IA 1.0.187+187
+
+
+## Build 147 — correção de testes de Novidades
+
+- `flutter analyze` no build 147: **aprovado**, com `No issues found!`.
+- `flutter test` no build 147: **335 testes executados, 2 falhas**, ambas em `test/update_news_service_test.dart`.
+- Causa confirmada: duas expectativas ainda comparavam o build atual com `185`, enquanto `UpdateNewsCatalog.current` já estava em `186`.
+- Ajuste 1.0.187: expectativas do catálogo atual passam a usar `AppMetadata.build`; o provider de versão do teste usa `AppMetadata.version/build`.
+- Objetivo: evitar a mesma regressão no próximo incremento de versão.
 
 
 ## Estabilização CI — 1.0.186

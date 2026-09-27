@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.187',
+          changes: [
+            'A tela de novidades acompanha corretamente a versão instalada.',
+            'A validação da atualização ficou mais consistente entre desenvolvimento e entrega.',
+            'Mapa, Bike/ESP32, IA e recursos offline mantêm o comportamento anterior.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.186',
           changes: [
             'A entrega dos painéis de instrumentos foi estabilizada para o pipeline de build.',
@@ -1699,8 +1708,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.186',
+          version: '1.0.187',
           current: true,
+          changes: [
+            'A tela de novidades acompanha corretamente a versão instalada.',
+            'A validação da atualização ficou mais consistente entre desenvolvimento e entrega.',
+            'Os recursos de mapa, Bike/ESP32, IA e offline permanecem inalterados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.186',
           changes: [
             'A entrega dos painéis de instrumentos foi estabilizada para o pipeline de build.',
             'Os recursos de mapa, Bike/ESP32 e telemetria continuam com o mesmo comportamento da versão anterior.',

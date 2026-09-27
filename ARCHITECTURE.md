@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.186+186
+# Arquitetura — Vigia IA 1.0.187+187
+
+
+## Validação de versão das Novidades — 1.0.187
+
+- `UpdateNewsCatalog.currentVersion` continua representando somente a versão empacotada atual.
+- Os testes que exercitam o catálogo atual derivam `version` e `build` de `AppMetadata`, evitando duplicar números de versão em expectativas que ficam obsoletas a cada release.
+- `tool/check_version_sync.py` permanece responsável por garantir que `pubspec.yaml`, `AppMetadata`, metadados JSON, notas de release, documentação e catálogo estejam sincronizados.
+- A mudança não altera serviços de mapa, sensores, IA, ESP32, armazenamento ou modo offline.
 
 
 ## Estabilização do pipeline — 1.0.186
