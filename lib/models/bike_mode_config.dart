@@ -5,6 +5,9 @@ enum BikeSimulationScenario {
   normal,
   frontTireLow,
   rearTireLow,
+  tireCritical,
+  rapidFrontPressureLoss,
+  rapidRearPressureLoss,
   sensorBatteryLow,
   vehicleApproaching,
   disconnected,
@@ -15,6 +18,9 @@ extension BikeSimulationScenarioUi on BikeSimulationScenario {
         BikeSimulationScenario.normal => 'Normal',
         BikeSimulationScenario.frontTireLow => 'Pneu dianteiro baixo',
         BikeSimulationScenario.rearTireLow => 'Pneu traseiro baixo',
+        BikeSimulationScenario.tireCritical => 'Pressão crítica',
+        BikeSimulationScenario.rapidFrontPressureLoss => 'Queda rápida dianteira',
+        BikeSimulationScenario.rapidRearPressureLoss => 'Queda rápida traseira',
         BikeSimulationScenario.sensorBatteryLow => 'Bateria dos sensores baixa',
         BikeSimulationScenario.vehicleApproaching => 'Veículo se aproximando',
         BikeSimulationScenario.disconnected => 'Sensores desconectados',
@@ -24,9 +30,15 @@ extension BikeSimulationScenarioUi on BikeSimulationScenario {
         BikeSimulationScenario.normal =>
           'Velocidade e pressões normais para conferir o HUD discreto.',
         BikeSimulationScenario.frontTireLow =>
-          'Força pressão crítica no pneu dianteiro e exibe alerta no vídeo.',
+          'Força pressão baixa no pneu dianteiro para testar o estado de atenção.',
         BikeSimulationScenario.rearTireLow =>
-          'Força pressão crítica no pneu traseiro e exibe alerta no vídeo.',
+          'Força pressão baixa no pneu traseiro para testar o estado de atenção.',
+        BikeSimulationScenario.tireCritical =>
+          'Força pressão crítica nos pneus para testar o estado crítico.',
+        BikeSimulationScenario.rapidFrontPressureLoss =>
+          'Simula queda progressiva rápida no pneu dianteiro e confirma o alerta temporal.',
+        BikeSimulationScenario.rapidRearPressureLoss =>
+          'Simula queda progressiva rápida no pneu traseiro e confirma o alerta temporal.',
         BikeSimulationScenario.sensorBatteryLow =>
           'Simula bateria baixa na futura central/sensores da bike.',
         BikeSimulationScenario.vehicleApproaching =>

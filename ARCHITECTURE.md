@@ -1,9 +1,19 @@
 # Arquitetura — Vigia IA 1.0.184+184
 
-## Manutenção de compatibilidade — 1.0.184
+## Busca local incremental + segurança Bike — 1.0.184
 
-- O card de localização selecionada usa o valor já promovido a não nulo pelo fluxo de renderização, sem `!` redundante.
-- Nenhuma regra funcional de mapa, navegação, POIs, câmera ou cicloviagem foi alterada nesta manutenção.
+- `MapDestinationSearchService.updateLocalQuery` filtra o índice persistente e pacotes offline em memória enquanto o usuário digita. Nenhuma chamada Nominatim é feita nesse caminho; `searchSubmitted` continua sendo o único fluxo de pesquisa textual online.
+- `BikeSensorService` continua como fonte única de velocidade/pressão/bateria/temperatura promovida a partir do emulador e de `Esp32TelemetryService`.
+- `BikePressureSafetyService` observa `BikeSensorService` e mantém histórico curto por pneu por meio de `BikeRapidPressureLossDetector`; ele não coleta telemetria nem cria transporte ESP32 próprio.
+- A detecção inicial usa janela de 10 s, queda >= 3 PSI ou >= 10% e duas amostras suspeitas para confirmação. A recuperação exige leituras estáveis próximas da pressão anterior e acima do mínimo.
+- Alertas de segurança usam a ponte nativa existente para som/notificação/vibração e `AlertVoiceService`/TTS para a fala dinâmica. O estado ativo é compartilhado com o mapa e possui cooldown de 30 s.
+- O mapa apenas observa `BikeSensorService` + `BikePressureSafetyService`: botão, painel e banner são composição de UI, sem duplicação da lógica ESP32.
+- O emulador foi ampliado dentro de `BikeSimulationScenario`, preservando o mesmo caminho de dados do hardware real.
+- A composição foi mantida preparada para a 1.0.185, sem redesenhar os cards Clima/GPS/Velocidade/Altitude/Bússola nesta release.
+
+### Compatibilidade preservada
+
+- Permanecem os ajustes estáticos recebidos no ZIP-base 1.0.184 e todo o fluxo de navegação/POIs/câmeras da etapa anterior.
 
 ## Navegação minimizável e contexto de rota — 1.0.182
 

@@ -1,10 +1,23 @@
 # Validação Vigia IA 1.0.184+184
 
-## Compatibilidade do build — 1.0.184
+## Busca do mapa + Bike/ESP32 — 1.0.184
 
-- Builds 141 e 142: quatro `unnecessary_non_null_assertion` identificados no card de localização selecionada.
-- As quatro asserções redundantes foram removidas sem mudança funcional.
-- O verificador agora protege contra a regressão específica desse padrão.
+- Digitar 1+ caracteres na busca e confirmar que a lista muda usando somente cache/dados offline, sem Nominatim a cada tecla.
+- Confirmar pesquisa online apenas ao pressionar enviar/seta e preservação do fluxo `Navegar`.
+- Confirmar botão Bike ao lado da lupa e estados visualmente distintos: normal, atenção, crítico e sem dados.
+- Em retrato, abrir painel Bike em bottom sheet; em paisagem, confirmar painel lateral/flutuante.
+- Confirmar dianteiro e traseiro simultâneos, limite PSI, conexão, módulo, atualização, bateria e temperatura quando presentes.
+- Simular queda rápida dianteira/traseira: uma única leitura suspeita não deve alertar; a segunda leitura confirmatória deve ativar som/voz/banner.
+- Confirmar que o banner grande reduz após ~8 s sem bloquear o mapa e que o botão Bike permanece crítico até recuperação.
+- Confirmar distinção entre `PRESSÃO BAIXA`, `CRÍTICA` e `PERDA RÁPIDA`.
+- Confirmar cooldown de 30 s e ausência de repetição a cada pacote.
+- Alternar cenários do emulador: normal, baixa dianteira, baixa traseira, crítica, queda rápida dianteira, queda rápida traseira, desconectado e retorno a Normal.
+- Confirmar que ESP32 real e emulador continuam alimentando `BikeSensorService`, sem segunda cadeia de telemetria.
+- Executar `python3 tool/check_version_sync.py`, `python3 tool/verify_audio_resource_catalog.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; rodar `flutter analyze`/`flutter test` onde o SDK estiver disponível.
+
+### Compatibilidade preservada do ZIP-base
+
+- Mantidos os ajustes das asserções nulas redundantes e o conjunto funcional de mapa/navegação existente.
 
 ## Navegação minimizável e rotas alternativas — 1.0.182
 

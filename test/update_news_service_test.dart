@@ -135,10 +135,11 @@ void main() {
   test('catálogo atual identifica a versão instalada', () {
     expect(UpdateNewsCatalog.currentVersion.version, AppMetadata.version);
     expect(UpdateNewsCatalog.currentVersion.build, AppMetadata.build);
-    expect(UpdateNewsCatalog.current.releases, isEmpty);
+    expect(UpdateNewsCatalog.current.releases, hasLength(1));
+    expect(UpdateNewsCatalog.current.releases.single.version.build, 184);
   });
 
-  test('versão técnica atual não abre popup de novidades', () async {
+  test('versão 1.0.184 abre popup com mudanças visíveis somente uma vez', () async {
     final store = _MemoryStore()..value = '1.0.182+182';
     final provider = _MutableVersionProvider(
       const AppBuildVersion(version: '1.0.184', build: 184),
@@ -151,9 +152,10 @@ void main() {
 
     final decision = await service.evaluate();
 
-    expect(decision.shouldShow, isFalse);
-    expect(decision.releases, isEmpty);
-    expect(decision.changes, isEmpty);
+    expect(decision.shouldShow, isTrue);
+    expect(decision.releases, hasLength(1));
+    expect(decision.releases.single.version.build, 184);
+    expect(decision.changes, isNotEmpty);
   });
 
 }

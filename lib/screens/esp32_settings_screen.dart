@@ -853,13 +853,16 @@ class _Esp32SensorEmulatorScreenState
     if (!profile.settings.alertOutputs.voice) return;
     final slot = switch (scenario) {
       BikeSimulationScenario.normal => 'bike_all_sensors_ok',
-      BikeSimulationScenario.frontTireLow => 'bike_front_pressure_critical',
-      BikeSimulationScenario.rearTireLow => 'bike_rear_pressure_critical',
+      BikeSimulationScenario.frontTireLow => 'bike_front_pressure_low',
+      BikeSimulationScenario.rearTireLow => 'bike_rear_pressure_low',
+      BikeSimulationScenario.tireCritical => 'bike_front_pressure_critical',
+      BikeSimulationScenario.rapidFrontPressureLoss => null,
+      BikeSimulationScenario.rapidRearPressureLoss => null,
       BikeSimulationScenario.sensorBatteryLow => 'bike_module_battery_low',
       BikeSimulationScenario.vehicleApproaching => AudioSlotIds.vehicleDetected,
       BikeSimulationScenario.disconnected => 'bike_sensor_disconnected',
     };
-    if (!profile.settings.voiceAlertPreferences.allowsSlot(slot)) return;
+    if (slot == null || !profile.settings.voiceAlertPreferences.allowsSlot(slot)) return;
     await NativePlatformService.instance.playCustomAlertAudio(slot, priority: 1);
   }
 
@@ -960,7 +963,7 @@ class _Esp32SensorEmulatorScreenState
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Depois de ativar o emulador, abra Ao vivo. O HUD usa o mesmo contrato de telemetria preparado para o ESP32 real.',
+                            'Depois de ativar o emulador, abra Ao vivo. O HUD e o mapa usam o mesmo contrato de telemetria do ESP32 real. Para testar recuperação após falha, retorne o cenário para Normal.',
                           ),
                         ),
                       ],

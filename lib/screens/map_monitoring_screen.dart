@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../controllers/secondary_camera_controller.dart';
 import '../models/bike_approach_status.dart';
+import '../models/bike_sensor_snapshot.dart';
 import '../models/bike_trip_plan.dart';
 import '../models/camera_endpoint.dart';
 import '../models/map_connectivity_status.dart';
@@ -26,6 +27,8 @@ import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/bike_mode_service.dart';
+import '../services/bike_pressure_safety_service.dart';
+import '../services/bike_sensor_service.dart';
 import '../services/bike_ride_history_service.dart';
 import '../services/bike_trip_planner.dart';
 import '../services/camera_registry_service.dart';
@@ -136,6 +139,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final BikeTripPlanner _bikeTripPlanner = const BikeTripPlanner();
   final BikeRideHistoryService _bikeRideHistory = BikeRideHistoryService.instance;
   final BikeModeService _bikeMode = BikeModeService.instance;
+  final BikeSensorService _bikeSensors = BikeSensorService.instance;
+  final BikePressureSafetyService _bikePressureSafety =
+      BikePressureSafetyService.instance;
   final MapNavigationVoiceService _navigationVoice = MapNavigationVoiceService();
   MapCyclingRoute? _cyclingRoute;
   List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
@@ -227,12 +233,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _connectivity.addListener(_onMapConnectivityChanged);
     _weather.addListener(_onWeatherChanged);
     _bikeRideHistory.addListener(_onBikeRideHistoryChanged);
+    _bikeSensors.addListener(_onBikeSensorChanged);
+    _bikePressureSafety.addListener(_onBikeSensorChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     unawaited(_initializeOfflineMaps());
     unawaited(_initializeCameraOverlays());
     unawaited(_connectivity.acquire(this));
     unawaited(_destinationSearch.initialize());
+    unawaited(_bikePressureSafety.initialize());
     _compassSubscription = _compass.readings().listen(
       _onCompassReading,
       onError: _onCompassError,
@@ -252,6 +261,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _connectivity.removeListener(_onMapConnectivityChanged);
     _weather.removeListener(_onWeatherChanged);
     _bikeRideHistory.removeListener(_onBikeRideHistoryChanged);
+    _bikeSensors.removeListener(_onBikeSensorChanged);
+    _bikePressureSafety.removeListener(_onBikeSensorChanged);
     _connectivity.release(this);
     _routeRecoveryTimer?.cancel();
     unawaited(_compassSubscription?.cancel());
@@ -289,6 +300,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _primaryCameraLayout = _cameraOverlaySettings.primary;
       _secondaryCameraLayout = _cameraOverlaySettings.secondary;
     });
+  }
+
+  void _onBikeSensorChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
@@ -4174,6 +4190,57 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     };
   }
 
+  Future<void> _showBikePanel() async {
+    await _bikePressureSafety.initialize();
+    if (!mounted) return;
+    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    final panel = _BikeMapPanel(
+      sensors: _bikeSensors,
+      safety: _bikePressureSafety,
+    );
+    if (!landscape) {
+      await showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (_) => panel,
+      );
+      return;
+    }
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Fechar painel da bike',
+      barrierColor: Colors.black.withValues(alpha: 0.18),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (dialogContext, _, __) => SafeArea(
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Material(
+              elevation: 12,
+              borderRadius: BorderRadius.circular(24),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: math.min(390.0, MediaQuery.sizeOf(dialogContext).width * 0.42).toDouble(),
+                child: panel,
+              ),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (_, animation, __, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.18, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
   Future<void> _showDestinationSearch() async {
     await Future.wait<void>([
       _destinationSearch.initialize(),
@@ -4201,6 +4268,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
     final controller = TextEditingController();
     var query = '';
+    var submittedSearch = false;
     try {
       await showModalBottomSheet<void>(
         context: context,
@@ -4259,7 +4327,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                 ? null
                                 : () async {
                                     final submitted = controller.text.trim();
-                                    setSheetState(() => query = submitted);
+                                    setSheetState(() {
+                                      query = submitted;
+                                      submittedSearch = true;
+                                    });
                                     await service.searchSubmitted(
                                       query: submitted,
                                       current: current,
@@ -4272,15 +4343,27 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ),
                         ),
                         onChanged: (value) {
-                          if (query.isNotEmpty && value.trim().isEmpty) {
-                            setSheetState(() => query = '');
-                          }
+                          final typed = value.trim();
+                          setSheetState(() {
+                            query = typed;
+                            submittedSearch = false;
+                          });
+                          service.updateLocalQuery(
+                            query: typed,
+                            current: current,
+                            offlineMaps: _offlineMaps.packages,
+                            offlinePoiPackages: _routeExplorer.offlinePackages,
+                            onlyDownloaded: offlineOnly,
+                          );
                         },
                         onSubmitted: service.searchLoading
                             ? null
                             : (value) async {
                                 final submitted = value.trim();
-                                setSheetState(() => query = submitted);
+                                setSheetState(() {
+                                  query = submitted;
+                                  submittedSearch = true;
+                                });
                                 await service.searchSubmitted(
                                   query: submitted,
                                   current: current,
@@ -4307,7 +4390,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             child: Text(
                               showingSuggestions
                                   ? 'Cidades e comunidades próximas'
-                                  : 'Resultados para “$query”',
+                                  : submittedSearch
+                                      ? 'Resultados para “$query”'
+                                      : 'Sugestões para “$query”',
                               style: const TextStyle(fontWeight: FontWeight.w900),
                             ),
                           ),
@@ -4914,6 +4999,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         : enabledAudioChannels == 3
             ? Icons.volume_up_rounded
             : Icons.volume_down_rounded;
+    final bikeSnapshot = _bikeSensors.snapshot;
+    final rapidPressureLoss = _bikePressureSafety.mostRecentRapidLoss;
+    final bikeHealth = bikeSnapshot?.health ?? BikeSensorHealth.disconnected;
+    final bikeButtonColor = rapidPressureLoss != null ||
+            bikeHealth == BikeSensorHealth.critical
+        ? scheme.error
+        : bikeHealth == BikeSensorHealth.warning
+            ? Colors.orange.shade800
+            : bikeHealth == BikeSensorHealth.normal
+                ? Colors.green.shade700
+                : scheme.surfaceContainerHighest;
+    final bikeButtonForeground = bikeHealth == BikeSensorHealth.disconnected &&
+            rapidPressureLoss == null
+        ? scheme.onSurfaceVariant
+        : Colors.white;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiService.mapOverlayStyle,
@@ -5410,6 +5510,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   onTap: () => unawaited(_showNearbyPoints()),
                 ),
               ),
+              if (rapidPressureLoss != null)
+                Positioned(
+                  top: cameraButtonTop,
+                  left: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 12,
+                  right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 12,
+                  child: _BikeRapidPressureAlertBanner(
+                    alert: rapidPressureLoss,
+                    onTap: () => unawaited(_showBikePanel()),
+                  ),
+                ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
                   top: cameraButtonTop + MapUxPolicy.controlSize + 6,
@@ -5472,6 +5582,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       onPressed: current == null
                           ? null
                           : () => unawaited(_showDestinationSearch()),
+                    ),
+                    _MapControlGap(horizontal: horizontalControls),
+                    _MapControlButton(
+                      tooltip: rapidPressureLoss != null
+                          ? 'Bike · perda rápida de pressão'
+                          : bikeSnapshot?.connected == true
+                              ? 'Bike · sensores conectados'
+                              : 'Bike · ESP32 sem dados',
+                      icon: Icons.pedal_bike_rounded,
+                      active: bikeSnapshot?.connected == true || rapidPressureLoss != null,
+                      backgroundColor: bikeButtonColor,
+                      foregroundColor: bikeButtonForeground,
+                      badge: rapidPressureLoss != null ? '!' : null,
+                      onPressed: () => unawaited(_showBikePanel()),
                     ),
                     if (navigation3dActive && !_navigation3dFollowing) ...[
                       _MapControlGap(horizontal: horizontalControls),
@@ -6861,6 +6985,372 @@ class _CameraPipMenuButton extends StatelessWidget {
       );
 }
 
+class _BikeRapidPressureAlertBanner extends StatelessWidget {
+  const _BikeRapidPressureAlertBanner({
+    required this.alert,
+    required this.onTap,
+  });
+
+  final BikeRapidPressureLoss alert;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label:
+          '${alert.tire.label}. Perda rápida de pressão. ${alert.previousPsi.toStringAsFixed(0)} para ${alert.currentPsi.toStringAsFixed(0)} PSI.',
+      child: Material(
+        elevation: 8,
+        color: scheme.errorContainer.withValues(alpha: 0.98),
+        borderRadius: BorderRadius.circular(alert.prominent ? 18 : 28),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: alert.prominent
+                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
+                : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: scheme.onErrorContainer,
+                  size: alert.prominent ? 28 : 20,
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${alert.tire.label.toUpperCase()} · PERDA RÁPIDA',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: scheme.onErrorContainer,
+                          fontWeight: FontWeight.w900,
+                          fontSize: alert.prominent ? 14 : 12,
+                        ),
+                      ),
+                      Text(
+                        '${alert.previousPsi.toStringAsFixed(0)} → ${alert.currentPsi.toStringAsFixed(0)} PSI'
+                        '${alert.prominent ? ' · Reduza e pare em segurança.' : ''}',
+                        maxLines: alert.prominent ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: scheme.onErrorContainer,
+                          fontWeight: FontWeight.w700,
+                          fontSize: alert.prominent ? 13 : 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onErrorContainer,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BikeMapPanel extends StatelessWidget {
+  const _BikeMapPanel({
+    required this.sensors,
+    required this.safety,
+  });
+
+  final BikeSensorService sensors;
+  final BikePressureSafetyService safety;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: safety,
+        builder: (context, _) => ListenableBuilder(
+          listenable: sensors,
+          builder: (context, _) {
+            final snapshot = sensors.snapshot;
+            final frontRapid =
+                safety.activeRapidLosses[BikeTirePosition.front];
+            final rearRapid = safety.activeRapidLosses[BikeTirePosition.rear];
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.pedal_bike_rounded, size: 26),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Bike · pneus e ESP32',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              snapshot?.simulated == true
+                                  ? 'SIMULAÇÃO · mesma fonte de dados do Monitoramento'
+                                  : snapshot?.connected == true
+                                      ? 'ESP32 conectado · telemetria compartilhada'
+                                      : 'ESP32 desconectado ou sem dados',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _BikeTireCard(
+                    title: 'PNEU DIANTEIRO',
+                    psi: snapshot?.frontTirePsi,
+                    available: snapshot?.frontTirePressureAvailable == true,
+                    connected: snapshot?.connected == true,
+                    minimumPsi: snapshot?.minimumTirePressurePsi ?? 30,
+                    criticalPsi: snapshot?.criticalTirePressurePsi ?? 24,
+                    rapidLoss: frontRapid,
+                  ),
+                  const SizedBox(height: 10),
+                  _BikeTireCard(
+                    title: 'PNEU TRASEIRO',
+                    psi: snapshot?.rearTirePsi,
+                    available: snapshot?.rearTirePressureAvailable == true,
+                    connected: snapshot?.connected == true,
+                    minimumPsi: snapshot?.minimumTirePressurePsi ?? 30,
+                    criticalPsi: snapshot?.criticalTirePressurePsi ?? 24,
+                    rapidLoss: rearRapid,
+                  ),
+                  const SizedBox(height: 12),
+                  _BikeSensorMetaCard(snapshot: snapshot),
+                  if (frontRapid != null || rearRapid != null) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Perda rápida é calculada pela variação temporal e confirmada por leituras subsequentes. Ela é diferente do alerta de pressão baixa.',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      );
+}
+
+class _BikeTireCard extends StatelessWidget {
+  const _BikeTireCard({
+    required this.title,
+    required this.psi,
+    required this.available,
+    required this.connected,
+    required this.minimumPsi,
+    required this.criticalPsi,
+    required this.rapidLoss,
+  });
+
+  final String title;
+  final double? psi;
+  final bool available;
+  final bool connected;
+  final double minimumPsi;
+  final double criticalPsi;
+  final BikeRapidPressureLoss? rapidLoss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final value = psi ?? 0;
+    final (label, color, icon) = rapidLoss != null
+        ? ('PERDA RÁPIDA', scheme.error, Icons.trending_down_rounded)
+        : !connected || !available
+            ? ('SEM DADOS', scheme.outline, Icons.link_off_rounded)
+            : value <= criticalPsi
+                ? ('CRÍTICA', scheme.error, Icons.error_rounded)
+                : value < minimumPsi
+                    ? ('PRESSÃO BAIXA', Colors.orange.shade800,
+                        Icons.warning_amber_rounded)
+                    : ('NORMAL', Colors.green.shade700,
+                        Icons.check_circle_rounded);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.36)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (rapidLoss != null)
+                    Text(
+                      '${rapidLoss!.previousPsi.toStringAsFixed(0)} → ${rapidLoss!.currentPsi.toStringAsFixed(0)} PSI · queda ${rapidLoss!.dropPsi.toStringAsFixed(1)} PSI',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  connected && available ? value.toStringAsFixed(1) : '--',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+                const Text('PSI', style: TextStyle(fontSize: 11)),
+                Text(
+                  'limite ${minimumPsi.toStringAsFixed(0)}',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BikeSensorMetaCard extends StatelessWidget {
+  const _BikeSensorMetaCard({required this.snapshot});
+
+  final BikeSensorSnapshot? snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = snapshot;
+    final captured = item?.capturedAt;
+    final time = captured == null
+        ? '--'
+        : '${captured.hour.toString().padLeft(2, '0')}:'
+            '${captured.minute.toString().padLeft(2, '0')}:'
+            '${captured.second.toString().padLeft(2, '0')}';
+    final module = item?.simulated == true
+        ? 'Emulador ESP32'
+        : (item?.moduleId?.trim().isNotEmpty == true
+            ? item!.moduleId!
+            : 'Não identificado');
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(13),
+        child: Wrap(
+          spacing: 18,
+          runSpacing: 10,
+          children: [
+            _BikeMetaItem(
+              icon: item?.connected == true
+                  ? Icons.link_rounded
+                  : Icons.link_off_rounded,
+              label: 'Conexão',
+              value: item?.connected == true ? 'Conectado' : 'Sem dados',
+            ),
+            _BikeMetaItem(
+              icon: Icons.memory_rounded,
+              label: 'Módulo',
+              value: module,
+            ),
+            _BikeMetaItem(
+              icon: Icons.schedule_rounded,
+              label: 'Atualização',
+              value: time,
+            ),
+            if (item?.batteryAvailable == true)
+              _BikeMetaItem(
+                icon: Icons.battery_5_bar_rounded,
+                label: 'Bateria sensores',
+                value: '${item!.sensorBatteryPercent}%',
+              ),
+            if (item?.temperatureAvailable == true &&
+                item?.ambientTemperatureC != null)
+              _BikeMetaItem(
+                icon: Icons.thermostat_rounded,
+                label: 'Temperatura',
+                value: '${item!.ambientTemperatureC!.toStringAsFixed(1)} °C',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BikeMetaItem extends StatelessWidget {
+  const _BikeMetaItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 142,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class _MapControlButton extends StatelessWidget {
   const _MapControlButton({
     required this.tooltip,
@@ -6868,6 +7358,8 @@ class _MapControlButton extends StatelessWidget {
     required this.onPressed,
     this.active = false,
     this.badge,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   final String tooltip;
@@ -6875,19 +7367,23 @@ class _MapControlButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool active;
   final String? badge;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
-    final background = active
-        ? scheme.primaryContainer.withValues(alpha: 0.96)
-        : scheme.surface.withValues(alpha: enabled ? 0.94 : 0.78);
-    final foreground = active
-        ? scheme.onPrimaryContainer
-        : enabled
-            ? scheme.onSurface
-            : scheme.onSurface.withValues(alpha: 0.38);
+    final background = backgroundColor ??
+        (active
+            ? scheme.primaryContainer.withValues(alpha: 0.96)
+            : scheme.surface.withValues(alpha: enabled ? 0.94 : 0.78));
+    final foreground = foregroundColor ??
+        (active
+            ? scheme.onPrimaryContainer
+            : enabled
+                ? scheme.onSurface
+                : scheme.onSurface.withValues(alpha: 0.38));
     return Tooltip(
       message: tooltip,
       child: SizedBox(

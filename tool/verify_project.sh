@@ -34,7 +34,7 @@ grep -Fq "tooltip: 'Voltar ao mapa'" lib/screens/map_monitoring_screen.dart || f
 if grep -A8 -F 'onTap: minimized' lib/screens/map_monitoring_screen.dart | grep -q 'onDoubleTap:.*_cycleCameraSlotSize'; then
   fail 'PiP 1.0.178 ainda disputa duplo toque com alternancia de tamanho.'
 fi
-[[ $(grep -c '^    UpdateRelease(' lib/services/update_news_catalog.dart) -eq 0 ]] || fail 'Release tecnica 1.0.184 nao deve abrir popup de Novidades.'
+[[ $(grep -c '^    UpdateRelease(' lib/services/update_news_catalog.dart) -eq 1 ]] || fail 'Release funcional 1.0.184 deve publicar exatamente uma entrada de Novidades.'
 if grep -Eq "AppBuildVersion\(version: '1\.0\.(178|177|176|175|174|173|172|171|170)'" lib/services/update_news_catalog.dart; then
   fail 'Catalogo 1.0.184 nao deve reutilizar releases anteriores.'
 fi
@@ -52,6 +52,16 @@ grep -q 'bool get searchLoading => _searchLoading;' lib/services/map_destination
 grep -q 'quickNearbyRadiusKm = 65' lib/services/map_destination_search_service.dart || fail 'Pesquisa 1.0.184 perdeu a fase curta de localidades.'
 grep -q 'radiusKm: nearbyRadiusKm' lib/services/map_destination_search_service.dart || fail 'Pesquisa 1.0.184 perdeu a ampliacao regional em segundo plano.'
 grep -q 'service.searchLoading' lib/screens/map_monitoring_screen.dart || fail 'Campo de pesquisa 1.0.184 ainda depende do loading geral.'
+grep -q 'void updateLocalQuery' lib/services/map_destination_search_service.dart || fail 'Busca incremental local 1.0.184 ausente.'
+grep -q 'service.updateLocalQuery' lib/screens/map_monitoring_screen.dart || fail 'Campo de busca 1.0.184 nao sugere enquanto digita.'
+grep -q 'class BikePressureSafetyService' lib/services/bike_pressure_safety_service.dart || fail 'Servico de seguranca de pressao 1.0.184 ausente.'
+grep -q 'confirmationSamples = 2' lib/services/bike_pressure_safety_service.dart || fail 'Queda rapida 1.0.184 nao exige confirmacao subsequente.'
+grep -q 'minimumDropPsi = 3.0' lib/services/bike_pressure_safety_service.dart || fail 'Limiar PSI da queda rapida 1.0.184 ausente.'
+grep -q 'minimumDropPercent = 10.0' lib/services/bike_pressure_safety_service.dart || fail 'Limiar percentual da queda rapida 1.0.184 ausente.'
+grep -q "icon: Icons.pedal_bike_rounded" lib/screens/map_monitoring_screen.dart || fail 'Botao Bike 1.0.184 ausente do mapa.'
+grep -q 'class _BikeMapPanel' lib/screens/map_monitoring_screen.dart || fail 'Painel Bike 1.0.184 ausente.'
+grep -q 'rapidFrontPressureLoss' lib/models/bike_mode_config.dart || fail 'Emulacao de queda rapida dianteira 1.0.184 ausente.'
+grep -q 'rapidRearPressureLoss' lib/models/bike_mode_config.dart || fail 'Emulacao de queda rapida traseira 1.0.184 ausente.'
 grep -q 'Você já pode pesquisar acima' lib/screens/map_monitoring_screen.dart || fail 'Pesquisa 1.0.184 nao comunica liberacao da busca durante sugestoes.'
 grep -q 'bool _stopMapOwnedSourcesWhenHidden = true;' lib/screens/map_monitoring_screen.dart || fail 'Politica de energia 1.0.184 ausente.'
 grep -q 'stopMapOwnedSourcesWhenHidden' lib/services/map_camera_overlay_settings_service.dart || fail 'Preferencia persistente de energia 1.0.184 ausente.'
@@ -392,7 +402,7 @@ if grep -q 'catch (_) {}' lib/widgets/map_navigation_3d_view.dart; then
 fi
 [[ -f github-manager.json ]] || fail 'github-manager.json ausente em 1.0.167.'
 grep -q '"version": "1.0.184"' github-manager.json || fail 'github-manager.json nao esta na versao 1.0.184.'
-grep -q '"versionCode": 184' github-manager.json || fail 'github-manager.json nao esta no versionCode 183.'
+grep -q '"versionCode": 184' github-manager.json || fail 'github-manager.json nao esta no versionCode 184.'
 [[ -f test/map_travel_mode_test.dart ]] || fail 'Teste de perfis de transporte 1.0.152 ausente.'
 if grep -q 'String? _offlineTileError' lib/screens/map_monitoring_screen.dart; then
   fail 'Android-APK-114: estado _offlineTileError sem uso voltou ao mapa.'
@@ -3089,7 +3099,7 @@ grep -q "label: 'Água'" lib/screens/map_monitoring_screen.dart || fail 'Card 1.
 grep -q "label: 'Comida'" lib/screens/map_monitoring_screen.dart || fail 'Card 1.0.184 perdeu indicador de comida.'
 grep -q "label: 'Descanso'" lib/screens/map_monitoring_screen.dart || fail 'Card 1.0.184 perdeu indicador de descanso.'
 grep -q "label: 'Parada'" lib/screens/map_monitoring_screen.dart || fail 'Card 1.0.184 perdeu indicador de parada.'
-grep -q "versão técnica atual não abre popup de novidades" test/update_news_service_test.dart || fail 'Teste da release tecnica 1.0.184 nao foi atualizado.'
+grep -q "versão 1.0.184 abre popup com mudanças visíveis somente uma vez" test/update_news_service_test.dart || fail 'Teste de Novidades 1.0.184 nao foi atualizado.'
 grep -q "AppBuildVersion(version: '1.0.184', build: 184)" test/update_news_service_test.dart || fail 'Teste de Novidades nao aponta para 1.0.184+184.'
 
 # Proximos pontos e navegacao contextual - 1.0.181

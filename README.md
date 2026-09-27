@@ -6,12 +6,16 @@ Aplicativo Flutter, inicialmente para Android, para monitoramento local por câm
 
 ## Estado atual
 
-A `1.0.184+184` preserva as melhorias recentes do mapa e da navegação e refina a compatibilidade estática para o próximo build de teste.
+A `1.0.184+184` integra a busca incremental local do mapa com o sistema Bike/ESP32, adicionando leitura simultânea dos pneus e detecção confirmada de perda rápida de pressão sem criar uma segunda fonte de telemetria.
 
-### Manutenção de compatibilidade — 1.0.184
+### Busca do mapa + Bike/ESP32 — 1.0.184
 
-- Remove asserções de nulidade redundantes no card de localização selecionada, sem alterar o comportamento funcional do mapa.
-- Mantém integralmente o painel minimizável, rotas alternativas, próximos na rota, toque livre e planejamento de cicloviagem.
+- A pesquisa passa a sugerir cidades, comunidades e pontos conforme a digitação usando cache, histórico conhecido e dados offline; a consulta online continua somente após confirmação/envio.
+- O mapa ganha botão Bike ao lado da lupa, refletindo estado normal, atenção, crítico e ESP32 sem dados.
+- O painel Bike mostra os dois pneus ao mesmo tempo, limite configurado, conexão, módulo, última atualização, bateria e temperatura quando disponíveis.
+- `BikePressureSafetyService` observa o mesmo `BikeSensorService` usado por ESP32/Monitoramento e confirma perda rápida por histórico temporal antes de alertar.
+- Referência inicial: queda de 3 PSI ou 10% em até 10 segundos, confirmada por leituras subsequentes, com proteção contra repetição.
+- O emulador ESP32 inclui pressão baixa, pressão crítica, queda rápida dianteira/traseira, desconexão e recuperação ao retornar para `Normal`.
 
 ### Navegação menos invasiva — 1.0.182
 - O painel grande pode ser minimizado sem encerrar a navegação; o `X` continua exclusivo para parar a rota.

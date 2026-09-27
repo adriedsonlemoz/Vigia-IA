@@ -7,6 +7,7 @@ import '../screens/home_screen.dart';
 import '../screens/launch_mode_screen.dart';
 import '../screens/monitor_connect_screen.dart';
 import '../services/appearance_settings_service.dart';
+import '../services/bike_pressure_safety_service.dart';
 import '../services/app_launch_mode_service.dart';
 import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
@@ -61,6 +62,7 @@ class _StartupGateState extends State<_StartupGate> {
         : null;
     if (completed) {
       await Esp32TelemetryService.instance.initialize();
+      await BikePressureSafetyService.instance.initialize();
     }
     if (!mounted) return;
     setState(() {

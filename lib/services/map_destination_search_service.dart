@@ -225,6 +225,54 @@ class MapDestinationSearchService extends ChangeNotifier {
     }
   }
 
+  void updateLocalQuery({
+    required String query,
+    required MapRoutePoint current,
+    required List<OfflineMapPackage> offlineMaps,
+    required List<OfflinePoiPackage> offlinePoiPackages,
+    required bool onlyDownloaded,
+  }) {
+    final text = query.trim();
+    if (text.isEmpty) {
+      _results = const <MapDestinationSearchResult>[];
+      _searchStatusMessage = null;
+      notifyListeners();
+      return;
+    }
+
+    final matches = _searchLocal(
+      text,
+      current: current,
+      offlineMaps: offlineMaps,
+      offlinePoiPackages: offlinePoiPackages,
+      onlyDownloaded: onlyDownloaded,
+    );
+    final needle = _fold(text);
+    final ranked = matches.toList(growable: false)
+      ..sort((a, b) {
+        int score(MapDestinationSearchResult item) {
+          var value = 0;
+          final title = _fold(item.title);
+          if (title == needle) value += 1000;
+          if (title.startsWith(needle)) value += 500;
+          if (item.kind != MapDestinationKind.pointOfInterest) value += 120;
+          if (item.offline) value += 80;
+          if (item.source == 'cache') value += 60;
+          return value;
+        }
+
+        final byScore = score(b).compareTo(score(a));
+        return byScore != 0
+            ? byScore
+            : a.distanceMeters.compareTo(b.distanceMeters);
+      });
+    _results = ranked.take(maximumSuggestions).toList(growable: false);
+    _searchStatusMessage = _results.isEmpty
+        ? 'Nenhuma sugestão local para “$text”. Confirme para pesquisar online.'
+        : '${_results.length} sugestão(ões) local(is) · confirme para ampliar online.';
+    notifyListeners();
+  }
+
   Future<void> searchSubmitted({
     required String query,
     required MapRoutePoint current,

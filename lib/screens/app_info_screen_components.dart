@@ -67,7 +67,9 @@ class AllChangesPanel extends StatelessWidget {
         _ReleaseCard(
           version: '1.0.184',
           changes: [
-            'Ajustes internos de compatibilidade mantêm o mapa e a navegação prontos para o próximo build de teste.',
+            'A busca do mapa passou a sugerir cidades e locais conforme a digitação usando cache e dados offline.',
+            'O mapa ganhou botão e painel Bike integrados ao ESP32 com os dois pneus visíveis ao mesmo tempo.',
+            'Perda rápida de pressão agora é detectada por histórico temporal e confirmada antes de alertar.',
           ],
         ),
         SizedBox(height: 10),
@@ -1682,7 +1684,9 @@ class _ChangesPanel extends StatelessWidget {
           version: '1.0.184',
           current: true,
           changes: [
-            'Compatibilidade interna refinada para preservar as melhorias recentes do mapa e da navegação no próximo build.',
+            'Sugestões locais aparecem durante a digitação sem consultas online excessivas.',
+            'Painel Bike do mapa mostra pneus, conexão ESP32, bateria e temperatura quando disponíveis.',
+            'Queda rápida de pressão dispara aviso visual, som e voz após confirmação por leituras subsequentes.',
           ],
         ),
         SizedBox(height: 10),

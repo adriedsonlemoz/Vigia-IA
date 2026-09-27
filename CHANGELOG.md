@@ -1,8 +1,14 @@
 ## 1.0.184+184 — 2026-09-26
 
-- Ajusta a lista de diferenças das rotas alternativas para a sintaxe null-aware aceita pelo analyzer do build 143.
-- Nenhuma funcionalidade nova; preserva o conjunto funcional da 1.0.182.
-- Sincroniza versão, metadados, documentação, testes e verificadores em `1.0.184+184`.
+- Pesquisa do mapa passa a filtrar sugestões locais/offline enquanto o usuário digita, sem requisições online por caractere; a pesquisa Nominatim permanece sob confirmação.
+- Adicionado botão Bike ao mapa com estados normal, atenção, crítico e ESP32 sem dados.
+- Adicionado painel Bike responsivo com os dois pneus simultâneos, limites, módulo, última atualização, bateria e temperatura quando disponíveis.
+- Adicionada detecção temporal de perda rápida de pressão (3 PSI ou 10% em ~10 s), exigindo confirmação subsequente e recuperação estável para limpar o estado.
+- Alerta de perda rápida usa som de segurança, voz dinâmica, aviso visual não bloqueante e cooldown contra repetição.
+- Emulador ESP32 ampliado com pressão baixa, pressão crítica, queda rápida dianteira/traseira e retorno ao cenário Normal para testar recuperação.
+- Mapa e Monitoramento continuam consumindo `BikeSensorService`; a nova segurança observa essa fonte compartilhada, sem serviço paralelo de telemetria.
+- Mantidos os ajustes de compatibilidade estática recebidos no ZIP-base da 1.0.184.
+- Versão e metadados permanecem sincronizados em `1.0.184+184`; a próxima etapa visual dos cards fica reservada para `1.0.185+185`.
 
 ## 1.0.183+183 — 2026-09-26
 

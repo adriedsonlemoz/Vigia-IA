@@ -28,6 +28,8 @@ class BikeSensorService extends ChangeNotifier {
   BikeSensorSnapshot? _snapshot;
   bool _initialized = false;
   int _tick = 0;
+  BikeSimulationScenario? _lastSimulationScenario;
+  int _simulationScenarioTick = 0;
   double _tripDistanceKm = 0;
   String? _primaryModuleId;
 
@@ -293,6 +295,12 @@ class BikeSensorService extends ChangeNotifier {
 
   void _emitSimulation(BikeSimulationScenario scenario) {
     if (!_bikeMode.config.sensorSimulationEnabled) return;
+    if (_lastSimulationScenario != scenario) {
+      _lastSimulationScenario = scenario;
+      _simulationScenarioTick = 0;
+    } else {
+      _simulationScenarioTick++;
+    }
     _tick++;
     final wave = math.sin(_tick / 3.2);
     final speed = switch (scenario) {
@@ -301,12 +309,19 @@ class BikeSensorService extends ChangeNotifier {
     };
     _tripDistanceKm += speed / 3600.0;
 
+    final rapidPhase = _simulationScenarioTick.clamp(0, 3).toInt();
     final frontPsi = switch (scenario) {
-      BikeSimulationScenario.frontTireLow => 24.0,
+      BikeSimulationScenario.frontTireLow => 28.0,
+      BikeSimulationScenario.tireCritical => 22.0,
+      BikeSimulationScenario.rapidFrontPressureLoss =>
+        switch (rapidPhase) { 0 => 42.0, 1 => 38.5, _ => 31.0 },
       _ => 42.0 + (wave * 0.4),
     };
     final rearPsi = switch (scenario) {
-      BikeSimulationScenario.rearTireLow => 26.0,
+      BikeSimulationScenario.rearTireLow => 28.0,
+      BikeSimulationScenario.tireCritical => 23.0,
+      BikeSimulationScenario.rapidRearPressureLoss =>
+        switch (rapidPhase) { 0 => 45.0, 1 => 41.0, _ => 33.0 },
       _ => 45.0 - (wave * 0.4),
     };
     final battery = switch (scenario) {
