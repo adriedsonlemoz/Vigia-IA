@@ -192,7 +192,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _camerasVisible = false;
   bool _stopMapOwnedSourcesWhenHidden = true;
   bool? _fullscreenCameraSecondary;
-  bool _navigationPanelMinimized = false;
+  bool _navigationPanelMinimized = true;
 
   bool _followPosition = true;
   bool _mapReady = false;
@@ -1662,6 +1662,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _offRouteSamples = 0;
       _lastRouteRecalculatedAt = null;
       _lastNavigationProgressPointAt = null;
+      _navigationPanelMinimized = true;
     });
     unawaited(_mapViewSettings.setLastTravelMode(travelMode));
     await _routeState.navigateTo(target);
@@ -1735,6 +1736,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _offRouteSamples = 0;
       _lastRouteRecalculatedAt = null;
       _lastNavigationProgressPointAt = null;
+      _navigationPanelMinimized = true;
     });
     unawaited(_mapViewSettings.setLastTravelMode(travelMode));
     await _routeState.navigateTo(target);
@@ -2186,7 +2188,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _navigation3dRendererReady = false;
     _navigation3dRendererFailed = false;
     _navigation3dFollowing = true;
-    _navigationPanelMinimized = false;
+    _navigationPanelMinimized = true;
   }
 
   void _stopNavigation() {
@@ -5194,6 +5196,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         : _openFreeMapAttribution;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
+    final showDockedNavigationBanner = compactHud &&
+        navigationTarget != null &&
+        _navigationPanelMinimized &&
+        !_routeState.recording;
+    final floatingCardBottomInset = !compactHud
+        ? 82
+        : navigationTarget == null
+            ? 82
+            : showDockedNavigationBanner
+                ? 96
+                : (_navigationPanelMinimized ? 176 : 360);
     final navigationAudioEnabled = _mapViewSettings.navigationVoiceEnabled;
     final aiAudioEnabled = _aiVoiceEnabled;
     final nearbyAudioEnabled = _routeExplorer.settings.voiceEnabled;
@@ -5888,7 +5901,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: compactHud ? 10 : 8,
                   right: compactHud ? 10 : 8,
-                  bottom: bottomInset + (!compactHud ? 82 : navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
+                  bottom: bottomInset + floatingCardBottomInset,
                   child: _SelectedMapLocationCard(
                     item: selectedMapLocation,
                     distanceLabel: _formatSearchDistance(
@@ -5904,7 +5917,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: compactHud ? 10 : 8,
                   right: compactHud ? 10 : 8,
-                  bottom: bottomInset + (!compactHud ? 82 : navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
+                  bottom: bottomInset + floatingCardBottomInset,
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -5928,7 +5941,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ),
               if (navigationTarget != null &&
-                  (compactHud || (!showSelectedPoiCard && !showSelectedMapLocationCard)))
+                  (compactHud || (!showSelectedPoiCard && !showSelectedMapLocationCard)) &&
+                  !showDockedNavigationBanner)
                 Positioned(
                   left: 8,
                   right: 8,
@@ -5949,6 +5963,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     networkOffline: networkOffline,
                     compact: compactHud,
                     minimized: _navigationPanelMinimized,
+                    docked: false,
                     following: navigation3dActive ? _navigation3dFollowing : _followPosition,
                     nearbyPoints: _routeExplorer.activeResults,
                     onRouteSelected: _selectCyclingRoute,
@@ -5970,27 +5985,96 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onStop: _stopNavigation,
                   ),
                 ),
-              Positioned(
-                right: MapUxPolicy.controlEdge,
-                bottom: bottomInset + 2,
-                child: _RouteButtonBar(
-                  recording: _routeState.recording,
-                  paused: _routeState.paused,
-                  hasRoute: _routeState.route.length >= 2,
-                  routeState: _routeState,
-                  distanceLabel: _formatDistance(),
-                  onToggleRecording: current == null
-                      ? null
-                      : _routeState.recording
-                          ? () => unawaited(_finishRecording())
-                          : () => unawaited(_startRecording()),
-                  onTogglePause:
-                      _routeState.recording ? _togglePauseRecording : null,
-                  onExport: _routeState.route.length >= 2
-                      ? () => unawaited(_exportGpx())
-                      : null,
+              if (showDockedNavigationBanner)
+                Positioned(
+                  left: 8,
+                  right: MapUxPolicy.controlEdge,
+                  bottom: bottomInset + 2,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: _NavigationBanner(
+                          target: navigationTarget!,
+                          distanceMeters: _routeState.navigationDistanceMeters,
+                          bearingDegrees: _routeState.navigationBearingDegrees,
+                          roadRoute: _cyclingRoute,
+                          routeAlternatives: _cyclingRouteAlternatives,
+                          selectedRouteIndex: _selectedCyclingRouteIndex,
+                          guidance: _navigationProgress,
+                          bikeEstimate: _bikeTripEstimate,
+                          bikeTripPlan: _bikeTripPlan,
+                          bikeTripPlanLoading: _bikeTripPlanLoading,
+                          loadingRoadRoute: _cyclingRouteLoading,
+                          fallbackMessage: _routeFallback?.message,
+                          networkOffline: networkOffline,
+                          compact: true,
+                          minimized: true,
+                          docked: true,
+                          following: navigation3dActive ? _navigation3dFollowing : _followPosition,
+                          nearbyPoints: _routeExplorer.activeResults,
+                          onRouteSelected: _selectCyclingRoute,
+                          onToggleMinimized: () => setState(
+                            () => _navigationPanelMinimized = false,
+                          ),
+                          onFollowRequested: current == null
+                              ? null
+                              : () {
+                                  if (navigation3dActive) {
+                                    _recenterNavigation3d();
+                                  } else if (!_followPosition) {
+                                    _toggleFollow();
+                                  }
+                                },
+                          onTripPlan: _bikeTripPlan == null
+                              ? null
+                              : () => unawaited(_showBikeTripPlan()),
+                          onStop: _stopNavigation,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _RouteButtonBar(
+                        recording: _routeState.recording,
+                        paused: _routeState.paused,
+                        hasRoute: _routeState.route.length >= 2,
+                        routeState: _routeState,
+                        distanceLabel: _formatDistance(),
+                        onToggleRecording: current == null
+                            ? null
+                            : _routeState.recording
+                                ? () => unawaited(_finishRecording())
+                                : () => unawaited(_startRecording()),
+                        onTogglePause:
+                            _routeState.recording ? _togglePauseRecording : null,
+                        onExport: _routeState.route.length >= 2
+                            ? () => unawaited(_exportGpx())
+                            : null,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Positioned(
+                  right: MapUxPolicy.controlEdge,
+                  bottom: bottomInset + 2,
+                  child: _RouteButtonBar(
+                    recording: _routeState.recording,
+                    paused: _routeState.paused,
+                    hasRoute: _routeState.route.length >= 2,
+                    routeState: _routeState,
+                    distanceLabel: _formatDistance(),
+                    onToggleRecording: current == null
+                        ? null
+                        : _routeState.recording
+                            ? () => unawaited(_finishRecording())
+                            : () => unawaited(_startRecording()),
+                    onTogglePause:
+                        _routeState.recording ? _togglePauseRecording : null,
+                    onExport: _routeState.route.length >= 2
+                        ? () => unawaited(_exportGpx())
+                        : null,
+                  ),
                 ),
-              ),
               if (_camerasVisible &&
                   !_primaryCameraLayout.hidden &&
                   _cameraPreviewBuilderFor(false) != null)
@@ -6469,741 +6553,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       builder: (context, _) => buildPip(context),
     );
   }
-
-  Marker _pinMarker(
-    MapRoutePoint point,
-    IconData icon,
-    Color color,
-    String semanticLabel,
-  ) {
-    return Marker(
-      point: LatLng(point.latitude, point.longitude),
-      width: 42,
-      rotate: true,
-      height: 42,
-      child: Semantics(
-        label: semanticLabel,
-        child: Icon(icon, size: 34, color: color),
-      ),
-    );
-  }
-
-  Widget _buildUnavailable(BuildContext context) {
-    final availability = _routeState.availability;
-    final forever =
-        availability == LocationTrackingAvailability.permissionDeniedForever;
-    final disabled =
-        availability == LocationTrackingAvailability.servicesDisabled;
-    final title = disabled
-        ? 'Localização do aparelho está desligada'
-        : forever
-            ? 'Permissão de localização bloqueada'
-            : 'Permissão de localização necessária';
-    final body = disabled
-        ? 'Ative a localização do Android para mostrar sua posição e registrar o trajeto.'
-        : forever
-            ? 'Abra as configurações do Vigia IA e permita localização durante o uso.'
-            : 'O GPS alimenta a mesma sessão de percurso do Monitor e do mapa completo; uma gravação ativa continua ao trocar de tela.';
-    final scheme = Theme.of(context).colorScheme;
-    final safePadding = MediaQuery.paddingOf(context);
-
-    return Scaffold(
-      extendBody: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  scheme.surfaceContainerHighest,
-                  scheme.surface,
-                ],
-              ),
-            ),
-          ),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 88, 24, 72),
-                child: Material(
-                  elevation: 4,
-                  color: scheme.surface.withValues(alpha: 0.96),
-                  borderRadius: BorderRadius.circular(24),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_off_outlined,
-                          size: 56,
-                          color: scheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.titleLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(body, textAlign: TextAlign.center),
-                        const SizedBox(height: 20),
-                        FilledButton.icon(
-                          onPressed: () async {
-                            if (disabled) {
-                              await _location.openLocationSettings();
-                            } else if (forever) {
-                              await _location.openAppSettings();
-                            } else {
-                              await _initialize();
-                            }
-                          },
-                          icon: Icon(
-                            disabled
-                                ? Icons.location_searching_rounded
-                                : Icons.settings_outlined,
-                          ),
-                          label: Text(
-                            disabled
-                                ? 'Ativar localização'
-                                : forever
-                                    ? 'Abrir configurações'
-                                    : 'Permitir localização',
-                          ),
-                        ),
-                        if (disabled || forever) ...[
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _initialize,
-                            child: const Text('Verificar novamente'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: safePadding.top + 8,
-            left: 8,
-            child: _MapControlButton(
-              tooltip: 'Voltar',
-              icon: Icons.arrow_back_rounded,
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-          ),
-          Positioned(
-            top: safePadding.top + 8,
-            right: 8,
-            child: _MapControlButton(
-              tooltip: 'Mapas offline',
-              icon: Icons.download_for_offline_outlined,
-              onPressed: () => unawaited(_openOfflineMaps()),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-}
-
-class _MapBrandButton extends StatelessWidget {
-  const _MapBrandButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Tooltip(
-    message: 'Vigia IA · configurações do mapa',
-    child: Material(
-      color: const Color(0xF0081D31),
-      borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: onTap,
-        child: SizedBox(
-          width: 89,
-          height: MapUxPolicy.controlSize,
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.terrain_rounded, size: 22, color: Color(0xFF19D2BC)),
-            SizedBox(width: 3),
-            Text('Vigia IA', style: TextStyle(color: Colors.white,
-              fontWeight: FontWeight.w900, fontSize: 11)),
-          ]),
-        ),
-      ),
-    ),
-  );
-}
-
-class _MapRouteOverview extends StatelessWidget {
-  const _MapRouteOverview({
-    required this.target,
-    required this.route,
-    required this.progress,
-    required this.bikeEstimate,
-    required this.onTap,
-  });
-
-  final MapNavigationTarget target;
-  final MapCyclingRoute? route;
-  final MapNavigationProgress? progress;
-  final BikeTripEstimate? bikeEstimate;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final distance = progress?.remainingDistanceMeters ?? route?.distanceMeters;
-    final seconds = bikeEstimate == null
-        ? progress?.remainingDurationSeconds ?? route?.durationSeconds
-        : distance == null || bikeEstimate!.preferences.averageSpeedKmh <= 0
-            ? null
-            : distance / 1000 / bikeEstimate!.preferences.averageSpeedKmh * 3600;
-    final arrival = seconds != null && seconds.isFinite && seconds >= 0
-        ? DateTime.now().add(Duration(seconds: seconds.round()))
-        : null;
-    final eta = arrival == null
-        ? '--:--'
-        : '${arrival.hour.toString().padLeft(2, '0')}:${arrival.minute.toString().padLeft(2, '0')}';
-    final distanceLabel = distance == null
-        ? 'Calculando rota'
-        : '${(distance / 1000).toStringAsFixed(1)} km · '
-          '${seconds == null ? '--' : '${(seconds / 60).round()} min'}';
-    const accent = Color(0xFF10B9F5);
-    return Material(
-      color: const Color(0xF3071B2D),
-      elevation: 6,
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(left: const BorderSide(color: accent, width: 4),
-                top: BorderSide(color: accent.withValues(alpha: 0.25)),
-                right: BorderSide(color: accent.withValues(alpha: 0.25)),
-                bottom: BorderSide(color: accent.withValues(alpha: 0.25))),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 9),
-          child: Row(children: [
-            const Icon(Icons.near_me_rounded, color: accent, size: 24),
-            const SizedBox(width: 7),
-            Expanded(
-              flex: 5,
-              child: Column(mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Rota ativa', style: TextStyle(color: accent,
-                    fontSize: 11, fontWeight: FontWeight.w900)),
-                  Text(target.label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 10)),
-                ]),
-            ),
-            const _MapOverviewDivider(),
-            const Tooltip(
-              message: 'O provedor desta rota ainda não informa o perfil de elevação.',
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text('Subidas', style: TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
-                Text('--', style: TextStyle(color: Colors.white,
-                  fontSize: 15, fontWeight: FontWeight.w900)),
-              ]),
-            ),
-            const SizedBox(width: 7),
-            const _MapOverviewDivider(),
-            const SizedBox(width: 7),
-            Expanded(flex: 4, child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Chegada', style: TextStyle(
-                  color: Color(0xFFB6C8D7), fontSize: 9)),
-                Text(eta, style: const TextStyle(color: Colors.white,
-                  fontSize: 16, fontWeight: FontWeight.w900)),
-                Text(distanceLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
-              ],
-            )),
-            const Icon(Icons.chevron_right_rounded, color: accent, size: 20),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapOverviewDivider extends StatelessWidget {
-  const _MapOverviewDivider();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 34, width: 1, margin: const EdgeInsets.symmetric(horizontal: 7),
-    color: const Color(0xFF38546A),
-  );
-}
-
-class _MapQuickViewBar extends StatelessWidget {
-  const _MapQuickViewBar({
-    required this.selected,
-    required this.routeAvailable,
-    required this.onSelected,
-    this.compact = false,
-  });
-
-  final _MapQuickView? selected;
-  final bool routeAvailable;
-  final ValueChanged<_MapQuickView> onSelected;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 4,
-      color: const Color(0xF2081D31),
-      borderRadius: BorderRadius.circular(30),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _MapQuickViewButton(
-            label: 'Perto',
-            icon: Icons.near_me_rounded,
-            active: selected == _MapQuickView.near,
-            onPressed: () => onSelected(_MapQuickView.near),
-            compact: compact,
-          ),
-          _MapQuickViewButton(
-            label: 'Região',
-            icon: Icons.public_rounded,
-            active: selected == _MapQuickView.region,
-            onPressed: () => onSelected(_MapQuickView.region),
-            compact: compact,
-          ),
-          _MapQuickViewButton(
-            label: 'Rota',
-            icon: Icons.route_rounded,
-            active: selected == _MapQuickView.route,
-            onPressed:
-                routeAvailable ? () => onSelected(_MapQuickView.route) : null,
-            compact: compact,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TravelModeChoiceCard extends StatelessWidget {
-  const _TravelModeChoiceCard({
-    required this.mode,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final MapTravelMode mode;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final borderColor = selected ? scheme.primary : scheme.outlineVariant;
-    final background = selected
-        ? scheme.primaryContainer.withValues(alpha: 0.55)
-        : scheme.surfaceContainerLow;
-    final foreground = selected ? scheme.onPrimaryContainer : scheme.onSurface;
-
-    return SizedBox(
-      height: 76,
-      child: Material(
-        color: background,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: borderColor,
-            width: selected ? 1.6 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
-            children: [
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 27, color: foreground),
-                      const SizedBox(height: 5),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          mode.label,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            color: foreground,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (selected)
-                Positioned(
-                  top: 5,
-                  right: 5,
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    size: 15,
-                    color: scheme.primary,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Navigation3DModePill extends StatelessWidget {
-  const _Navigation3DModePill({
-    required this.mode,
-    required this.compact,
-  });
-
-  final MapTravelMode mode;
-  final bool compact;
-
-  IconData get _modeIcon => switch (mode) {
-        MapTravelMode.bicycle => Icons.pedal_bike_rounded,
-        MapTravelMode.motorcycle => Icons.two_wheeler_rounded,
-        MapTravelMode.car => Icons.directions_car_filled_rounded,
-        MapTravelMode.walking => Icons.directions_walk_rounded,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      elevation: 2,
-      color: scheme.surface.withValues(alpha: 0.93),
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 10 : 13,
-          vertical: compact ? 7 : 9,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.view_in_ar_rounded,
-              size: compact ? 18 : 20,
-              color: scheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Navegação 3D',
-              style: TextStyle(
-                fontSize: compact ? 12 : 13,
-                fontWeight: FontWeight.w900,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 1,
-              height: compact ? 18 : 20,
-              color: scheme.outlineVariant,
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              _modeIcon,
-              size: compact ? 17 : 19,
-              color: scheme.secondary,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              mode.label,
-              style: TextStyle(
-                fontSize: compact ? 11 : 12,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MapQuickViewButton extends StatelessWidget {
-  const _MapQuickViewButton({
-    required this.label,
-    required this.icon,
-    required this.active,
-    required this.onPressed,
-    this.compact = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool active;
-  final VoidCallback? onPressed;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final foreground = !enabled
-        ? Colors.white38
-        : active ? Colors.white : const Color(0xFFC5D4E0);
-    return Tooltip(
-      message: label,
-      child: InkWell(
-        onTap: onPressed,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 7 : 8,
-            vertical: 6,
-          ),
-          color: active ? const Color(0xFF0D3955) : Colors.transparent,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: compact ? 16 : 17, color: foreground),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: compact ? 9.5 : 11,
-                  fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-                  color: foreground,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickAudioSwitch extends StatelessWidget {
-  const _QuickAudioSwitch({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile.adaptive(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      secondary: Icon(icon, size: 20),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        subtitle,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 11.5),
-      ),
-      value: value,
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _NearbyPointsBanner extends StatelessWidget {
-  const _NearbyPointsBanner({
-    required this.count,
-    required this.loading,
-    required this.offline,
-    required this.routeActive,
-    required this.points,
-    required this.onTap,
-  });
-
-  final int count;
-  final bool loading;
-  final bool offline;
-  final bool routeActive;
-  final List<RouteExplorerResult> points;
-  final VoidCallback onTap;
-
-  String _distance(double meters) {
-    if (meters < 1000) return '${meters.toStringAsFixed(0)} m';
-    return '${(meters / 1000).toStringAsFixed(1)} km';
-  }
-
-  String _categoryLabel(RouteExplorerCategory category) => switch (category) {
-        RouteExplorerCategory.water => 'Água',
-        RouteExplorerCategory.fuel => 'Posto',
-        RouteExplorerCategory.restaurant => 'Comida',
-        RouteExplorerCategory.market => 'Mercado',
-        RouteExplorerCategory.health => 'Saúde',
-        RouteExplorerCategory.camping => 'Camping',
-        RouteExplorerCategory.stop => 'Parada',
-        RouteExplorerCategory.workshop => 'Oficina',
-        RouteExplorerCategory.viewpoint => 'Mirante',
-        RouteExplorerCategory.waterfall => 'Cachoeira',
-        RouteExplorerCategory.riverBridge => 'Rio/ponte',
-      };
-
-  String _summary() {
-    if (points.isEmpty) {
-      return 'Postos, comida, saúde, água e outros';
-    }
-    final sorted = List<RouteExplorerResult>.from(points)
-      ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
-    final seen = <RouteExplorerCategory>{};
-    final parts = <String>[];
-    for (final item in sorted) {
-      if (!seen.add(item.category)) continue;
-      parts.add('${_categoryLabel(item.category)} ${_distance(item.distanceMeters)}');
-      if (parts.length == 2) break;
-    }
-    return parts.isEmpty ? 'Pontos disponíveis no mapa' : parts.join(' · ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final badge = MapUxPolicy.compactCountBadge(count) ?? '0';
-    final sourceLabel = offline ? 'Offline' : 'Online';
-    final title = routeActive ? 'Próximos na rota' : 'Locais próximos';
-    final subtitle = count > 0 ? _summary() : 'Postos, comida, saúde, água e outros';
-
-    return Material(
-      elevation: 2,
-      color: const Color(0xF3071B2D),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          child: Row(
-            children: [
-              Icon(
-                Icons.location_on_rounded,
-                size: 26,
-                color: const Color(0xFF12BDFC),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        if (loading) ...[
-                          const SizedBox(width: 6),
-                          const SizedBox(
-                            width: 11,
-                            height: 11,
-                            child: CircularProgressIndicator(strokeWidth: 1.6),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color(0xFFB6C8D7),
-                            fontSize: 9.5),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                constraints: const BoxConstraints(minWidth: 24),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF007C72),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Text(
-                  badge,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF123D54),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  sourceLabel,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 2),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 19,
-                color: Colors.white,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _MapControlGap extends StatelessWidget {
   const _MapControlGap({required this.horizontal});
@@ -8689,6 +8038,7 @@ class _NavigationBanner extends StatelessWidget {
     required this.networkOffline,
     required this.compact,
     required this.minimized,
+    this.docked = false,
     required this.following,
     required this.nearbyPoints,
     required this.onRouteSelected,
@@ -8713,6 +8063,7 @@ class _NavigationBanner extends StatelessWidget {
   final bool networkOffline;
   final bool compact;
   final bool minimized;
+  final bool docked;
   final bool following;
   final List<RouteExplorerResult> nearbyPoints;
   final ValueChanged<int> onRouteSelected;
@@ -8902,68 +8253,99 @@ class _NavigationBanner extends StatelessWidget {
     final accent = warning ? scheme.secondary : scheme.primary;
 
     if (minimized) {
+      final iconSize = docked ? 42.0 : 52.0;
+      final iconGlyphSize = docked ? 24.0 : 31.0;
       return Material(
         elevation: 10,
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(docked ? 18 : 20),
         clipBehavior: Clip.antiAlias,
-        child: Container(
-          decoration: BoxDecoration(
-            color: panelColor,
-            border: Border.all(color: accent.withValues(alpha: 0.22)),
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: 0.15),
-                  border: Border.all(color: accent.withValues(alpha: 0.65), width: 2),
+        child: InkWell(
+          onTap: docked ? onToggleMinimized : null,
+          onLongPress: docked ? onStop : null,
+          child: Container(
+            decoration: BoxDecoration(
+              color: panelColor,
+              border: Border.all(color: accent.withValues(alpha: 0.22)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              docked ? 10 : 12,
+              docked ? 8 : 9,
+              docked ? 6 : 8,
+              docked ? 8 : 9,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: iconSize,
+                  height: iconSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withValues(alpha: 0.15),
+                    border: Border.all(color: accent.withValues(alpha: 0.65), width: 2),
+                  ),
+                  child: Icon(
+                    _maneuverIcon(primaryInstruction),
+                    color: accent,
+                    size: iconGlyphSize,
+                  ),
                 ),
-                child: Icon(_maneuverIcon(primaryInstruction), color: accent, size: 31),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      primaryInstruction,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: foreground, fontSize: 15, fontWeight: FontWeight.w900),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${_distance(remainingDistance)} · $remainingTime${following ? '' : ' · mapa livre'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: foreground.withValues(alpha: 0.70), fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                SizedBox(width: docked ? 8 : 10),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        primaryInstruction,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: docked ? 13.5 : 15,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${_distance(remainingDistance)} · $remainingTime${following ? '' : ' · mapa livre'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foreground.withValues(alpha: 0.70),
+                          fontSize: docked ? 10.5 : 11,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              if (!following && onFollowRequested != null)
+                if (!docked && !following && onFollowRequested != null)
+                  IconButton(
+                    tooltip: 'Voltar a seguir posição',
+                    onPressed: onFollowRequested,
+                    icon: const Icon(Icons.my_location_rounded),
+                  ),
                 IconButton(
-                  tooltip: 'Voltar a seguir posição',
-                  onPressed: onFollowRequested,
-                  icon: const Icon(Icons.my_location_rounded),
+                  tooltip: 'Expandir navegação',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                  onPressed: onToggleMinimized,
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded),
                 ),
-              IconButton(
-                tooltip: 'Expandir navegação',
-                onPressed: onToggleMinimized,
-                icon: const Icon(Icons.keyboard_arrow_up_rounded),
-              ),
-              IconButton(
-                tooltip: 'Parar navegação',
-                onPressed: onStop,
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
+                if (!docked)
+                  IconButton(
+                    tooltip: 'Parar navegação',
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                    onPressed: onStop,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+              ],
+            ),
           ),
         ),
       );

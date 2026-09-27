@@ -1,3 +1,11 @@
+## 1.0.190+190 — 2026-09-27
+
+- A instrução minimizada de navegação agora pode ficar encaixada ao lado do botão **Gravar** no rodapé, liberando espaço vertical do mapa em retrato.
+- Novas navegações entram minimizadas por padrão no layout compacto; tocar no resumo inferior ou no card superior expande o painel completo.
+- O estado dockado preserva leitura rápida de manobra, distância e tempo restante, enquanto o painel completo continua disponível para métricas, rotas alternativas e encerramento da navegação.
+- Ajustados offsets dos cards flutuantes para respeitar o novo rodapé compacto sem sobreposição.
+- Versão, catálogo de novidades, tela Mudanças, User-Agents, documentação, verificadores e empacotador sincronizados em `1.0.190+190`.
+
 ## 1.0.189+189 — 2026-09-27
 
 - Corrigida a abertura que podia permanecer no `CircularProgressIndicator` após atualização: ESP32, sensores Bike e alertas deixaram a rota crítica do `_StartupGate`.

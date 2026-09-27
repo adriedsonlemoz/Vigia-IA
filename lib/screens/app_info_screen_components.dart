@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.190',
+          changes: [
+            'A próxima instrução da rota minimizada pode ficar ao lado do botão Gravar no rodapé.',
+            'Novas navegações entram minimizadas por padrão no layout compacto para liberar mapa visível.',
+            'Tocar no resumo inferior ou no card superior expande novamente o painel completo da rota.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.189',
           changes: [
             'A tela principal abre antes da preparação de ESP32, sensores Bike e alertas.',
@@ -1726,8 +1735,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.189',
+          version: '1.0.190',
           current: true,
+          changes: [
+            'A próxima instrução da rota minimizada pode ficar ao lado do botão Gravar no rodapé.',
+            'Novas navegações entram minimizadas por padrão no layout compacto para liberar mapa visível.',
+            'Tocar no resumo inferior ou no card superior expande novamente o painel completo da rota.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.189',
           changes: [
             'A tela principal abre antes da preparação de ESP32, sensores Bike e alertas.',
             'Etapas demoradas de inicialização agora têm limite de espera e recuperação.',

@@ -1,5 +1,11 @@
-# Arquitetura — Vigia IA 1.0.189+189
+# Arquitetura — Vigia IA 1.0.190+190
 
+
+## Navegação compacta no rodapé — 1.0.190
+
+`MapMonitoringScreen` passa a calcular `showDockedNavigationBanner` quando o HUD compacto está ativo, há destino de navegação e o painel está minimizado sem gravação em andamento. Nesse estado, `_NavigationBanner` usa o novo modo `docked`, fica expandido horizontalmente no lado esquerdo do rodapé e compartilha a faixa inferior com `_RouteButtonBar`, economizando altura sem perder a ação de expandir o painel.
+
+Ao iniciar uma navegação por busca ou POI, `_navigationPanelMinimized` passa a iniciar em `true` para privilegiar área útil do mapa. Um toque no banner dockado ou no resumo superior expande o painel completo; no modo completo permanecem disponíveis encerramento, métricas, progresso e alternativas de rota. Os cartões de POI/localidade usam um `floatingCardBottomInset` específico para não colidirem com o novo rodapé.
 
 ## Abertura resiliente — 1.0.189
 

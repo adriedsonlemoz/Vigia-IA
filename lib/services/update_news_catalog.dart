@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.189', build: 189);
+      AppBuildVersion(version: '1.0.190', build: 190);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.189', build: 189),
+      version: AppBuildVersion(version: '1.0.190', build: 190),
       changes: <String>[
-        'A abertura libera a tela principal antes de preparar ESP32, sensores e alertas em segundo plano.',
-        'A preparação de voz/TTS ganhou limite de espera para não prender a inicialização.',
-        'O app mantém um caminho de recuperação quando uma etapa de abertura demora além do esperado.',
+        'A instrução minimizada da navegação agora pode ficar ao lado do botão Gravar no rodapé.',
+        'Novas rotas entram minimizadas por padrão no layout compacto para liberar mais mapa visível.',
+        'Tocar no resumo inferior ou no card superior continua expandindo o painel completo da navegação.',
       ],
     ),
   ]);
