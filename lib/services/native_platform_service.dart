@@ -61,6 +61,20 @@ class LocalNetworkPermissionStatus {
   }
 }
 
+class NativeNetworkUsageSnapshot {
+  const NativeNetworkUsageSnapshot({
+    required this.receivedBytes,
+    required this.sentBytes,
+    required this.connection,
+    required this.capturedAt,
+  });
+
+  final int? receivedBytes;
+  final int? sentBytes;
+  final String connection;
+  final DateTime capturedAt;
+}
+
 class NativePlatformService {
   NativePlatformService._();
 
@@ -318,6 +332,38 @@ class NativePlatformService {
         'state': 'indisponível',
         'channelError': error.toString(),
       };
+    }
+  }
+
+  Future<NativeNetworkUsageSnapshot> networkUsageSnapshot() async {
+    if (!Platform.isAndroid) {
+      return NativeNetworkUsageSnapshot(
+        receivedBytes: null,
+        sentBytes: null,
+        connection: 'Indisponível',
+        capturedAt: DateTime.now(),
+      );
+    }
+    try {
+      final data = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'networkUsageSnapshot',
+      );
+      return NativeNetworkUsageSnapshot(
+        receivedBytes: (data?['receivedBytes'] as num?)?.toInt(),
+        sentBytes: (data?['sentBytes'] as num?)?.toInt(),
+        connection: data?['connection'] as String? ?? 'Indisponível',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(
+          (data?['capturedAtMs'] as num?)?.toInt() ??
+              DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    } catch (_) {
+      return NativeNetworkUsageSnapshot(
+        receivedBytes: null,
+        sentBytes: null,
+        connection: 'Indisponível',
+        capturedAt: DateTime.now(),
+      );
     }
   }
 

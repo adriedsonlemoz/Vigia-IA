@@ -6194,8 +6194,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   top: cameraButtonTop + MapUxPolicy.controlSize + 8,
                   left: MapUxPolicy.controlEdge,
                   child: _MapControlButton(
-                    tooltip: 'Rádio online', icon: Icons.radio_rounded,
-                    active: _radioState == 'tocando',
+                    tooltip: _radioState == 'tocando'
+                        ? 'Rádio tocando · abrir player'
+                        : _radioState == 'pausado'
+                            ? 'Rádio pausada · abrir player'
+                            : 'Rádio online',
+                    icon: _radioState == 'tocando'
+                        ? Icons.graphic_eq_rounded
+                        : _radioState == 'pausado'
+                            ? Icons.pause_circle_outline_rounded
+                            : Icons.radio_rounded,
+                    active: _radioState == 'tocando' ||
+                        _radioState == 'conectando' ||
+                        _radioState == 'pausado',
                     onPressed: () => unawaited(_showRadioPanel()),
                   ),
                 ),

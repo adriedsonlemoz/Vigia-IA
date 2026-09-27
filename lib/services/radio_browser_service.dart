@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'data_usage_service.dart';
+
 class RadioBrowserStation {
   const RadioBrowserStation({
     required this.id,
@@ -117,6 +119,7 @@ class RadioBrowserService {
   Future<List<RadioBrowserStation>> search({
     String query = '',
     bool brazilOnly = true,
+    bool preferLowBitrate = false,
     int limit = 40,
   }) async {
     Object? lastError;
@@ -134,7 +137,7 @@ class RadioBrowserService {
         final request = await _client.getUrl(uri)
             .timeout(const Duration(seconds: 10));
         request.headers.set(HttpHeaders.userAgentHeader,
-            'VigiaIA/1.0.195 radio-browser');
+            'VigiaIA/1.0.196 radio-browser');
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close()
             .timeout(const Duration(seconds: 12));
@@ -143,7 +146,16 @@ class RadioBrowserService {
           throw HttpException('Catálogo respondeu ${response.statusCode}.');
         }
         final text = await utf8.decoder.bind(response).join();
-        return decodeStations(text);
+        DataUsageService.instance.record(
+          DataUsageModule.radio,
+          received: utf8.encode(text).length,
+        );
+        final decoded = decodeStations(text);
+        if (!preferLowBitrate) return decoded;
+        final efficient = decoded
+            .where((station) => station.bitrate == 0 || station.bitrate <= 96)
+            .toList(growable: false);
+        return efficient.isEmpty ? decoded : efficient;
       } catch (error) {
         lastError = error;
       }

@@ -13,6 +13,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../models/offline_map_package.dart';
 import 'map_destination_search_service.dart';
 import 'native_platform_service.dart';
+import 'data_usage_service.dart';
 
 class OfflineMapDownloadEstimate {
   const OfflineMapDownloadEstimate({required this.tiles, required this.bytes});
@@ -275,7 +276,7 @@ class OfflineMapService extends ChangeNotifier {
         'https://tiles.stadiamaps.com/tiles/alidade_smooth/0/0/0.png',
       );
       final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195 key-test');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196 key-test');
       request.headers.set(HttpHeaders.authorizationHeader, 'Stadia-Auth $key');
       final response = await request.close().timeout(const Duration(seconds: 12));
       final status = response.statusCode;
@@ -530,6 +531,13 @@ class OfflineMapService extends ChangeNotifier {
         final downloaded = await Future.wait(
           batch.map((tile) => _fetchStadiaTile(client, apiKey, tile)),
         );
+        DataUsageService.instance.record(
+          DataUsageModule.downloads,
+          received: downloaded.fold<int>(
+            0,
+            (total, item) => total + item.bytes.length,
+          ),
+        );
         // As requisições já foram concluídas neste ponto; registre o consumo
         // mesmo se a gravação local do MBTiles falhar depois.
         _stadiaCreditsUsedThisMonth += creditsForRasterTiles(batch.length);
@@ -627,7 +635,7 @@ class OfflineMapService extends ChangeNotifier {
       '${tile.z}/${tile.x}/${tile.y}.png',
     );
     final request = await client.getUrl(uri);
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195 offline-map');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196 offline-map');
     request.headers.set(HttpHeaders.authorizationHeader, 'Stadia-Auth $apiKey');
     final response = await request.close().timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -734,7 +742,7 @@ class OfflineMapService extends ChangeNotifier {
       ..idleTimeout = const Duration(seconds: 30);
     try {
       final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195 offline-map');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196 offline-map');
       final response = await request.close().timeout(const Duration(seconds: 30));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
@@ -761,6 +769,10 @@ class OfflineMapService extends ChangeNotifier {
       } finally {
         await sink.close();
       }
+      DataUsageService.instance.record(
+        DataUsageModule.downloads,
+        received: received,
+      );
 
       final info = await _validateMbTiles(temporary);
       if (await target.exists()) await target.delete();

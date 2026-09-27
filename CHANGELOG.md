@@ -1,3 +1,13 @@
+## 1.0.196+196 — 2026-09-27
+
+- Coordenação global de áudio para TTS e alertas personalizados, com isolamento de falhas, recuperação após retorno do segundo plano e respeito ao mute global.
+- Diagnóstico de áudio com TTS, player, AudioFocus, saída atual, volume de mídia e ação **Testar áudio**.
+- Rádio online minimizável e persistente entre telas, indicador no ícone, AudioFocus Android, volume, estação, cidade/região, troca de estação e notificação com Play/Pause e Parar.
+- Card e tela **Uso de dados** com total real do UID quando disponível, períodos, recebido/enviado, Wi-Fi/móvel, recursos, viagem, limites e alertas.
+- Economia de dados aplicada a mapa, buscas, Pontos Próximos, clima, rádio de menor bitrate e, quando autorizada, transmissões.
+- Atualização eficiente dos contadores a cada 15 minutos e atualização imediata ao abrir a tela detalhada, sem polling por segundo.
+- Novidades, Mudanças, metadados, User-Agents, documentação, testes, verificador e empacotador sincronizados em `1.0.196+196`.
+
 ## 1.0.195+195 — 2026-09-27
 
 - Padronizados os fluxos da tela principal do mapa como diálogos centralizados, com margens seguras, largura limitada e altura rolável.

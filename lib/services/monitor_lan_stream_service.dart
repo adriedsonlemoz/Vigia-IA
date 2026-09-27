@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 
 import '../models/device_telemetry.dart';
 import '../models/rgb_frame.dart';
+import 'data_usage_service.dart';
 
 class MonitorLanStreamService extends ChangeNotifier {
   HttpServer? _server;
@@ -152,8 +153,14 @@ class MonitorLanStreamService extends ChangeNotifier {
           'width': frame.width,
           'height': frame.height,
           'bytes': Uint8List.fromList(frame.rgbBytes),
-          'maxWidth': _jpegMaxWidth,
-          'quality': _jpegQuality,
+          'maxWidth': DataUsageService.instance.dataSaverEnabled &&
+                  DataUsageService.instance.reduceTransmissionQuality
+              ? _jpegMaxWidth.clamp(320, 640).toInt()
+              : _jpegMaxWidth,
+          'quality': DataUsageService.instance.dataSaverEnabled &&
+                  DataUsageService.instance.reduceTransmissionQuality
+              ? _jpegQuality.clamp(40, 58).toInt()
+              : _jpegQuality,
         },
       );
       if (!running) return;
@@ -377,6 +384,10 @@ auth.addEventListener('submit',async e=>{e.preventDefault();authError.textConten
     } else {
       request.response.headers.contentType = ContentType('image', 'jpeg');
       request.response.add(jpeg);
+      DataUsageService.instance.record(
+        DataUsageModule.cameras,
+        sent: jpeg.length,
+      );
     }
     await request.response.close();
   }

@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../models/map_cycling_route.dart';
 import '../models/map_travel_mode.dart';
+import 'data_usage_service.dart';
 
 /// Busca rotas viárias para o perfil de deslocamento escolhido. A tela mantém
 /// direção direta como fallback quando a rede ou o serviço de roteamento não
@@ -52,10 +53,15 @@ class MapCyclingRouteService {
       <String, String>{'json': payload},
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196');
     request.headers.set('X-Client-Id', 'com.vigiaia.app');
     final response = await request.close().timeout(const Duration(seconds: 12));
     final body = await utf8.decoder.bind(response).join();
+    DataUsageService.instance.record(
+      DataUsageModule.maps,
+      received: utf8.encode(body).length,
+      sent: utf8.encode(payload).length,
+    );
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Roteamento indisponível (${response.statusCode})');
     }

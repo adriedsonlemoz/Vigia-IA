@@ -12,6 +12,8 @@ import '../services/appearance_settings_service.dart';
 import '../services/bike_pressure_safety_service.dart';
 import '../services/app_launch_mode_service.dart';
 import '../services/esp32_telemetry_service.dart';
+import '../services/global_audio_service.dart';
+import '../services/data_usage_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/startup_guard.dart';
 import '../widgets/update_news_host.dart';
@@ -110,6 +112,14 @@ class _StartupGateState extends State<_StartupGate> {
       _initializeOptionalService(
         'segurança Bike',
         BikePressureSafetyService.instance.initialize,
+      ),
+      _initializeOptionalService(
+        'áudio global',
+        GlobalAudioService.instance.initialize,
+      ),
+      _initializeOptionalService(
+        'uso de dados',
+        DataUsageService.instance.initialize,
       ),
     ]);
   }

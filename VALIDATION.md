@@ -1,4 +1,16 @@
-# Validação Vigia IA 1.0.195+195
+# Validação Vigia IA 1.0.196+196
+
+## Cobertura da 1.0.196
+
+- Instalar sobre uma versão anterior e confirmar que Novidades exibe somente `1.0.196` uma vez após a confirmação.
+- Em **Diagnóstico**, conferir TTS, player, AudioFocus, saída e volume; executar **Testar áudio** com alto-falante, fone e Bluetooth quando disponíveis.
+- Desativar TTS ou remover um áudio personalizado e confirmar que o aplicativo continua estável e que o outro caminho de reprodução continua funcional.
+- Abrir a rádio, pesquisar uma estação, reproduzir, minimizar e trocar de tela; confirmar continuidade, indicador no ícone e reabertura com a mesma estação/estado.
+- Colocar o aplicativo em segundo plano e validar a notificação de mídia com nome, Play/Pause e Parar.
+- Abrir **Uso de dados**, confirmar atualização imediata e os períodos sessão/hoje/7 dias/mês, recebido/enviado, Wi-Fi/móvel e recursos.
+- Zerar a viagem, definir limites de dados móveis, Wi-Fi e viagem e validar uma única notificação por limite/período.
+- Ativar economia de dados e conferir cadências reduzidas de mapa, busca automática, Pontos Próximos e clima; transmissão só deve reduzir qualidade quando a opção específica estiver ativa.
+- Manter a tela aberta por pelo menos um minuto e confirmar que não há atualização visual a cada segundo; o intervalo periódico deve permanecer em 15 minutos.
 
 ## Cobertura da 1.0.195
 

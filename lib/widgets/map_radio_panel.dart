@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/map_radio_service.dart';
 import '../services/map_ride_settings_service.dart';
 import '../services/radio_browser_service.dart';
+import '../services/data_usage_service.dart';
 
 enum _RadioSection { discover, favorites, manual }
 
@@ -104,6 +105,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
       final results = await _catalog.search(
         query: _queryController.text,
         brazilOnly: _brazilOnly,
+        preferLowBitrate: DataUsageService.instance.dataSaverEnabled,
       );
       if (!mounted) return;
       setState(() => _results = results);
@@ -134,11 +136,13 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
       await widget.settings.update(
         stationName: station.name,
         stationUrl: station.streamUrl,
+        radioBitrateKbps: station.bitrate,
       );
       await MapRadioService.play(
         name: station.name,
         url: station.streamUrl,
         volume: widget.settings.radioVolume,
+        bitrateKbps: station.bitrate,
       );
       if (!mounted) return;
       setState(() => _playbackState = 'conectando');
@@ -233,6 +237,11 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
               const Expanded(
                 child: Text('Rádio online',
                     style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              ),
+              IconButton(
+                tooltip: 'Minimizar e continuar tocando',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.minimize_rounded),
               ),
               IconButton(
                 tooltip: 'Fechar',
@@ -463,6 +472,10 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
           ),
           const SizedBox(height: 12),
           const Text('O catálogo Radio Browser é público e não exige chave de API. A reprodução usa internet e ocorre diretamente do servidor da estação.'),
+          if (DataUsageService.instance.dataSaverEnabled) ...[
+            const SizedBox(height: 8),
+            const Text('Economia de dados ativa: estações de até 96 kb/s têm prioridade quando disponíveis.'),
+          ],
         ],
       );
 

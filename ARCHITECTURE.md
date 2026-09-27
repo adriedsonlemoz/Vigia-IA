@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.195+195
+# Arquitetura — Vigia IA 1.0.196+196
+
+## Áudio global, rádio persistente e telemetria de dados — 1.0.196
+
+- `GlobalAudioService` é o coordenador único de voz e alertas gravados. Ele compartilha a mesma instância de `SpeechService`, mantém o mute global, recupera o TTS no retorno do segundo plano e captura falhas sem bloquear os demais recursos.
+- `DiagnosticReportService` combina o estado global com os dados nativos de AudioFocus, volume, mute e dispositivos de saída. O teste tenta primeiro o player de alerta e usa TTS como alternativa independente.
+- `RadioPlaybackService` permanece como serviço foreground Android. O painel Flutter apenas controla e observa o estado nativo, portanto minimizar ou trocar de tela não destrói a reprodução. AudioFocus e alteração transitória de volume são tratados no serviço.
+- `DataUsageService` amostra `TrafficStats` do UID em intervalo de 15 minutos, persiste deltas diários e bases de sessão/viagem e atualiza imediatamente ao abrir a tela. Wi-Fi e móvel são atribuídos à conexão ativa no momento da amostra.
+- A separação por Rádio, Mapas, Câmeras/transmissão, Busca/Pontos Próximos, Clima e Downloads usa contadores nos respectivos serviços. **Outros** reconcilia o total real do UID com os módulos conhecidos.
+- Economia de dados é uma preferência central consultada pelos serviços não críticos. Segurança e alertas críticos não são reduzidos; transmissão só baixa a qualidade mediante a opção explícita adicional.
 
 ## Diálogos do mapa e rádio pesquisável — 1.0.195
 

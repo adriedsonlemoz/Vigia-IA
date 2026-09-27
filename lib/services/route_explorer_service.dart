@@ -19,6 +19,7 @@ import 'map_bike_consolidation_policy.dart';
 import 'map_route_service.dart';
 import 'route_explorer_alert_policy.dart';
 import 'route_explorer_poi_catalog.dart';
+import 'data_usage_service.dart';
 
 class RouteExplorerService extends ChangeNotifier {
   RouteExplorerService._();
@@ -200,7 +201,10 @@ class RouteExplorerService extends ChangeNotifier {
 
   void _scheduleSettingsRefresh() {
     _settingsRefreshDebounce?.cancel();
-    _settingsRefreshDebounce = Timer(const Duration(milliseconds: 450), () {
+    final delay = DataUsageService.instance.dataSaverEnabled
+        ? const Duration(seconds: 3)
+        : const Duration(milliseconds: 450);
+    _settingsRefreshDebounce = Timer(delay, () {
       if (_loading || _routeState.current == null) return;
       unawaited(searchNow(requestPermission: false));
     });
@@ -626,12 +630,18 @@ class RouteExplorerService extends ChangeNotifier {
     final now = DateTime.now();
     final lastAt = _lastAutomaticSearchAt ?? _resultsUpdatedAt;
     final lastOrigin = _lastSearchOrigin;
+    final refreshInterval = DataUsageService.instance.dataSaverEnabled
+        ? const Duration(minutes: 15)
+        : automaticRefreshInterval;
+    final refreshDistance = DataUsageService.instance.dataSaverEnabled
+        ? 3000.0
+        : automaticRefreshDistanceMeters;
     final stale = lastAt == null ||
-        now.difference(lastAt) >= automaticRefreshInterval;
+        now.difference(lastAt) >= refreshInterval;
     final movedMeters = lastOrigin == null
         ? double.infinity
         : LocationTrackingService.distanceMeters(lastOrigin, current);
-    final moved = movedMeters >= automaticRefreshDistanceMeters;
+    final moved = movedMeters >= refreshDistance;
     final coverageEdge = lastOrigin == null ||
         movedMeters >= (_settings.radiusKm * 1000 * 0.60);
     final headingChanged = _headingChangedSignificantly(
@@ -683,13 +693,18 @@ class RouteExplorerService extends ChangeNotifier {
         Uri.parse('https://overpass-api.de/api/interpreter'),
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195');
+      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196');
       request.headers.contentType = ContentType.parse(
         'application/x-www-form-urlencoded; charset=utf-8',
       );
       request.write('data=${Uri.encodeQueryComponent(query)}');
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
+      DataUsageService.instance.record(
+        DataUsageModule.nearby,
+        received: utf8.encode(body).length,
+        sent: utf8.encode(query).length,
+      );
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
           'Falha ao consultar locais úteis (${response.statusCode}).',

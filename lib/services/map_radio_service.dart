@@ -9,6 +9,7 @@ class MapRadioService {
     required String name,
     required String url,
     double volume = 0.8,
+    int bitrateKbps = 0,
   }) async {
     final uri = Uri.tryParse(url.trim());
     if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http') ||
@@ -20,6 +21,7 @@ class MapRadioService {
       'name': name.trim(),
       'url': uri.toString(),
       'volume': volume.clamp(0.0, 1.0).toDouble(),
+      'bitrate': bitrateKbps.clamp(0, 1024).toInt(),
     });
   }
 
@@ -51,6 +53,7 @@ class MapRadioService {
     if (!Platform.isAndroid) {
       return const MapRadioPlaybackStatus(
         state: 'parado', station: '', url: '', volume: 0.8,
+        bitrateKbps: 0, estimatedBytes: 0,
       );
     }
     final value = await _channel.invokeMethod<Map<Object?, Object?>>('status');
@@ -59,6 +62,8 @@ class MapRadioService {
       station: value?['station'] as String? ?? '',
       url: value?['url'] as String? ?? '',
       volume: (value?['volume'] as num?)?.toDouble() ?? 0.8,
+      bitrateKbps: (value?['bitrate'] as num?)?.toInt() ?? 0,
+      estimatedBytes: (value?['estimatedBytes'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -69,10 +74,14 @@ class MapRadioPlaybackStatus {
     required this.station,
     required this.url,
     required this.volume,
+    required this.bitrateKbps,
+    required this.estimatedBytes,
   });
 
   final String state;
   final String station;
   final String url;
   final double volume;
+  final int bitrateKbps;
+  final int estimatedBytes;
 }

@@ -9,6 +9,7 @@ import 'error_log_service.dart';
 import 'esp32_telemetry_service.dart';
 import 'native_platform_service.dart';
 import 'performance_telemetry_service.dart';
+import 'global_audio_service.dart';
 import 'system_health_service.dart';
 
 class DiagnosticReport {
@@ -177,10 +178,17 @@ class DiagnosticReportService {
     await _logs.initialize();
     await Esp32TelemetryService.instance.initialize();
     final health = await _health.collect();
+    final nativeAudio = await _native.audioDiagnostics();
+    await GlobalAudioService.instance.initialize();
+    final globalAudio =
+        await GlobalAudioService.instance.refreshDiagnostics();
     return DiagnosticReport(
       generatedAt: health.createdAt,
       health: health,
-      audioDiagnostics: await _native.audioDiagnostics(),
+      audioDiagnostics: <String, Object?>{
+        ...nativeAudio,
+        ...globalAudio.toMap(),
+      },
       alertEvents: PerformanceTelemetryService.instance.createReport().alertEvents,
       esp32Modules: Esp32TelemetryService.instance.diagnostics,
       entries: List<ErrorLogEntry>.of(_logs.entries),

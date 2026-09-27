@@ -13,6 +13,7 @@ import 'error_log_service.dart';
 import 'esp32_module_service.dart';
 import 'esp32_telemetry_service.dart';
 import 'map_weather_policy.dart';
+import 'data_usage_service.dart';
 
 class MapWeatherService extends ChangeNotifier {
   MapWeatherService._();
@@ -104,6 +105,13 @@ class MapWeatherService extends ChangeNotifier {
             ) <=
             MapWeatherPolicy.locationRefreshDistanceKm;
     if (!force &&
+        DataUsageService.instance.dataSaverEnabled &&
+        cacheNear &&
+        now.difference(cache.updatedAt) < const Duration(hours: 2)) {
+      _recomputeSnapshot();
+      return;
+    }
+    if (!force &&
         cacheNear &&
         MapWeatherPolicy.cacheFresh(cache.updatedAt, now)) {
       _recomputeSnapshot();
@@ -185,12 +193,16 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.195 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.196 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)
         .join()
         .timeout(const Duration(seconds: 8));
+    DataUsageService.instance.record(
+      DataUsageModule.weather,
+      received: utf8.encode(body).length,
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw HttpException('HTTP ${response.statusCode}');
     }

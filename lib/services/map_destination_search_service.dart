@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'data_usage_service.dart';
+
 import '../models/map_destination_search.dart';
 import '../models/map_route_point.dart';
 import '../models/offline_map_package.dart';
@@ -449,7 +451,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -458,6 +460,10 @@ class MapDestinationSearchService extends ChangeNotifier {
     request.write('data=${Uri.encodeQueryComponent(query.toString())}');
     final response = await request.close().timeout(const Duration(seconds: 22));
     final body = await utf8.decoder.bind(response).join();
+    DataUsageService.instance.record(
+      DataUsageModule.nearby,
+      received: utf8.encode(body).length,
+    );
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Overpass HTTP ${response.statusCode}');
     }
@@ -525,7 +531,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -534,6 +540,10 @@ class MapDestinationSearchService extends ChangeNotifier {
     request.write('data=${Uri.encodeQueryComponent(query)}');
     final response = await request.close().timeout(const Duration(seconds: 20));
     final body = await utf8.decoder.bind(response).join();
+    DataUsageService.instance.record(
+      DataUsageModule.nearby,
+      received: utf8.encode(body).length,
+    );
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Overpass HTTP ${response.statusCode}');
     }
@@ -589,7 +599,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 5));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -598,6 +608,10 @@ class MapDestinationSearchService extends ChangeNotifier {
     request.write('data=${Uri.encodeQueryComponent(query)}');
     final response = await request.close().timeout(timeout);
     final body = await utf8.decoder.bind(response).join().timeout(timeout);
+    DataUsageService.instance.record(
+      DataUsageModule.nearby,
+      received: utf8.encode(body).length,
+    );
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Overpass HTTP ${response.statusCode}');
     }
@@ -715,11 +729,15 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.195 map-reverse-search',
+          'VigiaIA/1.0.196 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
         final body = await utf8.decoder.bind(response).join();
+        DataUsageService.instance.record(
+          DataUsageModule.nearby,
+          received: utf8.encode(body).length,
+        );
         _lastNominatimRequestAt = DateTime.now();
         if (response.statusCode == HttpStatus.ok) {
           final decoded = jsonDecode(body);
@@ -791,10 +809,14 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.195 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
+    DataUsageService.instance.record(
+      DataUsageModule.nearby,
+      received: utf8.encode(body).length,
+    );
     _lastNominatimRequestAt = DateTime.now();
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Nominatim HTTP ${response.statusCode}');

@@ -181,6 +181,11 @@ extension _HomeRedesign on _HomeScreenState {
                 const SizedBox(height: 10),
                 _buildCurrentMonitorCard(sourceText, activeZones),
                 const SizedBox(height: 10),
+                DataUsageCompactCard(
+                  snapshot: _dataUsage.snapshot,
+                  onTap: () => _openScreen(const DataUsageScreen()),
+                ),
+                const SizedBox(height: 10),
                 _buildMonitorPreparation(activeZones),
               ],
             ),

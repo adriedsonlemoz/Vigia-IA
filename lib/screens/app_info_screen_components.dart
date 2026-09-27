@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.195',
+          version: '1.0.196',
           current: true,
+          changes: [
+            'Áudio global com diagnóstico de TTS, player, foco, saída e volume.',
+            'Rádio minimizável e persistente, com estado no mapa e controles na notificação.',
+            'Uso de dados por período, recurso e viagem, com economia e alertas configuráveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.195',
           changes: [
             'Painéis do mapa padronizados como janelas centralizadas, incluindo instrumentos, áudio, busca, opções e pontos.',
             'O resumo principal agora usa o nome Pontos próximos.',
@@ -1772,8 +1781,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.195',
+          version: '1.0.196',
           current: true,
+          changes: [
+            'Áudio global com diagnóstico de TTS, player, foco, saída e volume.',
+            'Rádio minimizável e persistente, com estado no mapa e controles na notificação.',
+            'Uso de dados por período, recurso e viagem, com economia e alertas configuráveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.195',
           changes: [
             'Painéis do mapa padronizados como janelas centralizadas, incluindo instrumentos, áudio, busca, opções e pontos.',
             'O resumo principal agora usa o nome Pontos próximos.',

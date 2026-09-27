@@ -9,9 +9,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioManager
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 
 /** Streaming escolhido pelo usuário; uma notificação permite interromper a reprodução. */
 class RadioPlaybackService : Service() {
@@ -24,6 +28,7 @@ class RadioPlaybackService : Service() {
         const val extraUrl = "url"
         const val extraName = "name"
         const val extraVolume = "volume"
+        const val extraBitrate = "bitrate"
         private const val channelId = "vigiaia_radio"
         private const val notificationId = 7302
         @Volatile var station: String = ""
@@ -34,10 +39,24 @@ class RadioPlaybackService : Service() {
             private set
         @Volatile var volume: Float = 0.8f
             private set
+        @Volatile var bitrateKbps: Int = 0
+            private set
+        @Volatile var estimatedBytes: Long = 0L
+            private set
     }
 
     private var player: MediaPlayer? = null
     private var audioManager: AudioManager? = null
+    private var focusRequest: AudioFocusRequest? = null
+    private val usageHandler = Handler(Looper.getMainLooper())
+    private val usageTick = object : Runnable {
+        override fun run() {
+            if (state != "tocando") return
+            val effectiveBitrate = bitrateKbps.takeIf { it > 0 } ?: 96
+            estimatedBytes += (effectiveBitrate.toLong() * 1000L / 8L) * 5L
+            usageHandler.postDelayed(this, 5000L)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -59,6 +78,7 @@ class RadioPlaybackService : Service() {
                 return START_NOT_STICKY
             }
             if (current.isPlaying) current.pause()
+            stopUsageTicker()
             state = "pausado"
             promote()
             return START_NOT_STICKY
@@ -73,6 +93,7 @@ class RadioPlaybackService : Service() {
             try {
                 current.start()
                 state = "tocando"
+                startUsageTicker()
                 promote()
             } catch (_: IllegalStateException) {
                 state = "indisponível"
@@ -94,13 +115,14 @@ class RadioPlaybackService : Service() {
         station = intent.getStringExtra(extraName)?.take(80).orEmpty().ifBlank { "Rádio online" }
         streamUrl = url
         volume = intent.getFloatExtra(extraVolume, volume).coerceIn(0f, 1f)
+        bitrateKbps = intent.getIntExtra(extraBitrate, 0).coerceIn(0, 1024)
         state = "conectando"
         promote()
+        stopUsageTicker()
         player?.release()
         player = null
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-        @Suppress("DEPRECATION")
-        audioManager?.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        requestRadioFocus()
         try {
             player = MediaPlayer().apply {
                 setAudioStreamType(AudioManager.STREAM_MUSIC)
@@ -109,6 +131,7 @@ class RadioPlaybackService : Service() {
                 setOnPreparedListener {
                     it.start()
                     state = "tocando"
+                    startUsageTicker()
                     promote()
                 }
                 setOnErrorListener { _, _, _ ->
@@ -160,14 +183,60 @@ class RadioPlaybackService : Service() {
         }
     }
 
+    private fun startUsageTicker() {
+        usageHandler.removeCallbacks(usageTick)
+        usageHandler.postDelayed(usageTick, 5000L)
+    }
+
+    private fun requestRadioFocus() {
+        val manager = audioManager ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val attributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(attributes)
+                .setAcceptsDelayedFocusGain(true)
+                .setOnAudioFocusChangeListener { change ->
+                    when (change) {
+                        AudioManager.AUDIOFOCUS_GAIN ->
+                            player?.setVolume(volume, volume)
+                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
+                            player?.setVolume(volume * 0.25f, volume * 0.25f)
+                        AudioManager.AUDIOFOCUS_LOSS -> stopSelf()
+                    }
+                }
+                .build()
+            focusRequest = request
+            manager.requestAudioFocus(request)
+        } else {
+            @Suppress("DEPRECATION")
+            manager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        }
+    }
+
+    private fun stopUsageTicker() {
+        usageHandler.removeCallbacks(usageTick)
+    }
+
     override fun onDestroy() {
+        stopUsageTicker()
         player?.release()
         player = null
-        @Suppress("DEPRECATION")
-        audioManager?.abandonAudioFocus(null)
+        val manager = audioManager
+        val request = focusRequest
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && manager != null && request != null) {
+            manager.abandonAudioFocusRequest(request)
+        } else {
+            @Suppress("DEPRECATION")
+            manager?.abandonAudioFocus(null)
+        }
+        focusRequest = null
         audioManager = null
         station = ""
         streamUrl = ""
+        bitrateKbps = 0
         state = "parado"
         super.onDestroy()
     }

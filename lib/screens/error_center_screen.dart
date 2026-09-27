@@ -7,6 +7,7 @@ import '../models/system_health.dart';
 import '../services/diagnostic_report_service.dart';
 import '../services/error_log_service.dart';
 import '../services/performance_telemetry_service.dart';
+import '../services/global_audio_service.dart';
 import '../widgets/export_destination_dialog.dart';
 import '../widgets/help_button.dart';
 
@@ -33,6 +34,7 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
   bool _refreshing = false;
   bool _exporting = false;
   bool _exportingPerformance = false;
+  bool _testingAudio = false;
 
   @override
   void initState() {
@@ -154,6 +156,26 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
         const SnackBar(content: Text('Não foi possível abrir o compartilhamento.')),
       );
     }
+  }
+
+  Future<void> _testAudio() async {
+    if (_testingAudio) return;
+    setState(() => _testingAudio = true);
+    var success = false;
+    try {
+      success = await GlobalAudioService.instance.testAudio();
+      await _refreshReport();
+    } catch (_) {
+      // O diagnóstico deve permanecer utilizável mesmo sem engine de áudio.
+    } finally {
+      if (mounted) setState(() => _testingAudio = false);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? 'Teste enviado ao player/TTS.'
+          : 'Player e TTS estão indisponíveis. Confira volume e saída.'),
+    ));
   }
 
   Future<void> _clear() async {
@@ -290,6 +312,11 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
               },
               onExport: _exportPerformance,
             ),
+            _AudioDiagnosticCard(
+              diagnostics: report.audioDiagnostics,
+              testing: _testingAudio,
+              onTest: _testAudio,
+            ),
             _CurrentStateGrid(health: report.health),
             SizedBox(
               height: 50,
@@ -342,4 +369,3 @@ class _ErrorCenterScreenState extends State<ErrorCenterScreen> {
     );
   }
 }
-

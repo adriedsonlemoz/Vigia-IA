@@ -11,6 +11,7 @@ import '../models/alert_preferences.dart';
 import '../models/bike_mode_config.dart';
 import '../models/device_telemetry.dart';
 import '../models/rgb_frame.dart';
+import 'data_usage_service.dart';
 import 'background_monitor_service.dart';
 import 'bike_mode_service.dart';
 import 'bike_sensor_service.dart';
@@ -62,15 +63,23 @@ class RemoteCameraServerService extends ChangeNotifier {
   int get port => _port;
   bool get bikeModeEnabled => _bikeConfig.enabled;
   String get bikePowerProfileLabel => _bikeConfig.powerProfile.label;
-  int get targetStreamFps => _bikeConfig.enabled
-      ? _bikeConfig.powerProfile.targetStreamFps
-      : 10;
-  int get targetStreamWidth => _bikeConfig.enabled
-      ? _bikeConfig.powerProfile.targetJpegWidth
-      : 960;
-  int get targetStreamQuality => _bikeConfig.enabled
-      ? _bikeConfig.powerProfile.targetJpegQuality
-      : 78;
+  bool get _reduceForDataSaver => DataUsageService.instance.dataSaverEnabled &&
+      DataUsageService.instance.reduceTransmissionQuality;
+  int get targetStreamFps => _reduceForDataSaver
+      ? 5
+      : _bikeConfig.enabled
+          ? _bikeConfig.powerProfile.targetStreamFps
+          : 10;
+  int get targetStreamWidth => _reduceForDataSaver
+      ? 640
+      : _bikeConfig.enabled
+          ? _bikeConfig.powerProfile.targetJpegWidth
+          : 960;
+  int get targetStreamQuality => _reduceForDataSaver
+      ? 58
+      : _bikeConfig.enabled
+          ? _bikeConfig.powerProfile.targetJpegQuality
+          : 78;
   bool get receiverConnected => _receiverConnected;
 
   Widget buildPreview() => _source?.buildPreview() ?? const SizedBox.expand();
@@ -229,8 +238,7 @@ class RemoteCameraServerService extends ChangeNotifier {
       );
     }
     try {
-      final maxWidth =
-          _bikeConfig.enabled ? _bikeConfig.powerProfile.targetJpegWidth : 960;
+      final maxWidth = targetStreamWidth;
       final scale = frame.width > maxWidth ? maxWidth / frame.width : 1.0;
       _streamWidth = (frame.width * scale).round();
       _streamHeight = (frame.height * scale).round();
@@ -315,6 +323,10 @@ class RemoteCameraServerService extends ChangeNotifier {
               );
             }
             request.response.add(jpeg);
+            DataUsageService.instance.record(
+              DataUsageModule.cameras,
+              sent: jpeg.length,
+            );
           }
         } else {
           request.response

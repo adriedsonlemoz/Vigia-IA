@@ -1,5 +1,5 @@
-import 'alert_voice_service.dart';
 import 'app_settings_service.dart';
+import 'global_audio_service.dart';
 import 'speech_service.dart';
 
 /// Ponte única de voz usada pelos recursos do mapa.
@@ -12,7 +12,7 @@ class MapVoiceService {
 
   static final MapVoiceService instance = MapVoiceService._();
 
-  final AlertVoiceService _voice = AlertVoiceService();
+  final GlobalAudioService _voice = GlobalAudioService.instance;
   final AppSettingsService _settings = AppSettingsService.instance;
   Future<void>? _initializing;
   bool _initialized = false;
@@ -46,7 +46,7 @@ class MapVoiceService {
     if (respectGlobalVoice && !monitorSettings.alertOutputs.voice) return;
 
     _voice.configure(monitorSettings.voiceAlertPreferences);
-    if (!_voice.enabled) _voice.setEnabled(true);
+    if (!_voice.enabled) return;
     await _voice.deliver(text, priority: priority);
   }
 

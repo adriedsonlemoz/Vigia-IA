@@ -12,6 +12,7 @@ import '../services/app_settings_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/esp32_module_service.dart';
 import '../services/background_monitor_service.dart';
+import '../services/data_usage_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
 import '../core/vigia_design.dart';
@@ -20,6 +21,7 @@ import '../widgets/vigia_ui.dart';
 import '../widgets/object_filter_dialog.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'camera_mode_screen.dart';
+import 'data_usage_screen.dart';
 import 'error_center_screen.dart';
 import 'events_screen.dart';
 import 'esp32_settings_screen.dart';
@@ -76,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _backgroundMonitoringEnabled = false;
   bool _voiceEnabled = true;
   bool _autoStartTriggered = false;
+  final DataUsageService _dataUsage = DataUsageService.instance;
 
   void _updateHomeState(VoidCallback update) {
     if (!mounted) return;
@@ -88,12 +91,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _rtspController.addListener(_onSourceDetailsChanged);
     _remoteUrlController.addListener(_onSourceDetailsChanged);
     _remoteKeyController.addListener(_onSourceDetailsChanged);
+    _dataUsage.addListener(_onDataUsageChanged);
+    unawaited(_dataUsage.initialize());
     unawaited(_loadSettings());
   }
 
   @override
   void dispose() {
     _persistDebounce?.cancel();
+    _dataUsage.removeListener(_onDataUsageChanged);
     _rtspController
       ..removeListener(_onSourceDetailsChanged)
       ..dispose();
@@ -104,6 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ..removeListener(_onSourceDetailsChanged)
       ..dispose();
     super.dispose();
+  }
+
+  void _onDataUsageChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadSettings() async {

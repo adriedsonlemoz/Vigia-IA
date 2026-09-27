@@ -22,7 +22,7 @@ import '../models/system_health.dart';
 import '../models/tracked_detection.dart';
 import '../models/video_source_config.dart';
 import '../services/alert_repeat_guard.dart';
-import '../services/alert_voice_service.dart';
+import '../services/global_audio_service.dart';
 import '../services/analysis_budget_policy.dart';
 import '../services/app_settings_service.dart';
 import '../services/background_monitor_service.dart';
@@ -85,7 +85,7 @@ class MonitorController extends ChangeNotifier {
   MonitorSettings _settings;
   VideoSourceConfig sourceConfig;
   ObjectDetectionService _detector = ObjectDetectionService();
-  final AlertVoiceService _speech = AlertVoiceService();
+  final GlobalAudioService _speech = GlobalAudioService.instance;
   final MotionDetectionService _motion = MotionDetectionService();
   final DetectionCadencePolicy _cadence = DetectionCadencePolicy();
   String _lastAlertDecision = 'aguardando análise';
@@ -1757,7 +1757,7 @@ class MonitorController extends ChangeNotifier {
     await BackgroundMonitorService.release(BackgroundMonitorService.monitorOwner);
     await _native.setBikeScreenBrightness(null);
     await _detector.dispose();
-    await _speech.dispose();
+    await _speech.disposeClient();
   }
 }
 

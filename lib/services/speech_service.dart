@@ -12,12 +12,15 @@ class SpeechService {
   bool _enabled = true;
   bool _initialized = false;
   bool _languageInstalled = false;
+  String? _lastError;
   int _generation = 0;
   SpeechPriority? _activePriority;
   DateTime? _activeStartedAt;
 
   bool get enabled => _enabled;
   bool get languageInstalled => _languageInstalled;
+  bool get initialized => _initialized;
+  String? get lastError => _lastError;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -30,19 +33,39 @@ class SpeechService {
           .isLanguageInstalled('pt-BR')
           .timeout(_initializationStepTimeout);
       _languageInstalled = installed == true;
-      if (_languageInstalled) {
-        await _tts.setLanguage('pt-BR').timeout(_initializationStepTimeout);
-        await _tts.setSpeechRate(0.48).timeout(_initializationStepTimeout);
-        await _tts.setVolume(1.0).timeout(_initializationStepTimeout);
-        await _tts.setPitch(1.0).timeout(_initializationStepTimeout);
-        await _tts
-            .awaitSpeakCompletion(true)
-            .timeout(_initializationStepTimeout);
-      }
-    } catch (_) {
+      if (_languageInstalled) await _configureEngine();
+      _lastError = null;
+    } catch (error) {
       _languageInstalled = false;
+      _lastError = error.toString();
     } finally {
       _initialized = true;
+    }
+  }
+
+  Future<void> _configureEngine() async {
+    await _tts.setLanguage('pt-BR').timeout(_initializationStepTimeout);
+    await _tts.setSpeechRate(0.48).timeout(_initializationStepTimeout);
+    await _tts.setVolume(1.0).timeout(_initializationStepTimeout);
+    await _tts.setPitch(1.0).timeout(_initializationStepTimeout);
+    await _tts.awaitSpeakCompletion(true).timeout(_initializationStepTimeout);
+  }
+
+  Future<void> recoverAfterResume() async {
+    if (!_initialized) {
+      await initialize();
+      return;
+    }
+    try {
+      final installed = await _tts
+          .isLanguageInstalled('pt-BR')
+          .timeout(_initializationStepTimeout);
+      _languageInstalled = installed == true;
+      if (_languageInstalled) await _configureEngine();
+      _lastError = null;
+    } catch (error) {
+      _languageInstalled = false;
+      _lastError = error.toString();
     }
   }
 
@@ -87,7 +110,8 @@ class SpeechService {
       await _tts.stop();
       if (!_enabled || generation != _generation) return;
       await _tts.speak(normalized);
-    } catch (_) {
+    } catch (error) {
+      _lastError = error.toString();
       // Uma falha pontual do TTS não deve interromper detecções futuras.
     } finally {
       if (generation == _generation) {

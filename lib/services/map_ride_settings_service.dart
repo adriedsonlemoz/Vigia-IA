@@ -21,6 +21,7 @@ class MapRideSettingsService extends ChangeNotifier {
   String radioName = '';
   String radioUrl = '';
   double radioVolume = 0.8;
+  int radioBitrateKbps = 0;
   List<Map<String, String>> stations = <Map<String, String>>[];
   bool roadOverlayEnabled = false;
 
@@ -47,6 +48,10 @@ class MapRideSettingsService extends ChangeNotifier {
           radioVolume = ((raw['radioVolume'] as num?)?.toDouble() ?? 0.8)
               .clamp(0.0, 1.0)
               .toDouble();
+          radioBitrateKbps =
+              ((raw['radioBitrateKbps'] as num?)?.toInt() ?? 0)
+                  .clamp(0, 1024)
+                  .toInt();
           stations = ((raw['stations'] as List?) ?? const <Object>[])
               .whereType<Map>()
               .map((entry) => <String, String>{
@@ -71,7 +76,8 @@ class MapRideSettingsService extends ChangeNotifier {
   Future<void> update({int? focus, bool? fullscreen, bool? alerts,
       bool? voice, bool? vibration, List<int>? limits,
       String? stationName, String? stationUrl, bool? roads,
-      double? radioVolume, List<Map<String, String>>? savedStations}) async {
+      double? radioVolume, int? radioBitrateKbps,
+      List<Map<String, String>>? savedStations}) async {
     if (focus != null) focusLevel = focus.clamp(0, 2).toInt();
     if (fullscreen != null) immersive = fullscreen;
     if (alerts != null) speedAlertsEnabled = alerts;
@@ -82,6 +88,9 @@ class MapRideSettingsService extends ChangeNotifier {
     if (stationUrl != null) radioUrl = stationUrl.trim();
     if (radioVolume != null) {
       this.radioVolume = radioVolume.clamp(0.0, 1.0).toDouble();
+    }
+    if (radioBitrateKbps != null) {
+      this.radioBitrateKbps = radioBitrateKbps.clamp(0, 1024).toInt();
     }
     if (savedStations != null) stations = savedStations;
     if (roads != null) roadOverlayEnabled = roads;
@@ -99,6 +108,7 @@ class MapRideSettingsService extends ChangeNotifier {
       'radioName': radioName,
       'radioUrl': radioUrl,
       'radioVolume': this.radioVolume,
+      'radioBitrateKbps': this.radioBitrateKbps,
       'stations': stations,
       'roadOverlayEnabled': roadOverlayEnabled,
     });

@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../models/alert_preferences.dart';
-import 'alert_voice_service.dart';
+import 'global_audio_service.dart';
 import 'app_settings_service.dart';
 import 'bike_sensor_service.dart';
 import 'native_platform_service.dart';
@@ -192,7 +192,7 @@ class BikePressureSafetyService extends ChangeNotifier {
   final BikeSensorService _sensors = BikeSensorService.instance;
   final AppSettingsService _settings = AppSettingsService.instance;
   final NativePlatformService _native = NativePlatformService.instance;
-  final AlertVoiceService _voice = AlertVoiceService();
+  final GlobalAudioService _voice = GlobalAudioService.instance;
   final BikeRapidPressureLossDetector _detector =
       BikeRapidPressureLossDetector();
   final Map<BikeTirePosition, DateTime> _lastAlertAt = {};
@@ -328,7 +328,7 @@ class BikePressureSafetyService extends ChangeNotifier {
       timer.cancel();
     }
     _prominentTimers.clear();
-    unawaited(_voice.dispose());
+    unawaited(_voice.disposeClient());
     super.dispose();
   }
 }

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:latlong2/latlong.dart';
 
+import 'data_usage_service.dart';
+
 /// Sobreposição opcional de vias cuja superfície está marcada no OSM.
 /// Não infere asfalto/terra de vias sem tag surface.
 class MapSurfaceSegment {
@@ -43,8 +45,11 @@ class MapRoadOverlayService {
   Future<List<MapSurfaceSegment>> near(LatLng point) async {
     final now = DateTime.now();
     final previous = _center;
+    final cacheDuration = DataUsageService.instance.dataSaverEnabled
+        ? const Duration(minutes: 30)
+        : const Duration(minutes: 12);
     if (_fetchedAt != null && previous != null &&
-        DateTime.now().difference(_fetchedAt!) < const Duration(minutes: 12) &&
+        DateTime.now().difference(_fetchedAt!) < cacheDuration &&
         const Distance().as(LengthUnit.Meter, point, previous) < 1200) {
       return _cached;
     }
@@ -61,7 +66,7 @@ class MapRoadOverlayService {
         ');out geom 350;';
     final request = await _client.postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 7));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.193 road-overlay');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.196 road-overlay');
     request.headers.contentType = ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
     request.write('data=${Uri.encodeQueryComponent(query)}');
     final response = await request.close().timeout(const Duration(seconds: 15));
@@ -70,6 +75,11 @@ class MapRoadOverlayService {
       throw HttpException('Overpass ${response.statusCode}');
     }
     final body = await utf8.decoder.bind(response).join().timeout(const Duration(seconds: 8));
+    DataUsageService.instance.record(
+      DataUsageModule.maps,
+      received: utf8.encode(body).length,
+      sent: utf8.encode(query).length,
+    );
     final decoded = jsonDecode(body);
     final segments = <MapSurfaceSegment>[];
     if (decoded is Map && decoded['elements'] is List) {

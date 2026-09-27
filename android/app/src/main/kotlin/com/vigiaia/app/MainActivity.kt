@@ -36,6 +36,7 @@ import android.provider.MediaStore
 import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.TrafficStats
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -228,6 +229,8 @@ class MainActivity : FlutterActivity() {
                                     .putExtra(RadioPlaybackService.extraName, call.argument<String>("name").orEmpty())
                                     .putExtra(RadioPlaybackService.extraVolume,
                                         (call.argument<Double>("volume") ?: 0.8).toFloat())
+                                    .putExtra(RadioPlaybackService.extraBitrate,
+                                        call.argument<Int>("bitrate") ?: 0)
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(serviceIntent)
                                 else startService(serviceIntent)
                                 result.success(true)
@@ -259,6 +262,8 @@ class MainActivity : FlutterActivity() {
                         "station" to RadioPlaybackService.station,
                         "url" to RadioPlaybackService.streamUrl,
                         "volume" to RadioPlaybackService.volume.toDouble(),
+                        "bitrate" to RadioPlaybackService.bitrateKbps,
+                        "estimatedBytes" to RadioPlaybackService.estimatedBytes,
                     ))
                     else -> result.notImplemented()
                 }
@@ -360,6 +365,7 @@ class MainActivity : FlutterActivity() {
             }
             "stopAlertAudio" -> { alertAudio.stop(); result.success(true) }
             "audioDiagnostics" -> result.success(alertAudio.diagnostics())
+            "networkUsageSnapshot" -> result.success(networkUsageSnapshot())
             "setMonitorFullscreen" -> {
                 monitorFullscreen = call.argument<Boolean>("enabled") ?: false
                 MonitorSystemUi.apply(window, monitorFullscreen)
@@ -1066,6 +1072,19 @@ class MainActivity : FlutterActivity() {
         } catch (_: Throwable) {
             "Indisponível"
         }
+    }
+
+    private fun networkUsageSnapshot(): Map<String, Any?> {
+        val uid = applicationInfo.uid
+        val received = TrafficStats.getUidRxBytes(uid)
+        val sent = TrafficStats.getUidTxBytes(uid)
+        return mapOf(
+            "uid" to uid,
+            "receivedBytes" to received.takeIf { it != TrafficStats.UNSUPPORTED },
+            "sentBytes" to sent.takeIf { it != TrafficStats.UNSUPPORTED },
+            "connection" to activeConnectionType(),
+            "capturedAtMs" to System.currentTimeMillis(),
+        )
     }
 
     private fun readSystemHealth(): Map<String, Any?> {

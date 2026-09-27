@@ -2,11 +2,13 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.195+195`
+> **Versão atual:** `1.0.196+196`
 
 ## Estado atual
 
-A `1.0.195+195` padroniza os painéis da tela principal do mapa como janelas centralizadas, renomeia o resumo para **Pontos próximos** e amplia a rádio com pesquisa no catálogo público Radio Browser, favoritas, metadados disponíveis, volume e controles de reprodução. Consulte `RELEASE-1.0.195.md`.
+A `1.0.196+196` unifica TTS e alertas personalizados em uma camada global tolerante a falhas, mantém a rádio tocando ao minimizar ou trocar de tela e adiciona medição de uso de dados pelo UID do aplicativo, detalhamento por recurso, viagem atual, economia e alertas configuráveis. Consulte `RELEASE-1.0.196.md`.
+
+O Diagnóstico agora informa disponibilidade de TTS e player, AudioFocus, saída e volume de mídia, além de oferecer teste de áudio. O card **Uso de dados** abre a visão de sessão, dia, sete dias, mês, recebido/enviado, Wi-Fi, móvel e módulos. Os valores por módulo são contadores internos; o total usa o UID Android quando disponível.
 
 A `1.0.194+194` corrige os cinco avisos de controle de fluxo encontrados pelo `flutter analyze` no build 155, que interrompiam a geração do APK. O mapa Bike, rádio online, ETA, seleção livre, alertas e a abertura protegida de Novidades permanecem preservados.
 

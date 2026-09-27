@@ -128,6 +128,99 @@ class _CurrentStateGrid extends StatelessWidget {
   }
 }
 
+class _AudioDiagnosticCard extends StatelessWidget {
+  const _AudioDiagnosticCard({
+    required this.diagnostics,
+    required this.testing,
+    required this.onTest,
+  });
+
+  final Map<String, Object?> diagnostics;
+  final bool testing;
+  final VoidCallback onTest;
+
+  @override
+  Widget build(BuildContext context) {
+    final tts = diagnostics['ttsAvailable'] == true;
+    final player = diagnostics['playerAvailable'] == true;
+    final volume = (diagnostics['mediaVolume'] as num?)?.toInt() ?? 0;
+    final maxVolume = (diagnostics['mediaMaxVolume'] as num?)?.toInt() ?? 0;
+    final muted = diagnostics['mediaMuted'] == true;
+    final output = diagnostics['currentOutput']?.toString() ?? 'Indisponível';
+    final focus = diagnostics['audioFocus']?.toString() ?? 'Não solicitado';
+    return Card(
+      margin: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.volume_up_outlined),
+                SizedBox(width: 8),
+                Text('Áudio global',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _AudioStateChip(label: 'TTS', ok: tts),
+                _AudioStateChip(label: 'Player', ok: player),
+                _AudioInfoChip(label: 'Foco: $focus'),
+                _AudioInfoChip(label: 'Saída: $output'),
+                _AudioInfoChip(
+                  label: muted
+                      ? 'Mídia silenciada'
+                      : 'Volume: $volume/$maxVolume',
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: testing ? null : onTest,
+              icon: testing
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.play_circle_outline_rounded),
+              label: const Text('Testar áudio'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AudioStateChip extends StatelessWidget {
+  const _AudioStateChip({required this.label, required this.ok});
+  final String label;
+  final bool ok;
+
+  @override
+  Widget build(BuildContext context) => Chip(
+        avatar: Icon(
+          ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+          size: 18,
+          color: ok ? const Color(0xFF4ADE80) : Colors.orange,
+        ),
+        label: Text('$label: ${ok ? 'OK' : 'indisponível'}'),
+      );
+}
+
+class _AudioInfoChip extends StatelessWidget {
+  const _AudioInfoChip({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Chip(label: Text(label));
+}
+
 class _StateChip extends StatelessWidget {
   const _StateChip({
     required this.label,

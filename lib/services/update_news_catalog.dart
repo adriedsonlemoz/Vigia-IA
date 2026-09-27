@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.195', build: 195);
+      AppBuildVersion(version: '1.0.196', build: 196);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.195', build: 195),
+      version: AppBuildVersion(version: '1.0.196', build: 196),
       changes: <String>[
-        'Os painéis do mapa agora abrem centralizados, com margens e tamanho consistentes.',
-        'Pontos próximos recebe o novo nome em toda a tela principal.',
-        'A rádio agora pesquisa estações online e reúne favoritos, localização, volume e controles completos.',
+        'O áudio agora usa uma coordenação global com teste e diagnóstico de saída.',
+        'A rádio pode ser minimizada e continua tocando com controles na notificação.',
+        'Uso de dados reúne períodos, viagem, economia e alertas configuráveis.',
       ],
     ),
   ]);

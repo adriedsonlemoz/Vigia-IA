@@ -9,6 +9,7 @@ import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/remote_phone_status.dart';
 import '../models/rgb_frame.dart';
+import '../services/data_usage_service.dart';
 
 class RemotePhoneCameraSource implements VideoSource {
   RemotePhoneCameraSource({
@@ -125,6 +126,10 @@ class RemotePhoneCameraSource implements VideoSource {
         response.headers.value('x-vigia-frame-sequence') ?? '',
       );
       final bytes = await consolidateHttpClientResponseBytes(response);
+      DataUsageService.instance.record(
+        DataUsageModule.cameras,
+        received: bytes.length,
+      );
       final receivedAt = DateTime.now();
       _frameNetworkLatencyMs = receivedAt.difference(startedAt).inMilliseconds;
       _latestJpeg.value = bytes;
