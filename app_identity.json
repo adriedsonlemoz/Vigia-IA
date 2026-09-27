@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.201 corrige a integração do Google Maps (callback de câmera e acesso nulo em POI) e restaura a recuperação automática de rota após ficar offline, que estava inativa por um handler duplicado.",
-  "version": "1.0.201",
-  "build": 201
+  "notes": "A 1.0.202 corrige a integração do Google Maps (callback de câmera e acesso nulo em POI) e restaura a recuperação automática de rota após ficar offline, que estava inativa por um handler duplicado.",
+  "version": "1.0.202",
+  "build": 202
 }

@@ -77,7 +77,7 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.201',
+          version: '1.0.202',
           current: true,
           changes: [
             'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
@@ -1830,7 +1830,7 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.201',
+          version: '1.0.202',
           current: true,
           changes: [
             'Corrigido o teste das configurações do provedor de mapa para inicializar o binding Flutter antes de usar o path_provider.',

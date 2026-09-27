@@ -1,12 +1,23 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vigiaia/services/map_view_settings_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(pathProviderChannel, (call) async {
+    if (call.method == 'getApplicationSupportDirectory') {
+      return '/tmp/vigiaia-test-support';
+    }
+    return null;
+  });
+
   test('provedor do mapa tem mapa atual como padrao', () {
     expect(MapProvider.current.label, 'Mapa atual');
     expect(MapProvider.google.label, 'Google Maps');

@@ -1,3 +1,9 @@
+## 1.0.202+202 — 2026-09-27
+
+- Ajustado o teste de configuração do provedor de mapa para simular o canal `path_provider` no ambiente Flutter sem plugins nativos.
+- Mantidos o mapa atual, Google Maps, GPS, rotas, POIs e mapas offline; a alteração fica restrita ao ambiente de teste.
+- Documentação, catálogo de Novidades, metadados, User-Agents, verificador e versionamento sincronizados em `1.0.202+202`.
+
 ## 1.0.201+201 — 2026-09-27
 
 - Corrigido o teste de persistência das configurações do provedor de mapa: o `path_provider` agora é executado após a inicialização explícita do binding de testes Flutter.

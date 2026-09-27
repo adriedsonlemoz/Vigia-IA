@@ -1,9 +1,8 @@
-# Arquitetura — Vigia IA 1.0.201+201
+# Arquitetura — Vigia IA 1.0.202+202
 
-## Correções da 1.0.201
+## Validação de testes da 1.0.202
 
-- O widget `GoogleMapView` expõe `onCameraMoveStarted` como `VoidCallback`, compatível com a API real do `google_maps_flutter`. A tela de mapa mantém um sinalizador interno (`_googleProgrammaticCameraMove`), ativado durante `_animateGoogleCamera`/`_fitGoogleBounds`, para saber se um movimento de câmera foi disparado pelo app ou por gesto do usuário — preservando o comportamento de desligar o modo "seguir" apenas em gestos manuais.
-- O handler de conectividade (`_onMapConnectivityChanged`) passou a existir em um único lugar, na extension `_MapMonitoringOfflineSupport`, restaurando a recuperação automática de rota, atualização de POIs e política de fallback offline após a reconexão.
+O teste `map_view_settings_provider_test.dart` mantém o `TestWidgetsFlutterBinding` inicializado e registra um `MethodChannel` controlado para `path_provider`. Assim, `getApplicationSupportDirectory()` pode ser exercitado no `flutter test` sem depender da implementação nativa do plugin. A produção continua usando o `path_provider` normalmente.
 
 ## Provedor opcional do Google Maps — 1.0.199
 

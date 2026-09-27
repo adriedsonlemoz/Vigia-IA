@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.201', build: 201);
+      AppBuildVersion(version: '1.0.202', build: 202);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.201', build: 201),
+      version: AppBuildVersion(version: '1.0.202', build: 202),
       changes: <String>[
-        'Teste das configurações do provedor de mapa agora inicializa o ambiente Flutter antes de acessar o armazenamento do aplicativo.',
-        'Compatibilidade de testes reforçada sem alterar mapa atual, Google Maps, GPS, rotas, POIs ou mapas offline.',
+        'Teste das configurações do provedor de mapa usa um canal controlado para validar o armazenamento no ambiente Flutter.',
+        'Validação automatizada reforçada sem alterar mapa atual, Google Maps, GPS, rotas, POIs ou mapas offline.',
       ],
     ),
   ]);
