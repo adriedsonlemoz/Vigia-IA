@@ -27,6 +27,7 @@ class BikeSensorService extends ChangeNotifier {
   Timer? _timer;
   BikeSensorSnapshot? _snapshot;
   bool _initialized = false;
+  Future<void>? _initializing;
   int _tick = 0;
   BikeSimulationScenario? _lastSimulationScenario;
   int _simulationScenarioTick = 0;
@@ -40,11 +41,19 @@ class BikeSensorService extends ChangeNotifier {
 
   String? get primaryModuleId => _primaryModuleId;
 
-  Future<void> initialize() async {
-    if (_initialized) return;
-    await _bikeMode.initialize();
-    _initialized = true;
-    _syncWithBikeConfig();
+  Future<void> initialize() {
+    if (_initialized) return Future<void>.value();
+    return _initializing ??= _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _bikeMode.initialize();
+      _initialized = true;
+      _syncWithBikeConfig();
+    } finally {
+      _initializing = null;
+    }
   }
 
   void _syncWithBikeConfig() {

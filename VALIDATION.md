@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.188+188
+# Validação Vigia IA 1.0.189+189
+
+
+## Abertura após atualização — 1.0.189
+
+- Atualizar por cima da 1.0.188 e abrir o app: a tela de carregamento não pode permanecer indefinidamente; a tela inicial deve ser liberada antes da preparação de ESP32, Bike e voz.
+- Com ESP32 desligado ou inacessível, confirmar que Home/Monitor/Transmissão continuam abrindo normalmente e que a telemetria se recupera quando o módulo voltar.
+- Com serviço de TTS indisponível/lento, confirmar que o app abre e que a voz pode ficar temporariamente indisponível sem bloquear navegação, mapa ou monitoramento.
+- Confirmar que uma inicialização simultânea de `BikeSensorService`/`BikePressureSafetyService` registra apenas um listener e não duplica timers/alertas.
+- Testar primeira instalação: onboarding continua aparecendo; testar instalação existente: o modo inicial salvo continua sendo respeitado.
+- Executar `test/startup_guard_test.dart`, `flutter analyze`, `flutter test`, `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
 
 ## Mapa e novidades — 1.0.188
 

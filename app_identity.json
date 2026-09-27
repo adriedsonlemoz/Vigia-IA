@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.188 redesenha o mapa e apresenta as novidades após o acesso inicial, com confirmação explícita antes de registrar a exibição.",
-  "version": "1.0.188",
-  "build": 188
+  "notes": "A 1.0.189 remove ESP32, sensores Bike e voz/TTS da rota crítica de abertura, adiciona limites de espera e mantém recuperação segura para o app não ficar preso no carregamento.",
+  "version": "1.0.189",
+  "build": 189
 }

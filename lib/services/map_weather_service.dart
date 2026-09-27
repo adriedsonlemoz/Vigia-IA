@@ -185,7 +185,7 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.188 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.189 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)

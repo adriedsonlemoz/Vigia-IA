@@ -199,6 +199,7 @@ class BikePressureSafetyService extends ChangeNotifier {
   final Map<BikeTirePosition, Timer> _prominentTimers = {};
 
   bool _initialized = false;
+  Future<void>? _initializing;
   DateTime? _lastProcessedAt;
 
   Map<BikeTirePosition, BikeRapidPressureLoss> get activeRapidLosses =>
@@ -213,16 +214,24 @@ class BikePressureSafetyService extends ChangeNotifier {
 
   bool get hasRapidPressureLoss => _detector.active.isNotEmpty;
 
-  Future<void> initialize() async {
-    if (_initialized) return;
-    await _sensors.initialize();
-    await _settings.initialize();
-    await _voice.initialize();
-    _voice.configure(_settings.profile.settings.voiceAlertPreferences);
-    _voice.setEnabled(_settings.profile.settings.alertOutputs.voice);
-    _sensors.addListener(_onSensorChanged);
-    _initialized = true;
-    _onSensorChanged();
+  Future<void> initialize() {
+    if (_initialized) return Future<void>.value();
+    return _initializing ??= _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _sensors.initialize();
+      await _settings.initialize();
+      await _voice.initialize();
+      _voice.configure(_settings.profile.settings.voiceAlertPreferences);
+      _voice.setEnabled(_settings.profile.settings.alertOutputs.voice);
+      _sensors.addListener(_onSensorChanged);
+      _initialized = true;
+      _onSensorChanged();
+    } finally {
+      _initializing = null;
+    }
   }
 
   void _onSensorChanged() {

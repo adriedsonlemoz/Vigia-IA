@@ -14,8 +14,9 @@ class UpdateNewsCatalog {
     UpdateRelease(
       version: AppBuildVersion(version: '1.0.189', build: 189),
       changes: <String>[
-        'Corrigida uma trava na abertura do app: a inicialização da voz podia ficar presa indefinidamente se o motor de fala do sistema não respondesse, deixando a tela de carregamento girando para sempre.',
-        'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial caso algum sensor ou serviço demore para responder.',
+        'A abertura libera a tela principal antes de preparar ESP32, sensores e alertas em segundo plano.',
+        'A preparação de voz/TTS ganhou limite de espera para não prender a inicialização.',
+        'O app mantém um caminho de recuperação quando uma etapa de abertura demora além do esperado.',
       ],
     ),
   ]);

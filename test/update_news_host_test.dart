@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vigiaia/core/app_metadata.dart';
 import 'package:vigiaia/models/update_release.dart';
 import 'package:vigiaia/services/update_news_catalog.dart';
 import 'package:vigiaia/services/update_news_service.dart';
@@ -20,7 +21,7 @@ class _Store implements UpdateNewsStore {
 class _Installed implements InstalledVersionProvider {
   @override
   Future<AppBuildVersion> currentVersion() async =>
-      const AppBuildVersion(version: '1.0.188', build: 188);
+      const AppBuildVersion(version: AppMetadata.version, build: AppMetadata.build);
 }
 
 void main() {
@@ -30,7 +31,7 @@ void main() {
     final service = UpdateNewsService(
       catalog: const UpdateNewsCatalog(<UpdateRelease>[
         UpdateRelease(
-          version: AppBuildVersion(version: '1.0.188', build: 188),
+          version: AppBuildVersion(version: AppMetadata.version, build: AppMetadata.build),
           changes: <String>['Mapa atualizado'],
         ),
       ]),
@@ -51,7 +52,7 @@ void main() {
 
     await tester.tap(find.text('Entendi'));
     await tester.pumpAndSettle();
-    expect(store.shown, '1.0.188+188');
+    expect(store.shown, '${AppMetadata.version}+${AppMetadata.build}');
     expect(handled, isTrue);
 
     await tester.pumpWidget(const SizedBox());

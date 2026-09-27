@@ -13,6 +13,7 @@ import '../services/bike_pressure_safety_service.dart';
 import '../services/app_launch_mode_service.dart';
 import '../services/esp32_telemetry_service.dart';
 import '../services/native_platform_service.dart';
+import '../services/startup_guard.dart';
 import '../widgets/update_news_host.dart';
 
 class VigiaIaApp extends StatelessWidget {
@@ -47,6 +48,10 @@ class _StartupGate extends StatefulWidget {
 }
 
 class _StartupGateState extends State<_StartupGate> {
+  static const Duration _requiredStartupTimeout = Duration(seconds: 4);
+  static const Duration _optionalStartupTimeout = Duration(seconds: 8);
+
+  final StartupGuard _startupGuard = const StartupGuard();
   bool? _onboardingCompleted;
   AppLaunchMode? _launchMode;
   bool _launchModeLoaded = false;
@@ -58,24 +63,75 @@ class _StartupGateState extends State<_StartupGate> {
   }
 
   Future<void> _load() async {
-    final completed = await NativePlatformService.instance.onboardingCompleted();
+    final completed =
+        await _startupGuard.run<bool>(
+          NativePlatformService.instance.onboardingCompleted,
+          timeout: _requiredStartupTimeout,
+          onError: (error, stackTrace) => _traceStartupIssue(
+            'onboarding',
+            error,
+            stackTrace,
+          ),
+        ) ??
+        false;
     final launchMode = completed
-        ? await AppLaunchModeService.instance.initialize()
+        ? await _startupGuard.run<AppLaunchMode?>(
+            AppLaunchModeService.instance.initialize,
+            timeout: _requiredStartupTimeout,
+            onError: (error, stackTrace) => _traceStartupIssue(
+              'modo inicial',
+              error,
+              stackTrace,
+            ),
+          )
         : null;
-    if (completed) {
-      // Estes serviços alimentam painéis (ESP32/Bike) que não decidem qual
-      // tela abrir. Rodam em segundo plano, sem "await", para que uma falha
-      // de hardware/plugin (ex.: motor de TTS travado) nunca prenda a tela
-      // de carregamento inicial do app.
-      unawaited(Esp32TelemetryService.instance.initialize());
-      unawaited(BikePressureSafetyService.instance.initialize());
-    }
+
     if (!mounted) return;
     setState(() {
       _onboardingCompleted = completed;
       _launchMode = launchMode;
       _launchModeLoaded = true;
     });
+
+    if (completed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_initializeOptionalServices());
+      });
+    }
+  }
+
+  Future<void> _initializeOptionalServices() async {
+    await Future.wait<void>(<Future<void>>[
+      _initializeOptionalService(
+        'ESP32',
+        Esp32TelemetryService.instance.initialize,
+      ),
+      _initializeOptionalService(
+        'segurança Bike',
+        BikePressureSafetyService.instance.initialize,
+      ),
+    ]);
+  }
+
+  Future<void> _initializeOptionalService(
+    String name,
+    Future<void> Function() initialize,
+  ) =>
+      _startupGuard.runOptional(
+        initialize,
+        timeout: _optionalStartupTimeout,
+        onError: (error, stackTrace) =>
+            _traceStartupIssue(name, error, stackTrace),
+      );
+
+  void _traceStartupIssue(
+    String stage,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    debugPrint('Vigia IA startup [$stage]: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   @override

@@ -6,6 +6,8 @@ import 'performance_telemetry_service.dart';
 enum SpeechPriority { normal, high }
 
 class SpeechService {
+  static const Duration _initializationStepTimeout = Duration(seconds: 3);
+
   final FlutterTts _tts = FlutterTts();
   bool _enabled = true;
   bool _initialized = false;
@@ -23,30 +25,19 @@ class SpeechService {
     _tts.setCompletionHandler(() => _trace('tts_completed'));
     _tts.setCancelHandler(() => _trace('tts_cancelled'));
     _tts.setErrorHandler((message) => _trace('tts_error', '$message'));
-    // O motor de TTS do sistema pode não responder (por exemplo, logo após
-    // uma atualização do app ou do próprio motor de voz do Android), e a
-    // ponte nativa do flutter_tts não garante retorno nesse caso. Sem um
-    // limite de tempo aqui, a inicialização do app inteiro ficava presa
-    // indefinidamente na tela de carregamento. Cada chamada recebe um
-    // timeout curto; se estourar, seguimos sem voz em vez de travar o app.
-    const timeoutDuration = Duration(seconds: 3);
     try {
       final installed = await _tts
           .isLanguageInstalled('pt-BR')
-          .timeout(timeoutDuration, onTimeout: () => false);
+          .timeout(_initializationStepTimeout);
       _languageInstalled = installed == true;
       if (_languageInstalled) {
-        await _tts
-            .setLanguage('pt-BR')
-            .timeout(timeoutDuration, onTimeout: () => 1);
-        await _tts
-            .setSpeechRate(0.48)
-            .timeout(timeoutDuration, onTimeout: () => 1);
-        await _tts.setVolume(1.0).timeout(timeoutDuration, onTimeout: () => 1);
-        await _tts.setPitch(1.0).timeout(timeoutDuration, onTimeout: () => 1);
+        await _tts.setLanguage('pt-BR').timeout(_initializationStepTimeout);
+        await _tts.setSpeechRate(0.48).timeout(_initializationStepTimeout);
+        await _tts.setVolume(1.0).timeout(_initializationStepTimeout);
+        await _tts.setPitch(1.0).timeout(_initializationStepTimeout);
         await _tts
             .awaitSpeakCompletion(true)
-            .timeout(timeoutDuration, onTimeout: () {});
+            .timeout(_initializationStepTimeout);
       }
     } catch (_) {
       _languageInstalled = false;

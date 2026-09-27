@@ -6,7 +6,7 @@ Aplicativo Flutter, inicialmente para Android, para monitoramento local por câm
 
 ## Estado atual
 
-A `1.0.189+189` corrige uma trava na abertura do app: a inicialização da voz podia ficar presa para sempre caso o motor de Text-to-Speech do sistema não respondesse (comum logo após uma atualização), pois a chamada nativa não tinha tempo limite. Agora há timeout de 3s nas chamadas de TTS na inicialização, e os serviços de ESP32/Bike deixaram de bloquear a tela inicial, passando a inicializar em segundo plano.
+A `1.0.189+189` estabiliza a abertura após atualização. `_StartupGate` decide somente onboarding e modo inicial; ESP32, sensores Bike e alertas passam a ser preparados depois do primeiro frame, sem bloquear a interface. As etapas obrigatórias e opcionais possuem limites de espera, a inicialização compartilhada de sensores evita concorrência duplicada e o TTS também tem limite próprio para não manter o carregamento preso indefinidamente.
 
 A `1.0.188+188` aplica o visual de navegação do mockup ao mapa: cabeçalho escuro, mapa com cores mais vivas, cartões de instrumentos, próximos pontos e resumo da rota com ETA. A ficha de local aceita toque no nome, detalhes, parada e navegação. Subidas permanecem como `--` até existir um perfil real de elevação; os estilos de mapa e a origem dos pontos continuam configuráveis. A janela de novidades agora espera o fluxo inicial e só registra a versão após tocar **Entendi**.
 

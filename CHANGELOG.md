@@ -1,3 +1,13 @@
+## 1.0.189+189 — 2026-09-27
+
+- Corrigida a abertura que podia permanecer no `CircularProgressIndicator` após atualização: ESP32, sensores Bike e alertas deixaram a rota crítica do `_StartupGate`.
+- A tela inicial agora é decidida somente por onboarding + modo inicial e os serviços opcionais são preparados após o primeiro frame.
+- Adicionado `StartupGuard` com timeout e fallback para impedir espera infinita em Futures de inicialização.
+- `BikeSensorService` e `BikePressureSafetyService` agora compartilham a Future de inicialização, evitando concorrência duplicada durante a abertura.
+- `SpeechService` passou a limitar o tempo das chamadas de preparação do TTS, uma das pontes nativas que poderia manter a cadeia aguardando indefinidamente.
+- Adicionados testes do guard de startup, validações estáticas e documentação da nova política de abertura.
+- Versão, metadados, User-Agents, Novidades, Mudanças, documentação, verificadores e empacotador sincronizados em `1.0.189+189`.
+
 ## 1.0.188+188 — 2026-09-26
 
 - Aplicado o layout do mockup ao mapa: faixa escura superior, contraste reforçado no mapa padrão, instrumentos destacados, banner de pontos, resumo de rota com hora prevista e cartões escuros de local.

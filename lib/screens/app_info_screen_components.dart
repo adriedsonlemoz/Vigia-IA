@@ -67,8 +67,9 @@ class AllChangesPanel extends StatelessWidget {
         _ReleaseCard(
           version: '1.0.189',
           changes: [
-            'Corrigida uma trava na abertura do app causada pela inicialização da voz quando o motor de fala do sistema não respondia.',
-            'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial.',
+            'A tela principal abre antes da preparação de ESP32, sensores Bike e alertas.',
+            'Etapas demoradas de inicialização agora têm limite de espera e recuperação.',
+            'A preparação de voz/TTS não mantém mais a abertura presa indefinidamente.',
           ],
         ),
         SizedBox(height: 10),
@@ -1728,8 +1729,9 @@ class _ChangesPanel extends StatelessWidget {
           version: '1.0.189',
           current: true,
           changes: [
-            'Corrigida uma trava na abertura do app causada pela inicialização da voz quando o motor de fala do sistema não respondia.',
-            'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial.',
+            'A tela principal abre antes da preparação de ESP32, sensores Bike e alertas.',
+            'Etapas demoradas de inicialização agora têm limite de espera e recuperação.',
+            'A preparação de voz/TTS não mantém mais a abertura presa indefinidamente.',
           ],
         ),
         SizedBox(height: 10),

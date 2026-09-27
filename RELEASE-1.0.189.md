@@ -1,3 +1,5 @@
 # Vigia IA 1.0.189+189
 
-Corrige uma trava na abertura do app: a inicialização da voz (`SpeechService`) aguardava o motor de Text-to-Speech do Android sem limite de tempo, e um motor de fala que não respondesse (por exemplo, logo após uma atualização do app ou do próprio motor de voz do sistema) prendia a tela de carregamento inicial para sempre. Agora cada chamada ao TTS durante a inicialização tem um tempo limite de 3 segundos; se estourar, o app segue sem voz em vez de travar. Como reforço, a inicialização dos serviços de ESP32 e Bike deixou de bloquear a tela inicial — eles agora rodam em segundo plano, então uma falha ou demora nesses serviços também não pode mais travar a abertura do app.
+Esta entrega corrige a abertura que podia ficar presa no indicador circular após uma atualização. O `_StartupGate` não aguarda mais a preparação de ESP32, sensores Bike e voz antes de mostrar a interface: ele resolve apenas onboarding e modo inicial, libera a tela e inicia os serviços opcionais depois do primeiro frame.
+
+Também foram adicionados limites de espera para as etapas de abertura e para a preparação do TTS, além de proteção contra inicializações concorrentes nos serviços Bike. Assim, uma integração opcional lenta ou sem resposta pode ficar temporariamente indisponível sem impedir o restante do Vigia IA de abrir.

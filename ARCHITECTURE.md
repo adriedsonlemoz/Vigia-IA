@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.188+188
+# Arquitetura — Vigia IA 1.0.189+189
+
+
+## Abertura resiliente — 1.0.189
+
+`_StartupGate` mantém na rota crítica apenas a leitura de onboarding e do papel inicial do aparelho. Cada uma dessas Futures é protegida por `StartupGuard` com limite de espera; se uma integração nativa não responder, o fluxo recebe um fallback em vez de manter o `CircularProgressIndicator` para sempre. Depois que o destino inicial é definido, ESP32 e segurança Bike são iniciados após o primeiro frame, em paralelo e como serviços opcionais.
+
+`BikeSensorService` e `BikePressureSafetyService` agora deduplicam inicializações concorrentes com uma Future compartilhada. `SpeechService` aplica limite também às chamadas de preparação do `flutter_tts`, evitando que uma ponte TTS sem resposta mantenha a cadeia de inicialização aberta indefinidamente. O objetivo arquitetural é simples: indisponibilidade temporária de ESP32, sensores ou TTS pode degradar esses recursos, mas não pode impedir a interface principal de abrir.
 
 ## Mapa e abertura — 1.0.188
 
