@@ -1983,6 +1983,49 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() => _selectedMapLocation = resolved);
   }
 
+  Future<void> _showMapLocationDetails(MapDestinationSearchResult item) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(item.kind.label, style: Theme.of(sheetContext).textTheme.labelLarge),
+              Text(item.title, style: Theme.of(sheetContext).textTheme.headlineSmall),
+              const SizedBox(height: 10),
+              if (item.subtitle.trim().isNotEmpty) Text(item.subtitle),
+              const SizedBox(height: 8),
+              Text('Coordenadas: ${item.latitude.toStringAsFixed(5)}, '
+                  '${item.longitude.toStringAsFixed(5)}'),
+              Text('Fonte: ${item.offline ? 'Offline' : item.storedLocally ? 'Salvo no aparelho' : 'Online'}'),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _addManualTripStop(item);
+                  },
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  label: const Text('Adicionar parada'),
+                )),
+                const SizedBox(width: 8),
+                Expanded(child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _navigateToSearchResult(item);
+                  },
+                  icon: const Icon(Icons.navigation_rounded),
+                  label: const Text('Navegar'),
+                )),
+              ]),
+            ]),
+        ),
+      ),
+    );
+  }
+
   void _addManualTripStop(MapDestinationSearchResult item) {
     final alreadyAdded = _manualTripStops.any((candidate) => candidate.id == item.id);
     if (!alreadyAdded) _manualTripStops.add(item);
@@ -5196,11 +5239,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
-          final telemetryTop = topInset + MapUxPolicy.controlSize + 8;
-          final telemetryHeight = compactHud ? 42.0 : 48.0;
+          final telemetryTop = topInset + MapUxPolicy.controlSize + 10;
+          final telemetryHeight = compactHud ? 42.0 : 64.0;
           final nearbyTop = telemetryTop + telemetryHeight + 8;
-          final nearbyHeight = compactHud ? 44.0 : 48.0;
-          final cameraButtonTop = nearbyTop + nearbyHeight + 8;
+          final nearbyHeight = compactHud ? 44.0 : 52.0;
+          final routeOverviewTop = nearbyTop + nearbyHeight + 7;
+          final cameraButtonTop = routeOverviewTop +
+              (navigationTarget != null && !compactHud ? 62.0 : 0.0) + 8;
           final controlDockTop = cameraButtonTop;
           final attributionBottom = MapUxPolicy.attributionBottom(
             safeBottom: safePadding.bottom,
@@ -5563,7 +5608,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 top: 0,
                 left: 0,
                 right: 0,
-                height: safePadding.top + 54,
+                height: cameraButtonTop + 18,
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -5571,8 +5616,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: <Color>[
-                          Colors.black.withValues(alpha: 0.36),
-                          Colors.black.withValues(alpha: 0.10),
+                          const Color(0xED061D30),
+                          const Color(0xBA09283B),
                           Colors.transparent,
                         ],
                       ),
@@ -5597,15 +5642,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               Positioned(
                 top: topInset,
                 left: MapUxPolicy.controlEdge,
-                child: _MapControlButton(
-                  tooltip: 'Configurações do mapa',
-                  icon: Icons.settings_rounded,
-                  onPressed: () => unawaited(_showMapOptions()),
-                ),
+                child: compactHud
+                    ? _MapControlButton(
+                        tooltip: 'Configurações do mapa',
+                        icon: Icons.settings_rounded,
+                        onPressed: () => unawaited(_showMapOptions()),
+                      )
+                    : _MapBrandButton(onTap: () => unawaited(_showMapOptions())),
               ),
               Positioned(
                 top: topInset,
-                left: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
+                left: MapUxPolicy.controlEdge +
+                    (compactHud ? MapUxPolicy.controlSize : 89) + 6,
                 right: MapUxPolicy.controlEdge + MapUxPolicy.controlSize + 6,
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -5675,6 +5723,24 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   onTap: () => unawaited(_showNearbyPoints()),
                 ),
               ),
+              if (navigationTarget != null && !compactHud)
+                Positioned(
+                  top: routeOverviewTop,
+                  left: MapUxPolicy.controlEdge,
+                  right: MapUxPolicy.controlEdge,
+                  height: 62,
+                  child: _MapRouteOverview(
+                    target: navigationTarget,
+                    route: _cyclingRoute,
+                    progress: _navigationProgress,
+                    bikeEstimate: _bikeTripEstimate,
+                    onTap: () => setState(() {
+                      _selectedPoiId = null;
+                      _selectedMapLocation = null;
+                      _navigationPanelMinimized = false;
+                    }),
+                  ),
+                ),
               if (rapidPressureLoss != null)
                 Positioned(
                   top: cameraButtonTop,
@@ -5820,24 +5886,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               ),
               if (showSelectedMapLocationCard)
                 Positioned(
-                  left: compactHud ? 10 : 36,
-                  right: compactHud ? 10 : 36,
-                  bottom: bottomInset + (navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
+                  left: compactHud ? 10 : 8,
+                  right: compactHud ? 10 : 8,
+                  bottom: bottomInset + (!compactHud ? 82 : navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
                   child: _SelectedMapLocationCard(
                     item: selectedMapLocation,
                     distanceLabel: _formatSearchDistance(
                       selectedMapLocation.distanceMeters,
                     ),
                     onClose: () => setState(() => _selectedMapLocation = null),
+                    onDetails: () => unawaited(_showMapLocationDetails(selectedMapLocation)),
                     onNavigate: () => _navigateToSearchResult(selectedMapLocation),
                     onAddStop: () => _addManualTripStop(selectedMapLocation),
                   ),
                 ),
               if (showSelectedPoiCard)
                 Positioned(
-                  left: compactHud ? 10 : 36,
-                  right: compactHud ? 10 : 36,
-                  bottom: bottomInset + (navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
+                  left: compactHud ? 10 : 8,
+                  right: compactHud ? 10 : 8,
+                  bottom: bottomInset + (!compactHud ? 82 : navigationTarget == null ? 82 : (_navigationPanelMinimized ? 176 : 360)),
                   child: _SelectedPoiCard(
                     item: selectedPoi,
                     distanceLabel:
@@ -5846,10 +5913,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     compact: compactHud,
                     onClose: () => setState(() => _selectedPoiId = null),
                     onDetails: () => unawaited(_showPoiDetails(selectedPoi)),
+                    onAddStop: () => _addManualTripStop(MapDestinationSearchResult(
+                      id: selectedPoi.id,
+                      title: selectedPoi.title,
+                      subtitle: selectedPoi.subtitle,
+                      latitude: selectedPoi.latitude,
+                      longitude: selectedPoi.longitude,
+                      distanceMeters: selectedPoi.distanceMeters,
+                      kind: MapDestinationKind.pointOfInterest,
+                      source: selectedPoi.source,
+                      poiCategory: selectedPoi.category,
+                    )),
                     onNavigate: () => _navigateToPoi(selectedPoi),
                   ),
                 ),
-              if (navigationTarget != null)
+              if (navigationTarget != null &&
+                  (compactHud || (!showSelectedPoiCard && !showSelectedMapLocationCard)))
                 Positioned(
                   left: 8,
                   right: 8,
@@ -6535,6 +6614,139 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
 }
 
+class _MapBrandButton extends StatelessWidget {
+  const _MapBrandButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: 'Vigia IA · configurações do mapa',
+    child: Material(
+      color: const Color(0xF0081D31),
+      borderRadius: BorderRadius.circular(26),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(26),
+        onTap: onTap,
+        child: SizedBox(
+          width: 89,
+          height: MapUxPolicy.controlSize,
+          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.terrain_rounded, size: 22, color: Color(0xFF19D2BC)),
+            SizedBox(width: 3),
+            Text('Vigia IA', style: TextStyle(color: Colors.white,
+              fontWeight: FontWeight.w900, fontSize: 11)),
+          ]),
+        ),
+      ),
+    ),
+  );
+}
+
+class _MapRouteOverview extends StatelessWidget {
+  const _MapRouteOverview({
+    required this.target,
+    required this.route,
+    required this.progress,
+    required this.bikeEstimate,
+    required this.onTap,
+  });
+
+  final MapNavigationTarget target;
+  final MapCyclingRoute? route;
+  final MapNavigationProgress? progress;
+  final BikeTripEstimate? bikeEstimate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final distance = progress?.remainingDistanceMeters ?? route?.distanceMeters;
+    final seconds = bikeEstimate == null
+        ? progress?.remainingDurationSeconds ?? route?.durationSeconds
+        : distance == null || bikeEstimate!.preferences.averageSpeedKmh <= 0
+            ? null
+            : distance / 1000 / bikeEstimate!.preferences.averageSpeedKmh * 3600;
+    final arrival = seconds != null && seconds.isFinite && seconds >= 0
+        ? DateTime.now().add(Duration(seconds: seconds.round()))
+        : null;
+    final eta = arrival == null
+        ? '--:--'
+        : '${arrival.hour.toString().padLeft(2, '0')}:${arrival.minute.toString().padLeft(2, '0')}';
+    final distanceLabel = distance == null
+        ? 'Calculando rota'
+        : '${(distance / 1000).toStringAsFixed(1)} km · '
+          '${seconds == null ? '--' : '${(seconds / 60).round()} min'}';
+    const accent = Color(0xFF10B9F5);
+    return Material(
+      color: const Color(0xF3071B2D),
+      elevation: 6,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: const BorderSide(color: accent, width: 4),
+                top: BorderSide(color: accent.withValues(alpha: 0.25)),
+                right: BorderSide(color: accent.withValues(alpha: 0.25)),
+                bottom: BorderSide(color: accent.withValues(alpha: 0.25))),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          child: Row(children: [
+            const Icon(Icons.near_me_rounded, color: accent, size: 24),
+            const SizedBox(width: 7),
+            Expanded(
+              flex: 5,
+              child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Rota ativa', style: TextStyle(color: accent,
+                    fontSize: 11, fontWeight: FontWeight.w900)),
+                  Text(target.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 10)),
+                ]),
+            ),
+            const _MapOverviewDivider(),
+            const Tooltip(
+              message: 'O provedor desta rota ainda não informa o perfil de elevação.',
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text('Subidas', style: TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
+                Text('--', style: TextStyle(color: Colors.white,
+                  fontSize: 15, fontWeight: FontWeight.w900)),
+              ]),
+            ),
+            const SizedBox(width: 7),
+            const _MapOverviewDivider(),
+            const SizedBox(width: 7),
+            Expanded(flex: 4, child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Chegada', style: TextStyle(
+                  color: Color(0xFFB6C8D7), fontSize: 9)),
+                Text(eta, style: const TextStyle(color: Colors.white,
+                  fontSize: 16, fontWeight: FontWeight.w900)),
+                Text(distanceLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
+              ],
+            )),
+            const Icon(Icons.chevron_right_rounded, color: accent, size: 20),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapOverviewDivider extends StatelessWidget {
+  const _MapOverviewDivider();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 34, width: 1, margin: const EdgeInsets.symmetric(horizontal: 7),
+    color: const Color(0xFF38546A),
+  );
+}
+
 class _MapQuickViewBar extends StatelessWidget {
   const _MapQuickViewBar({
     required this.selected,
@@ -6550,11 +6762,10 @@ class _MapQuickViewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Material(
-      elevation: 2,
-      color: scheme.surface.withValues(alpha: 0.91),
-      borderRadius: BorderRadius.circular(16),
+      elevation: 4,
+      color: const Color(0xF2081D31),
+      borderRadius: BorderRadius.circular(30),
       clipBehavior: Clip.antiAlias,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -6758,13 +6969,10 @@ class _MapQuickViewButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
     final foreground = !enabled
-        ? scheme.onSurface.withValues(alpha: 0.32)
-        : active
-            ? scheme.onPrimaryContainer
-            : scheme.onSurface;
+        ? Colors.white38
+        : active ? Colors.white : const Color(0xFFC5D4E0);
     return Tooltip(
       message: label,
       child: InkWell(
@@ -6775,7 +6983,7 @@ class _MapQuickViewButton extends StatelessWidget {
             horizontal: compact ? 7 : 8,
             vertical: 6,
           ),
-          color: active ? scheme.primaryContainer : Colors.transparent,
+          color: active ? const Color(0xFF0D3955) : Colors.transparent,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -6888,7 +7096,6 @@ class _NearbyPointsBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final badge = MapUxPolicy.compactCountBadge(count) ?? '0';
     final sourceLabel = offline ? 'Offline' : 'Online';
     final title = routeActive ? 'Próximos na rota' : 'Locais próximos';
@@ -6896,8 +7103,8 @@ class _NearbyPointsBanner extends StatelessWidget {
 
     return Material(
       elevation: 2,
-      color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(14),
+      color: const Color(0xF3071B2D),
+      borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -6907,8 +7114,8 @@ class _NearbyPointsBanner extends StatelessWidget {
             children: [
               Icon(
                 Icons.location_on_rounded,
-                size: 20,
-                color: scheme.primary,
+                size: 26,
+                color: const Color(0xFF12BDFC),
               ),
               const SizedBox(width: 7),
               Expanded(
@@ -6924,6 +7131,7 @@ class _NearbyPointsBanner extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
+                              color: Colors.white,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w900,
                             ),
@@ -6943,9 +7151,8 @@ class _NearbyPointsBanner extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 9.5,
-                          ),
+                          style: const TextStyle(color: Color(0xFFB6C8D7),
+                            fontSize: 9.5),
                     ),
                   ],
                 ),
@@ -6955,14 +7162,14 @@ class _NearbyPointsBanner extends StatelessWidget {
                 constraints: const BoxConstraints(minWidth: 24),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
+                  color: const Color(0xFF007C72),
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
                   badge,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: scheme.onPrimaryContainer,
+                    color: Colors.white,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                   ),
@@ -6972,13 +7179,13 @@ class _NearbyPointsBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.82),
+                  color: const Color(0xFF123D54),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   sourceLabel,
                   style: TextStyle(
-                    color: scheme.onSurfaceVariant,
+                    color: Colors.white,
                     fontSize: 8.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -6988,7 +7195,7 @@ class _NearbyPointsBanner extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 19,
-                color: scheme.onSurfaceVariant,
+                color: Colors.white,
               ),
             ],
           ),
@@ -7850,6 +8057,7 @@ class _SelectedPoiCard extends StatelessWidget {
     required this.icon,
     required this.onClose,
     required this.onDetails,
+    required this.onAddStop,
     required this.onNavigate,
     this.compact = false,
   });
@@ -7859,20 +8067,20 @@ class _SelectedPoiCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onClose;
   final VoidCallback onDetails;
+  final VoidCallback onAddStop;
   final VoidCallback onNavigate;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final subtitle = item.subtitle.trim().isNotEmpty
         ? item.subtitle.trim()
         : item.category.label;
 
     return Material(
       elevation: 9,
-      color: scheme.surface.withValues(alpha: 0.97),
-      borderRadius: BorderRadius.circular(18),
+      color: const Color(0xF8082033),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -7887,13 +8095,15 @@ class _SelectedPoiCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: compact ? 18 : 21,
-                  backgroundColor: scheme.primaryContainer,
+                Container(
+                  width: compact ? 45 : 62,
+                  height: compact ? 45 : 62,
+                  decoration: BoxDecoration(color: const Color(0xFF154962),
+                    borderRadius: BorderRadius.circular(13)),
                   child: Icon(
                     icon,
-                    size: compact ? 19 : 22,
-                    color: scheme.onPrimaryContainer,
+                    size: compact ? 23 : 28,
+                    color: const Color(0xFF28C8EF),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -7905,10 +8115,14 @@ class _SelectedPoiCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          item.category.label,
+                          style: const TextStyle(color: Color(0xFFADBED0), fontSize: 10),
+                        ),
+                        Text(
                           item.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: const TextStyle(color: Colors.white,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
@@ -7918,7 +8132,7 @@ class _SelectedPoiCard extends StatelessWidget {
                           subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: const TextStyle(color: Color(0xFFB7CBD9), fontSize: 11),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -7926,9 +8140,7 @@ class _SelectedPoiCard extends StatelessWidget {
                           '${item.source == 'offline' ? 'Offline' : 'Online'}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
+                          style: const TextStyle(color: Color(0xFFB7CBD9), fontSize: 11),
                         ),
                       ],
                     ),
@@ -7942,7 +8154,7 @@ class _SelectedPoiCard extends StatelessWidget {
                     height: 34,
                   ),
                   onPressed: onClose,
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: const Icon(Icons.close_rounded, size: 20, color: Colors.white),
                 ),
               ],
             ),
@@ -7952,22 +8164,31 @@ class _SelectedPoiCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onDetails,
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
+                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact,
+                      foregroundColor: const Color(0xFF29C0F6)),
                     icon: const Icon(Icons.info_outline_rounded, size: 18),
                     label: const Text('Detalhes'),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
+                Expanded(child: OutlinedButton.icon(
+                  onPressed: onAddStop,
+                  style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact,
+                    foregroundColor: const Color(0xFF29C0F6)),
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 17),
+                  label: const Text('Parada', style: TextStyle(fontSize: 11)),
+                )),
+                const SizedBox(width: 4),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: onNavigate,
                     style: FilledButton.styleFrom(
                       visualDensity: VisualDensity.compact,
+                      backgroundColor: const Color(0xFF0CB7F4),
+                      foregroundColor: const Color(0xFF061B2B),
                     ),
                     icon: const Icon(Icons.navigation_rounded, size: 18),
-                    label: const Text('Navegar'),
+                    label: const Text('Navegar', style: TextStyle(fontSize: 11)),
                   ),
                 ),
               ],
@@ -7984,6 +8205,7 @@ class _SelectedMapLocationCard extends StatelessWidget {
     required this.item,
     required this.distanceLabel,
     required this.onClose,
+    required this.onDetails,
     required this.onNavigate,
     required this.onAddStop,
   });
@@ -7991,17 +8213,17 @@ class _SelectedMapLocationCard extends StatelessWidget {
   final MapDestinationSearchResult item;
   final String distanceLabel;
   final VoidCallback onClose;
+  final VoidCallback onDetails;
   final VoidCallback onNavigate;
   final VoidCallback onAddStop;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final identifying = item.title == 'Identificando local…';
     return Material(
       elevation: 9,
-      color: scheme.surface.withValues(alpha: 0.97),
-      borderRadius: BorderRadius.circular(18),
+      color: const Color(0xF8082033),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
@@ -8011,26 +8233,31 @@ class _SelectedMapLocationCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 21,
-                  backgroundColor: scheme.primaryContainer,
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(color: const Color(0xFF154962),
+                    borderRadius: BorderRadius.circular(13)),
                   child: Icon(
                     item.poiCategory == null
                         ? Icons.place_rounded
                         : Icons.location_on_rounded,
-                    color: scheme.onPrimaryContainer,
+                    color: const Color(0xFF28C8EF),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
+                  child: InkWell(onTap: identifying ? null : onDetails,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(item.kind.label,
+                        style: const TextStyle(color: Color(0xFFADBED0), fontSize: 10)),
                       Text(
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: const TextStyle(color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontSize: 14,
                         ),
@@ -8042,17 +8269,15 @@ class _SelectedMapLocationCard extends StatelessWidget {
                             : item.subtitle.trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: const TextStyle(color: Color(0xFFB7CBD9), fontSize: 11),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$distanceLabel · ${item.kind.label}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                        style: const TextStyle(color: Color(0xFFB7CBD9), fontSize: 11),
                       ),
                     ],
-                  ),
+                  )),
                 ),
                 if (identifying)
                   const Padding(
@@ -8071,7 +8296,7 @@ class _SelectedMapLocationCard extends StatelessWidget {
                       height: 34,
                     ),
                     onPressed: onClose,
-                    icon: const Icon(Icons.close_rounded, size: 20),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Colors.white),
                   ),
               ],
             ),
@@ -8079,25 +8304,36 @@ class _SelectedMapLocationCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
+                  Expanded(child: OutlinedButton.icon(
+                    onPressed: onDetails,
+                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact,
+                      foregroundColor: const Color(0xFF29C0F6)),
+                    icon: const Icon(Icons.info_outline_rounded, size: 17),
+                    label: const Text('Detalhes', style: TextStyle(fontSize: 11)),
+                  )),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: onAddStop,
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
+                        foregroundColor: const Color(0xFF29C0F6),
                       ),
-                      icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                      label: const Text('Adicionar parada'),
+                      icon: const Icon(Icons.bookmark_add_outlined, size: 17),
+                      label: const Text('Parada', style: TextStyle(fontSize: 11)),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: onNavigate,
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
+                        backgroundColor: const Color(0xFF0CB7F4),
+                        foregroundColor: const Color(0xFF061B2B),
                       ),
                       icon: const Icon(Icons.navigation_rounded, size: 18),
-                      label: const Text('Navegar'),
+                      label: const Text('Navegar', style: TextStyle(fontSize: 11)),
                     ),
                   ),
                 ],
@@ -8302,18 +8538,16 @@ class _MapTelemetryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final background = emphasized
-        ? scheme.primaryContainer.withValues(alpha: 0.94)
-        : scheme.surface.withValues(alpha: 0.93);
-    final foreground =
-        emphasized ? scheme.onPrimaryContainer : scheme.onSurface;
-    final iconColor = emphasized ? scheme.onPrimaryContainer : scheme.primary;
+        ? const Color(0xF500625F)
+        : const Color(0xF2081D31);
+    const foreground = Colors.white;
+    const iconColor = Color(0xFF16BDF8);
 
     Widget card = Material(
       elevation: 2,
       color: background,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(13),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -8328,7 +8562,7 @@ class _MapTelemetryCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: compact ? 11 : 12, color: iconColor),
+                  Icon(icon, size: compact ? 13 : 17, color: iconColor),
                   const SizedBox(width: 2),
                   Flexible(
                     child: Text(
@@ -8338,7 +8572,7 @@ class _MapTelemetryCard extends StatelessWidget {
                       softWrap: false,
                       style: TextStyle(
                         color: foreground.withValues(alpha: 0.72),
-                        fontSize: compact ? 7.5 : 8.2,
+                        fontSize: compact ? 7.5 : 9,
                         height: 1,
                         fontWeight: FontWeight.w800,
                       ),
@@ -8356,7 +8590,7 @@ class _MapTelemetryCard extends StatelessWidget {
                         text: value,
                         style: TextStyle(
                           color: foreground,
-                          fontSize: compact ? 15 : 17,
+                          fontSize: compact ? 15 : 20,
                           height: 1,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
@@ -8368,7 +8602,7 @@ class _MapTelemetryCard extends StatelessWidget {
                           text: unit,
                           style: TextStyle(
                             color: foreground.withValues(alpha: 0.74),
-                            fontSize: compact ? 7 : 8,
+                            fontSize: compact ? 7 : 9,
                             height: 1,
                             fontWeight: FontWeight.w800,
                           ),

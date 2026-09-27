@@ -30,7 +30,7 @@ class VigiaIaApp extends StatelessWidget {
         themeMode: appearance.themeMode,
         theme: _theme(brightness: Brightness.light, seed: appearance.seedColor),
         darkTheme: _theme(brightness: Brightness.dark, seed: appearance.seedColor),
-        home: const UpdateNewsHost(child: _StartupGate()),
+        home: const _StartupGate(),
       ),
     );
   }
@@ -91,7 +91,7 @@ class _StartupGateState extends State<_StartupGate> {
       };
       return _PermissionReminderHost(child: destination);
     }
-    return const AccessGuideScreen();
+    return const UpdateNewsHost(child: AccessGuideScreen());
   }
 }
 
@@ -108,12 +108,6 @@ class _PermissionReminderHost extends StatefulWidget {
 
 class _PermissionReminderHostState extends State<_PermissionReminderHost> {
   bool _checked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPermissions());
-  }
 
   Future<void> _checkPermissions() async {
     if (_checked || !mounted) return;
@@ -160,5 +154,8 @@ class _PermissionReminderHostState extends State<_PermissionReminderHost> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) => UpdateNewsHost(
+        onHandled: _checkPermissions,
+        child: widget.child,
+      );
 }

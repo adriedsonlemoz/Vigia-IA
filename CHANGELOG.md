@@ -1,3 +1,11 @@
+## 1.0.188+188 — 2026-09-26
+
+- Aplicado o layout do mockup ao mapa: faixa escura superior, contraste reforçado no mapa padrão, instrumentos destacados, banner de pontos, resumo de rota com hora prevista e cartões escuros de local.
+- Nome de localidade abre detalhes; cartão oferece detalhes, parada e navegação, preservando a busca e a navegação já existentes.
+- O contador de subidas fica indisponível (`--`) enquanto a rota não trouxer elevação, evitando exibir dados inventados.
+- Novidades são abertas depois da seleção inicial e registradas como exibidas somente após confirmação explícita; permissões pendentes aparecem depois.
+- Sincronizados versão, documentação, catálogo, metadados, User-Agents, verificadores e ZIP fonte.
+
 ## 1.0.187+187 — 2026-09-26
 
 - Corrigidos dois testes de `UpdateNewsCatalog` que ainda esperavam o build 185 durante a execução do build 147.

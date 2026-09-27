@@ -106,6 +106,7 @@ class MapAppearancePolicy {
             routeWidth: 8.5,
             routeCasingWidth: 13.0,
             vectorStyleUrl: libertyStyleUrl,
+            rasterColorMatrix: bikeTravelRasterMatrix,
           ),
         MapAppearancePreset.dark => const MapAppearancePalette(
             routeColor: Color(0xFF33D6FF),

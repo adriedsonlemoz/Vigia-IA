@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.187', build: 187);
+      AppBuildVersion(version: '1.0.188', build: 188);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.187', build: 187),
+      version: AppBuildVersion(version: '1.0.188', build: 188),
       changes: <String>[
-        'A tela de novidades agora acompanha corretamente a versão instalada.',
-        'A validação da atualização ficou mais consistente entre desenvolvimento e entrega.',
-        'Mapa, Bike/ESP32, IA e recursos offline mantêm o mesmo comportamento da versão anterior.',
+        'Mapa com painel escuro de leitura rápida, locais próximos e rota no topo.',
+        'Toque no nome de um local para abrir seus detalhes; adicione uma parada ou inicie a navegação pelo cartão.',
+        'A tela de novidades aparece após a abertura inicial e aguarda sua confirmação.',
       ],
     ),
   ]);

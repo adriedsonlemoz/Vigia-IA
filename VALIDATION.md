@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.187+187
+# Validação Vigia IA 1.0.188+188
+
+## Mapa e novidades — 1.0.188
+
+- Verificação local: `tool/check_version_sync.py` e `tool/verify_project.sh` aprovados; `flutter analyze` e `flutter test` pendentes no workflow Android porque o SDK Flutter não está instalado neste ambiente.
+- Abrir o mapa em retrato e paisagem: conferir instrumentos, banner e controles sem bloquear seleção livre no mapa.
+- Selecionar cidade/comunidade, tocar no nome, conferir dados da ficha, adicionar parada e navegar. Repetir com POI.
+- Iniciar rota e conferir ETA calculada, distância e ausência de contagem inventada de subidas; ampliar painel de navegação existente.
+- Atualizar 1.0.187 → 1.0.188: o diálogo aparece depois da tela inicial carregar; Entendi registra a versão; reiniciar sem reaparecer. Em primeira instalação, verificar tela de acesso e novidades.
+- Se o diálogo for interrompido sem confirmação, deve aparecer no próximo início.
+
 
 
 ## Build 147 — correção de testes de Novidades

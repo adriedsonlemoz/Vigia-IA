@@ -12,7 +12,9 @@ class UpdateNewsDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final changes = decision.changes;
-    return AlertDialog(
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
       icon: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.primaryContainer.withValues(alpha: 0.72),
@@ -54,10 +56,11 @@ class UpdateNewsDialog extends StatelessWidget {
       ),
       actions: [
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(true),
           child: const Text('Entendi'),
         ),
       ],
+      ),
     );
   }
 }

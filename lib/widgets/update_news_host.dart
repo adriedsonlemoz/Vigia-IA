@@ -10,18 +10,18 @@ class UpdateNewsHost extends StatefulWidget {
     super.key,
     required this.child,
     this.service,
+    this.onHandled,
   });
 
   final Widget child;
   final UpdateNewsService? service;
+  final VoidCallback? onHandled;
 
   @override
   State<UpdateNewsHost> createState() => _UpdateNewsHostState();
 }
 
 class _UpdateNewsHostState extends State<UpdateNewsHost> {
-  bool _ready = false;
-
   UpdateNewsService get _service => widget.service ?? UpdateNewsService.instance;
 
   @override
@@ -35,25 +35,22 @@ class _UpdateNewsHostState extends State<UpdateNewsHost> {
       final decision = await _service.evaluate();
       if (!mounted) return;
       if (decision.shouldShow) {
-        await showDialog<void>(
+        final acknowledged = await showDialog<bool>(
           context: context,
-          barrierDismissible: true,
+          barrierDismissible: false,
           builder: (_) => UpdateNewsDialog(decision: decision),
         );
-        await _service.markShown(decision);
+        if (acknowledged == true) await _service.markShown(decision);
       }
     } catch (_) {
       // Novidades são informativas: qualquer falha deve liberar o app.
     } finally {
-      if (mounted) setState(() => _ready = true);
+      if (mounted) widget.onHandled?.call();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_ready) return widget.child;
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return widget.child;
   }
 }

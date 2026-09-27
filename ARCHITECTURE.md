@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.187+187
+# Arquitetura — Vigia IA 1.0.188+188
+
+## Mapa e abertura — 1.0.188
+
+`MapAppearancePolicy` usa no mapa raster padrão a matriz suave de cores de Bike/Viagem para melhorar verdes, rios e vias sem alterar a geometria. `MapMonitoringScreen` mantém dados e ações existentes e compõe um cabeçalho escuro com telemetria, pontos e `_MapRouteOverview` com distância/tempo remanescentes. A ETA usa a duração disponível da rota ou a média configurada para Bike; não estima subidas sem perfil de altitude. Localidades selecionadas abrem ficha local de dados e reutilizam `_addManualTripStop`. `UpdateNewsHost` é montado após `_StartupGate`; somente o botão Entendi confirma a versão. `_PermissionReminderHost` espera o fim desse fluxo para conferir permissões.
 
 
 ## Validação de versão das Novidades — 1.0.187

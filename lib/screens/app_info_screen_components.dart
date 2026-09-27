@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.188',
+          changes: [
+            'Mapa com painel escuro para telemetria, locais próximos e resumo de rota com horário de chegada.',
+            'Toque no nome de uma localidade para detalhes e use o cartão para adicionar parada ou navegar.',
+            'Novidades são apresentadas após a abertura inicial e marcadas como vistas apenas ao tocar Entendi.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.187',
           changes: [
             'A tela de novidades acompanha corretamente a versão instalada.',
@@ -1708,8 +1717,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.187',
+          version: '1.0.188',
           current: true,
+          changes: [
+            'Mapa com painel escuro para telemetria, locais próximos e resumo de rota com horário de chegada.',
+            'Toque no nome de uma localidade para detalhes e use o cartão para adicionar parada ou navegar.',
+            'Novidades são apresentadas após a abertura inicial e marcadas como vistas apenas ao tocar Entendi.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.187',
           changes: [
             'A tela de novidades acompanha corretamente a versão instalada.',
             'A validação da atualização ficou mais consistente entre desenvolvimento e entrega.',
