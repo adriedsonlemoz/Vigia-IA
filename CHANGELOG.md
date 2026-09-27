@@ -1,3 +1,9 @@
+## 1.0.201+201 — 2026-09-27
+
+- Corrigido o teste de persistência das configurações do provedor de mapa: o `path_provider` agora é executado após a inicialização explícita do binding de testes Flutter.
+- O `flutter analyze` da 1.0.200 já estava limpo; esta versão corrige a falha restante do `flutter test` registrada no workflow Android 164.
+- Documentação, catálogo de Novidades, metadados, User-Agents, verificador e versionamento sincronizados em `1.0.201+201`.
+
 ## 1.0.200+200 — 2026-09-27
 
 - Corrigido o callback de câmera do Google Maps: o pacote `google_maps_flutter` não expõe motivo do movimento (`CameraMoveStartedReason` não existe), então o modo de seguir posição agora usa um controle interno para diferenciar gesto do usuário de movimento programático.

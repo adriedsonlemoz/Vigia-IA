@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:vigiaia/services/map_view_settings_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('provedor do mapa tem mapa atual como padrao', () {
     expect(MapProvider.current.label, 'Mapa atual');
     expect(MapProvider.google.label, 'Google Maps');

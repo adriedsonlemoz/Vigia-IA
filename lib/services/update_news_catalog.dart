@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.200', build: 200);
+      AppBuildVersion(version: '1.0.201', build: 201);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.200', build: 200),
+      version: AppBuildVersion(version: '1.0.201', build: 201),
       changes: <String>[
-        'Ajustes no controle da câmera ao usar o Google Maps, mantendo o "seguir posição" mais previsível.',
-        'A retomada automática da rota e dos pontos próximos ao voltar a ficar online agora funciona como esperado.',
+        'Teste das configurações do provedor de mapa agora inicializa o ambiente Flutter antes de acessar o armazenamento do aplicativo.',
+        'Compatibilidade de testes reforçada sem alterar mapa atual, Google Maps, GPS, rotas, POIs ou mapas offline.',
       ],
     ),
   ]);

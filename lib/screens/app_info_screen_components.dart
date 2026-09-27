@@ -77,7 +77,7 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.200',
+          version: '1.0.201',
           current: true,
           changes: [
             'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
@@ -1830,12 +1830,11 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.200',
+          version: '1.0.201',
           current: true,
           changes: [
-            'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
-            'Corrigido um possível acesso a valor nulo no texto de distância de um ponto de interesse no Google Maps.',
-            'A recuperação automática de rota e de pontos próximos ao voltar a ficar online voltou a funcionar.',
+            'Corrigido o teste das configurações do provedor de mapa para inicializar o binding Flutter antes de usar o path_provider.',
+            'Corrigida a falha registrada no workflow Android 164 sem remover funcionalidades do mapa atual ou do Google Maps.',
           ],
         ),
         SizedBox(height: 10),

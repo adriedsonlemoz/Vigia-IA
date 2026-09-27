@@ -1,12 +1,12 @@
-# Validação Vigia IA 1.0.200+200
+# Validação Vigia IA 1.0.201+201
 
-## Cobertura da 1.0.200
+## Cobertura da 1.0.201
 
 - Executar `flutter analyze` e confirmar 0 erros: sem uso de `CameraMoveStartedReason` (inexistente em `google_maps_flutter`) e sem acesso não condicional a `distanceMeters` nulo em `map_monitoring_screen.dart`.
 - Confirmar visualmente que alternar para "Mapa: Google" e arrastar o mapa manualmente ainda desativa o modo "seguir posição", enquanto centralizações automáticas (focar POI, iniciar navegação, ajustar aos limites da rota) não desativam o "seguir".
 - Confirmar, com o dispositivo saindo e voltando da conectividade, que a rota é recuperada automaticamente e os POIs online são atualizados (comportamento que estava inativo por handler duplicado).
 - Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter analyze` e `flutter test`.
-- Atualizar 1.0.199 → 1.0.200 e confirmar que Novidades aparece uma vez, sem regressão em áudio, rádio, mapa ou telemetria.
+- Atualizar 1.0.199 → 1.0.201 e confirmar que Novidades aparece uma vez, sem regressão em áudio, rádio, mapa ou telemetria.
 
 ## Cobertura da 1.0.199
 
