@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.197', build: 197);
+      AppBuildVersion(version: '1.0.198', build: 198);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.197', build: 197),
+      version: AppBuildVersion(version: '1.0.198', build: 198),
       changes: <String>[
-        'A validação estática foi ajustada para concluir o build corretamente.',
-        'O monitor de uso de dados mantém a atualização periódica sem duplicar o agendador.',
+        'A integração Android do monitor de dados foi ajustada para tipos numéricos compatíveis.',
+        'A leitura de tráfego recebido e enviado continua tratando valores indisponíveis com segurança.',
         'Áudio global, rádio persistente e telemetria de dados permanecem preservados.',
       ],
     ),

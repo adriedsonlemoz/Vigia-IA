@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.197',
+          version: '1.0.198',
           current: true,
+          changes: [
+            'Compilação Android da telemetria de rede ajustada para tipos numéricos compatíveis.',
+            'Contadores recebidos e enviados continuam ignorando corretamente valores não suportados.',
+            'Áudio global, rádio persistente e uso de dados continuam preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.197',
           changes: [
             'Pipeline estabilizado após a inclusão do monitor de uso de dados.',
             'Agendador periódico de telemetria agora é reaproveitado de forma segura.',
@@ -1790,8 +1799,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.197',
+          version: '1.0.198',
           current: true,
+          changes: [
+            'Compilação Android da telemetria de rede ajustada para tipos numéricos compatíveis.',
+            'Contadores recebidos e enviados continuam ignorando corretamente valores não suportados.',
+            'Áudio global, rádio persistente e uso de dados continuam preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.197',
           changes: [
             'Pipeline estabilizado após a inclusão do monitor de uso de dados.',
             'Agendador periódico de telemetria agora é reaproveitado de forma segura.',

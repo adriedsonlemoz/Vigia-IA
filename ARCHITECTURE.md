@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.197+197
+# Arquitetura — Vigia IA 1.0.198+198
+
+## Compatibilidade numérica da telemetria Android — 1.0.198
+
+`TrafficStats.getUidRxBytes()` e `getUidTxBytes()` fornecem contadores `Long`. No toolchain Android usado pelo workflow, `TrafficStats.UNSUPPORTED` é exposto a Kotlin como `Int`; por isso a comparação direta não compila. `networkUsageSnapshot()` converte o sentinela para `Long` antes do `takeIf`, preservando o contrato atual: contador válido quando disponível e `null` quando não suportado. A implementação ativa e a cópia espelhada de `MainActivity.kt` permanecem sincronizadas.
 
 ## Estabilização do pipeline — 1.0.197
 

@@ -1,3 +1,10 @@
+## 1.0.198+198 — 2026-09-27
+
+- Corrigida a compilação Kotlin do monitor de uso de dados no Android: `TrafficStats.getUidRxBytes/getUidTxBytes` retornam `Long`, enquanto `TrafficStats.UNSUPPORTED` é exposto como `Int` neste toolchain.
+- As comparações agora convertem explicitamente o sentinela para `Long`, mantendo `null` quando o Android informa que a métrica não é suportada.
+- A mesma correção foi aplicada ao `MainActivity.kt` ativo e à cópia espelhada em `tool/android`, evitando divergência nas validações futuras.
+- Versão, metadados, Novidades, Mudanças, User-Agents, documentação, testes e verificadores sincronizados em `1.0.198+198`.
+
 ## 1.0.197+197 — 2026-09-27
 
 - Corrigido o bloqueio do pipeline no `flutter analyze` causado pelo campo `_timer` do `DataUsageService` ser gravado sem leitura.

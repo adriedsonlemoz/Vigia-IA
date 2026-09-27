@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.197 estabiliza o pipeline após a inclusão do monitor de uso de dados, preservando áudio global, rádio persistente e telemetria.",
-  "version": "1.0.197",
-  "build": 197
+  "notes": "A 1.0.198 corrige a compilação Kotlin da telemetria de rede no Android, preservando áudio global, rádio persistente e uso de dados.",
+  "version": "1.0.198",
+  "build": 198
 }

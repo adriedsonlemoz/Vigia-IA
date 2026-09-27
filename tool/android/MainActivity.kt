@@ -1080,8 +1080,8 @@ class MainActivity : FlutterActivity() {
         val sent = TrafficStats.getUidTxBytes(uid)
         return mapOf(
             "uid" to uid,
-            "receivedBytes" to received.takeIf { it != TrafficStats.UNSUPPORTED },
-            "sentBytes" to sent.takeIf { it != TrafficStats.UNSUPPORTED },
+            "receivedBytes" to received.takeIf { it != TrafficStats.UNSUPPORTED.toLong() },
+            "sentBytes" to sent.takeIf { it != TrafficStats.UNSUPPORTED.toLong() },
             "connection" to activeConnectionType(),
             "capturedAtMs" to System.currentTimeMillis(),
         )

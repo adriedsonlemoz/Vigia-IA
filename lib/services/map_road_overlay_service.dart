@@ -66,7 +66,7 @@ class MapRoadOverlayService {
         ');out geom 350;';
     final request = await _client.postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 7));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.197 road-overlay');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.198 road-overlay');
     request.headers.contentType = ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
     request.write('data=${Uri.encodeQueryComponent(query)}');
     final response = await request.close().timeout(const Duration(seconds: 15));
