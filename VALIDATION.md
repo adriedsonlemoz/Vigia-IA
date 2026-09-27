@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.196+196
+# Validação Vigia IA 1.0.197+197
+
+## Cobertura da 1.0.197
+
+- Executar `flutter analyze`: deve retornar `No issues found!`, sem `unused_field` em `lib/services/data_usage_service.dart`.
+- Confirmar que a coleta periódica de uso de dados continua em 15 minutos e não cria mais de um agendador ao inicializar o serviço.
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Executar `flutter test` e o workflow Android completo para confirmar a geração do APK.
+- Atualizar 1.0.196 → 1.0.197 e confirmar que Novidades aparece uma vez, sem regressão em áudio, rádio, mapa ou telemetria.
 
 ## Cobertura da 1.0.196
 

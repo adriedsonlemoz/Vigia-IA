@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.196', build: 196);
+      AppBuildVersion(version: '1.0.197', build: 197);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.196', build: 196),
+      version: AppBuildVersion(version: '1.0.197', build: 197),
       changes: <String>[
-        'O áudio agora usa uma coordenação global com teste e diagnóstico de saída.',
-        'A rádio pode ser minimizada e continua tocando com controles na notificação.',
-        'Uso de dados reúne períodos, viagem, economia e alertas configuráveis.',
+        'A validação estática foi ajustada para concluir o build corretamente.',
+        'O monitor de uso de dados mantém a atualização periódica sem duplicar o agendador.',
+        'Áudio global, rádio persistente e telemetria de dados permanecem preservados.',
       ],
     ),
   ]);

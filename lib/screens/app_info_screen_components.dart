@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.196',
+          version: '1.0.197',
           current: true,
+          changes: [
+            'Pipeline estabilizado após a inclusão do monitor de uso de dados.',
+            'Agendador periódico de telemetria agora é reaproveitado de forma segura.',
+            'Áudio global, rádio persistente e uso de dados continuam preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.196',
           changes: [
             'Áudio global com diagnóstico de TTS, player, foco, saída e volume.',
             'Rádio minimizável e persistente, com estado no mapa e controles na notificação.',
@@ -1781,8 +1790,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.196',
+          version: '1.0.197',
           current: true,
+          changes: [
+            'Pipeline estabilizado após a inclusão do monitor de uso de dados.',
+            'Agendador periódico de telemetria agora é reaproveitado de forma segura.',
+            'Áudio global, rádio persistente e uso de dados continuam preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.196',
           changes: [
             'Áudio global com diagnóstico de TTS, player, foco, saída e volume.',
             'Rádio minimizável e persistente, com estado no mapa e controles na notificação.',

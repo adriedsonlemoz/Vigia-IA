@@ -175,6 +175,7 @@ class DataUsageService extends ChangeNotifier {
     _sessionBaselineWifi = _wifiTotal;
     _sessionBaselineMobile = _mobileTotal;
     _initialized = true;
+    _timer?.cancel();
     _timer = Timer.periodic(refreshInterval, (_) => unawaited(refresh()));
     notifyListeners();
   }

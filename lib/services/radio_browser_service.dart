@@ -137,7 +137,7 @@ class RadioBrowserService {
         final request = await _client.getUrl(uri)
             .timeout(const Duration(seconds: 10));
         request.headers.set(HttpHeaders.userAgentHeader,
-            'VigiaIA/1.0.196 radio-browser');
+            'VigiaIA/1.0.197 radio-browser');
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close()
             .timeout(const Duration(seconds: 12));

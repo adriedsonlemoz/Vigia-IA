@@ -1,3 +1,10 @@
+## 1.0.197+197 — 2026-09-27
+
+- Corrigido o bloqueio do pipeline no `flutter analyze` causado pelo campo `_timer` do `DataUsageService` ser gravado sem leitura.
+- O agendador periódico agora cancela explicitamente uma instância anterior antes de criar a nova, preservando o intervalo de 15 minutos e evitando duplicação defensiva.
+- Áudio global, rádio persistente, mapa e telemetria de uso de dados da 1.0.196 foram preservados.
+- Versão, metadados, Novidades, Mudanças, User-Agents, documentação, testes e verificadores sincronizados em `1.0.197+197`.
+
 ## 1.0.196+196 — 2026-09-27
 
 - Coordenação global de áudio para TTS e alertas personalizados, com isolamento de falhas, recuperação após retorno do segundo plano e respeito ao mute global.

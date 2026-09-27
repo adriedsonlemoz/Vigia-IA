@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.196+196
+# Arquitetura — Vigia IA 1.0.197+197
+
+## Estabilização do pipeline — 1.0.197
+
+`DataUsageService` continua usando um único `Timer.periodic` de 15 minutos. Antes de registrar o agendador, a instância anterior é cancelada defensivamente; isso torna o campo `_timer` efetivamente utilizado, elimina o aviso `unused_field` e mantém a proteção contra agendadores duplicados sem alterar a coleta de dados.
 
 ## Áudio global, rádio persistente e telemetria de dados — 1.0.196
 

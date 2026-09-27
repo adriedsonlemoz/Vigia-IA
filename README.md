@@ -2,9 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.196+196`
+> **Versão atual:** `1.0.197+197`
 
 ## Estado atual
+
+A `1.0.197+197` estabiliza o pipeline após a inclusão do monitor de uso de dados. O `DataUsageService` agora reutiliza defensivamente o agendador periódico, eliminando o aviso que fazia o `flutter analyze` encerrar o workflow. Consulte `RELEASE-1.0.197.md`.
 
 A `1.0.196+196` unifica TTS e alertas personalizados em uma camada global tolerante a falhas, mantém a rádio tocando ao minimizar ou trocar de tela e adiciona medição de uso de dados pelo UID do aplicativo, detalhamento por recurso, viagem atual, economia e alertas configuráveis. Consulte `RELEASE-1.0.196.md`.
 
