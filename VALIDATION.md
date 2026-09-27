@@ -1,4 +1,19 @@
-# Validação Vigia IA 1.0.184+184
+# Validação Vigia IA 1.0.185+185
+
+
+## Painéis de instrumentos do mapa — 1.0.185
+
+- Em retrato, tocar Clima/GPS/Velocidade/Altitude/Bússola e confirmar bottom sheet alto, rolável e fechável sem sair do mapa.
+- Em paisagem, confirmar painel lateral direito animado e mapa ainda visível ao fundo.
+- Velocidade: validar mostrador, média, máxima, distância, tempo, precisão, amostras e comparação com a média sem valores inventados quando GPS não fornecer velocidade.
+- Altitude: validar gráfico com leituras reais, mínima/máxima/amplitude/tendência e ausência de pontos cuja precisão vertical ultrapasse o limite do `MapTelemetryPolicy`.
+- GPS: validar rótulos excelente/boa/razoável/fraca/antiga, raio de precisão, idade, coordenadas, heading, altitude, precisões auxiliares e contador de rejeições.
+- Bússola: validar atualização do mostrador com sensor físico e fallback para GPS/rota, além da troca Norte/Direção/Rota sem fechar o painel.
+- Clima: validar até 12 cartões horários, cache offline após consulta bem-sucedida, atualização manual, resumo por voz e coexistência ESP32+Open-Meteo.
+- Validar avaliação meteorológica com cenário de chuva >=50%, chuva >=85%, rajadas >=60 km/h e código WMO de trovoada; confirmar aviso de que a leitura local não substitui alerta oficial.
+- Confirmar que abrir/fechar os painéis não inicia novos serviços GPS/ESP32 nem cria polling adicional.
+- Executar `python3 tool/check_version_sync.py`, `python3 tool/verify_audio_resource_catalog.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh`; rodar `flutter analyze` e `flutter test` quando o SDK estiver disponível.
+- Nesta entrega, as quatro verificações locais acima foram aprovadas; Flutter/Dart não estão instalados no ambiente de edição, portanto `flutter analyze`/`flutter test` permanecem pendentes para CI ou máquina com SDK.
 
 ## Busca do mapa + Bike/ESP32 — 1.0.184
 

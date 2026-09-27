@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.185',
+          changes: [
+            'Os cinco cards do mapa agora abrem painéis de instrumentos responsivos em vez de popups simples.',
+            'Clima exibe 12 horas de previsão; GPS classifica a qualidade da localização; Altitude mostra perfil real e amplitude do percurso.',
+            'Velocidade ganhou mostrador e comparação com a média; Bússola ganhou rosa dinâmica, fonte ativa e troca de orientação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.184',
           changes: [
             'A busca do mapa passou a sugerir cidades e locais conforme a digitação usando cache e dados offline.',
@@ -1681,8 +1690,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.184',
+          version: '1.0.185',
           current: true,
+          changes: [
+            'Clima, GPS, Velocidade, Altitude e Bússola viraram painéis de instrumentos responsivos e mais legíveis.',
+            'Clima mostra previsão horária de 12 horas e avaliação local para pedal; GPS expõe qualidade, idade, precisão e leituras rejeitadas.',
+            'Velocidade mostra ritmo, média, máxima e sessão; Altitude desenha o perfil real; Bússola mostra rosa dinâmica e fonte ativa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.184',
           changes: [
             'Sugestões locais aparecem durante a digitação sem consultas online excessivas.',
             'Painel Bike do mapa mostra pneus, conexão ESP32, bateria e temperatura quando disponíveis.',

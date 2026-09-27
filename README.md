@@ -2,11 +2,21 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.184+184`
+> **Versão atual:** `1.0.185+185`
 
 ## Estado atual
 
-A `1.0.184+184` integra a busca incremental local do mapa com o sistema Bike/ESP32, adicionando leitura simultânea dos pneus e detecção confirmada de perda rápida de pressão sem criar uma segunda fonte de telemetria.
+A `1.0.185+185` transforma os cards de Clima, GPS, Velocidade, Altitude e Bússola em painéis de instrumentos responsivos, preservando a área útil do mapa e reutilizando somente dados reais já disponíveis no Vigia IA.
+
+### Painéis de instrumentos do mapa — 1.0.185
+
+- Os cinco cards mantêm a leitura compacta no mapa e abrem um painel inferior em retrato ou painel lateral em paisagem.
+- Velocidade ganhou mostrador semicircular, média/máxima da sessão, distância, tempo, precisão e comparação do ritmo atual com a média.
+- Altitude ganhou perfil gráfico das leituras reais, mínima, máxima, amplitude, tendência recente e filtro de precisão vertical muito ruim.
+- GPS ganhou classificação local de qualidade baseada em precisão+idade, dados brutos, precisão de velocidade/heading/altitude e contador de leituras rejeitadas pelo filtro.
+- Bússola ganhou rosa dinâmica, direção em graus, fonte ativa (sensor/GPS/rota), idade do sensor físico e troca direta entre Norte, Direção e Rota.
+- Clima passou a guardar até 12 horas de previsão online com temperatura, chuva, vento, rajadas e código WMO; sensores ESP32 continuam tendo prioridade apenas nos campos fisicamente medidos.
+- A leitura meteorológica para pedal usa limites locais transparentes para chuva, vento, rajadas, trovoadas e sensação térmica e deixa explícito que não substitui alertas oficiais.
 
 ### Busca do mapa + Bike/ESP32 — 1.0.184
 

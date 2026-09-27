@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.184 integra busca incremental local do mapa com painel Bike/ESP32 e detecção confirmada de perda rápida de pressão dos pneus.",
-  "version": "1.0.184",
-  "build": 184
+  "notes": "A 1.0.185 transforma os cards do mapa em painéis de instrumentos responsivos com previsão horária, qualidade GPS, perfil de altitude, velocímetro de sessão e bússola avançada.",
+  "version": "1.0.185",
+  "build": 185
 }

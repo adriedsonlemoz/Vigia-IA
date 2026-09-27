@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.184', build: 184);
+      AppBuildVersion(version: '1.0.185', build: 185);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.184', build: 184),
+      version: AppBuildVersion(version: '1.0.185', build: 185),
       changes: <String>[
-        'A busca do mapa sugere locais enquanto você digita usando dados locais/offline, sem consultar a internet a cada caractere.',
-        'O mapa ganhou painel Bike integrado ao ESP32 com pressão dos dois pneus, conexão, bateria e temperatura quando disponíveis.',
-        'Perda rápida de pressão agora é confirmada por leituras sucessivas e gera alerta visual, sonoro e por voz sem bloquear a navegação.',
+        'Clima, GPS, Velocidade, Altitude e Bússola agora abrem painéis de instrumentos responsivos e ricos sem cobrir desnecessariamente o mapa.',
+        'Clima ganhou previsão horária de 12 horas e leitura para pedal; GPS mostra qualidade, idade e precisão da localização.',
+        'Velocidade ganhou mostrador de sessão, Altitude mostra perfil real das leituras e Bússola ganhou rosa dinâmica com fonte e modo de orientação.',
       ],
     ),
   ]);

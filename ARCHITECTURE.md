@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.184+184
+# Arquitetura — Vigia IA 1.0.185+185
+
+
+## Painéis de instrumentos do mapa — 1.0.185
+
+- `MapMonitoringScreen` mantém somente a coordenação dos cinco painéis. A apresentação reutilizável fica em `lib/widgets/map_telemetry_panel.dart`, com métricas, mostrador de velocidade, perfil de altitude, indicador de GPS, rosa da bússola e faixa de previsão.
+- `_showTelemetryPanel` escolhe a composição conforme a orientação: bottom sheet em retrato e painel lateral animado em paisagem, mantendo o mapa como contexto em vez de abrir uma nova tela.
+- `MapTelemetryPolicy` centraliza a classificação de qualidade GPS e o resumo de altitude. O perfil aceita apenas altitudes reais e rejeita leituras com precisão vertical acima do limite útil; não fabrica ganho acumulado.
+- `MapWeatherService` passa a consultar/persistir até 12 horas do Open-Meteo com temperatura, sensação, precipitação, condição, vento, rajadas e direção. O cache sobe para schema 2 sem invalidar a leitura dos campos antigos.
+- `MapWeatherPolicy.merge` mantém prioridade ESP32 apenas para medições físicas locais e preserva a previsão online separadamente. `assessForRide` produz uma leitura local e transparente a partir de limites explícitos, sem substituir alertas meteorológicos oficiais.
+- A bússola continua usando `MapViewPolicy.displayHeading`, portanto a UI revela a fonte real escolhida entre sensor, GPS e geometria da rota. Um `ValueNotifier` leve atualiza apenas o painel aberto quando o sensor físico muda.
+- Os cards compactos do mapa não ganham consultas extras: clima respeita cache/debounce existentes e os demais painéis observam os mesmos `ChangeNotifier`s já usados pela tela.
 
 ## Busca local incremental + segurança Bike — 1.0.184
 

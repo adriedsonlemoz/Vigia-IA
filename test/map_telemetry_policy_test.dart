@@ -9,17 +9,22 @@ MapRoutePoint point({
   double? speedAccuracyMps,
   double? heading,
   bool headingAvailable = true,
+  double accuracyMeters = 5,
+  double? altitudeMeters,
+  double? altitudeAccuracyMeters,
 }) =>
     MapRoutePoint(
       latitude: -20.0,
       longitude: -45.0,
       recordedAt: at,
-      accuracyMeters: 5,
+      accuracyMeters: accuracyMeters,
       speedMetersPerSecond: speedMps,
       speedAvailable: speedAvailable,
       speedAccuracyMetersPerSecond: speedAccuracyMps,
       headingDegrees: heading,
       headingAvailable: headingAvailable,
+      altitudeMeters: altitudeMeters,
+      altitudeAccuracyMeters: altitudeAccuracyMeters,
     );
 
 void main() {
@@ -83,4 +88,65 @@ void main() {
       isFalse,
     );
   });
+
+  test('qualidade GPS combina precisao e idade sem fabricar sinal', () {
+    final at = DateTime.utc(2026, 9, 26, 12);
+    expect(
+      MapTelemetryPolicy.gpsQuality(
+        point(at: at, accuracyMeters: 4),
+        now: at.add(const Duration(seconds: 2)),
+      ),
+      MapGpsQuality.excellent,
+    );
+    expect(
+      MapTelemetryPolicy.gpsQuality(
+        point(at: at, accuracyMeters: 24),
+        now: at.add(const Duration(seconds: 2)),
+      ),
+      MapGpsQuality.fair,
+    );
+
+    expect(
+      MapTelemetryPolicy.gpsQuality(
+        point(at: at, accuracyMeters: 0),
+        now: at.add(const Duration(seconds: 2)),
+      ),
+      MapGpsQuality.unknown,
+    );
+    expect(
+      MapTelemetryPolicy.gpsQuality(
+        point(at: at, accuracyMeters: 4),
+        now: at.add(const Duration(seconds: 25)),
+      ),
+      MapGpsQuality.stale,
+    );
+  });
+
+  test('perfil de altitude ignora amostra vertical muito ruim', () {
+    final at = DateTime.utc(2026, 9, 26, 12);
+    final summary = MapTelemetryPolicy.elevationSummary(<MapRoutePoint>[
+      point(
+        at: at,
+        altitudeMeters: 700,
+        altitudeAccuracyMeters: 8,
+      ),
+      point(
+        at: at.add(const Duration(seconds: 5)),
+        altitudeMeters: 900,
+        altitudeAccuracyMeters: 120,
+      ),
+      point(
+        at: at.add(const Duration(seconds: 10)),
+        altitudeMeters: 715,
+        altitudeAccuracyMeters: 10,
+      ),
+    ]);
+
+    expect(summary.samples, 2);
+    expect(summary.minimumMeters, 700);
+    expect(summary.maximumMeters, 715);
+    expect(summary.rangeMeters, 15);
+    expect(summary.recentDeltaMeters, 15);
+  });
+
 }

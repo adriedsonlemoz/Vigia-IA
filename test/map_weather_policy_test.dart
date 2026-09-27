@@ -87,4 +87,55 @@ void main() {
     expect(MapWeatherPolicy.conditionLabel(63), 'Chuva');
     expect(MapWeatherPolicy.conditionLabel(999), isNull);
   });
+  test('previsao horaria online sobrevive ao merge e alimenta leitura para pedal', () {
+    final forecast = <MapWeatherForecastHour>[
+      MapWeatherForecastHour(
+        time: DateTime.utc(2026, 9, 26, 13),
+        precipitationProbabilityPercent: 72,
+        windSpeedKmh: 28,
+        windGustKmh: 42,
+        weatherCode: 63,
+      ),
+    ];
+    final merged = MapWeatherPolicy.merge(
+      esp32: MapWeatherSnapshot(
+        temperatureC: value(27, MapWeatherSource.esp32),
+      ),
+      online: MapWeatherSnapshot(
+        hourlyForecast: forecast,
+        precipitationProbabilityPercent: value(72, MapWeatherSource.online),
+      ),
+    );
+
+    expect(merged.hourlyForecast, hasLength(1));
+    final assessment = MapWeatherPolicy.assessForRide(merged);
+    expect(assessment.level, MapRideWeatherLevel.attention);
+    expect(assessment.detail, contains('72%'));
+  });
+
+  test('sensor local isolado nao vira falso parecer de clima favoravel', () {
+    final snapshot = MapWeatherSnapshot(
+      temperatureC: value(24, MapWeatherSource.esp32),
+    );
+
+    final assessment = MapWeatherPolicy.assessForRide(snapshot);
+    expect(assessment.level, MapRideWeatherLevel.unavailable);
+    expect(assessment.summary, contains('insuficiente'));
+  });
+
+  test('trovoada prevista eleva avaliacao meteorologica', () {
+    final snapshot = MapWeatherSnapshot(
+      hourlyForecast: <MapWeatherForecastHour>[
+        MapWeatherForecastHour(
+          time: DateTime.utc(2026, 9, 26, 14),
+          weatherCode: 95,
+          precipitationProbabilityPercent: 90,
+        ),
+      ],
+    );
+
+    final assessment = MapWeatherPolicy.assessForRide(snapshot);
+    expect(assessment.level, MapRideWeatherLevel.critical);
+    expect(assessment.summary, contains('Trovoadas'));
+  });
 }

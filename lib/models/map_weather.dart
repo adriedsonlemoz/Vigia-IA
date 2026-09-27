@@ -32,6 +32,83 @@ class MapWeatherValue<T> {
   final String? sourceDetail;
 }
 
+class MapWeatherForecastHour {
+  const MapWeatherForecastHour({
+    required this.time,
+    this.temperatureC,
+    this.apparentTemperatureC,
+    this.precipitationProbabilityPercent,
+    this.precipitationMm,
+    this.weatherCode,
+    this.windSpeedKmh,
+    this.windGustKmh,
+    this.windDirectionDegrees,
+  });
+
+  final DateTime time;
+  final double? temperatureC;
+  final double? apparentTemperatureC;
+  final double? precipitationProbabilityPercent;
+  final double? precipitationMm;
+  final int? weatherCode;
+  final double? windSpeedKmh;
+  final double? windGustKmh;
+  final double? windDirectionDegrees;
+
+  bool get hasValues => <Object?>[
+        temperatureC,
+        apparentTemperatureC,
+        precipitationProbabilityPercent,
+        precipitationMm,
+        weatherCode,
+        windSpeedKmh,
+        windGustKmh,
+        windDirectionDegrees,
+      ].any((value) => value != null);
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'time': time.toIso8601String(),
+        'temperatureC': temperatureC,
+        'apparentTemperatureC': apparentTemperatureC,
+        'precipitationProbabilityPercent': precipitationProbabilityPercent,
+        'precipitationMm': precipitationMm,
+        'weatherCode': weatherCode,
+        'windSpeedKmh': windSpeedKmh,
+        'windGustKmh': windGustKmh,
+        'windDirectionDegrees': windDirectionDegrees,
+      };
+
+  factory MapWeatherForecastHour.fromJson(Map<String, dynamic> json) {
+    final time = DateTime.tryParse(json['time']?.toString() ?? '');
+    if (time == null) {
+      throw const FormatException('Hora de previsão inválida.');
+    }
+    double? number(Object? value) {
+      if (value is! num) return null;
+      final parsed = value.toDouble();
+      return parsed.isFinite ? parsed : null;
+    }
+
+    int? integer(Object? value) {
+      if (value is! num) return null;
+      return value.toInt();
+    }
+
+    return MapWeatherForecastHour(
+      time: time,
+      temperatureC: number(json['temperatureC']),
+      apparentTemperatureC: number(json['apparentTemperatureC']),
+      precipitationProbabilityPercent:
+          number(json['precipitationProbabilityPercent']),
+      precipitationMm: number(json['precipitationMm']),
+      weatherCode: integer(json['weatherCode']),
+      windSpeedKmh: number(json['windSpeedKmh']),
+      windGustKmh: number(json['windGustKmh']),
+      windDirectionDegrees: number(json['windDirectionDegrees']),
+    );
+  }
+}
+
 class MapWeatherSnapshot {
   const MapWeatherSnapshot({
     this.temperatureC,
@@ -44,6 +121,7 @@ class MapWeatherSnapshot {
     this.precipitationProbabilityPercent,
     this.precipitationMm,
     this.rainMm,
+    this.hourlyForecast = const <MapWeatherForecastHour>[],
     this.onlineUpdatedAt,
     this.onlineStale = false,
   });
@@ -58,6 +136,7 @@ class MapWeatherSnapshot {
   final MapWeatherValue<double>? precipitationProbabilityPercent;
   final MapWeatherValue<double>? precipitationMm;
   final MapWeatherValue<double>? rainMm;
+  final List<MapWeatherForecastHour> hourlyForecast;
   final DateTime? onlineUpdatedAt;
   final bool onlineStale;
 
@@ -72,11 +151,11 @@ class MapWeatherSnapshot {
         precipitationProbabilityPercent,
         precipitationMm,
         rainMm,
-      ].any((value) => value != null);
+      ].any((value) => value != null) || hourlyForecast.isNotEmpty;
 
   MapWeatherOrigin get origin {
     var hasEsp32 = false;
-    var hasOnline = false;
+    var hasOnline = hourlyForecast.isNotEmpty;
     final sources = <MapWeatherSource?>[
       temperatureC?.source,
       apparentTemperatureC?.source,

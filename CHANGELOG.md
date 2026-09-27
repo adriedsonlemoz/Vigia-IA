@@ -1,3 +1,16 @@
+## 1.0.185+185 — 2026-09-26
+
+- Clima, GPS, Velocidade, Altitude e Bússola deixam de abrir popups simples e passam a usar um painel de instrumentos responsivo: bottom sheet em retrato e painel lateral em paisagem.
+- Velocidade ganha mostrador semicircular, comparação com a média, máxima, distância, duração, precisão e quantidade de amostras reais da sessão.
+- Altitude ganha perfil gráfico das leituras válidas, mínima, máxima, amplitude, tendência recente e descarte de amostras com precisão vertical excessivamente ruim.
+- GPS ganha classificação local de qualidade, idade da leitura, precisões complementares, coordenadas e contador de pontos rejeitados pelo filtro.
+- Bússola ganha rosa dinâmica, direção/graus, identificação da fonte real usada e seleção Norte/Direção/Rota dentro do próprio painel.
+- Clima online passa de probabilidade agregada para previsão horária de até 12 horas com temperatura, sensação, precipitação, vento, rajadas, direção e condição WMO persistidas em cache.
+- Adicionada avaliação meteorológica local para pedal com critérios explícitos e sem substituir alertas oficiais.
+- Novos componentes visuais foram isolados em `map_telemetry_panel.dart`, evitando ampliar ainda mais a lógica de apresentação da tela principal.
+- Testes de clima e telemetria foram ampliados para previsão horária, qualidade GPS e perfil de altitude.
+- Versão, AppMetadata, identidades, User-Agents, documentação, Novidades, Mudanças, verificadores e empacotamento sincronizados em `1.0.185+185`.
+
 ## 1.0.184+184 — 2026-09-26
 
 - Pesquisa do mapa passa a filtrar sugestões locais/offline enquanto o usuário digita, sem requisições online por caractere; a pesquisa Nominatim permanece sob confirmação.

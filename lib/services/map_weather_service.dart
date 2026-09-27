@@ -166,8 +166,17 @@ class MapWeatherService extends ChangeNotifier {
         'wind_speed_10m',
         'wind_direction_10m',
       ].join(','),
-      'hourly': 'precipitation_probability',
-      'forecast_hours': '4',
+      'hourly': <String>[
+        'temperature_2m',
+        'apparent_temperature',
+        'precipitation_probability',
+        'precipitation',
+        'weather_code',
+        'wind_speed_10m',
+        'wind_gusts_10m',
+        'wind_direction_10m',
+      ].join(','),
+      'forecast_hours': '12',
       'timezone': 'GMT',
       if (_providerApiKey.isNotEmpty) 'apikey': _providerApiKey,
     };
@@ -176,7 +185,7 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.184 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.185 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)
@@ -211,6 +220,7 @@ class MapWeatherService extends ChangeNotifier {
     final observedAt = _parseDate(current['time']) ?? receivedAt;
     final hourly = _stringMap(json['hourly']) ?? const <String, dynamic>{};
     final probability = _maximumProbability(hourly['precipitation_probability']);
+    final forecast = _decodeHourlyForecast(hourly);
     return MapWeatherOnlineData(
       latitude: latitude,
       longitude: longitude,
@@ -232,6 +242,7 @@ class MapWeatherService extends ChangeNotifier {
       precipitationMm:
           _finiteDouble(current['precipitation'], min: 0, max: 1000),
       rainMm: _finiteDouble(current['rain'], min: 0, max: 1000),
+      hourlyForecast: forecast,
     );
   }
 
@@ -355,6 +366,7 @@ class MapWeatherService extends ChangeNotifier {
           value(cache.precipitationProbabilityPercent),
       precipitationMm: value(cache.precipitationMm),
       rainMm: value(cache.rainMm),
+      hourlyForecast: cache.hourlyForecast,
       onlineUpdatedAt: cache.updatedAt,
       onlineStale: stale,
     );
@@ -421,6 +433,16 @@ class MapWeatherService extends ChangeNotifier {
         _round(value.precipitationProbabilityPercent?.value, 0),
         _round(value.precipitationMm?.value, 1),
         _round(value.rainMm?.value, 1),
+        value.hourlyForecast.length,
+        for (final item in value.hourlyForecast)
+          <Object?>[
+            item.time.millisecondsSinceEpoch,
+            _round(item.temperatureC, 1),
+            _round(item.precipitationProbabilityPercent, 0),
+            _round(item.windSpeedKmh, 1),
+            _round(item.windGustKmh, 1),
+            item.weatherCode,
+          ].join(':'),
         value.origin.name,
         value.onlineStale,
       ].join('|');
@@ -505,6 +527,72 @@ class MapWeatherService extends ChangeNotifier {
     return result;
   }
 
+  static List<MapWeatherForecastHour> _decodeHourlyForecast(
+    Map<String, dynamic> hourly,
+  ) {
+    final times = hourly['time'];
+    if (times is! List || times.isEmpty) {
+      return const <MapWeatherForecastHour>[];
+    }
+
+    Object? at(String key, int index) {
+      final values = hourly[key];
+      if (values is! List || index < 0 || index >= values.length) return null;
+      return values[index];
+    }
+
+    final result = <MapWeatherForecastHour>[];
+    for (var index = 0; index < times.length && result.length < 12; index++) {
+      final time = _parseDate(times[index]);
+      if (time == null) continue;
+      final item = MapWeatherForecastHour(
+        time: time,
+        temperatureC: _finiteDouble(
+          at('temperature_2m', index),
+          min: -100,
+          max: 70,
+        ),
+        apparentTemperatureC: _finiteDouble(
+          at('apparent_temperature', index),
+          min: -120,
+          max: 80,
+        ),
+        precipitationProbabilityPercent: _finiteDouble(
+          at('precipitation_probability', index),
+          min: 0,
+          max: 100,
+        ),
+        precipitationMm: _finiteDouble(
+          at('precipitation', index),
+          min: 0,
+          max: 1000,
+        ),
+        weatherCode: _finiteInt(
+          at('weather_code', index),
+          min: 0,
+          max: 99,
+        ),
+        windSpeedKmh: _finiteDouble(
+          at('wind_speed_10m', index),
+          min: 0,
+          max: 500,
+        ),
+        windGustKmh: _finiteDouble(
+          at('wind_gusts_10m', index),
+          min: 0,
+          max: 500,
+        ),
+        windDirectionDegrees: _finiteDouble(
+          at('wind_direction_10m', index),
+          min: 0,
+          max: 360,
+        ),
+      );
+      if (item.hasValues) result.add(item);
+    }
+    return List<MapWeatherForecastHour>.unmodifiable(result);
+  }
+
   static String _friendlyError(Object error) {
     if (error is SocketException) return 'Sem conexão com o serviço de clima.';
     if (error is TimeoutException) return 'Tempo limite ao consultar o clima.';
@@ -530,6 +618,7 @@ class MapWeatherOnlineData {
     this.precipitationProbabilityPercent,
     this.precipitationMm,
     this.rainMm,
+    this.hourlyForecast = const <MapWeatherForecastHour>[],
   });
 
   final double latitude;
@@ -546,9 +635,10 @@ class MapWeatherOnlineData {
   final double? precipitationProbabilityPercent;
   final double? precipitationMm;
   final double? rainMm;
+  final List<MapWeatherForecastHour> hourlyForecast;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'version': 1,
+        'version': 2,
         'latitude': latitude,
         'longitude': longitude,
         'updatedAt': updatedAt.toIso8601String(),
@@ -563,6 +653,9 @@ class MapWeatherOnlineData {
         'precipitationProbabilityPercent': precipitationProbabilityPercent,
         'precipitationMm': precipitationMm,
         'rainMm': rainMm,
+        'hourlyForecast': <Map<String, Object?>>[
+          for (final item in hourlyForecast) item.toJson(),
+        ],
       };
 
   factory MapWeatherOnlineData.fromJson(Map<String, dynamic> json) {
@@ -580,6 +673,22 @@ class MapWeatherOnlineData {
     );
     if (updatedAt == null || observedAt == null || latitude == null || longitude == null) {
       throw const FormatException('Cache de clima incompleto.');
+    }
+    final rawForecast = json['hourlyForecast'];
+    final forecast = <MapWeatherForecastHour>[];
+    if (rawForecast is List) {
+      for (final raw in rawForecast) {
+        if (raw is! Map) continue;
+        try {
+          forecast.add(
+            MapWeatherForecastHour.fromJson(
+              raw.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          );
+        } catch (_) {
+          // Um item inválido não deve descartar todo o cache meteorológico.
+        }
+      }
     }
     return MapWeatherOnlineData(
       latitude: latitude,
@@ -636,6 +745,7 @@ class MapWeatherOnlineData {
         min: 0,
         max: 1000,
       ),
+      hourlyForecast: List<MapWeatherForecastHour>.unmodifiable(forecast),
     );
   }
 }
