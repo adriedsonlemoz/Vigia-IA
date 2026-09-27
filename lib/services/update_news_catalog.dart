@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.198', build: 198);
+      AppBuildVersion(version: '1.0.199', build: 199);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.198', build: 198),
+      version: AppBuildVersion(version: '1.0.199', build: 199),
       changes: <String>[
-        'A integração Android do monitor de dados foi ajustada para tipos numéricos compatíveis.',
-        'A leitura de tráfego recebido e enviado continua tratando valores indisponíveis com segurança.',
-        'Áudio global, rádio persistente e telemetria de dados permanecem preservados.',
+        'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
+        'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',
+        'O mapa atual continua sendo o padrão e os mapas offline permanecem disponíveis.',
       ],
     ),
   ]);

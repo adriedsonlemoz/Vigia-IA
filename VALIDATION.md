@@ -1,12 +1,12 @@
-# Validação Vigia IA 1.0.198+198
+# Validação Vigia IA 1.0.199+199
 
-## Cobertura da 1.0.198
+## Cobertura da 1.0.199
 
 - Executar o workflow Android e confirmar que `:app:compileReleaseKotlin` conclui sem `Operator '!=' cannot be applied to 'Long' and 'Int'` em `MainActivity.kt`.
 - Confirmar que `networkUsageSnapshot()` continua retornando bytes recebidos/enviados quando disponíveis e `null` para `TrafficStats.UNSUPPORTED`.
 - Verificar que `android/app/.../MainActivity.kt` e `tool/android/MainActivity.kt` usam a mesma conversão `TrafficStats.UNSUPPORTED.toLong()`.
 - Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter analyze` e `flutter test`.
-- Atualizar 1.0.197 → 1.0.198 e confirmar que Novidades aparece uma vez, sem regressão em áudio, rádio, mapa ou telemetria.
+- Atualizar 1.0.197 → 1.0.199 e confirmar que Novidades aparece uma vez, sem regressão em áudio, rádio, mapa ou telemetria.
 
 ## Cobertura da 1.0.197
 

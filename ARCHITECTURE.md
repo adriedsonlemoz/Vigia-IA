@@ -1,6 +1,14 @@
-# Arquitetura — Vigia IA 1.0.198+198
+# Arquitetura — Vigia IA 1.0.199+199
 
-## Compatibilidade numérica da telemetria Android — 1.0.198
+## Provedor opcional do Google Maps — 1.0.199
+
+O renderer existente com `FlutterMap` continua sendo o padrão. `MapViewSettingsService` persiste `MapProvider.current` ou `MapProvider.google`, permitindo alternar o motor visual sem alterar os serviços de GPS, rotas, pontos, busca, navegação ou mapas offline.
+
+Quando o Google está ativo, `GoogleMapView` adapta os mesmos dados de domínio para `Marker` e `Polyline` do `google_maps_flutter`. O estilo `satellite` usa o modo híbrido do Google para manter imagem aérea e rótulos; `terrain` usa o modo terreno e os demais estilos usam o modo normal.
+
+A chave Android não fica no código-fonte: `android/app/build.gradle.kts` lê `MAPS_API_KEY` de `local.properties` e injeta o placeholder recomendado `com.google.android.geo.API_KEY`. O arquivo `android/local.properties.example` documenta a configuração.
+
+## Compatibilidade numérica da telemetria Android — 1.0.199
 
 `TrafficStats.getUidRxBytes()` e `getUidTxBytes()` fornecem contadores `Long`. No toolchain Android usado pelo workflow, `TrafficStats.UNSUPPORTED` é exposto a Kotlin como `Int`; por isso a comparação direta não compila. `networkUsageSnapshot()` converte o sentinela para `Long` antes do `takeIf`, preservando o contrato atual: contador válido quando disponível e `null` quando não suportado. A implementação ativa e a cópia espelhada de `MainActivity.kt` permanecem sincronizadas.
 

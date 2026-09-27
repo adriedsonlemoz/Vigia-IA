@@ -50,6 +50,18 @@ extension MapAppearanceModeX on MapAppearanceMode {
       };
 }
 
+enum MapProvider {
+  current,
+  google,
+}
+
+extension MapProviderX on MapProvider {
+  String get label => switch (this) {
+        MapProvider.current => 'Mapa atual',
+        MapProvider.google => 'Google Maps',
+      };
+}
+
 enum MapStylePreset {
   standard,
   bikeTravel,
@@ -89,6 +101,7 @@ class MapViewSettingsService extends ChangeNotifier {
 
   static final MapViewSettingsService instance = MapViewSettingsService._();
 
+  MapProvider _provider = MapProvider.current;
   MapOrientationMode _orientationMode = MapOrientationMode.northUp;
   MapFollowViewPreset _followViewPreset = MapFollowViewPreset.near;
   MapStylePreset _stylePreset = MapStylePreset.standard;
@@ -105,6 +118,7 @@ class MapViewSettingsService extends ChangeNotifier {
   File? _file;
 
   bool get initialized => _initialized;
+  MapProvider get provider => _provider;
   MapOrientationMode get orientationMode => _orientationMode;
   MapFollowViewPreset get followViewPreset => _followViewPreset;
   MapStylePreset get stylePreset => _stylePreset;
@@ -130,6 +144,7 @@ class MapViewSettingsService extends ChangeNotifier {
         final decoded = jsonDecode(await file.readAsString());
         if (decoded is Map) {
           final map = decoded.cast<String, dynamic>();
+          final providerName = map['provider'] as String?;
           final orientationName = map['orientationMode'] as String?;
           final presetName = map['followViewPreset'] as String?;
           final styleName = map['stylePreset'] as String?;
@@ -143,6 +158,10 @@ class MapViewSettingsService extends ChangeNotifier {
           final bikeUseHistoricalSpeed = map['bikeUseHistoricalSpeed'];
           final navigationVoiceEnabled = map['navigationVoiceEnabled'];
           final weatherVoiceEnabled = map['weatherVoiceEnabled'];
+          _provider = MapProvider.values.firstWhere(
+            (value) => value.name == providerName,
+            orElse: () => MapProvider.current,
+          );
           _orientationMode = orientationName == 'headingUp'
               ? MapOrientationMode.directionUp
               : MapOrientationMode.values.firstWhere(
@@ -176,6 +195,7 @@ class MapViewSettingsService extends ChangeNotifier {
           _weatherVoiceEnabled = weatherVoiceEnabled as bool? ?? true;
         }
       } catch (_) {
+        _provider = MapProvider.current;
         _orientationMode = MapOrientationMode.northUp;
         _followViewPreset = MapFollowViewPreset.near;
         _stylePreset = MapStylePreset.standard;
@@ -191,6 +211,14 @@ class MapViewSettingsService extends ChangeNotifier {
       }
     }
     _initialized = true;
+  }
+
+  Future<void> setProvider(MapProvider value) async {
+    if (!_initialized) await initialize();
+    if (_provider == value) return;
+    _provider = value;
+    notifyListeners();
+    await _persist();
   }
 
   Future<void> setOrientationMode(MapOrientationMode value) async {
@@ -289,7 +317,8 @@ class MapViewSettingsService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 9,
+        'version': 10,
+        'provider': _provider.name,
         'orientationMode': _orientationMode.name,
         'followViewPreset': _followViewPreset.name,
         'stylePreset': _stylePreset.name,

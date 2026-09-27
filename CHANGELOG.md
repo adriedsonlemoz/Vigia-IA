@@ -1,9 +1,12 @@
-## 1.0.198+198 — 2026-09-27
+## 1.0.199+199 — 2026-09-27
 
-- Corrigida a compilação Kotlin do monitor de uso de dados no Android: `TrafficStats.getUidRxBytes/getUidTxBytes` retornam `Long`, enquanto `TrafficStats.UNSUPPORTED` é exposto como `Int` neste toolchain.
-- As comparações agora convertem explicitamente o sentinela para `Long`, mantendo `null` quando o Android informa que a métrica não é suportada.
-- A mesma correção foi aplicada ao `MainActivity.kt` ativo e à cópia espelhada em `tool/android`, evitando divergência nas validações futuras.
-- Versão, metadados, Novidades, Mudanças, User-Agents, documentação, testes e verificadores sincronizados em `1.0.198+198`.
+- Google Maps foi adicionado como provedor opcional do módulo de mapas, sem remover o `FlutterMap` atual.
+- O usuário pode alternar entre **Mapa atual** e **Google Maps** e persistir a escolha.
+- No Google Maps, o aplicativo oferece visual normal, satélite/híbrido e terreno.
+- Pontos do Vigia, destino, início/fim, posição atual e rotas continuam usando os mesmos dados do módulo existente.
+- Mapas offline/MBTiles continuam exclusivos do provedor atual e não foram removidos.
+- A chave Android é lida de `MAPS_API_KEY` em `android/local.properties`; o arquivo de exemplo documenta a configuração sem expor segredo.
+- A tela de Novidades e os metadados foram atualizados para `1.0.199+199`.
 
 ## 1.0.197+197 — 2026-09-27
 

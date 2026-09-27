@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_mbtiles/flutter_map_mbtiles.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart';
 
 import '../controllers/secondary_camera_controller.dart';
@@ -68,6 +69,7 @@ import 'audio_settings_screen.dart';
 import 'bike_mode_screen.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/map_navigation_3d_view.dart';
+import '../widgets/google_map_view.dart';
 import '../widgets/map_poi_details_sheet.dart';
 import '../widgets/map_bike_approach_overlay.dart';
 import '../widgets/map_ai_status_overlay.dart';
@@ -141,6 +143,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       '© OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors';
 
   final MapController _mapController = MapController();
+  gmaps.GoogleMapController? _googleMapController;
+  gmaps.CameraPosition? _googleCameraPosition;
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapRouteService _routeState = MapRouteService.instance;
@@ -303,6 +307,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _offlineTileProvider?.dispose();
     _navigationVoice.resetRoute();
     _mapController.dispose();
+    _googleMapController = null;
     super.dispose();
   }
 
@@ -412,6 +417,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       'Rota: ${target.label} · ${speed == null ? "--" : "${speed.kmh.toStringAsFixed(0)} km/h (${speed.source})"}'
       '${battery == null ? "" : " · bateria $battery%"}',
     );
+  }
+
+  void _onMapConnectivityChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
@@ -1365,11 +1375,54 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
+  bool get _usingGoogleMap =>
+      _mapViewSettings.provider == MapProvider.google && !_connectivity.isOffline;
+
+  gmaps.MapType get _googleMapType => switch (_mapViewSettings.stylePreset) {
+        MapStylePreset.satellite => gmaps.MapType.satellite,
+        MapStylePreset.terrain => gmaps.MapType.terrain,
+        _ => gmaps.MapType.normal,
+      };
+
+  Future<void> _animateGoogleCamera({
+    required LatLng target,
+    double? zoom,
+    double? bearing,
+    double? tilt,
+  }) async {
+    final controller = _googleMapController;
+    if (controller == null) return;
+    final current = _googleCameraPosition;
+    final position = gmaps.CameraPosition(
+      target: gmaps.LatLng(target.latitude, target.longitude),
+      zoom: zoom ?? current?.zoom ?? _followZoom,
+      bearing: bearing ?? current?.bearing ?? 0,
+      tilt: tilt ?? current?.tilt ?? 0,
+    );
+    _googleCameraPosition = position;
+    try {
+      await controller.animateCamera(gmaps.CameraUpdate.newCameraPosition(position));
+    } catch (_) {}
+  }
+
   void _applyFollowCamera(
     MapRoutePoint point, {
     double? zoom,
     bool forceRotation = false,
   }) {
+    if (_usingGoogleMap) {
+      final decision = _orientationHeadingFor(point);
+      final bearing = _mapViewSettings.orientationMode == MapOrientationMode.northUp
+          ? 0.0
+          : decision.headingDegrees ?? _googleCameraPosition?.bearing ?? 0.0;
+      unawaited(_animateGoogleCamera(
+        target: LatLng(point.latitude, point.longitude),
+        zoom: zoom ?? _followZoom,
+        bearing: bearing,
+      ));
+      _lastFollowCameraPointAt = point.recordedAt;
+      return;
+    }
     if (!_mapReady) return;
     try {
       if (_mapViewSettings.orientationMode == MapOrientationMode.northUp) {
@@ -1823,7 +1876,148 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
+  Future<void> _focusGooglePoint(LatLng point, {double zoom = 16}) async {
+    await _animateGoogleCamera(target: point, zoom: zoom);
+  }
+
+  Set<gmaps.Marker> _googleMarkers(
+    List<MapPoiCluster> poiClusters,
+    MapDestinationSearchResult? selectedMapLocation,
+    MapNavigationTarget? navigationTarget,
+    MapRoutePoint? current,
+  ) {
+    final markers = <gmaps.Marker>{};
+    for (final cluster in poiClusters) {
+      final item = cluster.isCluster ? null : cluster.first;
+      markers.add(gmaps.Marker(
+        markerId: gmaps.MarkerId(
+          'poi-${item?.id ?? 'cluster-${cluster.latitude}-${cluster.longitude}'}',
+        ),
+        position: gmaps.LatLng(cluster.latitude, cluster.longitude),
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
+          cluster.isCluster
+              ? gmaps.BitmapDescriptor.hueAzure
+              : gmaps.BitmapDescriptor.hueOrange,
+        ),
+        infoWindow: gmaps.InfoWindow(
+          title: cluster.isCluster ? '${cluster.count} pontos próximos' : item!.title,
+          snippet: cluster.isCluster
+              ? 'Toque para aproximar'
+              : _routeExplorer.formatDistance(item.distanceMeters),
+        ),
+        onTap: () => _focusPoiCluster(cluster),
+      ));
+    }
+    if (selectedMapLocation != null &&
+        navigationTarget?.sourceId != selectedMapLocation.id) {
+      markers.add(gmaps.Marker(
+        markerId: const gmaps.MarkerId('selected-destination'),
+        position: gmaps.LatLng(selectedMapLocation.latitude, selectedMapLocation.longitude),
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueViolet),
+        infoWindow: gmaps.InfoWindow(title: selectedMapLocation.title),
+      ));
+    }
+    if (_routeState.start != null) {
+      final point = _routeState.start!;
+      markers.add(_googleSimpleMarker('route-start', point, 'Início', gmaps.BitmapDescriptor.hueGreen));
+    }
+    if (_routeState.end != null) {
+      final point = _routeState.end!;
+      markers.add(_googleSimpleMarker('route-end', point, 'Fim', gmaps.BitmapDescriptor.hueRed));
+    }
+    if (navigationTarget != null) {
+      markers.add(gmaps.Marker(
+        markerId: const gmaps.MarkerId('navigation-target'),
+        position: gmaps.LatLng(navigationTarget.latitude, navigationTarget.longitude),
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueRed),
+        infoWindow: gmaps.InfoWindow(title: 'Destino: ${navigationTarget.label}'),
+      ));
+    }
+    if (current != null) {
+      markers.add(gmaps.Marker(
+        markerId: const gmaps.MarkerId('current-position'),
+        position: gmaps.LatLng(current.latitude, current.longitude),
+        rotation: current.headingDegrees ?? 0,
+        flat: true,
+        anchor: const Offset(0.5, 0.5),
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueAzure),
+        infoWindow: const gmaps.InfoWindow(title: 'Sua posição'),
+      ));
+    }
+    return markers;
+  }
+
+  gmaps.Marker _googleSimpleMarker(
+    String id, MapRoutePoint point, String title, double hue,
+  ) => gmaps.Marker(
+    markerId: gmaps.MarkerId(id),
+    position: gmaps.LatLng(point.latitude, point.longitude),
+    icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(hue),
+    infoWindow: gmaps.InfoWindow(title: title),
+  );
+
+  Set<gmaps.Polyline> _googlePolylines(List<List<LatLng>> routeSegments) {
+    final lines = <gmaps.Polyline>{};
+    for (var index = 0; index < _cyclingRouteAlternatives.length; index++) {
+      if (index == _selectedCyclingRouteIndex) continue;
+      lines.add(gmaps.Polyline(
+        polylineId: gmaps.PolylineId('cycling-alt-$index'),
+        points: _cyclingRouteAlternatives[index].points
+            .map((p) => gmaps.LatLng(p.latitude, p.longitude))
+            .toList(growable: false),
+        width: 4,
+      ));
+    }
+    if (_cyclingRoute != null) {
+      final points = _cyclingRoute!.points
+          .map((p) => gmaps.LatLng(p.latitude, p.longitude))
+          .toList(growable: false);
+      lines.add(gmaps.Polyline(
+        polylineId: const gmaps.PolylineId('cycling-route-casing'),
+        points: points, width: 10,
+      ));
+      lines.add(gmaps.Polyline(
+        polylineId: const gmaps.PolylineId('cycling-route'),
+        points: points, width: 6,
+      ));
+    }
+    for (var index = 0; index < routeSegments.length; index++) {
+      lines.add(gmaps.Polyline(
+        polylineId: gmaps.PolylineId('route-$index'),
+        points: routeSegments[index]
+            .map((p) => gmaps.LatLng(p.latitude, p.longitude))
+            .toList(growable: false),
+        width: 5,
+      ));
+    }
+    if (_rideSettings.roadOverlayEnabled && _roadSegments.isNotEmpty) {
+      for (var index = 0; index < _roadSegments.length; index++) {
+        final segment = _roadSegments[index];
+        lines.add(gmaps.Polyline(
+          polylineId: gmaps.PolylineId('road-$index'),
+          points: segment.points
+              .map((p) => gmaps.LatLng(p.latitude, p.longitude))
+              .toList(growable: false),
+          width: segment.kind == 'water' ? 3 : segment.kind == 'highway' ? 5 : 3,
+        ));
+      }
+    }
+    return lines;
+  }
+
   void _focusSearchResult(MapDestinationSearchResult item) {
+    if (_usingGoogleMap) {
+      unawaited(_focusGooglePoint(
+        LatLng(item.latitude, item.longitude),
+        zoom: math.max(_visibleMapZoom, 13.5),
+      ));
+      setState(() {
+        _followPosition = false;
+        _selectedPoiId = null;
+        _selectedMapLocation = item;
+      });
+      return;
+    }
     try {
       _mapController.move(
         LatLng(item.latitude, item.longitude),
@@ -2358,6 +2552,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _fitCyclingRoute(List<LatLng> points) {
     if (!_mapReady || points.length < 2) return;
+    if (_usingGoogleMap) {
+      unawaited(_fitGoogleBounds(points));
+      setState(() => _followPosition = false);
+      return;
+    }
     try {
       _mapController.fitCamera(
         CameraFit.coordinates(
@@ -2368,6 +2567,32 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         ),
       );
       setState(() => _followPosition = false);
+    } catch (_) {}
+  }
+
+  Future<void> _fitGoogleBounds(List<LatLng> points) async {
+    final controller = _googleMapController;
+    if (controller == null || points.length < 2) return;
+    var minLat = points.first.latitude;
+    var maxLat = points.first.latitude;
+    var minLng = points.first.longitude;
+    var maxLng = points.first.longitude;
+    for (final point in points.skip(1)) {
+      minLat = math.min(minLat, point.latitude);
+      maxLat = math.max(maxLat, point.latitude);
+      minLng = math.min(minLng, point.longitude);
+      maxLng = math.max(maxLng, point.longitude);
+    }
+    try {
+      await controller.animateCamera(
+        gmaps.CameraUpdate.newLatLngBounds(
+          gmaps.LatLngBounds(
+            southwest: gmaps.LatLng(minLat, minLng),
+            northeast: gmaps.LatLng(maxLat, maxLng),
+          ),
+          96,
+        ),
+      );
     } catch (_) {}
   }
 
@@ -2653,6 +2878,29 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _zoomBy(double delta) {
     if (!_mapReady) return;
+    if (_usingGoogleMap) {
+      final camera = _googleCameraPosition;
+      if (camera == null) return;
+      final nextZoom = (camera.zoom + delta).clamp(3.0, 20.0).toDouble();
+      final current = _routeState.current;
+      if (_followPosition && current != null) {
+        setState(() {
+          _quickView = null;
+          _customFollowZoom = nextZoom;
+        });
+        _applyFollowCamera(current, zoom: nextZoom);
+      } else {
+        setState(() {
+          _quickView = null;
+          _customFollowZoom = null;
+        });
+        unawaited(_animateGoogleCamera(
+          target: LatLng(camera.target.latitude, camera.target.longitude),
+          zoom: nextZoom,
+        ));
+      }
+      return;
+    }
     try {
       final camera = _mapController.camera;
       final nextZoom = (camera.zoom + delta).clamp(3.0, 19.0).toDouble();
@@ -2682,7 +2930,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() {});
     final current = _routeState.current;
     if (mode == MapOrientationMode.northUp) {
-      if (_mapReady) _mapController.rotate(0);
+      if (_usingGoogleMap) {
+        final camera = _googleCameraPosition;
+        if (camera != null) {
+          unawaited(_animateGoogleCamera(
+            target: LatLng(camera.target.latitude, camera.target.longitude),
+            bearing: 0,
+          ));
+        }
+      } else if (_mapReady) {
+        _mapController.rotate(0);
+      }
     } else if (showUnavailableNotice &&
         !_orientationHeadingFor(current).available) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -3395,6 +3653,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _customFollowZoom = null;
       _followPosition = false;
     });
+    if (_usingGoogleMap) {
+      unawaited(_fitGoogleBounds(coordinates));
+      return;
+    }
     try {
       _mapController.fitCamera(
         CameraFit.coordinates(
@@ -3471,6 +3733,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       };
 
   void _focusPoiCluster(MapPoiCluster cluster) {
+    if (_usingGoogleMap) {
+      setState(() {
+        _followPosition = false;
+        _quickView = null;
+        _customFollowZoom = null;
+        _selectedPoiId = cluster.isCluster ? null : cluster.first.id;
+      });
+      final nextZoom = math.min(16.0, math.max(_visibleMapZoom + 1.8, 13.0)).toDouble();
+      unawaited(_focusGooglePoint(
+        LatLng(cluster.latitude, cluster.longitude), zoom: nextZoom,
+      ));
+      return;
+    }
     if (!_mapReady) return;
     if (!cluster.isCluster) {
       _focusPoi(cluster.first);
@@ -3501,6 +3776,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   void _focusPoi(RouteExplorerResult item) {
+    if (_usingGoogleMap) {
+      setState(() {
+        _followPosition = false;
+        _quickView = null;
+        _customFollowZoom = null;
+        _selectedPoiId = item.id;
+      });
+      unawaited(_focusGooglePoint(LatLng(item.latitude, item.longitude)));
+      return;
+    }
     if (!_mapReady) return;
     setState(() {
       _followPosition = false;
@@ -3784,6 +4069,32 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
+                      'Provedor do mapa',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  for (final provider in MapProvider.values)
+                    RadioListTile<MapProvider>(
+                      dense: true,
+                      value: provider,
+                      groupValue: _mapViewSettings.provider,
+                      title: Text(provider.label),
+                      subtitle: Text(provider == MapProvider.google
+                          ? 'Google Maps: normal, satélite, híbrido e terreno.'
+                          : 'Mantém o renderer atual, incluindo mapas offline.'),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_mapViewSettings.setProvider(value).then((_) {
+                          if (mounted) setState(() {});
+                        }));
+                      },
+                    ),
+                  const Divider(height: 22),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
                       'Base do mapa',
                       style: TextStyle(fontWeight: FontWeight.w800),
                     ),
@@ -3802,6 +4113,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             : style.description,
                       ),
                       trailing: style.needsStadiaKey &&
+                              !_usingGoogleMap &&
                               !_offlineMaps.hasStadiaApiKey
                           ? const Icon(Icons.lock_outline_rounded)
                           : selectedLayer == style
@@ -3809,8 +4121,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               : null,
                       selected: selectedLayer == style,
                       enabled: !style.needsStadiaKey ||
+                          _usingGoogleMap ||
                           _offlineMaps.hasStadiaApiKey,
                       onTap: !style.needsStadiaKey ||
+                              _usingGoogleMap ||
                               _offlineMaps.hasStadiaApiKey
                           ? () {
                               Navigator.of(sheetContext).pop();
@@ -3840,7 +4154,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _selectMapStyle(MapStylePreset style) async {
-    if (style.needsStadiaKey && !_offlineMaps.hasStadiaApiKey) {
+    if (style.needsStadiaKey && !_usingGoogleMap && !_offlineMaps.hasStadiaApiKey) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${style.label} precisa da chave Stadia configurada.')),
@@ -3908,9 +4222,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   if (enabled) {
                     final current = _routeState.current;
                     unawaited(_refreshRoadSegments(current == null
-                        ? _mapController.camera.center
+                        ? (_usingGoogleMap && _googleCameraPosition != null
+                            ? LatLng(
+                                _googleCameraPosition!.target.latitude,
+                                _googleCameraPosition!.target.longitude,
+                              )
+                            : _mapController.camera.center)
                         : LatLng(current.latitude, current.longitude)));
                   }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.map_rounded),
+                title: const Text('Provedor do mapa'),
+                subtitle: Text(_mapViewSettings.provider == MapProvider.google
+                    ? 'Google Maps · ${_mapViewSettings.stylePreset.label}'
+                    : 'Mapa atual · ${_mapViewSettings.stylePreset.label}'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showLayerPicker());
                 },
               ),
               ListTile(
@@ -5625,8 +5955,77 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              FlutterMap(
-                mapController: _mapController,
+              if (_usingGoogleMap)
+                GoogleMapView(
+                  key: const ValueKey<String>('google-map-renderer'),
+                  initialCenter: center,
+                  initialZoom: current == null ? 12.5 : _followZoom,
+                  mapType: _googleMapType,
+                  markers: _googleMarkers(
+                    poiClusters,
+                    selectedMapLocation,
+                    navigationTarget,
+                    current,
+                  ),
+                  polylines: _googlePolylines(routeSegments),
+                  onMapCreated: (controller) {
+                    _googleMapController = controller;
+                    _googleCameraPosition = gmaps.CameraPosition(
+                      target: gmaps.LatLng(center.latitude, center.longitude),
+                      zoom: current == null ? 12.5 : _followZoom,
+                    );
+                    _mapReady = true;
+                    final initialPoi = widget.initialPointOfInterest;
+                    if (initialPoi != null) {
+                      _followPosition = false;
+                      _quickView = null;
+                      _customFollowZoom = null;
+                      _selectedPoiId = initialPoi.id;
+                      unawaited(_focusGooglePoint(
+                        LatLng(initialPoi.latitude, initialPoi.longitude),
+                        zoom: 16,
+                      ));
+                    } else {
+                      final point = _routeState.current;
+                      if (point != null) _applyFollowCamera(point, forceRotation: true);
+                    }
+                  },
+                  onCameraMoveStarted: (reason) {
+                    if (reason == gmaps.CameraMoveStartedReason.gesture && _followPosition) {
+                      setState(() {
+                        _followPosition = false;
+                        _quickView = null;
+                        _customFollowZoom = null;
+                      });
+                    }
+                  },
+                  onCameraMove: (camera) {
+                    _googleCameraPosition = camera;
+                    if (!mounted) return;
+                    final zoomChanged =
+                        (_visibleMapZoom - camera.zoom).abs() >= 0.20;
+                    final shouldReleaseFollow = _followPosition;
+                    if (zoomChanged || shouldReleaseFollow) {
+                      setState(() {
+                        if (zoomChanged) _visibleMapZoom = camera.zoom;
+                      });
+                    }
+                    if (_rideSettings.roadOverlayEnabled && camera.zoom >= 12) {
+                      unawaited(_refreshRoadSegments(
+                        LatLng(camera.target.latitude, camera.target.longitude),
+                      ));
+                    }
+                  },
+                  onTap: (point) => unawaited(_selectFreeMapPoint(
+                    LatLng(point.latitude, point.longitude),
+                  )),
+                  onLongPress: (point) => unawaited(_showLongPressActions(
+                    LatLng(point.latitude, point.longitude),
+                  )),
+                )
+              else
+                FlutterMap(
+                  mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
                   initialZoom: current == null ? 12.5 : _followZoom,

@@ -47,6 +47,18 @@ class _AboutPanel extends StatelessWidget {
           ),
           const _InfoRow(label: 'Desenvolvedor', value: AppMetadata.developer),
           const Divider(height: 28),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.gavel_rounded),
+            title: Text('Licenças e avisos legais'),
+            subtitle: Text('Licenças de bibliotecas e atribuições usadas pelo aplicativo.'),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: AppMetadata.name,
+              applicationVersion: '${AppMetadata.version}+${AppMetadata.build}',
+            ),
+          ),
+          const Divider(height: 28),
           const Text(
             'O Vigia IA usa a câmera do dispositivo, RTSP, outro celular ou uma câmera ESP32 para analisar objetos localmente no aparelho receptor, registrar eventos e emitir alertas sem depender de serviços de nuvem para a IA.',
           ),
@@ -65,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.198',
+          version: '1.0.199',
           current: true,
+          changes: [
+            'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
+            'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',
+            'O mapa atual continua sendo o padrão e os mapas offline permanecem disponíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.198',
           changes: [
             'Compilação Android da telemetria de rede ajustada para tipos numéricos compatíveis.',
             'Contadores recebidos e enviados continuam ignorando corretamente valores não suportados.',
@@ -1799,12 +1820,12 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.198',
+          version: '1.0.199',
           current: true,
           changes: [
-            'Compilação Android da telemetria de rede ajustada para tipos numéricos compatíveis.',
-            'Contadores recebidos e enviados continuam ignorando corretamente valores não suportados.',
-            'Áudio global, rádio persistente e uso de dados continuam preservados.',
+            'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
+            'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',
+            'O mapa atual continua sendo o padrão e os mapas offline permanecem disponíveis.',
           ],
         ),
         SizedBox(height: 10),
