@@ -83,6 +83,7 @@ class AllChangesPanel extends StatelessWidget {
             'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
             'Corrigido um possível acesso a valor nulo no texto de distância de um ponto de interesse no Google Maps.',
             'A recuperação automática de rota e de pontos próximos ao voltar a ficar online voltou a funcionar.',
+            'Corrigido o uso das APIs depreciadas de RadioListTile na seleção do provedor do mapa, mantendo compatibilidade com Flutter 3.44+.',
           ],
         ),
         SizedBox(height: 10),

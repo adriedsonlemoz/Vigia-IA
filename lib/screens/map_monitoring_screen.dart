@@ -4078,23 +4078,29 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                   ),
                   const SizedBox(height: 2),
-                  for (final provider in MapProvider.values)
-                    RadioListTile<MapProvider>(
-                      dense: true,
-                      value: provider,
-                      groupValue: _mapViewSettings.provider,
-                      title: Text(provider.label),
-                      subtitle: Text(provider == MapProvider.google
-                          ? 'Google Maps: normal, satélite, híbrido e terreno.'
-                          : 'Mantém o renderer atual, incluindo mapas offline.'),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        Navigator.of(sheetContext).pop();
-                        unawaited(_mapViewSettings.setProvider(value).then((_) {
-                          if (mounted) setState(() {});
-                        }));
-                      },
+                  RadioGroup<MapProvider>(
+                    groupValue: _mapViewSettings.provider,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      Navigator.of(sheetContext).pop();
+                      unawaited(_mapViewSettings.setProvider(value).then((_) {
+                        if (mounted) setState(() {});
+                      }));
+                    },
+                    child: Column(
+                      children: [
+                        for (final provider in MapProvider.values)
+                          RadioListTile<MapProvider>(
+                            dense: true,
+                            value: provider,
+                            title: Text(provider.label),
+                            subtitle: Text(provider == MapProvider.google
+                                ? 'Google Maps: normal, satélite, híbrido e terreno.'
+                                : 'Mantém o renderer atual, incluindo mapas offline.'),
+                          ),
+                      ],
                     ),
+                  ),
                   const Divider(height: 22),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
