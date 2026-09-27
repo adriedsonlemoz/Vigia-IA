@@ -212,6 +212,40 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "vigiaia/radio")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "play" -> {
+                        val url = call.argument<String>("url").orEmpty()
+                        val parsed = Uri.parse(url)
+                        if (parsed.scheme !in listOf("https", "http") || parsed.host.isNullOrBlank()) {
+                            result.error("invalid_url", "Informe uma URL HTTP(S) de áudio válida.", null)
+                        } else {
+                            try {
+                                val serviceIntent = Intent(this, RadioPlaybackService::class.java)
+                                    .setAction(RadioPlaybackService.actionPlay)
+                                    .putExtra(RadioPlaybackService.extraUrl, url)
+                                    .putExtra(RadioPlaybackService.extraName, call.argument<String>("name").orEmpty())
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(serviceIntent)
+                                else startService(serviceIntent)
+                                result.success(true)
+                            } catch (error: Exception) {
+                                result.error("radio_start", error.message, null)
+                            }
+                        }
+                    }
+                    "stop" -> {
+                        stopService(Intent(this, RadioPlaybackService::class.java))
+                        result.success(true)
+                    }
+                    "status" -> result.success(mapOf(
+                        "state" to RadioPlaybackService.state,
+                        "station" to RadioPlaybackService.station,
+                    ))
+                    else -> result.notImplemented()
+                }
+            }
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, nativeChannelName)
             .setMethodCallHandler { call, result -> handleNativeCall(call, result) }
 

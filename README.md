@@ -2,9 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.192+192`
+> **Versão atual:** `1.0.193+193`
 
 ## Estado atual
+
+A `1.0.193+193` amplia o mapa Bike com modo foco, tela inteira, relógio/bateria, seleção livre, destinos salvos, ETA, velocidade ESP32/Hall com alternativa GPS, alertas por limite, notificação durante navegação, camada opcional OSM de vias/rios, vista topográfica, rádio online Android e painel central dos pneus. Preserva a abertura protegida das Novidades e o HUD compacto. Consulte `RELEASE-1.0.193.md`.
 
 A `1.0.192+192` corrige os três problemas encontrados pelo `flutter analyze` no build 153: `compactHud` agora é calculado no mesmo escopo do `LayoutBuilder` em que o rodapé dockado é montado, e a asserção `!` redundante de `navigationTarget` foi removida. A navegação minimizada ao lado de **Gravar** permanece inalterada visualmente.
 

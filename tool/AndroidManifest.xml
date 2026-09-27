@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -51,11 +53,13 @@
         <service
             android:name=".MonitoringForegroundService"
             android:exported="false"
-            android:foregroundServiceType="camera|specialUse">
+            android:foregroundServiceType="camera|location|specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Continuous user-started offline monitoring of local, RTSP, or paired-phone video with on-device AI." />
         </service>
+        <service android:name=".RadioPlaybackService" android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <receiver
             android:name=".MonitorRecoveryReceiver"
             android:enabled="true"

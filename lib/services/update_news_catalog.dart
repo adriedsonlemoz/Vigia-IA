@@ -8,15 +8,16 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.192', build: 192);
+      AppBuildVersion(version: '1.0.193', build: 193);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.192', build: 192),
+      version: AppBuildVersion(version: '1.0.193', build: 193),
       changes: <String>[
-        'A navegação compacta do rodapé ficou mais consistente no mapa.',
-        'A navegação compacta ao lado de Gravar continua preservada no mapa.',
-        'O painel inferior mantém o mesmo visual com uma implementação interna mais segura.',
+        'Mapa em tela inteira com relógio, bateria e modos de foco para pedalar.',
+        'Selecione qualquer ponto no mapa, salve locais e veja a chegada prevista durante a rota.',
+        'Velocidade do sensor da bike ou GPS, alertas configuráveis e painel dos pneus.',
+        'Destaque opcional de vias e rios, vista de relevo e rádio online com estações salvas.',
       ],
     ),
   ]);

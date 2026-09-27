@@ -1,3 +1,12 @@
+## 1.0.193+193 — 2026-09-27
+
+- Seleção livre e toque longo para navegar, adicionar parada e salvar coordenada na pesquisa local.
+- ETA da rota e do ritmo atual; ESP32/Hall recente tem prioridade sobre GPS fresco, com fonte indicada.
+- Três níveis de foco, tela inteira com relógio/bateria e alertas configuráveis por limite com histerese.
+- Navegação ativa usa serviço foreground Android; painel central da bike dá acesso à simulação.
+- Camada opcional de vias/rios por tags OSM, vista topográfica e rádio online Android com estações cadastradas.
+- Preservadas a abertura protegida da 1.0.189 e correções do HUD compacto da 1.0.192; documentação e verificadores sincronizados.
+
 ## 1.0.192+192 — 2026-09-27
 
 - Corrigidos dois erros `undefined_identifier` do `flutter analyze`: `showDockedNavigationBanner` e `floatingCardBottomInset` agora são calculados dentro do `LayoutBuilder`, depois da definição de `compactHud`.

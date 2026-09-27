@@ -40,6 +40,8 @@ class MapDestinationSearchService extends ChangeNotifier {
   String? _searchStatusMessage;
   List<MapDestinationSearchResult> _knownPlaces =
       const <MapDestinationSearchResult>[];
+  List<MapDestinationSearchResult> _savedPlaces =
+      const <MapDestinationSearchResult>[];
   List<MapDestinationSearchResult> _suggestions =
       const <MapDestinationSearchResult>[];
   List<MapDestinationSearchResult> _results =
@@ -58,6 +60,18 @@ class MapDestinationSearchService extends ChangeNotifier {
       List<MapDestinationSearchResult>.unmodifiable(_suggestions);
   List<MapDestinationSearchResult> get results =>
       List<MapDestinationSearchResult>.unmodifiable(_results);
+  List<MapDestinationSearchResult> get savedPlaces =>
+      List<MapDestinationSearchResult>.unmodifiable(_savedPlaces);
+
+  Future<void> savePlace(MapDestinationSearchResult item) async {
+    await initialize();
+    _savedPlaces = <MapDestinationSearchResult>[
+      item.copyWith(source: 'offline'),
+      ..._savedPlaces.where((place) => place.id != item.id),
+    ];
+    notifyListeners();
+    await _persist();
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -340,7 +354,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     required List<OfflineMapPackage> offlineMaps,
     required bool onlyDownloaded,
   }) {
-    final places = _knownPlaces
+    final places = <MapDestinationSearchResult>[..._savedPlaces, ..._knownPlaces]
         .map(
           (item) => _withDistanceAndOfflineSource(
             item,
@@ -366,7 +380,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final needle = _fold(query);
     final found = <MapDestinationSearchResult>[];
 
-    for (final place in _knownPlaces) {
+    for (final place in <MapDestinationSearchResult>[..._savedPlaces, ..._knownPlaces]) {
       if (!_matches(needle, place.title, place.subtitle)) continue;
       final resolved = _withDistanceAndOfflineSource(
         place,
@@ -435,7 +449,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.192');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.193');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -511,7 +525,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.192');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.193');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -575,7 +589,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 5));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.192');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.193');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -634,12 +648,13 @@ class MapDestinationSearchService extends ChangeNotifier {
 
   Future<MapDestinationSearchResult> reverseLookup({
     required LatLng point,
-    required MapRoutePoint current,
+    required MapRoutePoint? current,
     required bool onlineAllowed,
     required List<OfflinePoiPackage> offlinePoiPackages,
   }) async {
     await initialize();
     final localCandidates = <MapDestinationSearchResult>[
+      ..._savedPlaces,
       ..._knownPlaces,
       for (final package in offlinePoiPackages)
         for (final poi in package.items)
@@ -651,11 +666,8 @@ class MapDestinationSearchService extends ChangeNotifier {
                 : poi.subtitle,
             latitude: poi.latitude,
             longitude: poi.longitude,
-            distanceMeters: _meters(
-              current.latitude,
-              current.longitude,
-              poi.latitude,
-              poi.longitude,
+            distanceMeters: current == null ? 0 : _meters(
+              current.latitude, current.longitude, poi.latitude, poi.longitude,
             ),
             kind: MapDestinationKind.pointOfInterest,
             source: 'offline',
@@ -678,11 +690,9 @@ class MapDestinationSearchService extends ChangeNotifier {
     }
     if (nearest != null && nearestToTap <= 120) {
       return nearest.copyWith(
-        distanceMeters: _meters(
-          current.latitude,
-          current.longitude,
-          nearest.latitude,
-          nearest.longitude,
+        distanceMeters: current == null ? 0 : _meters(
+          current.latitude, current.longitude,
+          nearest.latitude, nearest.longitude,
         ),
       );
     }
@@ -705,7 +715,7 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.192 map-reverse-search',
+          'VigiaIA/1.0.193 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
@@ -734,11 +744,9 @@ class MapDestinationSearchService extends ChangeNotifier {
               subtitle: displayName.isEmpty ? 'Endereço aproximado indisponível' : displayName,
               latitude: point.latitude,
               longitude: point.longitude,
-              distanceMeters: _meters(
-                current.latitude,
-                current.longitude,
-                point.latitude,
-                point.longitude,
+              distanceMeters: current == null ? 0 : _meters(
+                current.latitude, current.longitude,
+                point.latitude, point.longitude,
               ),
               kind: kind,
               source: 'online',
@@ -757,11 +765,9 @@ class MapDestinationSearchService extends ChangeNotifier {
           '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
       latitude: point.latitude,
       longitude: point.longitude,
-      distanceMeters: _meters(
-        current.latitude,
-        current.longitude,
-        point.latitude,
-        point.longitude,
+      distanceMeters: current == null ? 0 : _meters(
+        current.latitude, current.longitude,
+        point.latitude, point.longitude,
       ),
       kind: MapDestinationKind.place,
       source: onlineAllowed ? 'coordinate' : 'offline',
@@ -785,7 +791,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.192 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.193 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
@@ -981,6 +987,12 @@ class MapDestinationSearchService extends ChangeNotifier {
       }
       final now = DateTime.now();
       final rawPlaces = (map['places'] as List?) ?? const <Object>[];
+      _savedPlaces = ((map['savedPlaces'] as List?) ?? const <Object>[])
+          .whereType<Map>()
+          .map((item) => MapDestinationSearchResult.fromJson(
+              item.cast<String, dynamic>()).copyWith(source: 'offline'))
+          .where((item) => item.id.isNotEmpty)
+          .toList(growable: false);
       _knownPlaces = rawPlaces
           .whereType<Map>()
           .map((item) => item.cast<String, dynamic>())
@@ -993,6 +1005,7 @@ class MapDestinationSearchService extends ChangeNotifier {
           .toList(growable: false);
     } catch (_) {
       _knownPlaces = const <MapDestinationSearchResult>[];
+      _savedPlaces = const <MapDestinationSearchResult>[];
     }
   }
 
@@ -1019,6 +1032,7 @@ class MapDestinationSearchService extends ChangeNotifier {
               },
             )
             .toList(growable: false),
+        'savedPlaces': _savedPlaces.map((item) => item.toJson()).toList(),
       }),
       flush: true,
     );

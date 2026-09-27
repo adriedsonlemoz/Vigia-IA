@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../controllers/secondary_camera_controller.dart';
 import '../models/bike_approach_status.dart';
+import '../models/alert_preferences.dart';
 import '../models/bike_sensor_snapshot.dart';
 import '../models/bike_trip_plan.dart';
 import '../models/camera_endpoint.dart';
@@ -26,6 +27,7 @@ import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
+import '../services/background_monitor_service.dart';
 import '../services/bike_mode_service.dart';
 import '../services/bike_pressure_safety_service.dart';
 import '../services/bike_sensor_service.dart';
@@ -48,6 +50,10 @@ import '../services/map_offline_navigation_policy.dart';
 import '../services/map_poi_display_policy.dart';
 import '../services/map_route_service.dart';
 import '../services/map_telemetry_policy.dart';
+import '../services/map_ride_settings_service.dart';
+import '../services/map_speed_policy.dart';
+import '../services/map_radio_service.dart';
+import '../services/map_road_overlay_service.dart';
 import '../services/map_weather_policy.dart';
 import '../services/map_weather_service.dart';
 import '../services/map_voice_service.dart';
@@ -59,6 +65,7 @@ import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
 import '../services/system_ui_service.dart';
 import 'audio_settings_screen.dart';
+import 'bike_mode_screen.dart';
 import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/map_navigation_3d_view.dart';
 import '../widgets/map_poi_details_sheet.dart';
@@ -172,6 +179,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       MapCameraOverlaySettingsService.instance;
   final MapWeatherService _weather = MapWeatherService.instance;
   final MapVoiceService _mapVoice = MapVoiceService.instance;
+  final MapRideSettingsService _rideSettings = MapRideSettingsService.instance;
+  final MapRoadOverlayService _roadOverlay = MapRoadOverlayService();
+  final MapSpeedAlertPolicy _speedAlertPolicy = MapSpeedAlertPolicy();
+  List<MapSurfaceSegment> _roadSegments = const <MapSurfaceSegment>[];
+  bool _roadLoading = false;
+  bool _navigationLeaseActive = false;
+  DateTime? _lastNavigationStatusAt;
+  Timer? _hudTimer;
+  int? _phoneBattery;
+  String _radioState = 'parado';
 
   SecondaryCameraController? _primaryMapCamera;
   SecondaryCameraController? _secondaryMapCamera;
@@ -237,8 +254,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _bikeRideHistory.addListener(_onBikeRideHistoryChanged);
     _bikeSensors.addListener(_onBikeSensorChanged);
     _bikePressureSafety.addListener(_onBikeSensorChanged);
+    _rideSettings.addListener(_onRideSettingsChanged);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
+    _hudTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+      unawaited(_refreshBattery());
+      unawaited(_refreshRadioStatus());
+    });
+    unawaited(_refreshBattery());
     unawaited(_initializeOfflineMaps());
     unawaited(_initializeCameraOverlays());
     unawaited(_connectivity.acquire(this));
@@ -265,6 +289,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _bikeRideHistory.removeListener(_onBikeRideHistoryChanged);
     _bikeSensors.removeListener(_onBikeSensorChanged);
     _bikePressureSafety.removeListener(_onBikeSensorChanged);
+    _rideSettings.removeListener(_onRideSettingsChanged);
+    _hudTimer?.cancel();
+    _roadOverlay.dispose();
+    if (_rideSettings.immersive) unawaited(SystemUiService.edgeToEdge());
+    unawaited(BackgroundMonitorService.release('mapNavigation'));
     _connectivity.release(this);
     _routeRecoveryTimer?.cancel();
     unawaited(_compassSubscription?.cancel());
@@ -307,7 +336,76 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _onBikeSensorChanged() {
     if (!mounted) return;
+    _checkSpeedAlert();
     setState(() {});
+  }
+
+  void _onRideSettingsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _refreshBattery() async {
+    final telemetry = await _native.readDeviceTelemetry();
+    if (mounted) setState(() => _phoneBattery = telemetry.batteryPercent);
+  }
+
+  Future<void> _refreshRadioStatus() async {
+    try {
+      final state = await MapRadioService.status();
+      if (mounted) setState(() => _radioState = state);
+    } catch (_) {}
+  }
+
+  MapSpeedReading? get _speedReading =>
+      MapSpeedPolicy.select(_bikeSensors.snapshot, _routeState.current);
+
+  void _checkSpeedAlert() {
+    if (!_rideSettings.speedAlertsEnabled) return;
+    final reading = _speedReading;
+    final limit = _speedAlertPolicy.observe(reading?.kmh, _rideSettings.speedLimitsKmh);
+    if (limit == null) return;
+    final message = 'Velocidade acima de $limit km/h (${reading!.source}).';
+    unawaited(_native.showAlertNotification(
+      title: 'Vigia IA · velocidade', message: message,
+      outputs: AlertOutputs(voice: _rideSettings.speedAlertVoice,
+        sound: false, vibration: _rideSettings.speedAlertVibration,
+        androidNotification: true),
+    ));
+    if (_rideSettings.speedAlertVoice) {
+      unawaited(_mapVoice.deliver('Velocidade acima de $limit quilômetros por hora.',
+        respectGlobalVoice: false));
+    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _syncNavigationForeground() async {
+    final navigating = _routeState.navigationTarget != null &&
+        _routeState.availability == LocationTrackingAvailability.ready;
+    if (!navigating) {
+      if (_navigationLeaseActive) {
+        _navigationLeaseActive = false;
+        await BackgroundMonitorService.release('mapNavigation');
+      }
+      return;
+    }
+    if (!_navigationLeaseActive) {
+      _navigationLeaseActive = await BackgroundMonitorService.acquire(
+        owner: 'mapNavigation', usesCamera: false,
+        statusText: 'Navegação Bike ativa · abrir mapa',
+      );
+    }
+    if (!_navigationLeaseActive) return;
+    final now = DateTime.now();
+    if (_lastNavigationStatusAt != null &&
+        now.difference(_lastNavigationStatusAt!) < const Duration(seconds: 12)) return;
+    _lastNavigationStatusAt = now;
+    final target = _routeState.navigationTarget!;
+    final speed = _speedReading;
+    final battery = _phoneBattery;
+    await BackgroundMonitorService.updateStatus(
+      'Rota: ${target.label} · ${speed == null ? "--" : "${speed.kmh.toStringAsFixed(0)} km/h (${speed.source})"}'
+      '${battery == null ? "" : " · bateria $battery%"}',
+    );
   }
 
   @override
@@ -978,12 +1076,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _weather.initialize(),
       _bikeRideHistory.initialize(),
       _bikeMode.initialize().then((_) {}),
+      _rideSettings.initialize(),
     ]);
     _quickView = switch (_mapViewSettings.followViewPreset) {
       MapFollowViewPreset.near => _MapQuickView.near,
       MapFollowViewPreset.region => _MapQuickView.region,
     };
     _lastTravelMode = _mapViewSettings.lastTravelMode;
+    if (_rideSettings.immersive) unawaited(SystemUiService.immersive());
     await _routeState.acquireLocationConsumer(
       this,
       requestPermission: true,
@@ -1019,6 +1119,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dRendererReady = false;
       _navigation3dRendererFailed = false;
       _navigation3dFollowing = true;
+      unawaited(_syncNavigationForeground());
     }
     if (restoredTarget != null && restoredPosition != null) {
       unawaited(
@@ -1029,6 +1130,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           announceFailure: false,
         ),
       );
+    }
+    if (_rideSettings.roadOverlayEnabled && restoredPosition != null) {
+      unawaited(_refreshRoadSegments(
+        LatLng(restoredPosition.latitude, restoredPosition.longitude)));
     }
   }
 
@@ -1067,6 +1172,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       );
     }
     _navigationProgress = _evaluateNavigationProgress(current);
+    _checkSpeedAlert();
+    unawaited(_syncNavigationForeground());
     unawaited(_navigationVoice.handleProgress(_navigationProgress));
     setState(() {});
     final routeUses3d = _navigation3dEnabled &&
@@ -1084,6 +1191,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
     if (current != null) {
       unawaited(_maybeRecalculateCyclingRoute(current));
+      if (_rideSettings.roadOverlayEnabled) {
+        unawaited(_refreshRoadSegments(LatLng(current.latitude, current.longitude)));
+      }
+    }
+  }
+
+  Future<void> _refreshRoadSegments(LatLng center) async {
+    if (_roadLoading || !_rideSettings.roadOverlayEnabled || _connectivity.isOffline) return;
+    _roadLoading = true;
+    try {
+      final segments = await _roadOverlay.near(center);
+      if (mounted) setState(() => _roadSegments = segments);
+    } catch (_) {
+      // Sem rede ou Overpass ocupado: preserva a última camada obtida.
+    } finally {
+      _roadLoading = false;
     }
   }
 
@@ -1666,6 +1789,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     });
     unawaited(_mapViewSettings.setLastTravelMode(travelMode));
     await _routeState.navigateTo(target);
+    unawaited(_syncNavigationForeground());
     if (current != null) {
       await _requestCyclingRoute(
         origin: LatLng(current.latitude, current.longitude),
@@ -1740,6 +1864,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     });
     unawaited(_mapViewSettings.setLastTravelMode(travelMode));
     await _routeState.navigateTo(target);
+    unawaited(_syncNavigationForeground());
     if (current != null) {
       await _requestCyclingRoute(
         origin: LatLng(current.latitude, current.longitude),
@@ -1951,7 +2076,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<void> _selectFreeMapPoint(LatLng point) async {
     final current = _routeState.current;
-    if (current == null) return;
     final serial = ++_mapTapLookupSerial;
     setState(() {
       _selectedPoiId = null;
@@ -1962,7 +2086,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
         latitude: point.latitude,
         longitude: point.longitude,
-        distanceMeters: const Distance().as(
+        distanceMeters: current == null ? 0 : const Distance().as(
           LengthUnit.Meter,
           LatLng(current.latitude, current.longitude),
           point,
@@ -1983,6 +2107,52 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
     if (!mounted || serial != _mapTapLookupSerial) return;
     setState(() => _selectedMapLocation = resolved);
+  }
+
+  Future<void> _showLongPressActions(LatLng point) async {
+    unawaited(_selectFreeMapPoint(point));
+    final current = _routeState.current;
+    final item = MapDestinationSearchResult(
+      id: 'coordinate:${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}',
+      title: 'Ponto selecionado',
+      subtitle: '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+      latitude: point.latitude,
+      longitude: point.longitude,
+      distanceMeters: current == null ? 0 : const Distance().as(
+        LengthUnit.Meter,
+        LatLng(current.latitude, current.longitude), point,
+      ),
+      kind: MapDestinationKind.place,
+      source: 'coordinate',
+    );
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(title: const Text('Ponto no mapa'), subtitle: Text(item.subtitle)),
+          ListTile(leading: const Icon(Icons.navigation_rounded),
+            title: const Text('Ir até aqui'), onTap: () {
+              Navigator.of(sheetContext).pop();
+              unawaited(_navigateToSearchResult(item));
+            }),
+          ListTile(leading: const Icon(Icons.add_location_alt_outlined),
+            title: const Text('Adicionar parada'), onTap: () {
+              Navigator.of(sheetContext).pop();
+              _addManualTripStop(item);
+            }),
+          ListTile(leading: const Icon(Icons.bookmark_add_outlined),
+            title: const Text('Salvar local'), onTap: () {
+              Navigator.of(sheetContext).pop();
+              unawaited(_destinationSearch.savePlace(item));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Local salvo para pesquisa offline.')),
+              );
+            }),
+        ],
+      )),
+    );
   }
 
   Future<void> _showMapLocationDetails(MapDestinationSearchResult item) async {
@@ -2197,6 +2367,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _navigationVoice.resetRoute();
     setState(_clearLocalNavigationState);
     unawaited(_routeState.stopNavigation());
+    unawaited(_syncNavigationForeground());
   }
 
   Future<void> _exportGpx() async {
@@ -2625,10 +2796,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       title: 'Velocidade',
       subtitle: 'Ritmo atual e estatísticas desta sessão',
       icon: Icons.speed_rounded,
-      listenables: <Listenable>[_routeState],
+      listenables: <Listenable>[_routeState, _bikeSensors],
       contentBuilder: (context) {
         final current = _routeState.current;
-        final speed = MapTelemetryPolicy.currentSpeedKmh(current);
+        final reading = _speedReading;
+        final speed = reading?.kmh;
         final speedAccuracy = MapTelemetryPolicy.speedAccuracyKmh(current);
         final average = _telemetrySession.averageSpeedKmh;
         final maximum = _telemetrySession.maximumSpeedKmh;
@@ -2648,6 +2820,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               averageKmh: average,
               maximumReferenceKmh: maximum,
             ),
+            Text('Fonte atual: ${reading?.source ?? 'Sem leitura'} · '
+                'média e máxima da sessão: GPS', textAlign: TextAlign.center),
             Text(
               comparison,
               textAlign: TextAlign.center,
@@ -3680,7 +3854,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-          child: Column(
+          child: SingleChildScrollView(child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
@@ -3695,6 +3869,66 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ),
               ),
+              ListTile(
+                leading: const Icon(Icons.fullscreen_rounded),
+                title: const Text('Tela inteira no mapa'),
+                subtitle: Text(_rideSettings.immersive ? 'Ativada · relógio e bateria no mapa' : 'Barras do Android visíveis'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  final enabled = !_rideSettings.immersive;
+                  unawaited(_rideSettings.update(fullscreen: enabled));
+                  unawaited(enabled ? SystemUiService.immersive() : SystemUiService.edgeToEdge());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.route_rounded),
+                title: const Text('Destacar terra, asfalto, rodovias e rios'),
+                subtitle: Text(_rideSettings.roadOverlayEnabled
+                    ? 'Ligado · dados OSM marcados, requer internet'
+                    : 'Desligado · sem inferir vias sem dados'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  final enabled = !_rideSettings.roadOverlayEnabled;
+                  unawaited(_rideSettings.update(roads: enabled));
+                  if (enabled) {
+                    final current = _routeState.current;
+                    unawaited(_refreshRoadSegments(current == null
+                        ? _mapController.camera.center
+                        : LatLng(current.latitude, current.longitude)));
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.terrain_rounded),
+                title: const Text('Vista de relevo'),
+                subtitle: const Text('Mapa topográfico 2D; relevo sombreado quando a chave Stadia estiver configurada.'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_selectMapStyle(_offlineMaps.hasStadiaApiKey
+                      ? MapStylePreset.terrain : MapStylePreset.topographic));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.speed_rounded),
+                title: const Text('Alertas de velocidade'),
+                subtitle: Text(_rideSettings.speedAlertsEnabled
+                    ? 'Limites: ${_rideSettings.speedLimitsKmh.join(' / ')} km/h'
+                    : 'Desligados'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showSpeedAlertSettings());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.radio_rounded),
+                title: const Text('Rádio online'),
+                subtitle: const Text('Streams salvos e reprodução'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showRadioPanel());
+                },
+              ),
+              const Divider(height: 8),
               ListTile(
                 leading: Icon(
                   _mapViewSettings.orientationMode == MapOrientationMode.northUp
@@ -3762,7 +3996,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 },
               ),
             ],
-          ),
+          )),
         ),
       ),
     );
@@ -4400,53 +4634,226 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     };
   }
 
+  Future<void> _showSpeedAlertSettings() async {
+    final customController = TextEditingController();
+    try {
+      await showModalBottomSheet<void>(
+        context: context, isScrollControlled: true, showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, refresh) => SafeArea(child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16, 4, 16,
+                MediaQuery.viewInsetsOf(sheetContext).bottom + 24),
+            child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Text('Alertas de velocidade',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+              const Text('ESP32/Hall quando disponível; GPS como alternativa. '
+                'O aviso dispara ao ultrapassar a faixa e só rearma abaixo dela.'),
+              SwitchListTile(title: const Text('Ativar alertas'),
+                value: _rideSettings.speedAlertsEnabled,
+                onChanged: (value) {
+                  refresh(() {});
+                  unawaited(_rideSettings.update(alerts: value));
+                }),
+              Wrap(spacing: 8, children: [
+                for (final limit in <int>[20, 25, 30])
+                  FilterChip(label: Text('$limit km/h'),
+                    selected: _rideSettings.speedLimitsKmh.contains(limit),
+                    onSelected: (selected) {
+                      final limits = <int>[..._rideSettings.speedLimitsKmh];
+                      selected ? limits.add(limit) : limits.remove(limit);
+                      refresh(() {});
+                      unawaited(_rideSettings.update(limits: limits));
+                    }),
+              ]),
+              Row(children: [
+                Expanded(child: TextField(controller: customController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Limite personalizado (km/h)'))),
+                IconButton(tooltip: 'Adicionar limite', icon: const Icon(Icons.add_rounded),
+                  onPressed: () {
+                    final value = int.tryParse(customController.text);
+                    if (value == null || value < 5 || value > 120) return;
+                    refresh(() {});
+                    unawaited(_rideSettings.update(limits: <int>[
+                      ..._rideSettings.speedLimitsKmh, value,
+                    ]));
+                    customController.clear();
+                  }),
+              ]),
+              for (final limit in _rideSettings.speedLimitsKmh
+                  .where((value) => !<int>[20,25,30].contains(value)))
+                ListTile(title: Text('$limit km/h'),
+                  trailing: IconButton(icon: const Icon(Icons.close_rounded),
+                    onPressed: () {
+                      refresh(() {});
+                      unawaited(_rideSettings.update(limits: <int>[
+                        ..._rideSettings.speedLimitsKmh.where((item) => item != limit),
+                      ]));
+                    })),
+              SwitchListTile(title: const Text('Avisar por voz'),
+                value: _rideSettings.speedAlertVoice,
+                onChanged: (value) {
+                  refresh(() {});
+                  unawaited(_rideSettings.update(voice: value));
+                }),
+              SwitchListTile(title: const Text('Vibrar'),
+                value: _rideSettings.speedAlertVibration,
+                onChanged: (value) {
+                  refresh(() {});
+                  unawaited(_rideSettings.update(vibration: value));
+                }),
+            ]),
+          )),
+        ),
+      );
+    } finally {
+      customController.dispose();
+    }
+  }
+
+  Future<void> _showRadioPanel() async {
+    final nameController = TextEditingController();
+    final urlController = TextEditingController();
+    Future<void> play(Map<String, String> station, StateSetter refresh) async {
+      try {
+        await _rideSettings.update(stationName: station['name'],
+          stationUrl: station['url']);
+        await MapRadioService.play(name: station['name'] ?? '',
+          url: station['url'] ?? '');
+        await _refreshRadioStatus();
+        refresh(() {});
+      } catch (error) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rádio indisponível: $error')));
+      }
+    }
+    try {
+      await _refreshRadioStatus();
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context, isScrollControlled: true, showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, refresh) => SafeArea(child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16, 2, 16,
+              MediaQuery.viewInsetsOf(sheetContext).bottom + 22),
+            child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Text('Rádio online', style: TextStyle(fontSize: 20,
+                fontWeight: FontWeight.w900)),
+              Text(_radioState == 'tocando'
+                ? 'Tocando: ${_rideSettings.radioName}' : 'Estado: $_radioState'),
+              const SizedBox(height: 8),
+              Row(children: [
+                FilledButton.icon(onPressed: _rideSettings.radioUrl.isEmpty ? null :
+                  () => unawaited(play(<String, String>{
+                    'name': _rideSettings.radioName, 'url': _rideSettings.radioUrl,
+                  }, refresh)),
+                  icon: const Icon(Icons.play_arrow_rounded), label: const Text('Tocar')),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(onPressed: () async {
+                  await MapRadioService.stop();
+                  await _refreshRadioStatus();
+                  refresh(() {});
+                }, icon: const Icon(Icons.stop_rounded), label: const Text('Parar')),
+                if (_rideSettings.stations.length > 1)
+                  IconButton(tooltip: 'Estação anterior',
+                    icon: const Icon(Icons.skip_previous_rounded), onPressed: () {
+                      final count = _rideSettings.stations.length;
+                      final index = _rideSettings.stations.indexWhere(
+                        (station) => station['url'] == _rideSettings.radioUrl);
+                      unawaited(play(_rideSettings.stations[
+                        (index < 0 ? 0 : index + count - 1) % count], refresh));
+                    }),
+                if (_rideSettings.stations.length > 1)
+                  IconButton(tooltip: 'Próxima estação',
+                    icon: const Icon(Icons.skip_next_rounded), onPressed: () {
+                      final index = _rideSettings.stations.indexWhere(
+                        (station) => station['url'] == _rideSettings.radioUrl);
+                      unawaited(play(_rideSettings.stations[
+                        (index + 1) % _rideSettings.stations.length], refresh));
+                    }),
+              ]),
+              const Text('Use os botões de volume do celular. '
+                'Streaming exige internet; 128 kb/s consome cerca de 58 MB/h.'),
+              for (final station in _rideSettings.stations)
+                ListTile(leading: const Icon(Icons.radio_rounded),
+                  title: Text(station['name'] ?? 'Estação'),
+                  subtitle: Text(station['url'] ?? '', maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                  onTap: () => unawaited(play(station, refresh)),
+                  trailing: IconButton(tooltip: 'Excluir estação',
+                    icon: const Icon(Icons.delete_outline_rounded), onPressed: () {
+                      refresh(() {});
+                      unawaited(_rideSettings.update(savedStations: <Map<String,String>>[
+                        ..._rideSettings.stations.where((item) => item['url'] != station['url']),
+                      ]));
+                    })),
+              TextField(controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nome da estação')),
+              TextField(controller: urlController,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(labelText: 'URL direta do stream (https://…)')),
+              const SizedBox(height: 8),
+              FilledButton.icon(onPressed: () {
+                final name = nameController.text.trim();
+                final url = urlController.text.trim();
+                final uri = Uri.tryParse(url);
+                if (name.isEmpty || uri == null ||
+                    !<String>['http','https'].contains(uri.scheme) || uri.host.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Informe nome e URL HTTP(S) direta do áudio.')));
+                  return;
+                }
+                final station = <String,String>{'name': name, 'url': url};
+                refresh(() {});
+                unawaited(_rideSettings.update(savedStations: <Map<String,String>>[
+                  ..._rideSettings.stations.where((item) => item['url'] != url),
+                  station,
+                ], stationName: name, stationUrl: url));
+                nameController.clear();
+                urlController.clear();
+              }, icon: const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Salvar estação')),
+            ]),
+          )),
+        ),
+      );
+    } finally {
+      nameController.dispose();
+      urlController.dispose();
+    }
+  }
+
   Future<void> _showBikePanel() async {
     await _bikePressureSafety.initialize();
     if (!mounted) return;
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    final panel = _BikeMapPanel(
-      sensors: _bikeSensors,
-      safety: _bikePressureSafety,
-    );
-    if (!landscape) {
-      await showModalBottomSheet<void>(
-        context: context,
-        useSafeArea: true,
-        showDragHandle: true,
-        isScrollControlled: true,
-        builder: (_) => panel,
-      );
-      return;
-    }
-    await showGeneralDialog<void>(
+    await showDialog<void>(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Fechar painel da bike',
-      barrierColor: Colors.black.withValues(alpha: 0.18),
-      transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (dialogContext, _, _) => SafeArea(
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Material(
-              elevation: 12,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: math.min(390.0, MediaQuery.sizeOf(dialogContext).width * 0.42).toDouble(),
-                child: panel,
-              ),
-            ),
-          ),
+      builder: (dialogContext) => Dialog(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 430,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.80),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(padding: const EdgeInsets.fromLTRB(18, 14, 8, 2),
+              child: Row(children: [
+                const Icon(Icons.pedal_bike_rounded, color: Colors.tealAccent),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Bike · pneus e sensores',
+                  style: TextStyle(fontWeight: FontWeight.w900))),
+                IconButton(tooltip: 'Fechar', icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(dialogContext).pop()),
+              ])),
+            Flexible(child: _BikeMapPanel(
+              sensors: _bikeSensors, safety: _bikePressureSafety)),
+            TextButton.icon(onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).push<void>(MaterialPageRoute<void>(
+                builder: (_) => const BikeModeScreen()));
+            }, icon: const Icon(Icons.science_outlined),
+              label: const Text('Testar/simular sensores')),
+          ]),
         ),
-      ),
-      transitionBuilder: (_, animation, _, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.18, 0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-        child: FadeTransition(opacity: animation, child: child),
       ),
     );
   }
@@ -5119,9 +5526,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         (_routeState.loading && _routeState.availability == null)) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_routeState.availability != LocationTrackingAvailability.ready) {
-      return _buildUnavailable(context);
-    }
+    if (_routeState.availability == null) return _buildUnavailable(context);
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -5194,7 +5599,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final navigation3dAttribution = stadiaVectorStyle != null
         ? '© Stadia Maps · © OpenMapTiles · © OpenStreetMap contributors'
         : _openFreeMapAttribution;
-    final topInset = safePadding.top + MapUxPolicy.controlEdge;
+    final topInset = safePadding.top + MapUxPolicy.controlEdge +
+        (_rideSettings.immersive ? 26 : 0);
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
     final navigationAudioEnabled = _mapViewSettings.navigationVoiceEnabled;
     final aiAudioEnabled = _aiVoiceEnabled;
@@ -5210,6 +5616,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             ? Icons.volume_up_rounded
             : Icons.volume_down_rounded;
     final bikeSnapshot = _bikeSensors.snapshot;
+    final speedReading = _speedReading;
+    final focusLevel = _rideSettings.focusLevel;
     final rapidPressureLoss = _bikePressureSafety.mostRecentRapidLoss;
     final bikeHealth = bikeSnapshot?.health ?? BikeSensorHealth.disconnected;
     final bikeButtonColor = rapidPressureLoss != null ||
@@ -5241,7 +5649,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
-          final showDockedNavigationBanner = compactHud &&
+          final showDockedNavigationBanner = focusLevel == 0 && compactHud &&
               navigationTarget != null &&
               _navigationPanelMinimized &&
               !_routeState.recording;
@@ -5257,8 +5665,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           final nearbyTop = telemetryTop + telemetryHeight + 8;
           final nearbyHeight = compactHud ? 44.0 : 52.0;
           final routeOverviewTop = nearbyTop + nearbyHeight + 7;
-          final cameraButtonTop = routeOverviewTop +
-              (navigationTarget != null && !compactHud ? 62.0 : 0.0) + 8;
+          final cameraButtonTop = focusLevel == 0 ? routeOverviewTop +
+              (navigationTarget != null && !compactHud ? 70.0 : 0.0) + 8
+              : topInset + MapUxPolicy.controlSize + 12;
           final controlDockTop = cameraButtonTop;
           final attributionBottom = MapUxPolicy.attributionBottom(
             safeBottom: safePadding.bottom,
@@ -5301,6 +5710,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   },
                   onPositionChanged: (camera, hasGesture) {
                     if (!mounted) return;
+                    if (hasGesture && _rideSettings.roadOverlayEnabled && camera.zoom >= 12) {
+                      unawaited(_refreshRoadSegments(camera.center));
+                    }
                     final zoomChanged =
                         (_visibleMapZoom - camera.zoom).abs() >= 0.20;
                     final shouldReleaseFollow = hasGesture && _followPosition;
@@ -5316,6 +5728,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   },
                   onTap: (_, point) {
                     unawaited(_selectFreeMapPoint(point));
+                  },
+                  onLongPress: (_, point) {
+                    unawaited(_showLongPressActions(point));
                   },
                 ),
                 children: [
@@ -5345,6 +5760,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       ),
                       mapAppearance,
                     ),
+                  if (_rideSettings.roadOverlayEnabled && !networkOffline &&
+                      _roadSegments.isNotEmpty)
+                    PolylineLayer(polylines: <Polyline>[
+                      for (final segment in _roadSegments)
+                        Polyline(
+                          points: segment.points,
+                          strokeWidth: segment.kind == 'water' ? 3.5 :
+                              segment.kind == 'highway' ? 5 : 3.3,
+                          color: switch (segment.kind) {
+                            'earth' => const Color(0xFFB37537),
+                            'asphalt' => const Color(0xFF687783),
+                            'highway' => const Color(0xFFE9AA24),
+                            _ => const Color(0xFF1E8ED3),
+                          },
+                        ),
+                    ]),
                   if (_cyclingRouteAlternatives.isNotEmpty)
                     PolylineLayer(
                       polylines: <Polyline>[
@@ -5649,10 +6080,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ),
               ),
+              if (_rideSettings.immersive)
+                Positioned(
+                  top: safePadding.top + 2,
+                  left: 12,
+                  right: 12,
+                  child: _MapSystemHud(
+                    batteryPercent: _phoneBattery,
+                    gpsReady: _routeState.availability == LocationTrackingAvailability.ready,
+                    speedSource: speedReading?.source,
+                  ),
+                ),
 
               // O mapa permanece sob as áreas do sistema; somente os controles
               // respeitam notch/status/navigation bar para evitar faixas vazias.
-              Positioned(
+              if (focusLevel < 2) Positioned(
                 top: topInset,
                 left: MapUxPolicy.controlEdge,
                 child: compactHud
@@ -5663,7 +6105,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       )
                     : _MapBrandButton(onTap: () => unawaited(_showMapOptions())),
               ),
-              Positioned(
+              if (focusLevel < 2) Positioned(
                 top: topInset,
                 left: MapUxPolicy.controlEdge +
                     (compactHud ? MapUxPolicy.controlSize : 89) + 6,
@@ -5684,7 +6126,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         ),
                 ),
               ),
-              Positioned(
+              if (focusLevel == 0) Positioned(
                 top: topInset,
                 right: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
@@ -5701,13 +6143,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   },
                 ),
               ),
-              Positioned(
+              if (focusLevel == 0) Positioned(
                 top: telemetryTop,
                 left: MapUxPolicy.controlEdge,
                 right: MapUxPolicy.controlEdge,
                 height: telemetryHeight,
                 child: _MapTelemetryStrip(
-                  speedKmh: MapTelemetryPolicy.currentSpeedKmh(current),
+                  speedKmh: speedReading?.kmh,
+                  speedSource: speedReading?.source,
                   altitudeMeters: current?.altitudeMeters,
                   headingDegrees: _displayHeadingFor(current).headingDegrees,
                   gpsAccuracyMeters:
@@ -5722,7 +6165,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   compact: compactHud,
                 ),
               ),
-              Positioned(
+              if (focusLevel == 0) Positioned(
                 top: nearbyTop,
                 left: MapUxPolicy.controlEdge,
                 right: MapUxPolicy.controlEdge,
@@ -5736,17 +6179,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   onTap: () => unawaited(_showNearbyPoints()),
                 ),
               ),
-              if (navigationTarget != null && !compactHud)
+              if (navigationTarget != null && !compactHud && focusLevel == 0)
                 Positioned(
                   top: routeOverviewTop,
                   left: MapUxPolicy.controlEdge,
                   right: MapUxPolicy.controlEdge,
-                  height: 62,
+                  height: 70,
                   child: _MapRouteOverview(
                     target: navigationTarget,
                     route: _cyclingRoute,
                     progress: _navigationProgress,
                     bikeEstimate: _bikeTripEstimate,
+                    speedReading: speedReading,
                     onTap: () => setState(() {
                       _selectedPoiId = null;
                       _selectedMapLocation = null;
@@ -5764,6 +6208,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onTap: () => unawaited(_showBikePanel()),
                   ),
                 ),
+              if (focusLevel > 0)
+                Positioned(
+                  top: topInset + MapUxPolicy.controlSize + 8,
+                  left: MapUxPolicy.controlEdge,
+                  child: _MapFocusSpeedPill(
+                    reading: speedReading,
+                    heading: _displayHeadingFor(current).headingDegrees,
+                    onTap: () => unawaited(_showSpeedDetails()),
+                  ),
+                ),
               if (outsideOfflineArea && mode != OfflineMapMode.online)
                 Positioned(
                   top: cameraButtonTop + MapUxPolicy.controlSize + 6,
@@ -5772,7 +6226,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
-              Positioned(
+              if (focusLevel == 0) Positioned(
                 top: cameraButtonTop,
                 left: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
@@ -5789,6 +6243,27 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ),
               ),
+              if (focusLevel == 0)
+                Positioned(
+                  top: cameraButtonTop + MapUxPolicy.controlSize + 8,
+                  left: MapUxPolicy.controlEdge,
+                  child: _MapControlButton(
+                    tooltip: 'Rádio online', icon: Icons.radio_rounded,
+                    active: _radioState == 'tocando',
+                    onPressed: () => unawaited(_showRadioPanel()),
+                  ),
+                ),
+              if (_routeState.availability != LocationTrackingAvailability.ready)
+                Positioned(
+                  left: MapUxPolicy.controlEdge,
+                  bottom: bottomInset + 140,
+                  child: _MapControlButton(
+                    tooltip: 'GPS indisponível · abrir permissões',
+                    icon: Icons.location_disabled_rounded,
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(builder: _buildUnavailable)),
+                  ),
+                ),
               Positioned(
                 top: horizontalControls ? null : controlDockTop,
                 right: MapUxPolicy.controlEdge,
@@ -5798,7 +6273,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       horizontalControls ? Axis.horizontal : Axis.vertical,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (canRenderNavigation3d)
+                    if (canRenderNavigation3d && focusLevel == 0)
                       _MapControlButton(
                         tooltip: navigation3dActive
                             ? 'Voltar ao mapa 2D'
@@ -5809,9 +6284,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         active: navigation3dActive,
                         onPressed: _toggleNavigation3d,
                       ),
-                    if (canRenderNavigation3d)
+                    if (canRenderNavigation3d && focusLevel == 0)
                       _MapControlGap(horizontal: horizontalControls),
-                    _MapControlButton(
+                    if (focusLevel == 0) _MapControlButton(
                       tooltip: enabledAudioChannels == 0
                           ? 'Áudio do mapa silenciado'
                           : 'Áudio do mapa',
@@ -5819,7 +6294,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       active: enabledAudioChannels > 0,
                       onPressed: () => unawaited(_showAudioQuickControls()),
                     ),
-                    _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0) _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
                       tooltip: 'Pesquisar no mapa',
                       icon: Icons.search_rounded,
@@ -5829,6 +6304,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                     _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
+                      tooltip: switch (focusLevel) {
+                        0 => 'Modo foco reduzido',
+                        1 => 'Mapa limpo',
+                        _ => 'Mostrar todos os controles',
+                      },
+                      icon: focusLevel == 0 ? Icons.fullscreen_rounded :
+                          focusLevel == 1 ? Icons.visibility_off_outlined :
+                          Icons.fullscreen_exit_rounded,
+                      active: focusLevel > 0,
+                      onPressed: () => unawaited(_rideSettings.update(
+                        focus: (focusLevel + 1) % 3)),
+                    ),
+                    if (focusLevel == 0) _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0) _MapControlButton(
                       tooltip: rapidPressureLoss != null
                           ? 'Bike · perda rápida de pressão'
                           : bikeSnapshot?.connected == true
@@ -5841,7 +6330,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       badge: rapidPressureLoss != null ? '!' : null,
                       onPressed: () => unawaited(_showBikePanel()),
                     ),
-                    if (navigation3dActive && !_navigation3dFollowing) ...[
+                    if (focusLevel == 0 && navigation3dActive && !_navigation3dFollowing) ...[
                       _MapControlGap(horizontal: horizontalControls),
                       _MapControlButton(
                         tooltip: 'Centralizar e retomar acompanhamento 3D',
@@ -5851,7 +6340,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             current == null ? null : _recenterNavigation3d,
                       ),
                     ],
-                    if (!navigation3dActive) ...[
+                    if (!navigation3dActive && focusLevel == 0) ...[
                       _MapControlGap(horizontal: horizontalControls),
                       _MapZoomCluster(
                         horizontal: horizontalControls,
@@ -5904,7 +6393,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   bottom: bottomInset + floatingCardBottomInset,
                   child: _SelectedMapLocationCard(
                     item: selectedMapLocation,
-                    distanceLabel: _formatSearchDistance(
+                    distanceLabel: _routeState.current == null
+                        ? 'Distância indisponível' : _formatSearchDistance(
                       selectedMapLocation.distanceMeters,
                     ),
                     onClose: () => setState(() => _selectedMapLocation = null),
@@ -5940,7 +6430,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onNavigate: () => _navigateToPoi(selectedPoi),
                   ),
                 ),
-              if (navigationTarget != null &&
+              if (focusLevel == 0 && navigationTarget != null &&
                   (compactHud || (!showSelectedPoiCard && !showSelectedMapLocationCard)) &&
                   !showDockedNavigationBanner)
                 Positioned(
@@ -6701,6 +7191,68 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
 }
 
+class _MapSystemHud extends StatelessWidget {
+  const _MapSystemHud({required this.batteryPercent,
+    required this.gpsReady, required this.speedSource});
+  final int? batteryPercent;
+  final bool gpsReady;
+  final String? speedSource;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final clock = '${now.hour.toString().padLeft(2, '0')}:'
+        '${now.minute.toString().padLeft(2, '0')}';
+    return Container(
+      height: 25, padding: const EdgeInsets.symmetric(horizontal: 9),
+      decoration: BoxDecoration(color: const Color(0xD6081D31),
+        borderRadius: BorderRadius.circular(15)),
+      child: Row(children: [
+        Text(clock, style: const TextStyle(color: Colors.white,
+          fontWeight: FontWeight.w900, fontSize: 12)),
+        const Spacer(),
+        Icon(gpsReady ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
+          size: 14, color: gpsReady ? Colors.lightGreenAccent : Colors.orangeAccent),
+        const SizedBox(width: 6),
+        Text(speedSource ?? '--', style: const TextStyle(color: Colors.white70,
+          fontSize: 10)),
+        const SizedBox(width: 9),
+        const Icon(Icons.battery_5_bar_rounded, size: 15, color: Colors.white),
+        Text(batteryPercent == null ? '--%' : '$batteryPercent%',
+          style: const TextStyle(color: Colors.white, fontSize: 11)),
+      ]),
+    );
+  }
+}
+
+class _MapFocusSpeedPill extends StatelessWidget {
+  const _MapFocusSpeedPill({required this.reading,
+    required this.heading, required this.onTap});
+  final MapSpeedReading? reading;
+  final double? heading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xEB09273A),
+    borderRadius: BorderRadius.circular(16),
+    child: InkWell(
+      onTap: onTap, borderRadius: BorderRadius.circular(16),
+      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, children: [
+            Text('${reading?.kmh.toStringAsFixed(1) ?? '--'} km/h',
+              style: const TextStyle(color: Colors.white,
+                fontSize: 20, fontWeight: FontWeight.w900)),
+            Text('${reading?.source ?? 'Sem leitura'} · '
+                '${heading == null ? 'rumo --' : '${heading!.round()}°'}',
+              style: const TextStyle(color: Color(0xFFAAD1DE), fontSize: 10)),
+          ]),
+      ),
+    ),
+  );
+}
+
 class _MapBrandButton extends StatelessWidget {
   const _MapBrandButton({required this.onTap});
 
@@ -6736,6 +7288,7 @@ class _MapRouteOverview extends StatelessWidget {
     required this.route,
     required this.progress,
     required this.bikeEstimate,
+    required this.speedReading,
     required this.onTap,
   });
 
@@ -6743,6 +7296,7 @@ class _MapRouteOverview extends StatelessWidget {
   final MapCyclingRoute? route;
   final MapNavigationProgress? progress;
   final BikeTripEstimate? bikeEstimate;
+  final MapSpeedReading? speedReading;
   final VoidCallback onTap;
 
   @override
@@ -6763,6 +7317,13 @@ class _MapRouteOverview extends StatelessWidget {
         ? 'Calculando rota'
         : '${(distance / 1000).toStringAsFixed(1)} km · '
           '${seconds == null ? '--' : '${(seconds / 60).round()} min'}';
+    final liveSeconds = distance == null || speedReading == null ||
+        speedReading!.kmh < 5 ? null : distance / 1000 / speedReading!.kmh * 3600;
+    final liveArrival = liveSeconds == null ? null :
+        DateTime.now().add(Duration(seconds: liveSeconds.round()));
+    final liveEta = liveArrival == null ? null :
+        '${liveArrival.hour.toString().padLeft(2, '0')}:'
+        '${liveArrival.minute.toString().padLeft(2, '0')}';
     const accent = Color(0xFF10B9F5);
     return Material(
       color: const Color(0xF3071B2D),
@@ -6814,6 +7375,10 @@ class _MapRouteOverview extends StatelessWidget {
                   fontSize: 16, fontWeight: FontWeight.w900)),
                 Text(distanceLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
+                if (liveEta != null)
+                  Text('Ritmo atual $liveEta', maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF28C8EF), fontSize: 9)),
               ],
             )),
             const Icon(Icons.chevron_right_rounded, color: accent, size: 20),
@@ -8473,6 +9038,7 @@ class _OfflineAreaWarning extends StatelessWidget {
 class _MapTelemetryStrip extends StatelessWidget {
   const _MapTelemetryStrip({
     required this.speedKmh,
+    required this.speedSource,
     required this.altitudeMeters,
     required this.headingDegrees,
     required this.gpsAccuracyMeters,
@@ -8487,6 +9053,7 @@ class _MapTelemetryStrip extends StatelessWidget {
   });
 
   final double? speedKmh;
+  final String? speedSource;
   final double? altitudeMeters;
   final double? headingDegrees;
   final double? gpsAccuracyMeters;
@@ -8536,6 +9103,7 @@ class _MapTelemetryStrip extends StatelessWidget {
             value: speedKmh == null ? '--' : speedKmh!.toStringAsFixed(1),
             unit: speedKmh == null ? null : 'km/h',
             label: 'Velocidade',
+            source: speedSource,
             emphasized: true,
             onTap: onSpeedTap,
             tooltip: 'Velocidade: toque para ver detalhes da sessão.',
@@ -8609,6 +9177,7 @@ class _MapTelemetryCard extends StatelessWidget {
     required this.label,
     required this.compact,
     this.unit,
+    this.source,
     this.emphasized = false,
     required this.onTap,
     this.tooltip,
@@ -8617,6 +9186,7 @@ class _MapTelemetryCard extends StatelessWidget {
   final IconData icon;
   final String value;
   final String? unit;
+  final String? source;
   final String label;
   final bool compact;
   final bool emphasized;
@@ -8701,6 +9271,9 @@ class _MapTelemetryCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
+              if (source != null && !compact)
+                Text(source!, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Color(0xFFB4DAE4), fontSize: 8)),
             ],
           ),
         ),

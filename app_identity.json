@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.192 corrige o escopo do HUD compacto no mapa e remove a asserção nula redundante apontada pelo flutter analyze no build 153.",
-  "version": "1.0.192",
-  "build": 192
+  "notes": "A 1.0.193 amplia o mapa Bike e preserva as correções da abertura de Novidades e do HUD compacto.",
+  "version": "1.0.193",
+  "build": 193
 }

@@ -35,6 +35,7 @@ cp "$ROOT/tool/android/AlertAudioPlayer.kt" "$KOTLIN_DIR/AlertAudioPlayer.kt"
 cp "$ROOT/tool/android/AudioResourceCatalog.kt" "$KOTLIN_DIR/AudioResourceCatalog.kt"
 cp "$ROOT/tool/android/MonitorSystemUi.kt" "$KOTLIN_DIR/MonitorSystemUi.kt"
 cp "$ROOT/tool/android/MonitoringForegroundService.kt" "$KOTLIN_DIR/MonitoringForegroundService.kt"
+cp "$ROOT/tool/android/RadioPlaybackService.kt" "$KOTLIN_DIR/RadioPlaybackService.kt"
 cp "$ROOT/tool/android/MonitorRecoveryReceiver.kt" "$KOTLIN_DIR/MonitorRecoveryReceiver.kt"
 
 # Áudios personalizados opcionais. Eles ficam fora de android/ para sobreviver

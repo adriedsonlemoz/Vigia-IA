@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.193',
+          changes: [
+            'Modo foco, relógio e bateria na tela inteira do mapa.',
+            'Seleção livre, pontos salvos, ETA e velocidade ESP32 ou GPS.',
+            'Alertas, vias destacadas, rádio online e painel central da bike.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.192',
           changes: [
             'Corrigido o erro de escopo do HUD compacto que interrompia a análise estática.',
@@ -1744,8 +1753,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.192',
+          version: '1.0.193',
           current: true,
+          changes: [
+            'Modo foco, relógio e bateria na tela inteira do mapa.',
+            'Seleção livre, pontos salvos, ETA e velocidade ESP32 ou GPS.',
+            'Alertas, vias destacadas, rádio online e painel central da bike.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.192',
           changes: [
             'Corrigido o erro de escopo do HUD compacto que interrompia a análise estática.',
             'Removida uma asserção nula redundante apontada pelo analisador Dart.',

@@ -81,11 +81,12 @@ class MonitoringForegroundService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
             return Notification.Builder(context, channelId)
-                .setSmallIcon(android.R.drawable.presence_video_online)
+                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setContentTitle("Vigia IA ativo")
                 .setContentText(text)
                 .setStyle(Notification.BigTextStyle().bigText(text))
                 .setContentIntent(pendingIntent)
+                .addAction(android.R.drawable.ic_menu_mapmode, "Abrir Vigia IA", pendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(Notification.CATEGORY_SERVICE)
@@ -197,11 +198,11 @@ class MonitoringForegroundService : Service() {
 
     private fun promoteToForeground(camera: Boolean, notification: Notification) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val type = when {
-                camera -> ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
-                Build.VERSION.SDK_INT >= 34 -> ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                else -> 0
-            }
+            val navigation = synchronized(leases) { leases.containsKey("mapNavigation") }
+            val type = (if (camera) ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA else 0) or
+                (if (navigation) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0) or
+                (if (!camera && !navigation && Build.VERSION.SDK_INT >= 34)
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0)
             startForeground(notificationId, notification, type)
         } else {
             startForeground(notificationId, notification)

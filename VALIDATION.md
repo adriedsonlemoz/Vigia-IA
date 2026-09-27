@@ -1,4 +1,16 @@
-# Validação Vigia IA 1.0.192+192
+# Validação Vigia IA 1.0.193+193
+
+## Mapa Bike — 1.0.193
+
+- Atualizar 1.0.192 → 1.0.193: verificar Novidades, confirmar e reiniciar sem reaparecer; testar primeiro uso e ESP32 indisponível.
+- Selecionar ponto sem POI ou GPS, usar toque longo para navegar, salvar e adicionar parada; procurar ponto após reinício.
+- Alternar ESP32/Hall e GPS; conferir fonte e indisponibilidade de dados antigos. Testar limites 20/25/30 e personalizado, histerese, voz e vibração.
+- Conferir ETA de rota e ritmo atual. Alternar três níveis de foco, tela inteira, relógio/bateria e orientação sem overflow.
+- Iniciar navegação, verificar notificação Android, retorno ao mapa e liberação ao parar; validar Android 14+ em aparelho.
+- Ligar camada online com tags explícitas terra/asfalto/rodovia/rios; testar topografia/hillshade só em fonte compatível.
+- Salvar stream HTTP(S), tocar, parar e trocar estação; testar sem rede, notificação de mídia e painel Bike/simulação.
+- Verificador estrutural passou localmente. Executar `flutter analyze`, `flutter test` e build Android no CI.
+
 
 ## Correção do analyze — 1.0.192
 

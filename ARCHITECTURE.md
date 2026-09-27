@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.192+192
+# Arquitetura — Vigia IA 1.0.193+193
 
 ## Escopo do HUD compacto — 1.0.192
 
@@ -1799,3 +1799,7 @@ A gravação recebida contém dez falas. As duas falas de entrada/saída de anim
 ### Navegação visual ampliada — 1.0.180
 
 O `_NavigationBanner` do mapa foi convertido em card de navegação ampliado com hierarquia visual para manobra, ETA, distância, ritmo e progresso. Os quatro indicadores de apoio (água, comida, descanso e parada) são derivados de `RouteExplorerResult` reais já carregados; a UI nunca cria distâncias fictícias. O `MapUxPolicy` reserva mais área inferior durante navegação para evitar colisão do card com PiPs e cards de POI.
+
+## Mapa Bike — 1.0.193
+
+`MapRideSettingsService` persiste foco, tela inteira, alertas, estações e camada de vias. `MapSpeedPolicy` prioriza ESP32/Hall recente e usa GPS fresco como alternativa. `MapRoadOverlayService` consulta Overpass em raio limitado e desenha tags explícitas de vias e rios. `MapRadioService` controla `RadioPlaybackService` Android. O lease `mapNavigation` mantém a notificação foreground durante navegação com localização. `StartupGuard` protege a abertura inicial.
