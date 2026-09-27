@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.185', build: 185);
+      AppBuildVersion(version: '1.0.186', build: 186);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.185', build: 185),
+      version: AppBuildVersion(version: '1.0.186', build: 186),
       changes: <String>[
-        'Clima, GPS, Velocidade, Altitude e Bússola agora abrem painéis de instrumentos responsivos e ricos sem cobrir desnecessariamente o mapa.',
-        'Clima ganhou previsão horária de 12 horas e leitura para pedal; GPS mostra qualidade, idade e precisão da localização.',
-        'Velocidade ganhou mostrador de sessão, Altitude mostra perfil real das leituras e Bússola ganhou rosa dinâmica com fonte e modo de orientação.',
+        'A versão 1.0.186 melhora a estabilidade da entrega dos novos painéis de instrumentos do mapa.',
+        'Clima, GPS, Velocidade, Altitude, Bússola e Bike mantêm o mesmo comportamento visual da 1.0.185.',
+        'A base foi ajustada para passar pela análise estática do pipeline sem avisos pendentes.',
       ],
     ),
   ]);

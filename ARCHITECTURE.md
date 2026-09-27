@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.185+185
+# Arquitetura — Vigia IA 1.0.186+186
+
+
+## Estabilização do pipeline — 1.0.186
+
+- A arquitetura funcional da 1.0.185 foi preservada integralmente; esta versão remove apenas código morto/imports sem uso e identificadores descartados redundantes apontados pelo analyzer.
+- Nenhuma cadeia paralela de GPS, clima, Bike/ESP32, mapa ou telemetria foi criada.
+- O pipeline continua executando `flutter analyze` com as regras existentes, sem `--no-fatal-warnings`, exclusões ou suppressions para esconder os apontamentos.
 
 
 ## Painéis de instrumentos do mapa — 1.0.185

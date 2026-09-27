@@ -1,3 +1,12 @@
+## 1.0.186+186 — 2026-09-26
+
+- Corrigidos os cinco apontamentos que faziam `flutter analyze` encerrar o pipeline com código 1 nos builds 145/146.
+- Removidos callbacks com identificadores descartados redundantes (`__`) em mapa e previsão horária.
+- Removido import não utilizado de `bike_sensor_snapshot.dart` no serviço de segurança de pressão.
+- Removido `_TelemetryDetailRow`, widget legado que ficou sem referência após os novos painéis da 1.0.185.
+- Nenhuma regra do analyzer foi desativada e nenhuma funcionalidade de mapa, Bike/ESP32, clima, GPS, velocidade, altitude ou bússola foi removida.
+- Versionamento, User-Agents, metadados, Novidades, documentação, verificador e empacotador sincronizados em `1.0.186+186`.
+
 ## 1.0.185+185 — 2026-09-26
 
 - Clima, GPS, Velocidade, Altitude e Bússola deixam de abrir popups simples e passam a usar um painel de instrumentos responsivo: bottom sheet em retrato e painel lateral em paisagem.

@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.186',
+          changes: [
+            'A entrega dos painéis de instrumentos foi estabilizada para o pipeline de build.',
+            'Clima, GPS, Velocidade, Altitude, Bússola e Bike mantêm o comportamento introduzido na versão anterior.',
+            'A análise estática foi limpa sem desativar regras ou esconder avisos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.185',
           changes: [
             'Os cinco cards do mapa agora abrem painéis de instrumentos responsivos em vez de popups simples.',
@@ -1690,8 +1699,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.185',
+          version: '1.0.186',
           current: true,
+          changes: [
+            'A entrega dos painéis de instrumentos foi estabilizada para o pipeline de build.',
+            'Os recursos de mapa, Bike/ESP32 e telemetria continuam com o mesmo comportamento da versão anterior.',
+            'A base agora está limpa para a análise estática usada pelo pipeline de produção.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.185',
           changes: [
             'Clima, GPS, Velocidade, Altitude e Bússola viraram painéis de instrumentos responsivos e mais legíveis.',
             'Clima mostra previsão horária de 12 horas e avaliação local para pedal; GPS expõe qualidade, idade, precisão e leituras rejeitadas.',

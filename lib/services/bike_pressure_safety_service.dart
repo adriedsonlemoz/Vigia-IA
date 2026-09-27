@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../models/alert_preferences.dart';
-import '../models/bike_sensor_snapshot.dart';
 import 'alert_voice_service.dart';
 import 'app_settings_service.dart';
 import 'bike_sensor_service.dart';

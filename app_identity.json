@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.185 transforma os cards do mapa em painéis de instrumentos responsivos com previsão horária, qualidade GPS, perfil de altitude, velocímetro de sessão e bússola avançada.",
-  "version": "1.0.185",
-  "build": 185
+  "notes": "A 1.0.186 estabiliza a entrega 1.0.185 para o CI, removendo avisos do analyzer sem alterar o comportamento dos painéis de instrumentos, mapa, Bike/ESP32 ou modo offline.",
+  "version": "1.0.186",
+  "build": 186
 }

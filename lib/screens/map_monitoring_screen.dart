@@ -4379,7 +4379,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       barrierLabel: 'Fechar painel da bike',
       barrierColor: Colors.black.withValues(alpha: 0.18),
       transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (dialogContext, _, __) => SafeArea(
+      pageBuilder: (dialogContext, _, _) => SafeArea(
         child: Align(
           alignment: Alignment.centerRight,
           child: Padding(
@@ -4396,7 +4396,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           ),
         ),
       ),
-      transitionBuilder: (_, animation, __, child) => SlideTransition(
+      transitionBuilder: (_, animation, _, child) => SlideTransition(
         position: Tween<Offset>(
           begin: const Offset(0.18, 0),
           end: Offset.zero,
@@ -8145,32 +8145,6 @@ class _OfflineAreaWarning extends StatelessWidget {
       ),
     );
   }
-}
-
-class _TelemetryDetailRow extends StatelessWidget {
-  const _TelemetryDetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: Text(label)),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                value,
-                textAlign: TextAlign.end,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-          ],
-        ),
-      );
 }
 
 class _MapTelemetryStrip extends StatelessWidget {

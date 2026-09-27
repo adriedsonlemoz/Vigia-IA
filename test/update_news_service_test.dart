@@ -139,10 +139,10 @@ void main() {
     expect(UpdateNewsCatalog.current.releases.single.version.build, 185);
   });
 
-  test('versão 1.0.185 abre popup com mudanças visíveis somente uma vez', () async {
+  test('versão 1.0.186 abre popup com mudanças visíveis somente uma vez', () async {
     final store = _MemoryStore()..value = '1.0.182+182';
     final provider = _MutableVersionProvider(
-      const AppBuildVersion(version: '1.0.185', build: 185),
+      const AppBuildVersion(version: '1.0.186', build: 186),
     );
     final service = UpdateNewsService(
       catalog: UpdateNewsCatalog.current,

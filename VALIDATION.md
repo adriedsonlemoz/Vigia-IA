@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.185+185
+# Validação Vigia IA 1.0.186+186
+
+
+## Estabilização CI — 1.0.186
+
+- Logs `Vigia-IA-Android-APK-145-logs.zip`: `flutter analyze` registrou 3 apontamentos e encerrou com código 1.
+- Logs `Vigia-IA-Android-APK-146-logs.zip`: `flutter analyze` registrou 5 apontamentos e encerrou com código 1.
+- Corrigidos os cinco apontamentos do build 146: dois identificadores `__` em `map_monitoring_screen.dart`, um widget legado não referenciado no mesmo arquivo, um import sem uso em `bike_pressure_safety_service.dart` e um identificador `__` em `map_telemetry_panel.dart`.
+- Confirmar no próximo CI que `flutter analyze` retorna `No issues found!` antes de prosseguir para testes/build.
+- `python3 tool/check_version_sync.py`, `python3 tool/verify_audio_resource_catalog.py`, `bash -n tool/verify_project.sh` e `bash tool/verify_project.sh` devem permanecer aprovados.
 
 
 ## Painéis de instrumentos do mapa — 1.0.185

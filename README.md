@@ -2,11 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.185+185`
+> **Versão atual:** `1.0.186+186`
 
 ## Estado atual
 
-A `1.0.185+185` transforma os cards de Clima, GPS, Velocidade, Altitude e Bússola em painéis de instrumentos responsivos, preservando a área útil do mapa e reutilizando somente dados reais já disponíveis no Vigia IA.
+A `1.0.186+186` estabiliza a entrega dos painéis de instrumentos da 1.0.185 para o pipeline de produção, eliminando avisos da análise estática sem alterar o comportamento de mapa, Bike/ESP32, IA ou funcionamento offline.
 
 ### Painéis de instrumentos do mapa — 1.0.185
 
