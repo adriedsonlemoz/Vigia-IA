@@ -2,9 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.191+191`
+> **Versão atual:** `1.0.192+192`
 
 ## Estado atual
+
+A `1.0.192+192` corrige os três problemas encontrados pelo `flutter analyze` no build 153: `compactHud` agora é calculado no mesmo escopo do `LayoutBuilder` em que o rodapé dockado é montado, e a asserção `!` redundante de `navigationTarget` foi removida. A navegação minimizada ao lado de **Gravar** permanece inalterada visualmente.
 
 A `1.0.191+191` entrega a navegação minimizada encaixada ao lado do botão **Gravar** no rodapé do mapa, reduzindo a área ocupada sobre a rota. A implementação parte novamente da base íntegra `1.0.189`, preserva o seletor compacto de transporte, o HUD 3D, atalhos do mapa e demais widgets que o verificador preventivo exige.
 

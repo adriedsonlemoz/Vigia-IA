@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.191', build: 191);
+      AppBuildVersion(version: '1.0.192', build: 192);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.191', build: 191),
+      version: AppBuildVersion(version: '1.0.192', build: 192),
       changes: <String>[
-        'A próxima instrução da rota minimizada agora divide o rodapé com o botão Gravar.',
-        'Novas navegações entram compactas por padrão para deixar mais mapa visível.',
-        'Um toque no resumo inferior ou superior continua abrindo o painel completo da rota.',
+        'A navegação compacta do rodapé ficou mais consistente no mapa.',
+        'A navegação compacta ao lado de Gravar continua preservada no mapa.',
+        'O painel inferior mantém o mesmo visual com uma implementação interna mais segura.',
       ],
     ),
   ]);

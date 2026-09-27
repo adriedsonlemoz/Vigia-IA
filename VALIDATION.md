@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.191+191
+# Validação Vigia IA 1.0.192+192
+
+## Correção do analyze — 1.0.192
+
+- Executar `flutter analyze`: não devem existir erros `undefined_identifier` para `compactHud` em `map_monitoring_screen.dart`.
+- Confirmar ausência do aviso `unnecessary_non_null_assertion` no `navigationTarget` do banner dockado.
+- Em retrato, iniciar navegação e verificar que o banner minimizado continua ao lado de **Gravar** e expande normalmente ao toque.
+- Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter test` e o workflow Android completo.
 
 ## Build preventivo e navegação compacta — 1.0.191
 

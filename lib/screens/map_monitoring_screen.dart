@@ -5196,17 +5196,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         : _openFreeMapAttribution;
     final topInset = safePadding.top + MapUxPolicy.controlEdge;
     final bottomInset = safePadding.bottom + MapUxPolicy.controlEdge;
-    final showDockedNavigationBanner = compactHud &&
-        navigationTarget != null &&
-        _navigationPanelMinimized &&
-        !_routeState.recording;
-    final floatingCardBottomInset = !compactHud
-        ? 82.0
-        : navigationTarget == null
-            ? 82.0
-            : showDockedNavigationBanner
-                ? 96.0
-                : (_navigationPanelMinimized ? 176.0 : 360.0);
     final navigationAudioEnabled = _mapViewSettings.navigationVoiceEnabled;
     final aiAudioEnabled = _aiVoiceEnabled;
     final nearbyAudioEnabled = _routeExplorer.settings.voiceEnabled;
@@ -5252,6 +5241,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
+          final showDockedNavigationBanner = compactHud &&
+              navigationTarget != null &&
+              _navigationPanelMinimized &&
+              !_routeState.recording;
+          final floatingCardBottomInset = !compactHud
+              ? 82.0
+              : navigationTarget == null
+                  ? 82.0
+                  : showDockedNavigationBanner
+                      ? 96.0
+                      : (_navigationPanelMinimized ? 176.0 : 360.0);
           final telemetryTop = topInset + MapUxPolicy.controlSize + 10;
           final telemetryHeight = compactHud ? 42.0 : 64.0;
           final nearbyTop = telemetryTop + telemetryHeight + 8;
@@ -5995,7 +5995,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     children: [
                       Expanded(
                         child: _NavigationBanner(
-                          target: navigationTarget!,
+                          target: navigationTarget,
                           distanceMeters: _routeState.navigationDistanceMeters,
                           bearingDegrees: _routeState.navigationBearingDegrees,
                           roadRoute: _cyclingRoute,

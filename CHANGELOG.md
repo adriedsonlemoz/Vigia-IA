@@ -1,3 +1,10 @@
+## 1.0.192+192 — 2026-09-27
+
+- Corrigidos dois erros `undefined_identifier` do `flutter analyze`: `showDockedNavigationBanner` e `floatingCardBottomInset` agora são calculados dentro do `LayoutBuilder`, depois da definição de `compactHud`.
+- Removida a asserção nula redundante em `navigationTarget` no banner dockado, eliminando o aviso `unnecessary_non_null_assertion`.
+- Mantida a navegação minimizada ao lado de **Gravar** e preservados os componentes restaurados na 1.0.191.
+- Versão, metadados, User-Agents, Novidades, Mudanças, documentação, verificadores e empacotador sincronizados em `1.0.192+192`.
+
 ## 1.0.191+191 — 2026-09-27
 
 - Corrigido o build preventivo que parava em **Seletor de transporte compacto 1.0.167 ausente**; o `_TravelModeChoiceCard` e os widgets auxiliares do mapa foram preservados a partir da base íntegra `1.0.189`.

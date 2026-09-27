@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.191+191
+# Arquitetura — Vigia IA 1.0.192+192
+
+## Escopo do HUD compacto — 1.0.192
+
+O cálculo de `showDockedNavigationBanner` e `floatingCardBottomInset` depende de `compactHud`, que por sua vez depende das dimensões reais recebidas pelo `LayoutBuilder`. Por isso esses valores passam a ser criados dentro do `builder`, imediatamente depois de `compactHud`, evitando referência a uma variável fora de escopo durante análise/compilação. O `navigationTarget` já está promovido a não nulo pelo ramo `showDockedNavigationBanner`, então o `!` redundante foi removido.
 
 ## Navegação compacta e integridade do mapa — 1.0.191
 

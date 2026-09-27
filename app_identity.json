@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.191 entrega a navegação compacta no rodapé ao lado de Gravar e restaura os componentes auxiliares do mapa exigidos pelo build preventivo.",
-  "version": "1.0.191",
-  "build": 191
+  "notes": "A 1.0.192 corrige o escopo do HUD compacto no mapa e remove a asserção nula redundante apontada pelo flutter analyze no build 153.",
+  "version": "1.0.192",
+  "build": 192
 }

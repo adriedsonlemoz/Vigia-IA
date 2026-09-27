@@ -65,6 +65,15 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.192',
+          changes: [
+            'Corrigido o erro de escopo do HUD compacto que interrompia a análise estática.',
+            'Removida uma asserção nula redundante apontada pelo analisador Dart.',
+            'A navegação compacta ao lado de Gravar continua com o mesmo comportamento visual.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.191',
           changes: [
             'A próxima instrução da rota minimizada agora fica ao lado do botão Gravar no rodapé.',
@@ -1735,8 +1744,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.191',
+          version: '1.0.192',
           current: true,
+          changes: [
+            'Corrigido o erro de escopo do HUD compacto que interrompia a análise estática.',
+            'Removida uma asserção nula redundante apontada pelo analisador Dart.',
+            'A navegação compacta ao lado de Gravar continua com o mesmo comportamento visual.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.191',
           changes: [
             'A próxima instrução da rota minimizada agora fica ao lado do botão Gravar no rodapé.',
             'Novas navegações entram compactas por padrão para liberar mais área útil do mapa.',
