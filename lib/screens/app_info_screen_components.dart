@@ -65,6 +65,14 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
+          version: '1.0.189',
+          changes: [
+            'Corrigida uma trava na abertura do app causada pela inicialização da voz quando o motor de fala do sistema não respondia.',
+            'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
           version: '1.0.188',
           changes: [
             'Mapa com painel escuro para telemetria, locais próximos e resumo de rota com horário de chegada.',
@@ -1717,8 +1725,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.188',
+          version: '1.0.189',
           current: true,
+          changes: [
+            'Corrigida uma trava na abertura do app causada pela inicialização da voz quando o motor de fala do sistema não respondia.',
+            'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.188',
           changes: [
             'Mapa com painel escuro para telemetria, locais próximos e resumo de rota com horário de chegada.',
             'Toque no nome de uma localidade para detalhes e use o cartão para adicionar parada ou navegar.',

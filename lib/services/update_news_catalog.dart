@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.188', build: 188);
+      AppBuildVersion(version: '1.0.189', build: 189);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.188', build: 188),
+      version: AppBuildVersion(version: '1.0.189', build: 189),
       changes: <String>[
-        'Mapa com painel escuro de leitura rápida, locais próximos e rota no topo.',
-        'Toque no nome de um local para abrir seus detalhes; adicione uma parada ou inicie a navegação pelo cartão.',
-        'A tela de novidades aparece após a abertura inicial e aguarda sua confirmação.',
+        'Corrigida uma trava na abertura do app: a inicialização da voz podia ficar presa indefinidamente se o motor de fala do sistema não respondesse, deixando a tela de carregamento girando para sempre.',
+        'ESP32 e Bike agora inicializam em segundo plano, sem atrasar a tela inicial caso algum sensor ou serviço demore para responder.',
       ],
     ),
   ]);

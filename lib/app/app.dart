@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/vigia_design.dart';
@@ -61,8 +63,12 @@ class _StartupGateState extends State<_StartupGate> {
         ? await AppLaunchModeService.instance.initialize()
         : null;
     if (completed) {
-      await Esp32TelemetryService.instance.initialize();
-      await BikePressureSafetyService.instance.initialize();
+      // Estes serviços alimentam painéis (ESP32/Bike) que não decidem qual
+      // tela abrir. Rodam em segundo plano, sem "await", para que uma falha
+      // de hardware/plugin (ex.: motor de TTS travado) nunca prenda a tela
+      // de carregamento inicial do app.
+      unawaited(Esp32TelemetryService.instance.initialize());
+      unawaited(BikePressureSafetyService.instance.initialize());
     }
     if (!mounted) return;
     setState(() {
