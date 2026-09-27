@@ -145,6 +145,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final MapController _mapController = MapController();
   gmaps.GoogleMapController? _googleMapController;
   gmaps.CameraPosition? _googleCameraPosition;
+  bool _googleProgrammaticCameraMove = false;
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
   final MapRouteService _routeState = MapRouteService.instance;
@@ -417,11 +418,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       'Rota: ${target.label} · ${speed == null ? "--" : "${speed.kmh.toStringAsFixed(0)} km/h (${speed.source})"}'
       '${battery == null ? "" : " · bateria $battery%"}',
     );
-  }
-
-  void _onMapConnectivityChanged() {
-    if (!mounted) return;
-    setState(() {});
   }
 
   @override
@@ -1400,9 +1396,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       tilt: tilt ?? current?.tilt ?? 0,
     );
     _googleCameraPosition = position;
+    _googleProgrammaticCameraMove = true;
     try {
       await controller.animateCamera(gmaps.CameraUpdate.newCameraPosition(position));
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      _googleProgrammaticCameraMove = false;
+    }
   }
 
   void _applyFollowCamera(
@@ -1903,7 +1903,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           title: cluster.isCluster ? '${cluster.count} pontos próximos' : item!.title,
           snippet: cluster.isCluster
               ? 'Toque para aproximar'
-              : _routeExplorer.formatDistance(item.distanceMeters),
+              : _routeExplorer.formatDistance(item!.distanceMeters),
         ),
         onTap: () => _focusPoiCluster(cluster),
       ));
@@ -2583,6 +2583,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       minLng = math.min(minLng, point.longitude);
       maxLng = math.max(maxLng, point.longitude);
     }
+    _googleProgrammaticCameraMove = true;
     try {
       await controller.animateCamera(
         gmaps.CameraUpdate.newLatLngBounds(
@@ -2593,7 +2594,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           96,
         ),
       );
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      _googleProgrammaticCameraMove = false;
+    }
   }
 
   void _clearLocalNavigationState() {
@@ -5990,8 +5994,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       if (point != null) _applyFollowCamera(point, forceRotation: true);
                     }
                   },
-                  onCameraMoveStarted: (reason) {
-                    if (reason == gmaps.CameraMoveStartedReason.gesture && _followPosition) {
+                  onCameraMoveStarted: () {
+                    if (!_googleProgrammaticCameraMove && _followPosition) {
                       setState(() {
                         _followPosition = false;
                         _quickView = null;

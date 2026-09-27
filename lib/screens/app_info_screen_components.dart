@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.199',
+          version: '1.0.200',
           current: true,
+          changes: [
+            'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
+            'Corrigido um possível acesso a valor nulo no texto de distância de um ponto de interesse no Google Maps.',
+            'A recuperação automática de rota e de pontos próximos ao voltar a ficar online voltou a funcionar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.199',
           changes: [
             'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
             'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',
@@ -1820,8 +1829,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.199',
+          version: '1.0.200',
           current: true,
+          changes: [
+            'Ajuste no controle de câmera do Google Maps para diferenciar gesto do usuário de centralização automática.',
+            'Corrigido um possível acesso a valor nulo no texto de distância de um ponto de interesse no Google Maps.',
+            'A recuperação automática de rota e de pontos próximos ao voltar a ficar online voltou a funcionar.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.199',
           changes: [
             'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
             'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',

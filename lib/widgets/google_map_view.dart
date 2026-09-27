@@ -26,7 +26,7 @@ class GoogleMapView extends StatelessWidget {
   final Set<gmaps.Polyline> polylines;
   final ValueChanged<gmaps.GoogleMapController> onMapCreated;
   final ValueChanged<gmaps.CameraPosition> onCameraMove;
-  final ValueChanged<gmaps.CameraMoveStartedReason> onCameraMoveStarted;
+  final VoidCallback onCameraMoveStarted;
   final ValueChanged<LatLng> onTap;
   final ValueChanged<LatLng> onLongPress;
 

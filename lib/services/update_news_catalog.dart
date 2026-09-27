@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.199', build: 199);
+      AppBuildVersion(version: '1.0.200', build: 200);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.199', build: 199),
+      version: AppBuildVersion(version: '1.0.200', build: 200),
       changes: <String>[
-        'Google Maps agora pode ser escolhido como provedor opcional sem remover o mapa atual.',
-        'Satélite, híbrido, terreno, marcadores, pontos e rotas do Vigia acompanham o novo provedor.',
-        'O mapa atual continua sendo o padrão e os mapas offline permanecem disponíveis.',
+        'Ajustes no controle da câmera ao usar o Google Maps, mantendo o "seguir posição" mais previsível.',
+        'A retomada automática da rota e dos pontos próximos ao voltar a ficar online agora funciona como esperado.',
       ],
     ),
   ]);

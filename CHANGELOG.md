@@ -1,3 +1,9 @@
+## 1.0.200+200 — 2026-09-27
+
+- Corrigido o callback de câmera do Google Maps: o pacote `google_maps_flutter` não expõe motivo do movimento (`CameraMoveStartedReason` não existe), então o modo de seguir posição agora usa um controle interno para diferenciar gesto do usuário de movimento programático.
+- Corrigido acesso a valor nulo ao montar o snippet de distância dos marcadores de POI no Google Maps.
+- Restaurada a recuperação automática de navegação ao voltar a ficar online: havia um handler de conectividade duplicado que impedia a lógica completa (retomar rota, atualizar POIs, política de fallback offline) de ser executada.
+
 ## 1.0.199+199 — 2026-09-27
 
 - Google Maps foi adicionado como provedor opcional do módulo de mapas, sem remover o `FlutterMap` atual.
