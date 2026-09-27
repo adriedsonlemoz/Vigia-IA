@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.194+194
+# Arquitetura — Vigia IA 1.0.195+195
+
+## Diálogos do mapa e rádio pesquisável — 1.0.195
+
+`showMapCenteredDialog` concentra o comportamento visual dos painéis da tela principal: área segura, margem simétrica, limite de largura/altura, barreira escurecida e transição por escala/opacidade. Os fluxos de instrumentos, áudio, Bike, rádio, busca, câmera, camadas, opções, ponto selecionado, alertas e pontos próximos passam por esse invólucro, eliminando a mistura entre bottom sheets, painel lateral e janelas desalinhadas.
+
+`RadioBrowserService` consulta servidores públicos redundantes do Radio Browser sem chave de API e converte apenas streams HTTP(S) válidos. `MapRadioPanel` separa busca, favoritas e URL manual; os metadados persistidos incluem nome, logo, estado/país quando fornecidos, idioma, codec e bitrate. `MapRadioService` mantém uma ponte pequena com `RadioPlaybackService`, responsável por reprodução Android, pausa, retomada, volume e notificação de mídia.
 
 ## Estabilização do analyzer — 1.0.194
 

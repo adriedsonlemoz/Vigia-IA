@@ -20,6 +20,7 @@ class MapRideSettingsService extends ChangeNotifier {
   List<int> speedLimitsKmh = <int>[20, 25, 30];
   String radioName = '';
   String radioUrl = '';
+  double radioVolume = 0.8;
   List<Map<String, String>> stations = <Map<String, String>>[];
   bool roadOverlayEnabled = false;
 
@@ -43,11 +44,17 @@ class MapRideSettingsService extends ChangeNotifier {
               .toSet().toList()..sort();
           radioName = raw['radioName'] as String? ?? '';
           radioUrl = raw['radioUrl'] as String? ?? '';
+          radioVolume = ((raw['radioVolume'] as num?)?.toDouble() ?? 0.8)
+              .clamp(0.0, 1.0)
+              .toDouble();
           stations = ((raw['stations'] as List?) ?? const <Object>[])
               .whereType<Map>()
               .map((entry) => <String, String>{
-                    'name': entry['name']?.toString() ?? '',
-                    'url': entry['url']?.toString() ?? '',
+                    for (final key in <String>[
+                      'id', 'name', 'url', 'favicon', 'country', 'state',
+                      'language', 'tags', 'codec', 'bitrate',
+                    ])
+                      key: entry[key]?.toString() ?? '',
                   })
               .where((entry) => entry['url']!.isNotEmpty)
               .toList();
@@ -64,7 +71,7 @@ class MapRideSettingsService extends ChangeNotifier {
   Future<void> update({int? focus, bool? fullscreen, bool? alerts,
       bool? voice, bool? vibration, List<int>? limits,
       String? stationName, String? stationUrl, bool? roads,
-      List<Map<String, String>>? savedStations}) async {
+      double? radioVolume, List<Map<String, String>>? savedStations}) async {
     if (focus != null) focusLevel = focus.clamp(0, 2).toInt();
     if (fullscreen != null) immersive = fullscreen;
     if (alerts != null) speedAlertsEnabled = alerts;
@@ -73,13 +80,16 @@ class MapRideSettingsService extends ChangeNotifier {
     if (limits != null) speedLimitsKmh = limits.toSet().toList()..sort();
     if (stationName != null) radioName = stationName.trim();
     if (stationUrl != null) radioUrl = stationUrl.trim();
+    if (radioVolume != null) {
+      this.radioVolume = radioVolume.clamp(0.0, 1.0).toDouble();
+    }
     if (savedStations != null) stations = savedStations;
     if (roads != null) roadOverlayEnabled = roads;
     notifyListeners();
     final file = _file;
     if (file == null) return;
     final snapshot = jsonEncode(<String, Object?>{
-      'schema': 1,
+      'schema': 2,
       'focusLevel': focusLevel,
       'immersive': immersive,
       'speedAlertsEnabled': speedAlertsEnabled,
@@ -88,6 +98,7 @@ class MapRideSettingsService extends ChangeNotifier {
       'speedLimitsKmh': speedLimitsKmh,
       'radioName': radioName,
       'radioUrl': radioUrl,
+      'radioVolume': this.radioVolume,
       'stations': stations,
       'roadOverlayEnabled': roadOverlayEnabled,
     });

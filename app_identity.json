@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.194 corrige os avisos do analyzer que bloqueavam o APK e preserva o mapa Bike da 1.0.193.",
-  "version": "1.0.194",
-  "build": 194
+  "notes": "A 1.0.195 padroniza os painéis do mapa como janelas centrais e adiciona busca e player completo de rádio online.",
+  "version": "1.0.195",
+  "build": 195
 }

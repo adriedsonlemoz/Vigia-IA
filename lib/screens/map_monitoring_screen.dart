@@ -71,6 +71,8 @@ import '../widgets/map_navigation_3d_view.dart';
 import '../widgets/map_poi_details_sheet.dart';
 import '../widgets/map_bike_approach_overlay.dart';
 import '../widgets/map_ai_status_overlay.dart';
+import '../widgets/map_centered_dialog.dart';
+import '../widgets/map_radio_panel.dart';
 import '../widgets/map_telemetry_panel.dart';
 
 part 'map_monitoring_offline_support.dart';
@@ -775,9 +777,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           )
           .map(_sourceForEndpoint),
     ];
-    final selectedKey = await showModalBottomSheet<String>(
+    final selectedKey = await showMapCenteredDialog<String>(
       context: context,
-      showDragHandle: true,
+      maxWidth: 520,
+      maxHeightFactor: 0.78,
+      barrierLabel: 'Fechar seleção de câmera',
       builder: (sheetContext) => SafeArea(
         child: ListView(
           shrinkWrap: true,
@@ -786,6 +790,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             ListTile(
               title: Text(secondary ? 'Fonte da câmera 2' : 'Fonte da câmera 1'),
               subtitle: const Text('A IA do Monitor não é duplicada pelas câmeras abertas só para o mapa.'),
+              trailing: IconButton(
+                tooltip: 'Fechar',
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
             ),
             if ((!secondary && widget.cameraPreviewBuilder != null) ||
                 (secondary && widget.secondaryCameraPreviewBuilder != null))
@@ -860,10 +869,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _cameraRegistry.initialize(),
     ]);
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
+      maxWidth: 560,
+      maxHeightFactor: 0.86,
+      barrierLabel: 'Fechar câmeras do mapa',
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           Widget slotTile(bool secondary) {
@@ -1512,11 +1522,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   Future<MapTravelMode?> _chooseTravelMode() async {
     final scheme = Theme.of(context).colorScheme;
-    return showModalBottomSheet<MapTravelMode>(
+    return showMapCenteredDialog<MapTravelMode>(
       context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      isScrollControlled: true,
+      maxWidth: 560,
+      maxHeightFactor: 0.62,
+      barrierLabel: 'Fechar escolha de transporte',
       builder: (sheetContext) {
         final systemBottom = MediaQuery.viewPaddingOf(sheetContext).bottom;
         final bottomPadding = MapUxPolicy.travelModeSheetBottomPadding(
@@ -1568,11 +1578,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     var balance = _mapViewSettings.bikeTravelPreferences.balanceDays;
     var history = _bikeRideHistory.summary;
     var useHistory = _mapViewSettings.bikeUseHistoricalSpeed && history.reliable;
-    final selected = await showModalBottomSheet<_BikeTravelSelection>(
+    final selected = await showMapCenteredDialog<_BikeTravelSelection>(
       context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      isScrollControlled: true,
+      maxWidth: 560,
+      maxHeightFactor: 0.86,
+      barrierLabel: 'Fechar planejamento da bicicleta',
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final scheme = Theme.of(sheetContext).colorScheme;
@@ -2129,9 +2139,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       kind: MapDestinationKind.place,
       source: 'coordinate',
     );
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
+      maxWidth: 480,
+      maxHeightFactor: 0.68,
+      barrierLabel: 'Fechar ações do ponto',
       builder: (sheetContext) => SafeArea(child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2160,9 +2172,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _showMapLocationDetails(MapDestinationSearchResult item) async {
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
+      maxWidth: 520,
+      maxHeightFactor: 0.86,
+      barrierLabel: 'Fechar detalhes do local',
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
@@ -2224,14 +2238,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   Future<void> _showBikeTripPlan() async {
     final plan = _bikeTripPlan;
     if (plan == null || plan.days.isEmpty || !mounted) return;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      useSafeArea: true,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheetContext) => FractionallySizedBox(
-        heightFactor: 0.82,
-        child: Column(
+      maxWidth: 620,
+      maxHeightFactor: 0.86,
+      expand: true,
+      barrierLabel: 'Fechar plano da cicloviagem',
+      builder: (sheetContext) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
@@ -2239,9 +2252,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Plano da cicloviagem',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Plano da cicloviagem',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Fechar',
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -2307,7 +2334,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -2737,53 +2763,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       );
     }
 
-    final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    if (landscape) {
-      final width = math.min(MediaQuery.sizeOf(context).width * 0.48, 520.0);
-      await showGeneralDialog<void>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'Fechar painel de $title',
-        barrierColor: Colors.black54,
-        transitionDuration: const Duration(milliseconds: 220),
-        pageBuilder: (dialogContext, animation, secondaryAnimation) => Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: width,
-            height: double.infinity,
-            child: buildPanel(dialogContext),
-          ),
-        ),
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(curved),
-            child: FadeTransition(opacity: curved, child: child),
-          );
-        },
-      );
-      return;
-    }
-
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: false,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => FractionallySizedBox(
-        heightFactor: 0.82,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-          child: buildPanel(sheetContext),
-        ),
-      ),
+      maxWidth: 560,
+      maxHeightFactor: 0.86,
+      expand: true,
+      barrierLabel: 'Fechar painel de $title',
+      builder: buildPanel,
     );
   }
 
@@ -3664,10 +3650,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   Future<void> _showLayerPicker() async {
     await _offlineMaps.initialize();
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
+      maxWidth: 560,
+      maxHeightFactor: 0.86,
+      barrierLabel: 'Fechar aparência e camadas',
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final selectedLayer = _mapViewSettings.stylePreset;
@@ -3681,11 +3668,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Aparência e camadas',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Aparência e camadas',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Fechar',
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -3852,9 +3853,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _showMapOptions() async {
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
+      maxWidth: 520,
+      maxHeightFactor: 0.86,
+      barrierLabel: 'Fechar configurações do mapa',
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
@@ -3862,15 +3865,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Configurações do mapa',
-                    style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
+                padding: const EdgeInsets.fromLTRB(8, 0, 0, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Configurações do mapa',
+                        style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Fechar',
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
                 ),
               ),
               ListTile(
@@ -4094,14 +4105,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   Future<void> _showOfflinePoiPackages() async {
     await _routeExplorer.initialize();
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: FractionallySizedBox(
-          heightFactor: 0.72,
-          child: ListenableBuilder(
+      maxWidth: 560,
+      maxHeightFactor: 0.78,
+      expand: true,
+      barrierLabel: 'Fechar pacotes offline',
+      builder: (sheetContext) => ListenableBuilder(
             listenable: _routeExplorer,
             builder: (context, _) {
               final packages = _routeExplorer.offlinePackages;
@@ -4127,6 +4137,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                 },
                           icon: const Icon(Icons.add_rounded),
                           label: const Text('Salvar atual'),
+                        ),
+                        IconButton(
+                          tooltip: 'Fechar',
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded),
                         ),
                       ],
                     ),
@@ -4202,22 +4217,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               );
             },
           ),
-        ),
-      ),
     );
   }
 
   Future<void> _showPoiDetails(RouteExplorerResult item) async {
     _focusPoi(item);
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      useSafeArea: true,
+      maxWidth: 580,
+      maxHeightFactor: 0.86,
+      expand: true,
+      barrierLabel: 'Fechar detalhes do ponto',
       builder: (sheetContext) => MapPoiDetailsSheet(
         item: item,
         icon: _poiIcon(item.category),
         distanceLabel: _routeExplorer.formatDistance(item.distanceMeters),
+        centered: true,
         onShowOnMap: () => Navigator.of(sheetContext).pop(),
         onNavigate: () {
           Navigator.of(sheetContext).pop();
@@ -4286,8 +4301,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               .max(240.0, dialogHeight - dialogPadding.vertical - 32.0)
               .toDouble();
           return Dialog(
-            alignment: Alignment.centerRight,
-            insetPadding: const EdgeInsets.fromLTRB(24, 16, 14, 16),
+            alignment: Alignment.center,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 24,
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 330, maxHeight: maxHeight),
               child: SingleChildScrollView(
@@ -4441,15 +4459,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     await _routeExplorer.initialize();
     if (!mounted) return;
     var filter = _poiFilter;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
+      maxWidth: 560,
+      maxHeightFactor: 0.86,
+      expand: true,
+      barrierLabel: 'Fechar pontos próximos',
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => SafeArea(
-          child: FractionallySizedBox(
-            heightFactor: 0.82,
-            child: ListenableBuilder(
+        builder: (sheetContext, setSheetState) => ListenableBuilder(
               listenable: _routeExplorer,
               builder: (context, _) {
                 final service = _routeExplorer;
@@ -4488,6 +4505,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               unawaited(_showMapSettings(returnToNearby: true));
                             },
                             icon: const Icon(Icons.settings_rounded),
+                          ),
+                          IconButton(
+                            tooltip: 'Fechar',
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            icon: const Icon(Icons.close_rounded),
                           ),
                         ],
                       ),
@@ -4608,8 +4630,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 );
               },
             ),
-          ),
-        ),
       ),
     );
   }
@@ -4641,16 +4661,26 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   Future<void> _showSpeedAlertSettings() async {
     final customController = TextEditingController();
     try {
-      await showModalBottomSheet<void>(
-        context: context, isScrollControlled: true, showDragHandle: true,
+      await showMapCenteredDialog<void>(
+        context: context,
+        maxWidth: 520,
+        maxHeightFactor: 0.86,
+        barrierLabel: 'Fechar alertas de velocidade',
         builder: (sheetContext) => StatefulBuilder(
           builder: (sheetContext, refresh) => SafeArea(child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(16, 4, 16,
                 MediaQuery.viewInsetsOf(sheetContext).bottom + 24),
             child: Column(mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text('Alertas de velocidade',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+              Row(children: [
+                const Expanded(child: Text('Alertas de velocidade',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20))),
+                IconButton(
+                  tooltip: 'Fechar',
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ]),
               const Text('ESP32/Hall quando disponível; GPS como alternativa. '
                 'O aviso dispara ao ultrapassar a faixa e só rearma abaixo dela.'),
               SwitchListTile(title: const Text('Ativar alertas'),
@@ -4717,130 +4747,33 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _showRadioPanel() async {
-    final nameController = TextEditingController();
-    final urlController = TextEditingController();
-    Future<void> play(Map<String, String> station, StateSetter refresh) async {
-      try {
-        await _rideSettings.update(stationName: station['name'],
-          stationUrl: station['url']);
-        await MapRadioService.play(name: station['name'] ?? '',
-          url: station['url'] ?? '');
-        await _refreshRadioStatus();
-        refresh(() {});
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Rádio indisponível: $error')),
-          );
-        }
-      }
-    }
-    try {
-      await _refreshRadioStatus();
-      if (!mounted) return;
-      await showModalBottomSheet<void>(
-        context: context, isScrollControlled: true, showDragHandle: true,
-        builder: (sheetContext) => StatefulBuilder(
-          builder: (sheetContext, refresh) => SafeArea(child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16, 2, 16,
-              MediaQuery.viewInsetsOf(sheetContext).bottom + 22),
-            child: Column(mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text('Rádio online', style: TextStyle(fontSize: 20,
-                fontWeight: FontWeight.w900)),
-              Text(_radioState == 'tocando'
-                ? 'Tocando: ${_rideSettings.radioName}' : 'Estado: $_radioState'),
-              const SizedBox(height: 8),
-              Row(children: [
-                FilledButton.icon(onPressed: _rideSettings.radioUrl.isEmpty ? null :
-                  () => unawaited(play(<String, String>{
-                    'name': _rideSettings.radioName, 'url': _rideSettings.radioUrl,
-                  }, refresh)),
-                  icon: const Icon(Icons.play_arrow_rounded), label: const Text('Tocar')),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(onPressed: () async {
-                  await MapRadioService.stop();
-                  await _refreshRadioStatus();
-                  refresh(() {});
-                }, icon: const Icon(Icons.stop_rounded), label: const Text('Parar')),
-                if (_rideSettings.stations.length > 1)
-                  IconButton(tooltip: 'Estação anterior',
-                    icon: const Icon(Icons.skip_previous_rounded), onPressed: () {
-                      final count = _rideSettings.stations.length;
-                      final index = _rideSettings.stations.indexWhere(
-                        (station) => station['url'] == _rideSettings.radioUrl);
-                      unawaited(play(_rideSettings.stations[
-                        (index < 0 ? 0 : index + count - 1) % count], refresh));
-                    }),
-                if (_rideSettings.stations.length > 1)
-                  IconButton(tooltip: 'Próxima estação',
-                    icon: const Icon(Icons.skip_next_rounded), onPressed: () {
-                      final index = _rideSettings.stations.indexWhere(
-                        (station) => station['url'] == _rideSettings.radioUrl);
-                      unawaited(play(_rideSettings.stations[
-                        (index + 1) % _rideSettings.stations.length], refresh));
-                    }),
-              ]),
-              const Text('Use os botões de volume do celular. '
-                'Streaming exige internet; 128 kb/s consome cerca de 58 MB/h.'),
-              for (final station in _rideSettings.stations)
-                ListTile(leading: const Icon(Icons.radio_rounded),
-                  title: Text(station['name'] ?? 'Estação'),
-                  subtitle: Text(station['url'] ?? '', maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                  onTap: () => unawaited(play(station, refresh)),
-                  trailing: IconButton(tooltip: 'Excluir estação',
-                    icon: const Icon(Icons.delete_outline_rounded), onPressed: () {
-                      refresh(() {});
-                      unawaited(_rideSettings.update(savedStations: <Map<String,String>>[
-                        ..._rideSettings.stations.where((item) => item['url'] != station['url']),
-                      ]));
-                    })),
-              TextField(controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nome da estação')),
-              TextField(controller: urlController,
-                keyboardType: TextInputType.url,
-                decoration: const InputDecoration(labelText: 'URL direta do stream (https://…)')),
-              const SizedBox(height: 8),
-              FilledButton.icon(onPressed: () {
-                final name = nameController.text.trim();
-                final url = urlController.text.trim();
-                final uri = Uri.tryParse(url);
-                if (name.isEmpty || uri == null ||
-                    !<String>['http','https'].contains(uri.scheme) || uri.host.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Informe nome e URL HTTP(S) direta do áudio.')));
-                  return;
-                }
-                final station = <String,String>{'name': name, 'url': url};
-                refresh(() {});
-                unawaited(_rideSettings.update(savedStations: <Map<String,String>>[
-                  ..._rideSettings.stations.where((item) => item['url'] != url),
-                  station,
-                ], stationName: name, stationUrl: url));
-                nameController.clear();
-                urlController.clear();
-              }, icon: const Icon(Icons.bookmark_add_outlined),
-                label: const Text('Salvar estação')),
-            ]),
-          )),
-        ),
-      );
-    } finally {
-      nameController.dispose();
-      urlController.dispose();
-    }
+    await _rideSettings.initialize();
+    if (!mounted) return;
+    await showMapCenteredDialog<void>(
+      context: context,
+      maxWidth: 560,
+      maxHeightFactor: 0.90,
+      expand: true,
+      barrierLabel: 'Fechar rádio online',
+      builder: (dialogContext) => MapRadioPanel(
+        settings: _rideSettings,
+        onPlaybackStateChanged: (state) {
+          if (mounted) setState(() => _radioState = state);
+        },
+      ),
+    );
   }
 
   Future<void> _showBikePanel() async {
     await _bikePressureSafety.initialize();
     if (!mounted) return;
-    await showDialog<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 430,
-            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.80),
+      maxWidth: 430,
+      maxHeightFactor: 0.80,
+      barrierLabel: 'Fechar painel da bike',
+      builder: (dialogContext) => ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Padding(padding: const EdgeInsets.fromLTRB(18, 14, 8, 2),
               child: Row(children: [
@@ -4860,7 +4793,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             }, icon: const Icon(Icons.science_outlined),
               label: const Text('Testar/simular sensores')),
           ]),
-        ),
       ),
     );
   }
@@ -4894,15 +4826,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     var query = '';
     var submittedSearch = false;
     try {
-      await showModalBottomSheet<void>(
+      await showMapCenteredDialog<void>(
         context: context,
-        useSafeArea: true,
-        showDragHandle: true,
-        isScrollControlled: true,
+        maxWidth: 620,
+        maxHeightFactor: 0.90,
+        expand: true,
+        barrierLabel: 'Fechar pesquisa no mapa',
         builder: (sheetContext) => StatefulBuilder(
-          builder: (sheetContext, setSheetState) => FractionallySizedBox(
-            heightFactor: 0.88,
-            child: ListenableBuilder(
+          builder: (sheetContext, setSheetState) => ListenableBuilder(
               listenable: _destinationSearch,
               builder: (context, _) {
                 final service = _destinationSearch;
@@ -4916,14 +4847,25 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
-                            'Pesquisar no mapa',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                            ),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Pesquisar no mapa',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Fechar',
+                                onPressed: () => Navigator.of(sheetContext).pop(),
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -5111,7 +5053,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 );
               },
             ),
-          ),
         ),
       );
     } finally {
@@ -5127,15 +5068,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _weather.initialize(),
     ]);
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    await showMapCenteredDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      useSafeArea: true,
+      maxWidth: 640,
+      maxHeightFactor: 0.90,
+      expand: true,
+      barrierLabel: 'Fechar configurações do mapa',
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => FractionallySizedBox(
-          heightFactor: 0.90,
-          child: ListenableBuilder(
+        builder: (sheetContext, setSheetState) => ListenableBuilder(
           listenable: Listenable.merge([
             _routeExplorer,
             _mapViewSettings,
@@ -5519,7 +5459,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             );
             },
           ),
-        ),
       ),
     );
     if (returnToNearby && mounted) {
@@ -7757,7 +7696,7 @@ class _NearbyPointsBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final badge = MapUxPolicy.compactCountBadge(count) ?? '0';
     final sourceLabel = offline ? 'Offline' : 'Online';
-    final title = routeActive ? 'Próximos na rota' : 'Locais próximos';
+    final title = routeActive ? 'Próximos na rota' : 'Pontos próximos';
     final subtitle = count > 0 ? _summary() : 'Postos, comida, saúde, água e outros';
 
     return Material(

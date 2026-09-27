@@ -11,6 +11,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
     required this.distanceLabel,
     required this.onNavigate,
     required this.onShowOnMap,
+    this.centered = false,
   });
 
   final RouteExplorerResult item;
@@ -18,6 +19,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
   final String distanceLabel;
   final VoidCallback onNavigate;
   final VoidCallback onShowOnMap;
+  final bool centered;
 
   static Future<void> copyText(
     BuildContext context, {
@@ -84,13 +86,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
             : 0.72;
     final minimumSize = detailDensity == 0 ? 0.34 : 0.42;
 
-    return SafeArea(
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: initialSize,
-        minChildSize: minimumSize,
-        maxChildSize: 0.94,
-        builder: (context, scrollController) => Column(
+    Widget content(ScrollController? scrollController) => Column(
           children: [
             Expanded(
               child: ListView(
@@ -143,6 +139,12 @@ class MapPoiDetailsSheet extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (centered)
+                        IconButton(
+                          tooltip: 'Fechar',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                     ],
                   ),
                   if (item.subtitle.trim().isNotEmpty) ...[
@@ -263,7 +265,16 @@ class MapPoiDetailsSheet extends StatelessWidget {
               ),
             ),
           ],
-        ),
+        );
+
+    if (centered) return SafeArea(child: content(null));
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: initialSize,
+        minChildSize: minimumSize,
+        maxChildSize: 0.94,
+        builder: (context, scrollController) => content(scrollController),
       ),
     );
   }

@@ -1,3 +1,12 @@
+## 1.0.195+195 — 2026-09-27
+
+- Padronizados os fluxos da tela principal do mapa como diálogos centralizados, com margens seguras, largura limitada e altura rolável.
+- Instrumentos, áudio, rádio, Bike, busca, opções, camadas, câmera, ponto selecionado, alertas e pontos próximos deixaram de abrir como painéis inferiores nessa tela.
+- Renomeado o resumo de `Locais próximos` para `Pontos próximos`.
+- Rádio ampliada com pesquisa online via Radio Browser, catálogo Brasil/mundial, favoritas, logos, estado/país quando informados, codec, bitrate, URL manual, volume, anterior/próxima, pausar, continuar e parar.
+- Player Android e notificação de mídia agora suportam pausa, retomada, volume e encerramento, preservando o stream escolhido.
+- Novidades, Mudanças, metadados, User-Agents, documentação, testes preventivos, verificador e empacotador sincronizados em `1.0.195+195`.
+
 ## 1.0.194+194 — 2026-09-27
 
 - Corrigidos os cinco avisos `curly_braces_in_flow_control_structures` registrados pelo build 155.

@@ -226,6 +226,8 @@ class MainActivity : FlutterActivity() {
                                     .setAction(RadioPlaybackService.actionPlay)
                                     .putExtra(RadioPlaybackService.extraUrl, url)
                                     .putExtra(RadioPlaybackService.extraName, call.argument<String>("name").orEmpty())
+                                    .putExtra(RadioPlaybackService.extraVolume,
+                                        (call.argument<Double>("volume") ?: 0.8).toFloat())
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(serviceIntent)
                                 else startService(serviceIntent)
                                 result.success(true)
@@ -238,9 +240,25 @@ class MainActivity : FlutterActivity() {
                         stopService(Intent(this, RadioPlaybackService::class.java))
                         result.success(true)
                     }
+                    "pause", "resume" -> {
+                        val action = if (call.method == "pause")
+                            RadioPlaybackService.actionPause else RadioPlaybackService.actionResume
+                        startService(Intent(this, RadioPlaybackService::class.java).setAction(action))
+                        result.success(true)
+                    }
+                    "setVolume" -> {
+                        val volume = (call.argument<Double>("volume") ?: 0.8)
+                            .toFloat().coerceIn(0f, 1f)
+                        startService(Intent(this, RadioPlaybackService::class.java)
+                            .setAction(RadioPlaybackService.actionSetVolume)
+                            .putExtra(RadioPlaybackService.extraVolume, volume))
+                        result.success(true)
+                    }
                     "status" -> result.success(mapOf(
                         "state" to RadioPlaybackService.state,
                         "station" to RadioPlaybackService.station,
+                        "url" to RadioPlaybackService.streamUrl,
+                        "volume" to RadioPlaybackService.volume.toDouble(),
                     ))
                     else -> result.notImplemented()
                 }

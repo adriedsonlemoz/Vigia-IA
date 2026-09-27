@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.194', build: 194);
+      AppBuildVersion(version: '1.0.195', build: 195);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.194', build: 194),
+      version: AppBuildVersion(version: '1.0.195', build: 195),
       changes: <String>[
-        'A geração do APK foi estabilizada para concluir a atualização.',
-        'Mapa Bike, rádio online, alertas e seleção livre continuam preservados.',
-        'A tela de Novidades acompanha corretamente a versão 1.0.194 instalada.',
+        'Os painéis do mapa agora abrem centralizados, com margens e tamanho consistentes.',
+        'Pontos próximos recebe o novo nome em toda a tela principal.',
+        'A rádio agora pesquisa estações online e reúne favoritos, localização, volume e controles completos.',
       ],
     ),
   ]);

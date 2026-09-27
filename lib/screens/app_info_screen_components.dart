@@ -65,8 +65,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.194',
+          version: '1.0.195',
           current: true,
+          changes: [
+            'Painéis do mapa padronizados como janelas centralizadas, incluindo instrumentos, áudio, busca, opções e pontos.',
+            'O resumo principal agora usa o nome Pontos próximos.',
+            'Rádio online com busca pública, favoritas, localização disponível, volume e controles de reprodução.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.194',
           changes: [
             'Corrigidos os cinco avisos de controle de fluxo que bloqueavam o flutter analyze.',
             'Preservados o mapa Bike, rádio online, alertas, ETA e seleção livre.',
@@ -1763,8 +1772,26 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.193',
+          version: '1.0.195',
           current: true,
+          changes: [
+            'Painéis do mapa padronizados como janelas centralizadas, incluindo instrumentos, áudio, busca, opções e pontos.',
+            'O resumo principal agora usa o nome Pontos próximos.',
+            'Rádio online com busca pública, favoritas, localização disponível, volume e controles de reprodução.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.194',
+          changes: [
+            'A geração do APK foi estabilizada para concluir a atualização.',
+            'Mapa Bike, rádio online, alertas e seleção livre continuam preservados.',
+            'A tela de Novidades acompanha corretamente a versão instalada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.193',
           changes: [
             'Modo foco, relógio e bateria na tela inteira do mapa.',
             'Seleção livre, pontos salvos, ETA e velocidade ESP32 ou GPS.',

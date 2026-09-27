@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.194+194
+# Validação Vigia IA 1.0.195+195
+
+## Cobertura da 1.0.195
+
+- Confirme que a tela principal do mapa não contém chamadas a `showModalBottomSheet`.
+- Abra Velocidade, Altitude, Bússola, GPS, Clima, Áudio, Bike, Rádio, Busca, Camadas, Opções e Pontos próximos; todos devem ficar centralizados e respeitar as margens da tela.
+- Pesquise uma rádio pelo nome com o filtro Brasil ligado e desligado, salve como favorita e confira os metadados oferecidos pelo catálogo.
+- Valide tocar, pausar, continuar, ajustar volume, avançar, voltar e parar; a notificação Android deve acompanhar o estado.
+- Reabra o app e confirme que favoritas, estação selecionada e volume foram preservados.
+- Instale sobre uma versão anterior e confirme que a tela de Novidades exibe somente a entrega `1.0.195` uma vez, após confirmação.
 
 ## Correção do build 155 — 1.0.194
 
