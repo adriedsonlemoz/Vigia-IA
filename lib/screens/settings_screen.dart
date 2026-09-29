@@ -11,6 +11,7 @@ import 'appearance_settings_screen.dart';
 import 'bike_mode_screen.dart';
 import 'camera_mode_screen.dart';
 import 'error_center_screen.dart';
+import 'google_maps_key_screen.dart';
 import 'launch_mode_screen.dart';
 import 'multi_camera_screen.dart';
 import 'presets_screen.dart';
@@ -84,6 +85,12 @@ class SettingsScreen extends StatelessWidget {
             title: 'Tema e cores',
             subtitle: 'Sistema, Claro ou Escuro; Turquesa, Azul, Roxo ou Laranja.',
             onTap: () => _push(context, const AppearanceSettingsScreen()),
+          ),
+          _SettingsTile(
+            icon: Icons.vpn_key_outlined,
+            title: 'Chave do Google Maps',
+            subtitle: 'Use a sua própria chave para ativar o mapa Google.',
+            onTap: () => _push(context, const GoogleMapsKeyScreen()),
           ),
         ],
       ),

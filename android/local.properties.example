@@ -1,6 +1,0 @@
-# Caminho do Flutter usado pela máquina de desenvolvimento.
-# flutter.sdk=/caminho/para/flutter
-
-# Chave restrita para Android do Google Maps Platform.
-# A chave não deve ser commitada no repositório.
-MAPS_API_KEY=COLOQUE_SUA_CHAVE_AQUI

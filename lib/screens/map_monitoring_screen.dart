@@ -60,7 +60,9 @@ import '../services/map_weather_service.dart';
 import '../services/map_voice_service.dart';
 import '../services/map_ux_policy.dart';
 import '../services/map_view_policy.dart';
+import '../services/google_maps_key_service.dart';
 import '../services/map_view_settings_service.dart';
+import 'google_maps_key_screen.dart';
 import '../services/native_platform_service.dart';
 import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
@@ -271,6 +273,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     });
     unawaited(_refreshBattery());
     unawaited(_initializeOfflineMaps());
+    unawaited(_initializeGoogleMapsKey());
     unawaited(_initializeCameraOverlays());
     unawaited(_connectivity.acquire(this));
     unawaited(_destinationSearch.initialize());
@@ -1371,8 +1374,62 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
   }
 
+  // Sem chave, o Maps SDK derruba o app ao criar o mapa. Só usa o Google Maps
+  // quando existe chave; caso contrário mantém o mapa atual.
   bool get _usingGoogleMap =>
-      _mapViewSettings.provider == MapProvider.google && !_connectivity.isOffline;
+      _mapViewSettings.provider == MapProvider.google &&
+      !_connectivity.isOffline &&
+      GoogleMapsKeyService.instance.hasKey;
+
+  Future<void> _initializeGoogleMapsKey() async {
+    await GoogleMapsKeyService.instance.initialize();
+    await _mapViewSettings.initialize();
+    if (!mounted) return;
+    setState(() {});
+    if (_mapViewSettings.provider == MapProvider.google &&
+        !GoogleMapsKeyService.instance.hasKey) {
+      unawaited(_promptGoogleMapsKey());
+    }
+  }
+
+  Future<void> _promptGoogleMapsKeyScreen() async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const GoogleMapsKeyScreen()),
+    );
+    await GoogleMapsKeyService.instance.refresh();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _promptGoogleMapsKey() async {
+    if (!mounted) return;
+    final open = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Chave do Google Maps necessária'),
+        content: const Text(
+          'Para usar o Google Maps, cadastre sua própria chave em Configurações. '
+          'Enquanto isso, o mapa atual continua sendo usado.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Agora não'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cadastrar chave'),
+          ),
+        ],
+      ),
+    );
+    if (open != true || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const GoogleMapsKeyScreen()),
+    );
+    await GoogleMapsKeyService.instance.refresh();
+    if (mounted) setState(() {});
+  }
 
   gmaps.MapType get _googleMapType => switch (_mapViewSettings.stylePreset) {
         MapStylePreset.satellite => gmaps.MapType.satellite,
@@ -4083,6 +4140,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onChanged: (value) {
                       if (value == null) return;
                       Navigator.of(sheetContext).pop();
+                      if (value == MapProvider.google &&
+                          !GoogleMapsKeyService.instance.hasKey) {
+                        unawaited(_promptGoogleMapsKey());
+                        return;
+                      }
                       unawaited(_mapViewSettings.setProvider(value).then((_) {
                         if (mounted) setState(() {});
                       }));
@@ -4100,6 +4162,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ),
                       ],
                     ),
+                  ),
+                  ListTile(
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
+                    leading: const Icon(Icons.vpn_key_outlined),
+                    title: const Text('Chave do Google Maps'),
+                    subtitle: Text(GoogleMapsKeyService.instance.hasKey
+                        ? 'Configurada: ${GoogleMapsKeyService.instance.status.masked}'
+                        : 'Não configurada. Toque para digitar a sua chave.'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      unawaited(_promptGoogleMapsKeyScreen());
+                    },
                   ),
                   const Divider(height: 22),
                   const Padding(

@@ -94,8 +94,16 @@ class MainActivity : FlutterActivity() {
     private val documentSaveRequestCode = 4417
     private val offlineMapImportRequestCode = 4418
 
+    private companion object {
+        // Chave gravada no manifest em tempo de build (MAPS_API_KEY), lida uma vez
+        // antes de qualquer injecao da chave do usuario.
+        var googleMapsBuildKey: String? = null
+        var googleMapsBuildKeyLoaded: Boolean = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         resumeMonitorRequested = intent?.getBooleanExtra("resume_monitor", false) == true
+        applyStoredGoogleMapsKey()
         super.onCreate(savedInstanceState)
     }
 
@@ -311,6 +319,29 @@ class MainActivity : FlutterActivity() {
                     result.success(unprotectSecret(call.argument<String>("value") ?: ""))
                 } catch (error: Throwable) {
                     result.error("keystore_decrypt", error.message, null)
+                }
+            }
+            "googleMapsKeyStatus" -> {
+                try {
+                    result.success(googleMapsKeyStatus())
+                } catch (error: Throwable) {
+                    result.error("google_maps_key_status", error.message, null)
+                }
+            }
+            "setGoogleMapsApiKey" -> {
+                try {
+                    val value = call.argument<String>("value")?.trim().orEmpty()
+                    saveGoogleMapsKey(value)
+                    result.success(googleMapsKeyStatus())
+                } catch (error: Throwable) {
+                    result.error("google_maps_key_save", error.message, null)
+                }
+            }
+            "revealGoogleMapsApiKey" -> {
+                try {
+                    result.success(readUserGoogleMapsKey())
+                } catch (error: Throwable) {
+                    result.error("google_maps_key_reveal", error.message, null)
                 }
             }
             "requestCameraPermission" -> requestCameraPermission(result)
@@ -1023,6 +1054,86 @@ class MainActivity : FlutterActivity() {
                 .build(),
         )
         return generator.generateKey()
+    }
+
+    // ---- Chave do Google Maps informada pelo usuario ----
+    // O Maps SDK le a chave de com.google.android.geo.API_KEY. Quando o usuario
+    // cadastra a propria chave, ela e guardada criptografada (Keystore) e injetada
+    // nos metadados do app antes de o primeiro mapa ser criado.
+    private val googleMapsMetaName = "com.google.android.geo.API_KEY"
+    private val googleMapsPrefsName = "vigiaia_google_maps"
+    private val googleMapsPrefsKey = "user_key_protected"
+
+    private fun readUserGoogleMapsKey(): String? {
+        val stored = getSharedPreferences(googleMapsPrefsName, Context.MODE_PRIVATE)
+            .getString(googleMapsPrefsKey, null) ?: return null
+        return try {
+            unprotectSecret(stored)?.trim()?.takeIf { it.isNotEmpty() }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun injectGoogleMapsKey(key: String) {
+        try {
+            val info = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            info.metaData?.putString(googleMapsMetaName, key)
+        } catch (_: Throwable) {
+        }
+        try {
+            applicationInfo.metaData?.putString(googleMapsMetaName, key)
+        } catch (_: Throwable) {
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun captureBuildGoogleMapsKey() {
+        if (googleMapsBuildKeyLoaded) return
+        googleMapsBuildKeyLoaded = true
+        googleMapsBuildKey = try {
+            packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+                .metaData?.getString(googleMapsMetaName)?.trim()?.takeIf { it.isNotEmpty() }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun applyStoredGoogleMapsKey() {
+        captureBuildGoogleMapsKey()
+        val userKey = readUserGoogleMapsKey()
+        if (userKey != null) injectGoogleMapsKey(userKey)
+    }
+
+    private fun saveGoogleMapsKey(value: String) {
+        captureBuildGoogleMapsKey()
+        val prefs = getSharedPreferences(googleMapsPrefsName, Context.MODE_PRIVATE)
+        if (value.isEmpty()) {
+            prefs.edit().remove(googleMapsPrefsKey).apply()
+            injectGoogleMapsKey(googleMapsBuildKey ?: "")
+        } else {
+            prefs.edit().putString(googleMapsPrefsKey, protectSecret(value)).apply()
+            injectGoogleMapsKey(value)
+        }
+    }
+
+    private fun googleMapsKeyStatus(): Map<String, Any> {
+        captureBuildGoogleMapsKey()
+        val userKey = readUserGoogleMapsKey()
+        val effective = userKey ?: googleMapsBuildKey
+        val masked = effective?.let {
+            val tail = if (it.length <= 4) it else it.takeLast(4)
+            "••••••••••••$tail"
+        } ?: ""
+        return mapOf(
+            "configured" to (effective != null),
+            "source" to when {
+                userKey != null -> "user"
+                googleMapsBuildKey != null -> "build"
+                else -> "none"
+            },
+            "masked" to masked,
+        )
     }
 
     private fun protectSecret(value: String): String {
