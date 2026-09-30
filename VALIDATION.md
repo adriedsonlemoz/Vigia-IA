@@ -1,4 +1,15 @@
-# Validação Vigia IA 1.0.202+202
+# Validação Vigia IA 1.0.203+203
+
+## Cobertura da 1.0.203
+
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Executar `flutter analyze` e `flutter test` (inclui `test/google_maps_key_service_test.dart`).
+- Em aparelho: sem chave cadastrada, escolher **Google Maps** no painel do mapa e confirmar que o app não fecha, mostra o aviso e mantém o mapa atual.
+- Cadastrar uma chave válida (Maps SDK for Android, restrita a `com.vigiaia.app` e ao SHA-1 do APK), reabrir o app e confirmar que o mapa Google carrega.
+- Remover a chave e confirmar que o app volta a usar o mapa atual sem fechar.
+- Confirmar que o workflow encontra `android/`, `tool/bootstrap_android.sh` e `tool/android/*` no repositório (o log do workflow 168 falhou com exit code 127 por esses arquivos ausentes).
+- Atualizar 1.0.202 → 1.0.203 e confirmar que Novidades aparece uma vez.
+
 
 ## Cobertura da 1.0.202
 

@@ -2,9 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.202+202`
+> **Versão atual:** `1.0.203+203`
 
-A `1.0.202+202` torna o teste de persistência das configurações de mapa independente de plugins nativos, mantendo a integração opcional do Google Maps.
+A `1.0.203+203` impede que o aplicativo feche ao escolher o Google Maps sem chave e permite que cada pessoa informe a própria chave do Google Maps em **Configurações > Chave do Google Maps** (ou no painel de provedor do mapa). A chave fica criptografada no Android Keystore e nunca é enviada a terceiros além do próprio Google.
+
+A `1.0.202+202` tornou o teste de persistência das configurações de mapa independente de plugins nativos, mantendo a integração opcional do Google Maps.
 
 A `1.0.199+199` adiciona Google Maps como provedor opcional do módulo de mapas. O mapa atual continua sendo o padrão, com suporte a pontos, rotas, GPS e mapas offline. A chave Android é configurada por `MAPS_API_KEY` em `android/local.properties`.
 

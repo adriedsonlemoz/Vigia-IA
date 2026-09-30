@@ -1,4 +1,18 @@
-# Arquitetura — Vigia IA 1.0.202+202
+# Arquitetura — Vigia IA 1.0.203+203
+
+## Chave do Google Maps por usuário — 1.0.203
+
+O Maps SDK for Android lê a chave de `com.google.android.geo.API_KEY` nos metadados do `<application>`. Até a 1.0.202 essa tag estava dentro de `<activity>`; o SDK não a encontrava e derrubava o processo ao criar o primeiro `GoogleMap`, sem passar por nenhum handler do Dart. A tag agora fica em `<application>` (manifest ativo e `tool/AndroidManifest.xml`).
+
+Fluxo atual:
+
+1. `GoogleMapsKeyService` (`lib/services/google_maps_key_service.dart`) conversa com `MainActivity` pelo canal `vigiaia/native` (`googleMapsKeyStatus`, `setGoogleMapsApiKey`, `revealGoogleMapsApiKey`).
+2. `MainActivity` guarda a chave do usuário em `SharedPreferences` protegida por `protectSecret` (Android Keystore) e a injeta nos metadados do aplicativo em `onCreate`, antes de qualquer mapa ser criado. A chave embutida no build (`MAPS_API_KEY`) é preservada como alternativa.
+3. `MapMonitoringScreen` só usa `GoogleMapView` quando `GoogleMapsKeyService.hasKey` é verdadeiro. Sem chave, mantém o mapa atual e oferece o atalho para cadastrar a chave.
+4. A tela `GoogleMapsKeyScreen` (Configurações e painel de provedor do mapa) permite salvar, mostrar/ocultar e remover a chave.
+
+`tool/android/MainActivity.kt` continua sendo cópia idêntica do `MainActivity.kt` ativo.
+
 
 ## Validação de testes da 1.0.202
 

@@ -1,0 +1,495 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../models/monitor_schedule.dart';
+import '../models/camera_endpoint.dart';
+import '../models/monitoring_zone.dart';
+import '../models/object_filter_catalog.dart';
+import '../models/smart_alert_rules.dart';
+import '../models/video_source_config.dart';
+import '../services/app_settings_service.dart';
+import '../services/camera_registry_service.dart';
+import '../services/esp32_module_service.dart';
+import '../services/background_monitor_service.dart';
+import '../services/data_usage_service.dart';
+import '../services/native_platform_service.dart';
+import '../services/remote_camera_pairing_service.dart';
+import '../core/vigia_design.dart';
+import '../widgets/main_navigation_bar.dart';
+import '../widgets/vigia_ui.dart';
+import '../widgets/object_filter_dialog.dart';
+import '../widgets/smart_alert_rules_dialog.dart';
+import 'camera_mode_screen.dart';
+import 'data_usage_screen.dart';
+import 'error_center_screen.dart';
+import 'events_screen.dart';
+import 'esp32_settings_screen.dart';
+import 'launch_mode_screen.dart';
+import 'map_monitoring_screen.dart';
+import 'settings_screen.dart';
+import 'monitor_screen.dart';
+import 'monitor_connect_screen.dart';
+import 'multi_camera_screen.dart';
+import 'phone_pairing_scanner_screen.dart';
+
+part 'home_screen_components.dart';
+part 'home_screen_source_panel.dart';
+part 'home_screen_redesign.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, this.startMonitorOnLoad = false});
+
+  final bool startMonitorOnLoad;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final AppSettingsService _settingsService = AppSettingsService.instance;
+  final NativePlatformService _native = NativePlatformService.instance;
+  final CameraRegistryService _cameraRegistry = CameraRegistryService.instance;
+  final Esp32ModuleService _esp32ModuleRegistry = Esp32ModuleService.instance;
+  VideoSourceType _sourceType = VideoSourceType.localCamera;
+  final _rtspController = TextEditingController();
+  final _remoteUrlController = TextEditingController();
+  final _remoteKeyController = TextEditingController();
+  String? _selectedEsp32Id;
+  MonitorSettings _loadedSettings = const MonitorSettings();
+  Timer? _persistDebounce;
+  bool _loading = true;
+  double _confidence = 0.55;
+  bool _motionOnly = true;
+  double _analysisMs = 400;
+  double _repeatSeconds = 60;
+  double _absenceSeconds = 1;
+  int _maxResults = 10;
+  int _motionConfirmationHits = 2;
+  Set<String> _alertLabels = <String>{...ObjectFilterCatalog.recommended};
+  SmartAlertRules _smartAlertRules = const SmartAlertRules();
+  List<MonitoringZoneProfile> _monitoringZones = const <MonitoringZoneProfile>[
+    MonitoringZoneProfile.primary(),
+  ];
+  MonitorSchedule _schedule = const MonitorSchedule();
+  bool _clipRecordingEnabled = true;
+  bool _trackingEnabled = true;
+  bool _announceEntryExit = true;
+  bool _backgroundMonitoringEnabled = false;
+  bool _voiceEnabled = true;
+  bool _autoStartTriggered = false;
+  final DataUsageService _dataUsage = DataUsageService.instance;
+
+  void _updateHomeState(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _rtspController.addListener(_onSourceDetailsChanged);
+    _remoteUrlController.addListener(_onSourceDetailsChanged);
+    _remoteKeyController.addListener(_onSourceDetailsChanged);
+    _dataUsage.addListener(_onDataUsageChanged);
+    unawaited(_dataUsage.initialize());
+    unawaited(_loadSettings());
+  }
+
+  @override
+  void dispose() {
+    _persistDebounce?.cancel();
+    _dataUsage.removeListener(_onDataUsageChanged);
+    _rtspController
+      ..removeListener(_onSourceDetailsChanged)
+      ..dispose();
+    _remoteUrlController
+      ..removeListener(_onSourceDetailsChanged)
+      ..dispose();
+    _remoteKeyController
+      ..removeListener(_onSourceDetailsChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onDataUsageChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadSettings() async {
+    await _cameraRegistry.initialize();
+    await _esp32ModuleRegistry.initialize();
+    final profile = await _settingsService.initialize();
+    if (!mounted) return;
+    final source = profile.source;
+    final settings = profile.settings;
+    setState(() {
+      _sourceType = source.type;
+      _rtspController.text = source.rtspUrl ?? '';
+      _remoteUrlController.text = source.remoteBaseUrl ?? '';
+      _remoteKeyController.text = source.remoteAccessKey ?? '';
+      _selectedEsp32Id = source.cameraId;
+      _loadedSettings = settings;
+      _analysisMs = source.analysisInterval.inMilliseconds.toDouble();
+      _confidence = settings.confidenceThreshold;
+      _motionOnly = settings.motionOnly;
+      _repeatSeconds = settings.repeatInterval.inMilliseconds / 1000;
+      _absenceSeconds = settings.absenceReset.inMilliseconds / 1000;
+      _maxResults = settings.maxResults;
+      _motionConfirmationHits = settings.motionConfirmationHits;
+      _alertLabels = <String>{...settings.alertLabels};
+      _smartAlertRules = settings.smartAlertRules;
+      _monitoringZones = List<MonitoringZoneProfile>.from(settings.monitoringZones);
+      _schedule = settings.schedule;
+      _clipRecordingEnabled = settings.clipRecordingEnabled;
+      _trackingEnabled = settings.trackingEnabled;
+      _announceEntryExit = settings.announceEntryExit;
+      _backgroundMonitoringEnabled = settings.backgroundMonitoringEnabled;
+      _voiceEnabled = settings.voiceEnabled;
+      _loading = false;
+    });
+    final resumeRequested = await BackgroundMonitorService.consumeResumeRequest();
+    if (!mounted) return;
+    if ((widget.startMonitorOnLoad || resumeRequested) && !_autoStartTriggered) {
+      _autoStartTriggered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_start());
+      });
+    }
+  }
+
+  void _onSourceDetailsChanged() {
+    if (_loading) return;
+    _schedulePersist();
+  }
+
+  void _schedulePersist() {
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(
+      const Duration(milliseconds: 250),
+      () => unawaited(_persist()),
+    );
+  }
+
+  Future<void> _persist() => _settingsService.saveProfile(_currentProfile());
+
+  void _updateSourcePanelState(VoidCallback update) => setState(update);
+
+  PersistedMonitorProfile _currentProfile() {
+    final rtsp = _rtspController.text.trim();
+    final remoteUrl = _remoteUrlController.text.trim();
+    final remoteKey = _remoteKeyController.text.trim();
+    final outputs = _loadedSettings.alertOutputs.copyWith(voice: _voiceEnabled);
+    CameraEndpoint? selectedEsp32;
+    if (_sourceType == VideoSourceType.esp32 && _selectedEsp32Id != null) {
+      for (final camera in _cameraRegistry.items) {
+        if (camera.id == _selectedEsp32Id &&
+            camera.type == CameraEndpointType.esp32) {
+          selectedEsp32 = camera;
+          break;
+        }
+      }
+    }
+    return PersistedMonitorProfile(
+      source: VideoSourceConfig(
+        type: _sourceType,
+        rtspUrl: rtsp.isEmpty ? null : rtsp,
+        remoteBaseUrl: _sourceType == VideoSourceType.esp32
+            ? selectedEsp32?.address
+            : (remoteUrl.isEmpty ? null : remoteUrl),
+        remoteAccessKey: _sourceType == VideoSourceType.esp32
+            ? selectedEsp32?.accessKey
+            : (remoteKey.isEmpty ? null : remoteKey),
+        displayName: selectedEsp32?.name,
+        cameraId: selectedEsp32?.id,
+        analysisInterval: Duration(milliseconds: _analysisMs.round()),
+      ),
+      settings: _loadedSettings.copyWith(
+        confidenceThreshold: _confidence,
+        repeatInterval: Duration(seconds: _repeatSeconds.round()),
+        absenceReset: Duration(milliseconds: (_absenceSeconds * 1000).round()),
+        maxResults: _maxResults,
+        motionOnly: _motionOnly,
+        motionConfirmationHits: _motionConfirmationHits,
+        alertLabels: Set<String>.unmodifiable(_alertLabels),
+        smartAlertRules: _smartAlertRules,
+        monitoringZones: List<MonitoringZoneProfile>.unmodifiable(_monitoringZones),
+        clipRecordingEnabled: _clipRecordingEnabled,
+        trackingEnabled: _trackingEnabled,
+        announceEntryExit: _announceEntryExit,
+        backgroundMonitoringEnabled: _backgroundMonitoringEnabled,
+        voiceEnabled: _voiceEnabled,
+        alertOutputs: outputs,
+        schedule: _schedule,
+      ),
+    );
+  }
+
+  Future<void> _configureObjectFilter() async {
+    final result = await showObjectFilterDialog(
+      context: context,
+      selectedLabels: _alertLabels,
+    );
+    if (result == null || !mounted) return;
+    setState(() => _alertLabels = <String>{...result});
+    _schedulePersist();
+  }
+
+  Future<void> _configureSmartAlertRules() async {
+    final result = await showSmartAlertRulesDialog(
+      context: context,
+      initialRules: _smartAlertRules,
+    );
+    if (result == null || !mounted) return;
+    setState(() => _smartAlertRules = result);
+    _schedulePersist();
+  }
+
+  Future<void> _configureSchedule() async {
+    var draft = _schedule;
+    final result = await showDialog<MonitorSchedule>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> pickTime(bool start) async {
+            final minute = start ? draft.startMinute : draft.endMinute;
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay(hour: minute ~/ 60, minute: minute % 60),
+            );
+            if (picked == null) return;
+            setDialogState(() {
+              final nextMinute = picked.hour * 60 + picked.minute;
+              draft = start
+                  ? draft.copyWith(startMinute: nextMinute)
+                  : draft.copyWith(endMinute: nextMinute);
+            });
+          }
+
+          const dayNames = <int, String>{
+            DateTime.monday: 'Seg',
+            DateTime.tuesday: 'Ter',
+            DateTime.wednesday: 'Qua',
+            DateTime.thursday: 'Qui',
+            DateTime.friday: 'Sex',
+            DateTime.saturday: 'Sáb',
+            DateTime.sunday: 'Dom',
+          };
+          return AlertDialog(
+            title: const Text('Agendamento'),
+            content: SizedBox(
+              width: 430,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: draft.enabled,
+                      onChanged: (value) =>
+                          setDialogState(() => draft = draft.copyWith(enabled: value)),
+                      title: const Text('Usar horário programado'),
+                      subtitle: const Text(
+                        'Com o monitor aberto, a câmera inicia e pausa automaticamente.',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('Dias da semana'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: dayNames.entries.map((entry) {
+                        final selected = draft.weekdays.contains(entry.key);
+                        return FilterChip(
+                          label: Text(entry.value),
+                          selected: selected,
+                          onSelected: (value) {
+                            final days = <int>{...draft.weekdays};
+                            value ? days.add(entry.key) : days.remove(entry.key);
+                            setDialogState(
+                              () => draft = draft.copyWith(weekdays: days),
+                            );
+                          },
+                        );
+                      }).toList(growable: false),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => pickTime(true),
+                            icon: const Icon(Icons.play_arrow),
+                            label: Text(
+                              'Início ${formatMinuteOfDay(draft.startMinute)}',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => pickTime(false),
+                            icon: const Icon(Icons.stop),
+                            label: Text(
+                              'Fim ${formatMinuteOfDay(draft.endMinute)}',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Horários que atravessam a meia-noite são suportados.',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, draft),
+                child: const Text('Salvar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _schedule = result);
+    _schedulePersist();
+  }
+
+  Future<void> _scanRemotePhoneQr() async {
+    final cameraGranted = await _native.requestCameraPermission();
+    if (!mounted) return;
+    if (!cameraGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Permita a câmera para escanear o QR do outro celular.'),
+          action: SnackBarAction(
+            label: 'AJUSTES',
+            onPressed: () => unawaited(_native.openAppSettings()),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => const PhonePairingScannerScreen(),
+      ),
+    );
+    if (!mounted || raw == null || raw.trim().isEmpty) return;
+
+    try {
+      final pairing = RemoteCameraPairingService.decode(raw);
+      setState(() {
+        _sourceType = VideoSourceType.remotePhone;
+        _remoteUrlController.text = pairing.address;
+        _remoteKeyController.text = pairing.accessKey;
+      });
+      _schedulePersist();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Celular remoto preenchido: ${pairing.name}.')),
+      );
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message.toString())),
+      );
+    }
+  }
+
+  Future<void> _start() async {
+    final profile = _currentProfile();
+    if (_sourceType == VideoSourceType.localCamera) {
+      final cameraGranted = await _native.requestCameraPermission();
+      if (!mounted) return;
+      if (!cameraGranted) {
+        final permission = await _native.cameraPermissionStatus();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              permission.canRequest
+                  ? 'A câmera precisa ser permitida para iniciar o monitoramento.'
+                  : 'A permissão da câmera está bloqueada. Libere-a nos ajustes do aplicativo.',
+            ),
+            action: SnackBarAction(
+              label: 'AJUSTES',
+              onPressed: () => unawaited(_native.openAppSettings()),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (profile.settings.backgroundMonitoringEnabled) {
+      final notificationsAllowed = await _native.requestNotificationPermission();
+      if (!mounted) return;
+      if (!notificationsAllowed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'O monitor pode continuar em segundo plano, mas a notificação permanente pode ficar oculta sem permissão de notificações.',
+            ),
+          ),
+        );
+      }
+    }
+    final rtsp = profile.source.rtspUrl ?? '';
+    if (_sourceType == VideoSourceType.rtsp) {
+      final uri = Uri.tryParse(rtsp);
+      if (uri == null || uri.scheme != 'rtsp' || uri.host.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe uma URL RTSP válida.')),
+        );
+        return;
+      }
+    }
+    if (_sourceType == VideoSourceType.remotePhone) {
+      final uri = Uri.tryParse(profile.source.remoteBaseUrl ?? '');
+      if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty || (profile.source.remoteAccessKey ?? '').isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe o endereço local e a chave do celular remoto.')),
+        );
+        return;
+      }
+    }
+    if (_sourceType == VideoSourceType.esp32) {
+      final uri = Uri.tryParse(profile.source.remoteBaseUrl ?? '');
+      if (uri == null ||
+          !(uri.scheme == 'http' || uri.scheme == 'https') ||
+          uri.host.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cadastre e selecione um ESP32 com câmera.'),
+          ),
+        );
+        return;
+      }
+    }
+
+    await _settingsService.saveProfile(profile);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MonitorScreen(
+          initialSource: profile.source,
+          settings: profile.settings,
+        ),
+      ),
+    );
+    if (mounted) await _loadSettings();
+  }
+
+  @override
+  Widget build(BuildContext context) => _buildRedesignedHome(context);
+}

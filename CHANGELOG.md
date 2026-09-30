@@ -1,3 +1,11 @@
+## 1.0.203+203 — 2026-09-29
+
+- Corrigido o fechamento do aplicativo ao escolher o Google Maps: a chave `com.google.android.geo.API_KEY` estava dentro de `<activity>` no `AndroidManifest.xml` e o Maps SDK só a procura em `<application>`. A tag foi movida nos dois manifests (`android/` e `tool/`).
+- O Google Maps só é aberto quando existe chave. Sem chave, o aplicativo avisa, oferece o atalho de cadastro e mantém o mapa atual.
+- Nova opção **Configurações > Chave do Google Maps** (também no painel de provedor do mapa) para cada pessoa informar a própria chave; ela é guardada criptografada no Android Keystore e aplicada antes da criação do mapa.
+- `tool/android/MainActivity.kt` sincronizado com o `MainActivity.kt` ativo.
+- Documentação, catálogo de Novidades, metadados, User-Agents, verificador e versionamento sincronizados em `1.0.203+203`.
+
 ## 1.0.202+202 — 2026-09-27
 
 - Ajustado o teste de configuração do provedor de mapa para simular o canal `path_provider` no ambiente Flutter sem plugins nativos.
