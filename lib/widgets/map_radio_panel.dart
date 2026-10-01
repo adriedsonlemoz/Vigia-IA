@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/map_radio_service.dart';
 import '../services/map_ride_settings_service.dart';
 import '../services/radio_browser_service.dart';
+import '../services/radio_health_service.dart';
 import '../services/data_usage_service.dart';
 
 enum _RadioSection { discover, favorites, manual }
@@ -34,12 +35,17 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   bool _loading = false;
   String? _error;
   String _playbackState = 'parado';
+  String _nowPlaying = '';
+  bool _fromCache = false;
   Timer? _statusTimer;
 
   @override
   void initState() {
     super.initState();
     unawaited(_refreshPlayback());
+    unawaited(RadioHealthService.instance.load().then((_) {
+      if (mounted) setState(() {});
+    }));
     unawaited(_search());
     _statusTimer = Timer.periodic(
       const Duration(seconds: 1),
@@ -89,9 +95,30 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
     try {
       final status = await MapRadioService.statusDetails();
       if (!mounted) return;
-      if (_playbackState != status.state) {
-        setState(() => _playbackState = status.state);
-        widget.onPlaybackStateChanged(status.state);
+      final previous = _playbackState;
+      if (previous != status.state || _nowPlaying != status.nowPlaying) {
+        setState(() {
+          _playbackState = status.state;
+          _nowPlaying = status.nowPlaying;
+        });
+      }
+      if (previous == status.state) return;
+      widget.onPlaybackStateChanged(status.state);
+      final url = widget.settings.radioUrl;
+      if (status.state == 'tocando') {
+        unawaited(RadioHealthService.instance.markWorking(url));
+      } else if (status.state == 'indisponível' &&
+          (previous == 'conectando' || previous == 'tocando')) {
+        // Só avisa quando uma estação que estava ativa deixa de responder.
+        unawaited(RadioHealthService.instance.markFailed(url));
+        final name = _selected?.name ?? 'A estação';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$name não respondeu. Tente outra estação ou confira a conexão.',
+            ),
+          ),
+        );
       }
     } catch (_) {}
   }
@@ -102,13 +129,20 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
       _error = null;
     });
     try {
+      await RadioHealthService.instance.load();
       final results = await _catalog.search(
         query: _queryController.text,
         brazilOnly: _brazilOnly,
         preferLowBitrate: DataUsageService.instance.dataSaverEnabled,
       );
       if (!mounted) return;
-      setState(() => _results = results);
+      setState(() {
+        _results = RadioBrowserService.rankStations(
+          results,
+          isSuspect: RadioHealthService.instance.isSuspect,
+        );
+        _fromCache = _catalog.lastSearchFromCache;
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error.toString().replaceFirst('HttpException: ', ''));
@@ -138,6 +172,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
         stationUrl: station.streamUrl,
         radioBitrateKbps: station.bitrate,
       );
+      unawaited(_catalog.registerClick(station));
       await MapRadioService.play(
         name: station.name,
         url: station.streamUrl,
@@ -180,7 +215,18 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
     final current = stations.indexWhere(
       (station) => station.streamUrl == widget.settings.radioUrl,
     );
-    final index = (current < 0 ? 0 : current + offset) % stations.length;
+    final step = offset >= 0 ? 1 : -1;
+    // Sem estação atual na lista: "Próxima" começa no início e "Anterior" no fim.
+    var index = current < 0
+        ? (step > 0 ? 0 : stations.length - 1)
+        : (current + offset) % stations.length;
+    // Pula estações marcadas como instáveis, se existirem outras.
+    final health = RadioHealthService.instance;
+    for (var tries = 0;
+        tries < stations.length && health.isSuspect(stations[index].streamUrl);
+        tries++) {
+      index = (index + step) % stations.length;
+    }
     unawaited(_play(stations[index]));
   }
 
@@ -303,6 +349,10 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
                         style: const TextStyle(fontWeight: FontWeight.w900)),
                     Text(station?.location ?? 'Busque uma estação para começar',
                         maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (_nowPlaying.isNotEmpty && _playbackState == 'tocando')
+                      Text('♪ $_nowPlaying',
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: scheme.primary)),
                     Text(_playbackLabel,
                         style: TextStyle(color: active ? scheme.primary : null,
                             fontWeight: FontWeight.w700)),
@@ -328,7 +378,10 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
                 icon: Icon(_playbackState == 'tocando' || _playbackState == 'conectando'
                     ? Icons.pause_rounded : Icons.play_arrow_rounded),
                 label: Text(_playbackState == 'pausado' ? 'Continuar'
-                    : _playbackState == 'tocando' ? 'Pausar' : 'Tocar'),
+                    : (_playbackState == 'tocando' ||
+                            _playbackState == 'conectando')
+                        ? 'Pausar'
+                        : 'Tocar'),
               ),
               IconButton(tooltip: 'Próxima', onPressed: () => _skip(1),
                   icon: const Icon(Icons.skip_next_rounded)),
@@ -411,6 +464,14 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
             ),
           ),
           if (_loading) const LinearProgressIndicator(minHeight: 2),
+          if (_fromCache)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                'Sem acesso ao catálogo agora: mostrando a última busca salva.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           Expanded(
             child: _error != null
                 ? _RadioMessage(message: _error!, action: _search)
@@ -482,7 +543,9 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   Widget _stationTile(RadioBrowserStation station) => ListTile(
         leading: _StationLogo(station: station, size: 42),
         title: Text(station.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text('${station.location}\n${station.technicalSummary}',
+        subtitle: Text(
+            '${station.location}\n${station.technicalSummary}'
+            '${RadioHealthService.instance.isSuspect(station.streamUrl) ? ' · pode estar fora do ar' : ''}',
             maxLines: 2, overflow: TextOverflow.ellipsis),
         isThreeLine: true,
         onTap: () => unawaited(_play(station)),

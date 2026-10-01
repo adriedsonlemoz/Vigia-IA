@@ -2,7 +2,13 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.203+203`
+> **Versão atual:** `1.0.205+205`
+
+A `1.0.205+205` moderniza o rádio online: player Media3/ExoPlayer (mais formatos, HLS e playlists `.pls`/`.m3u`), música que está tocando, controles na tela de bloqueio, reconexão automática quando o sinal ou a rede mudam, servidores do catálogo descobertos por DNS, última busca salva para uso sem conexão e estações instáveis marcadas.
+
+A `1.0.204+204` corrigiu a troca de estação no rádio online (a nova rádio não iniciava).
+
+A `1.0.204+204` corrige a troca de estação no rádio online (a nova rádio não iniciava), reconecta automaticamente quando o stream cai e avisa quando a estação não responde.
 
 A `1.0.203+203` impede que o aplicativo feche ao escolher o Google Maps sem chave e permite que cada pessoa informe a própria chave do Google Maps em **Configurações > Chave do Google Maps** (ou no painel de provedor do mapa). A chave fica criptografada no Android Keystore e nunca é enviada a terceiros além do próprio Google.
 

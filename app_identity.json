@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.203 impede que o aplicativo feche ao escolher o Google Maps (chave ausente) e permite que cada pessoa informe a própria chave do Google Maps dentro do app.",
-  "version": "1.0.203",
-  "build": 203
+  "notes": "A 1.0.205 moderniza o player de rádio (Media3/ExoPlayer), mostra a música que está tocando, resolve playlists .pls/.m3u, descobre os servidores do catálogo por DNS, guarda a última busca para uso sem conexão e marca estações instáveis.",
+  "version": "1.0.205",
+  "build": 205
 }

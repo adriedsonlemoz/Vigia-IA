@@ -8,14 +8,16 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.203', build: 203);
+      AppBuildVersion(version: '1.0.205', build: 205);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.203', build: 203),
+      version: AppBuildVersion(version: '1.0.205', build: 205),
       changes: <String>[
-        'Novo: informe a sua própria chave do Google Maps em Configurações ou no painel de provedor do mapa.',
-        'Ao escolher o Google Maps sem chave, o aplicativo avisa e continua no mapa atual.',
+        'Rádio com player novo: mais estável, toca mais formatos e continua com a tela apagada.',
+        'Agora aparece a música que está tocando e os controles ficam na tela de bloqueio e nos fones.',
+        'Se o sinal cair ou a internet trocar, a rádio reconecta sozinha.',
+        'Catálogo de rádios mais confiável: guarda a última busca para usar sem conexão e deixa por último as estações que não respondem.',
       ],
     ),
   ]);

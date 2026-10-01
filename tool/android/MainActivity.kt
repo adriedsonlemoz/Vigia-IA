@@ -272,6 +272,7 @@ class MainActivity : FlutterActivity() {
                         "volume" to RadioPlaybackService.volume.toDouble(),
                         "bitrate" to RadioPlaybackService.bitrateKbps,
                         "estimatedBytes" to RadioPlaybackService.estimatedBytes,
+                        "nowPlaying" to RadioPlaybackService.nowPlaying,
                     ))
                     else -> result.notImplemented()
                 }

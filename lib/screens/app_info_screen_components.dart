@@ -77,8 +77,29 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.203',
+          version: '1.0.205',
           current: true,
+          changes: [
+            'Player de rádio renovado (Media3/ExoPlayer): toca mais formatos, inclusive streams HLS e links de playlist (.pls e .m3u).',
+            'Mostra a música e o artista que estão tocando e exibe os controles na tela de bloqueio, na notificação e nos fones.',
+            'Reconexão automática quando o sinal cai ou a rede muda; se a internet acabar, a rádio espera e volta sozinha.',
+            'Retomar depois de uma pausa longa reconecta ao vivo em vez de tocar o áudio antigo.',
+            'Catálogo: servidores descobertos automaticamente, última busca salva para usar sem conexão e estações que falham ficam no fim da lista, com aviso.',
+            'Os botões Anterior e Próxima começam do lugar certo e pulam estações instáveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.204',
+          changes: [
+            'Ao escolher outra rádio, a nova estação agora inicia normalmente.',
+            'Se o sinal cair, a rádio tenta reconectar sozinha; se não voltar, o painel avisa que a estação está indisponível.',
+            'Chamadas e outros áudios pausam a rádio e ela volta sozinha; pausar enquanto conecta também funciona.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.203',
           changes: [
             'O aplicativo não fecha mais ao escolher o Google Maps: a chave agora é lida do lugar correto e, sem chave, o mapa atual é mantido com um aviso.',
             'Nova opção Chave do Google Maps em Configurações e no painel de provedor do mapa, para cada pessoa usar a sua própria chave.',
@@ -1839,8 +1860,29 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.203',
+          version: '1.0.205',
           current: true,
+          changes: [
+            'Player de rádio renovado (Media3/ExoPlayer): toca mais formatos, inclusive streams HLS e links de playlist (.pls e .m3u).',
+            'Mostra a música e o artista que estão tocando e exibe os controles na tela de bloqueio, na notificação e nos fones.',
+            'Reconexão automática quando o sinal cai ou a rede muda; se a internet acabar, a rádio espera e volta sozinha.',
+            'Retomar depois de uma pausa longa reconecta ao vivo em vez de tocar o áudio antigo.',
+            'Catálogo: servidores descobertos automaticamente, última busca salva para usar sem conexão e estações que falham ficam no fim da lista, com aviso.',
+            'Os botões Anterior e Próxima começam do lugar certo e pulam estações instáveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.204',
+          changes: [
+            'Ao escolher outra rádio, a nova estação agora inicia normalmente.',
+            'Se o sinal cair, a rádio tenta reconectar sozinha; se não voltar, o painel avisa que a estação está indisponível.',
+            'Chamadas e outros áudios pausam a rádio e ela volta sozinha; pausar enquanto conecta também funciona.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.203',
           changes: [
             'O aplicativo não fecha mais ao escolher o Google Maps: a chave agora é lida do lugar correto e, sem chave, o mapa atual é mantido com um aviso.',
             'Nova opção Chave do Google Maps em Configurações e no painel de provedor do mapa, para cada pessoa usar a sua própria chave.',

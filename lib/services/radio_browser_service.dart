@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'data_usage_service.dart';
+import 'radio_catalog_cache.dart';
 
 class RadioBrowserStation {
   const RadioBrowserStation({
@@ -16,6 +19,8 @@ class RadioBrowserStation {
     required this.codec,
     required this.bitrate,
     required this.votes,
+    this.lastCheckOk = true,
+    this.sslError = false,
   });
 
   final String id;
@@ -29,6 +34,14 @@ class RadioBrowserStation {
   final String codec;
   final int bitrate;
   final int votes;
+
+  /// Resultado da última verificação de saúde feita pelo catálogo.
+  final bool lastCheckOk;
+
+  /// O catálogo detectou erro de certificado no stream HTTPS.
+  final bool sslError;
+
+  bool get isHttps => streamUrl.toLowerCase().startsWith('https://');
 
   String get location {
     final parts = <String>[
@@ -84,6 +97,8 @@ class RadioBrowserStation {
       codec: value('codec'),
       bitrate: int.tryParse(value('bitrate')) ?? 0,
       votes: int.tryParse(value('votes')) ?? 0,
+      lastCheckOk: value('lastcheckok') != '0',
+      sslError: value('ssl_error') == '1',
     );
   }
 
@@ -104,17 +119,98 @@ class RadioBrowserStation {
 }
 
 class RadioBrowserService {
-  RadioBrowserService({HttpClient? client}) : _client = client ?? HttpClient();
+  RadioBrowserService({
+    HttpClient? client,
+    Future<List<String>> Function()? hostResolver,
+    RadioCatalogCache? cache,
+  })  : _client = client ?? HttpClient(),
+        _hostResolver = hostResolver ?? discoverHosts,
+        _cache = cache ?? RadioCatalogCache();
 
   final HttpClient _client;
-  static const _hosts = <String>[
+  final Future<List<String>> Function() _hostResolver;
+  final RadioCatalogCache _cache;
+  bool _lastSearchFromCache = false;
+
+  /// Servidores conhecidos, usados só como reserva quando a descoberta por DNS falha.
+  static const _fallbackHosts = <String>[
     'de1.api.radio-browser.info',
     'nl1.api.radio-browser.info',
     'at1.api.radio-browser.info',
     'all.api.radio-browser.info',
   ];
+  static const _maxHostsPerSearch = 4;
+  static List<String>? _discoveredHosts;
+  static DateTime? _discoveredAt;
+
+  /// `true` quando a última busca precisou usar o cache local.
+  bool get lastSearchFromCache => _lastSearchFromCache;
 
   void dispose() => _client.close(force: true);
+
+  /// Descobre os servidores do Radio Browser por DNS (como recomenda a
+  /// documentação do catálogo) e devolve a lista em ordem aleatória, seguida
+  /// da lista de reserva. O resultado é reaproveitado por uma hora.
+  static Future<List<String>> discoverHosts() async {
+    final cached = _discoveredHosts;
+    final at = _discoveredAt;
+    if (cached != null &&
+        at != null &&
+        DateTime.now().difference(at) < const Duration(hours: 1)) {
+      return cached;
+    }
+    final discovered = <String>[];
+    try {
+      final addresses = await InternetAddress.lookup('all.api.radio-browser.info')
+          .timeout(const Duration(seconds: 5));
+      for (final address in addresses) {
+        try {
+          final reverse =
+              await address.reverse().timeout(const Duration(seconds: 3));
+          discovered.add(reverse.host);
+        } catch (_) {
+          continue;
+        }
+      }
+    } catch (_) {
+      // Sem DNS: segue apenas com a lista de reserva.
+    }
+    final merged = mergeHosts(discovered, _fallbackHosts);
+    _discoveredHosts = merged;
+    _discoveredAt = DateTime.now();
+    return merged;
+  }
+
+  /// Valida os nomes descobertos, embaralha e acrescenta a lista de reserva.
+  static List<String> mergeHosts(
+    List<String> discovered,
+    List<String> fallback, {
+    Random? random,
+  }) {
+    final valid = <String>{};
+    for (final raw in discovered) {
+      final name = raw.trim().toLowerCase().replaceAll(RegExp(r'\.$'), '');
+      if (name.endsWith('.radio-browser.info') &&
+          name != 'all.api.radio-browser.info') {
+        valid.add(name);
+      }
+    }
+    final shuffled = valid.toList()..shuffle(random);
+    return <String>[
+      ...shuffled,
+      ...fallback.where((host) => !valid.contains(host)),
+    ];
+  }
+
+  Future<List<String>> _safeHosts() async {
+    try {
+      final hosts = await _hostResolver();
+      if (hosts.isNotEmpty) return hosts;
+    } catch (_) {
+      // Usa a lista de reserva.
+    }
+    return _fallbackHosts;
+  }
 
   Future<List<RadioBrowserStation>> search({
     String query = '',
@@ -122,8 +218,11 @@ class RadioBrowserService {
     bool preferLowBitrate = false,
     int limit = 40,
   }) async {
+    final cacheKey =
+        RadioCatalogCache.keyFor(query: query, brazilOnly: brazilOnly);
     Object? lastError;
-    for (final host in _hosts) {
+    final hosts = (await _safeHosts()).take(_maxHostsPerSearch);
+    for (final host in hosts) {
       try {
         final parameters = <String, String>{
           if (query.trim().isNotEmpty) 'name': query.trim(),
@@ -137,7 +236,7 @@ class RadioBrowserService {
         final request = await _client.getUrl(uri)
             .timeout(const Duration(seconds: 10));
         request.headers.set(HttpHeaders.userAgentHeader,
-            'VigiaIA/1.0.199 radio-browser');
+            'VigiaIA/1.0.205 radio-browser');
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close()
             .timeout(const Duration(seconds: 12));
@@ -151,18 +250,69 @@ class RadioBrowserService {
           received: utf8.encode(text).length,
         );
         final decoded = decodeStations(text);
-        if (!preferLowBitrate) return decoded;
-        final efficient = decoded
-            .where((station) => station.bitrate == 0 || station.bitrate <= 96)
-            .toList(growable: false);
-        return efficient.isEmpty ? decoded : efficient;
+        _lastSearchFromCache = false;
+        unawaited(_cache.save(cacheKey, decoded));
+        return _applyBitratePreference(decoded, preferLowBitrate);
       } catch (error) {
         lastError = error;
       }
     }
+    final cached = await _cache.load(cacheKey);
+    if (cached != null && cached.isNotEmpty) {
+      _lastSearchFromCache = true;
+      return _applyBitratePreference(cached, preferLowBitrate);
+    }
     throw HttpException(
       'Não foi possível consultar as rádios agora${lastError == null ? '.' : ': $lastError'}',
     );
+  }
+
+  /// Informa ao catálogo que a estação foi tocada (contagem de cliques). É
+  /// opcional e nunca atrapalha a reprodução.
+  Future<void> registerClick(RadioBrowserStation station) async {
+    final id = station.id.trim();
+    if (id.isEmpty) return;
+    try {
+      final hosts = await _safeHosts();
+      final uri = Uri.https(hosts.first, '/json/url/$id');
+      final request =
+          await _client.getUrl(uri).timeout(const Duration(seconds: 6));
+      request.headers.set(HttpHeaders.userAgentHeader,
+          'VigiaIA/1.0.205 radio-browser');
+      final response = await request.close().timeout(const Duration(seconds: 8));
+      await response.drain<void>();
+    } catch (_) {
+      // Falhas aqui não afetam a reprodução.
+    }
+  }
+
+  static List<RadioBrowserStation> _applyBitratePreference(
+    List<RadioBrowserStation> stations,
+    bool preferLowBitrate,
+  ) {
+    if (!preferLowBitrate) return stations;
+    final efficient = stations
+        .where((station) => station.bitrate == 0 || station.bitrate <= 96)
+        .toList(growable: false);
+    return efficient.isEmpty ? stations : efficient;
+  }
+
+  /// Mantém a ordem do catálogo, mas leva as estações instáveis para o fim.
+  static List<RadioBrowserStation> rankStations(
+    List<RadioBrowserStation> stations, {
+    bool Function(String url)? isSuspect,
+  }) {
+    if (isSuspect == null) return stations;
+    final healthy = <RadioBrowserStation>[];
+    final suspect = <RadioBrowserStation>[];
+    for (final station in stations) {
+      if (isSuspect(station.streamUrl)) {
+        suspect.add(station);
+      } else {
+        healthy.add(station);
+      }
+    }
+    return <RadioBrowserStation>[...healthy, ...suspect];
   }
 
   static List<RadioBrowserStation> decodeStations(String source) {
@@ -172,7 +322,9 @@ class RadioBrowserService {
     final stations = <RadioBrowserStation>[];
     for (final raw in decoded) {
       final station = RadioBrowserStation.fromJson(raw);
-      if (station == null || !seen.add(station.streamUrl)) continue;
+      if (station == null) continue;
+      if (!station.lastCheckOk || (station.sslError && station.isHttps)) continue;
+      if (!seen.add(station.streamUrl)) continue;
       stations.add(station);
     }
     return stations;

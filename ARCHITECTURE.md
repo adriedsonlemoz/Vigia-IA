@@ -1,4 +1,42 @@
-# Arquitetura — Vigia IA 1.0.203+203
+# Arquitetura — Vigia IA 1.0.205+205
+
+## Rádio online — 1.0.205
+
+`RadioPlaybackService` continua sendo um foreground service de mídia controlado pelo canal `vigiaia/radio` (`MapRadioService`), mas agora reproduz com Media3/ExoPlayer em vez de `MediaPlayer`.
+
+Camada nativa:
+
+1. `ExoPlayer` cuida do foco de áudio (`setAudioAttributes(..., true)`), da pausa ao desconectar fones (`setHandleAudioBecomingNoisy`) e do wake lock de rede (`WAKE_MODE_NETWORK`). Isso substitui o gerenciamento manual de `AudioFocusRequest` que causava a falha da 1.0.203 (nova estação derrubada por `AUDIOFOCUS_LOSS`).
+2. `DefaultHttpDataSource` com `setAllowCrossProtocolRedirects(true)`: muitas estações redirecionam entre http e https.
+3. `media3-exoplayer-hls` adiciona streams HLS (`.m3u8`); `media3-session` cria a `MediaSession` usada pela tela de bloqueio, controles do sistema e fones.
+4. `Player.Listener` mantém o estado exposto ao Dart (`conectando`, `tocando`, `pausado`, `indisponível`, `parado`) e publica a música atual (`nowPlaying`, metadados ICY) no canal `status`.
+5. Falhas: até 3 reconexões (2 s, 4 s, 6 s). Sem rede, o serviço espera por `registerDefaultNetworkCallback` e reconecta quando ela volta (desiste após 5 min). Retomar após pausa longa reconecta ao vivo. Vigia de conexão de 30 s.
+6. As dependências Media3 ficam em `android/app/build.gradle.kts` e são recriadas por `tool/bootstrap_android.sh` quando o projeto Android é regenerado. `tool/android/RadioPlaybackService.kt` continua cópia idêntica do serviço ativo.
+
+Camada Dart:
+
+- `RadioStreamResolver` converte URLs `.pls`/`.m3u` no endereço direto antes de chamar o player (`MapRadioService.play`).
+- `RadioBrowserService.discoverHosts` descobre os servidores do Radio Browser por DNS (`all.api.radio-browser.info`, com resolução reversa) e usa a lista fixa só como reserva; `lastcheckok`/`ssl_error` descartam estações reprovadas; `registerClick` informa a reprodução ao catálogo.
+- `RadioCatalogCache` guarda as últimas buscas; sem catálogo, o painel mostra a última busca salva e avisa.
+- `RadioHealthService` (persistido) conta falhas por URL; a partir de 2 a estação é marcada como instável, vai para o fim das listas e é pulada em Anterior/Próxima.
+
+
+## Rádio online — 1.0.204
+
+`RadioPlaybackService` (foreground service de mídia) é controlado pelo canal `vigiaia/radio` (`MapRadioService` no Dart) e consultado por polling de 1 s no `MapRadioPanel`.
+
+Causa da rádio que não iniciava ao trocar de estação: cada reprodução criava um novo `AudioFocusRequest` com um novo listener sem abandonar o anterior. O Android entregava `AUDIOFOCUS_LOSS` ao pedido antigo e o listener chamava `stopSelf()`, derrubando o serviço junto com a estação recém-escolhida.
+
+Fluxo atual:
+
+1. Um único `focusListener` e um único `AudioFocusRequest` são reutilizados; pedir foco de novo não gera perda.
+2. `startPlayback()` descarta o player anterior antes de criar o novo; os listeners conferem `player === mp` para ignorar callbacks de players antigos.
+3. Falha, fim inesperado do stream ou 25 s sem conectar acionam `handleStreamFailure()`: até 3 reconexões automáticas (2 s, 4 s, 6 s) e, depois, estado `indisponível`, mantido visível para o painel avisar o usuário.
+4. Perda transitória de foco pausa e retoma sozinha; pausar durante a conexão inicia o stream pausado.
+5. O player usa `AudioAttributes` de mídia e `WAKE_LOCK` parcial para continuar com a tela apagada.
+
+`tool/android/RadioPlaybackService.kt` continua sendo cópia idêntica do serviço ativo.
+
 
 ## Chave do Google Maps por usuário — 1.0.203
 

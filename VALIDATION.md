@@ -1,4 +1,30 @@
-# Validação Vigia IA 1.0.203+203
+# Validação Vigia IA 1.0.205+205
+
+## Cobertura da 1.0.205
+
+- Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter analyze` e `flutter test` (inclui `test/radio_improvements_test.dart`).
+- Confirmar no build do workflow que as dependências `androidx.media3` foram resolvidas e que o APK compila (Kotlin 2.3 / AGP 9).
+- Em aparelho: tocar uma estação MP3, uma AAC e uma HLS (`.m3u8`); trocar de estação várias vezes seguidas e confirmar que a nova sempre inicia.
+- Colar manualmente um link `.pls` e um `.m3u` e confirmar que tocam.
+- Conferir a música/artista no painel, na notificação e na tela de bloqueio, e os botões play/pausa dos fones.
+- Desligar a internet com a rádio tocando: deve ficar "Conectando…" (aguardando rede) e voltar sozinha ao religar; trocar Wi-Fi por dados e confirmar a reconexão.
+- Pausar por mais de alguns segundos e continuar: deve voltar ao vivo.
+- Escolher uma URL inexistente: após as tentativas, aviso de estação indisponível, e a estação passa a aparecer como instável depois de repetir.
+- Sem internet, abrir o painel de rádio: deve mostrar a última busca salva com o aviso.
+- Confirmar que Anterior/Próxima funcionam sem estação atual na lista.
+- Atualizar 1.0.204 → 1.0.205 e confirmar que Novidades aparece uma vez.
+
+
+## Cobertura da 1.0.204
+
+- Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter analyze` e `flutter test`.
+- Em aparelho: tocar uma rádio, escolher outra e confirmar que a nova inicia e a anterior para, repetindo várias trocas seguidas (inclusive Anterior/Próxima e a mesma estação duas vezes).
+- Desligar a internet com a rádio tocando e confirmar as tentativas de reconexão e, depois, a mensagem de estação indisponível; religar e tocar de novo.
+- Escolher uma URL inexistente e confirmar que o painel mostra "Stream indisponível" e o aviso, sem o app fechar.
+- Pausar durante "Conectando…" e confirmar que a rádio fica pausada; tocar outro áudio (alerta, outro app) e confirmar que a rádio abaixa/pausa e volta sozinha quando cabível.
+- Confirmar que a notificação Pausar/Continuar/Parar continua funcionando e que a rádio segue com a tela apagada.
+- Atualizar 1.0.203 → 1.0.204 e confirmar que Novidades aparece uma vez.
+
 
 ## Cobertura da 1.0.203
 

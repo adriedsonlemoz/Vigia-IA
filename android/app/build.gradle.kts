@@ -77,6 +77,13 @@ kotlin {
     }
 }
 
+dependencies {
+    // Rádio online: ExoPlayer (MP3/AAC/Ogg/HLS com metadados ICY) e MediaSession.
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+    implementation("androidx.media3:media3-exoplayer-hls:1.8.0")
+    implementation("androidx.media3:media3-session:1.8.0")
+}
+
 flutter {
     source = "../.."
 }

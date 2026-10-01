@@ -1,3 +1,24 @@
+## 1.0.205+205 — 2026-10-01
+
+- Rádio: player trocado de `MediaPlayer` para Media3/ExoPlayer (`media3-exoplayer`, `media3-exoplayer-hls`, `media3-session`), com foco de áudio, fones e wake lock gerenciados pelo ExoPlayer, redirecionamentos http/https permitidos e suporte a HLS.
+- Rádio: música e artista (metadados ICY) aparecem no painel e na notificação; `MediaSession` expõe controles na tela de bloqueio, no sistema e nos fones.
+- Rádio: reconexão automática (até 3 tentativas), espera pela rede quando a internet cai e retomada ao vivo depois de pausas longas.
+- Rádio: links `.pls` e `.m3u` são resolvidos no endereço direto do stream antes de tocar.
+- Catálogo: servidores do Radio Browser descobertos por DNS (lista fixa como reserva), estações reprovadas na verificação do catálogo descartadas, clique da estação registrado e últimas buscas guardadas para uso sem conexão.
+- Painel: estações que falham ficam marcadas como instáveis e vão para o fim da lista; Anterior/Próxima começam do lugar certo e pulam estações instáveis.
+- `tool/bootstrap_android.sh` recria as dependências Media3 quando o projeto Android é regenerado; novas verificações em `tool/verify_project.sh`.
+- Documentação, catálogo de Novidades, tela Sobre, metadados, User-Agents e versionamento sincronizados em `1.0.205+205`.
+
+## 1.0.204+204 — 2026-09-30
+
+- Corrigido o rádio online que não iniciava ao escolher outra estação: cada troca criava um novo pedido de foco de áudio sem abandonar o anterior e o Android avisava o pedido antigo com `AUDIOFOCUS_LOSS`, o que encerrava o serviço. Agora há um único listener/pedido de foco reutilizado.
+- Falhas do stream deixam de encerrar o serviço silenciosamente: até 3 reconexões automáticas e, se não voltar, o estado "Stream indisponível" fica visível com aviso no painel.
+- Tempo limite de 25 s ao conectar; fim inesperado do stream ao vivo é tratado como queda de conexão.
+- Perda transitória de foco (chamada, outro áudio) pausa e retoma a rádio; pausar durante "Conectando…" passa a ser respeitado.
+- Player com `AudioAttributes` de mídia e `WAKE_LOCK` parcial para seguir tocando com a tela apagada.
+- Botão do painel mostra "Pausar" também durante a conexão; User-Agent do catálogo de rádios acompanha a versão.
+- Documentação, catálogo de Novidades, metadados, User-Agents, verificador e versionamento sincronizados em `1.0.204+204`.
+
 ## 1.0.203+203 — 2026-09-29
 
 - Corrigido o fechamento do aplicativo ao escolher o Google Maps: a chave `com.google.android.geo.API_KEY` estava dentro de `<activity>` no `AndroidManifest.xml` e o Maps SDK só a procura em `<application>`. A tag foi movida nos dois manifests (`android/` e `tool/`).

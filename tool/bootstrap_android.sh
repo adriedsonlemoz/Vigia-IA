@@ -129,6 +129,19 @@ if 'signingConfig = signingConfigs.getByName("release")' not in text:
     raise SystemExit('Nao foi possivel aplicar signingConfig release')
 if 'signingConfigs.getByName("debug")' in text:
     raise SystemExit('Assinatura debug ainda presente no release')
+media_deps = '''dependencies {
+    // Rádio online: ExoPlayer (MP3/AAC/Ogg/HLS com metadados ICY) e MediaSession.
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+    implementation("androidx.media3:media3-exoplayer-hls:1.8.0")
+    implementation("androidx.media3:media3-session:1.8.0")
+}
+
+'''
+if 'androidx.media3' not in text:
+    flutter_marker = 'flutter {\n    source'
+    if flutter_marker not in text:
+        raise SystemExit('Bloco flutter nao encontrado para adicionar dependencias Media3')
+    text = text.replace(flutter_marker, media_deps + flutter_marker, 1)
 path.write_text(text)
 PY
 
