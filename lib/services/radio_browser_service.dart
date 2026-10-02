@@ -236,7 +236,7 @@ class RadioBrowserService {
         final request = await _client.getUrl(uri)
             .timeout(const Duration(seconds: 10));
         request.headers.set(HttpHeaders.userAgentHeader,
-            'VigiaIA/1.0.205 radio-browser');
+            'VigiaIA/1.0.206 radio-browser');
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close()
             .timeout(const Duration(seconds: 12));
@@ -278,7 +278,7 @@ class RadioBrowserService {
       final request =
           await _client.getUrl(uri).timeout(const Duration(seconds: 6));
       request.headers.set(HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.205 radio-browser');
+          'VigiaIA/1.0.206 radio-browser');
       final response = await request.close().timeout(const Duration(seconds: 8));
       await response.drain<void>();
     } catch (_) {

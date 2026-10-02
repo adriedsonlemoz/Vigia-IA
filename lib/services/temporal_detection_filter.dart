@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../models/detection.dart';
 import '../models/object_filter_catalog.dart';
 import 'detection_confidence_policy.dart';
+import 'person_hint_confirmer.dart';
 
 /// Estabiliza detecções de baixa confiança sem atrasar detecções fortes.
 /// Candidatas abaixo do limiar global precisam reaparecer em frames próximos
@@ -20,6 +21,7 @@ class TemporalDetectionFilter {
   final int weakConfirmationHits;
 
   final Map<int, _CandidateTrack> _tracks = <int, _CandidateTrack>{};
+  final PersonHintConfirmer _personHints = PersonHintConfirmer();
   int _nextId = 1;
 
   List<Detection> apply({
@@ -85,8 +87,18 @@ class TemporalDetectionFilter {
     return List<Detection>.unmodifiable(_deduplicate(accepted));
   }
 
+  /// Pistas indiretas de pessoa (movimento + cor de pele) só aparecem depois de
+  /// confirmadas em vários quadros seguidos; veja [PersonHintConfirmer].
+  List<Detection> confirmPersonHints(
+    Iterable<Detection> hints, {
+    required DateTime now,
+    Duration? observationWindow,
+  }) =>
+      _personHints.apply(hints, now: now, observationWindow: observationWindow);
+
   void reset() {
     _tracks.clear();
+    _personHints.reset();
     _nextId = 1;
   }
 

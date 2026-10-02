@@ -2,7 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.205+205`
+> **Versão atual:** `1.0.206+206`
+
+A `1.0.206+206` mostra o nome específico do que foi visto (cachorro, gato, moto, carro, ônibus...) na tela, no histórico, nas notificações e nas frases de alerta, e trata a pista de movimento com cor de pele como "Possível pessoa": confiança menor, sem status de evidência forte e confirmada em vários quadros antes de aparecer.
+
+A `1.0.205+205` modernizou o rádio online (Media3/ExoPlayer, música tocando, playlists, cache do catálogo).
 
 A `1.0.205+205` moderniza o rádio online: player Media3/ExoPlayer (mais formatos, HLS e playlists `.pls`/`.m3u`), música que está tocando, controles na tela de bloqueio, reconexão automática quando o sinal ou a rede mudam, servidores do catálogo descobertos por DNS, última busca salva para uso sem conexão e estações instáveis marcadas.
 

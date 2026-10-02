@@ -20,7 +20,41 @@ void main() {
     );
 
     expect(result.map((item) => item.label), <String>['person', 'car', 'dog']);
-    expect(result.map((item) => item.displayLabel), <String>['Pessoa', 'Automóvel', 'Animal']);
+    expect(result.map((item) => item.displayLabel), <String>['Pessoa', 'Carro', 'Cachorro']);
+  });
+
+  test('mostra o nome específico de veículos e animais', () {
+    const detections = <Detection>[
+      Detection(label: 'motorcycle', displayLabel: 'motocicleta', confidence: 0.8, box: box),
+      Detection(label: 'bus', displayLabel: 'ônibus', confidence: 0.8, box: box),
+      Detection(label: 'cat', displayLabel: 'gato', confidence: 0.8, box: box),
+      Detection(label: 'cow', displayLabel: 'vaca', confidence: 0.8, box: box),
+    ];
+
+    final result = ObjectFilterPolicy.apply(
+      detections,
+      const <String>{'motorcycle', 'bus', 'cat', 'cow'},
+    );
+
+    expect(
+      result.map((item) => item.displayLabel),
+      <String>['Moto', 'Ônibus', 'Gato', 'Vaca'],
+    );
+  });
+
+  test('detecção inferida mantém o texto próprio e a marca', () {
+    const hint = Detection(
+      label: 'person',
+      displayLabel: 'Possível pessoa',
+      confidence: 0.5,
+      box: box,
+      inferred: true,
+    );
+
+    final result = ObjectFilterPolicy.apply(<Detection>[hint], const <String>{'person'});
+
+    expect(result.single.displayLabel, 'Possível pessoa');
+    expect(result.single.inferred, isTrue);
   });
 
   test('seleção antiga de uma classe migra para o grupo correspondente', () {

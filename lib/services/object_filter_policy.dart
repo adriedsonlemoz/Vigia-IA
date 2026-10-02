@@ -12,7 +12,9 @@ class ObjectFilterPolicy {
     final allowed = ObjectFilterCatalog.normalizeSelection(enabledLabels);
     return List<Detection>.unmodifiable(
       detections.where((item) => allowed.contains(item.label)).map((item) {
-        final displayLabel = ObjectFilterCatalog.singularNameForLabel(item.label);
+        // Detecções inferidas já trazem o texto próprio (ex.: "Possível pessoa").
+        if (item.inferred) return item;
+        final displayLabel = ObjectFilterCatalog.displayNameForLabel(item.label);
         if (displayLabel == null) return item;
         return Detection(
           label: item.label,

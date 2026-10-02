@@ -90,11 +90,20 @@ class VoiceAlertPreferences {
 }
 
 class AlertMessages {
+  /// Mensagens padrão (1.0.206+): mostram o nome específico (Cachorro, Moto...).
+  /// `{detectado}` vira "detectado" ou "detectada" conforme o objeto.
+  static const String defaultVehicle = '{objeto} {detectado}.';
+  static const String defaultAnimal = '{objeto} {detectado}.';
+
+  /// Textos padrão das versões anteriores; migram para o padrão novo ao carregar.
+  static const String legacyVehicle = 'Automóvel detectado.';
+  static const String legacyAnimal = 'Animal detectado.';
+
   const AlertMessages({
     this.person = 'Pessoa detectada.',
-    this.vehicle = 'Automóvel detectado.',
-    this.animal = 'Animal detectado.',
-    this.other = '{objeto} detectado.',
+    this.vehicle = defaultVehicle,
+    this.animal = defaultAnimal,
+    this.other = '{objeto} {detectado}.',
     this.entered = '{objeto} entrou em {area}.',
     this.exited = '{objeto} saiu de {area}.',
     this.cameraObstructed = 'A câmera parece estar obstruída.',
@@ -159,6 +168,7 @@ class AlertMessages {
     };
     return template
         .replaceAll('{objeto}', displayLabel)
+        .replaceAll('{detectado}', ObjectFilterCatalog.detectedWordForLabel(label))
         .replaceAll('{area}', area)
         .trim();
   }
@@ -175,6 +185,9 @@ class AlertMessages {
         'byObjectAndArea': byObjectAndArea,
       };
 
+  static String _migrate(String? stored, String legacy, String current) =>
+      stored == null || stored == legacy ? current : stored;
+
   factory AlertMessages.fromJson(Map<String, dynamic> json) {
     final custom = (json['byObjectAndArea'] as Map?)?.map(
           (key, value) => MapEntry(key.toString(), value.toString()),
@@ -182,9 +195,9 @@ class AlertMessages {
         const <String, String>{};
     return AlertMessages(
       person: json['person'] as String? ?? 'Pessoa detectada.',
-      vehicle: json['vehicle'] as String? ?? 'Automóvel detectado.',
-      animal: json['animal'] as String? ?? 'Animal detectado.',
-      other: json['other'] as String? ?? '{objeto} detectado.',
+      vehicle: _migrate(json['vehicle'] as String?, legacyVehicle, defaultVehicle),
+      animal: _migrate(json['animal'] as String?, legacyAnimal, defaultAnimal),
+      other: _migrate(json['other'] as String?, '{objeto} detectado.', '{objeto} {detectado}.'),
       entered: json['entered'] as String? ?? '{objeto} entrou em {area}.',
       exited: json['exited'] as String? ?? '{objeto} saiu de {area}.',
       cameraObstructed: json['cameraObstructed'] as String? ?? 'A câmera parece estar obstruída.',

@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.205+205
+# Validação Vigia IA 1.0.206+206
+
+## Cobertura da 1.0.206
+
+- Executar `python3 tool/check_version_sync.py`, `bash tool/verify_project.sh`, `flutter analyze` e `flutter test` (inclui `person_hint_confirmer_test.dart`, `inferred_detection_test.dart` e `object_filter_policy_test.dart` atualizado).
+- Em aparelho: mostrar um cachorro, um gato, uma moto e um carro à câmera e conferir o nome na caixa, no cartão de detecção, no histórico e na notificação.
+- Confirmar que a frase padrão fala "Cachorro detectado.", "Moto detectada." etc. quando a voz sintética é usada, e que a frase personalizada continua igual.
+- Passar uma mão ou um objeto marrom/bege em movimento diante da câmera sem pessoa: não deve aparecer nada no primeiro quadro; se aparecer depois de vários quadros, deve ser "Possível pessoa", nunca "Pessoa".
+- Atualizar 1.0.205 → 1.0.206 e confirmar que Novidades aparece uma vez.
+
 
 ## Cobertura da 1.0.205
 

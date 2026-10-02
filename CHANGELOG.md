@@ -1,3 +1,11 @@
+## 1.0.206+206 — 2026-10-02
+
+- Tela, histórico de eventos, notificações e frases de alerta passam a mostrar o nome específico (Carro, Moto, Ônibus, Caminhão, Pássaro, Gato, Cachorro, Cavalo, Ovelha, Vaca) em vez de só Automóvel/Animal. O grupo continua em ícones, estatísticas e regras.
+- Frases de alerta padrão de veículo e animal usam `{objeto} {detectado}.`; novo marcador `{detectado}` concorda com o objeto. Textos padrão antigos migram; textos personalizados são preservados.
+- Pista de pessoa por movimento e cor de pele agora é `Detection.inferred`: rótulo "Possível pessoa", confiança 0,42–0,62, proporção mínima de pele 0,22 e nunca tratada como evidência forte.
+- Nova `PersonHintConfirmer`: a pista só aparece depois de 3 quadros seguidos na mesma região; alerta com texto próprio e voz sintética.
+- Novos testes e verificações em `tool/verify_project.sh`; documentação, Novidades, tela Sobre, metadados e versionamento sincronizados em `1.0.206+206`.
+
 ## 1.0.205+205 — 2026-10-01
 
 - Rádio: player trocado de `MediaPlayer` para Media3/ExoPlayer (`media3-exoplayer`, `media3-exoplayer-hls`, `media3-session`), com foco de áudio, fones e wake lock gerenciados pelo ExoPlayer, redirecionamentos http/https permitidos e suporte a HLS.

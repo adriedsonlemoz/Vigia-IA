@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.205 moderniza o player de rádio (Media3/ExoPlayer), mostra a música que está tocando, resolve playlists .pls/.m3u, descobre os servidores do catálogo por DNS, guarda a última busca para uso sem conexão e marca estações instáveis.",
-  "version": "1.0.205",
-  "build": 205
+  "notes": "A 1.0.206 mostra o nome específico do que foi visto (cachorro, gato, moto, carro, ônibus...) nos alertas e no histórico e trata a pista de movimento com cor de pele como \"Possível pessoa\", só confirmada em vários quadros.",
+  "version": "1.0.206",
+  "build": 206
 }

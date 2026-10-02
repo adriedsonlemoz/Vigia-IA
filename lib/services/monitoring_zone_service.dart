@@ -70,6 +70,7 @@ class MonitoringZoneService {
         yMax: normalized.yMin + box.yMax * normalized.height,
       ),
       appearance: detection.appearance,
+      inferred: detection.inferred,
     );
   }
 

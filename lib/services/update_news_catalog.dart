@@ -8,16 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.205', build: 205);
+      AppBuildVersion(version: '1.0.206', build: 206);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.205', build: 205),
+      version: AppBuildVersion(version: '1.0.206', build: 206),
       changes: <String>[
-        'Rádio com player novo: mais estável, toca mais formatos e continua com a tela apagada.',
-        'Agora aparece a música que está tocando e os controles ficam na tela de bloqueio e nos fones.',
-        'Se o sinal cair ou a internet trocar, a rádio reconecta sozinha.',
-        'Catálogo de rádios mais confiável: guarda a última busca para usar sem conexão e deixa por último as estações que não respondem.',
+        'Alertas e histórico agora mostram o que foi visto: cachorro, gato, moto, carro, ônibus e outros, em vez de só Animal ou Automóvel.',
+        'Quando só existe uma pista de movimento com cor de pele, o app mostra Possível pessoa e só avisa depois de confirmar em vários quadros.',
+        'As frases de alerta padrão acompanham o nome do objeto; as que você personalizou continuam como estão.',
       ],
     ),
   ]);

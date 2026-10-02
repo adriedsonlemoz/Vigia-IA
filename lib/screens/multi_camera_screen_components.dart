@@ -305,7 +305,7 @@ class _CameraCard extends StatelessWidget {
               child: lastEvent == null
                   ? const Text('Último evento: nenhum registrado')
                   : Text(
-                      'Último: ${ObjectFilterCatalog.singularNameForLabel(lastEvent!.label) ?? 'Detecção'} · ${_eventKind(lastEvent!.type)} · ${_formatDateTime(lastEvent!.createdAt)}',
+                      'Último: ${lastEvent!.displayLabel.startsWith('Possível') ? lastEvent!.displayLabel : ObjectFilterCatalog.displayNameForLabel(lastEvent!.label) ?? 'Detecção'} · ${_eventKind(lastEvent!.type)} · ${_formatDateTime(lastEvent!.createdAt)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

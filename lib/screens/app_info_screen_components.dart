@@ -77,8 +77,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.205',
+          version: '1.0.206',
           current: true,
+          changes: [
+            'Tela, histórico, notificações e frases de alerta mostram o nome específico: cachorro, gato, moto, carro, ônibus, caminhão, cavalo e outros.',
+            'Pista indireta de pessoa (movimento com cor de pele) agora aparece como Possível pessoa, com confiança menor e sem tratamento de evidência forte.',
+            'A pista precisa se repetir em vários quadros seguidos antes de aparecer ou gerar aviso, e o aviso usa texto próprio.',
+            'Frases de alerta que você personalizou não mudam; as padrão antigas migram para o novo formato. O novo marcador {detectado} concorda com o objeto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.205',
           changes: [
             'Player de rádio renovado (Media3/ExoPlayer): toca mais formatos, inclusive streams HLS e links de playlist (.pls e .m3u).',
             'Mostra a música e o artista que estão tocando e exibe os controles na tela de bloqueio, na notificação e nos fones.',
@@ -1860,8 +1870,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.205',
+          version: '1.0.206',
           current: true,
+          changes: [
+            'Tela, histórico, notificações e frases de alerta mostram o nome específico: cachorro, gato, moto, carro, ônibus, caminhão, cavalo e outros.',
+            'Pista indireta de pessoa (movimento com cor de pele) agora aparece como Possível pessoa, com confiança menor e sem tratamento de evidência forte.',
+            'A pista precisa se repetir em vários quadros seguidos antes de aparecer ou gerar aviso, e o aviso usa texto próprio.',
+            'Frases de alerta que você personalizou não mudam; as padrão antigas migram para o novo formato. O novo marcador {detectado} concorda com o objeto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.205',
           changes: [
             'Player de rádio renovado (Media3/ExoPlayer): toca mais formatos, inclusive streams HLS e links de playlist (.pls e .m3u).',
             'Mostra a música e o artista que estão tocando e exibe os controles na tela de bloqueio, na notificação e nos fones.',

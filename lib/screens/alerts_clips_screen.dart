@@ -108,7 +108,7 @@ class _AlertsClipsScreenState extends State<AlertsClipsScreen> {
     };
     var selectedGroup = 'person';
     var selectedArea = '*';
-    final message = TextEditingController(text: '{objeto} detectado em {area}.');
+    final message = TextEditingController(text: '{objeto} {detectado} em {area}.');
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -153,7 +153,7 @@ class _AlertsClipsScreenState extends State<AlertsClipsScreen> {
                   maxLines: 2,
                   decoration: const InputDecoration(
                     labelText: 'Frase',
-                    helperText: 'Você pode usar {objeto} e {area}',
+                    helperText: 'Você pode usar {objeto}, {detectado} e {area}',
                   ),
                 ),
               ],

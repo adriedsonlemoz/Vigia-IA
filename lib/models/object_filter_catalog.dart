@@ -100,6 +100,40 @@ class ObjectFilterCatalog {
     return null;
   }
 
+  /// Nome específico mostrado ao usuário (tela, histórico e alertas escritos).
+  /// O grupo (Pessoa, Automóvel, Animal) continua sendo usado para regras,
+  /// ícones e estatísticas.
+  static const Map<String, String> _specificNames = <String, String>{
+    'person': 'Pessoa',
+    'car': 'Carro',
+    'motorcycle': 'Moto',
+    'bus': 'Ônibus',
+    'truck': 'Caminhão',
+    'bird': 'Pássaro',
+    'cat': 'Gato',
+    'dog': 'Cachorro',
+    'horse': 'Cavalo',
+    'sheep': 'Ovelha',
+    'cow': 'Vaca',
+  };
+
+  static const Set<String> _feminineLabels = <String>{
+    'person',
+    'motorcycle',
+    'sheep',
+    'cow',
+  };
+
+  static String? specificNameForLabel(String label) => _specificNames[label];
+
+  /// Nome para exibir: específico quando conhecido, senão o do grupo.
+  static String? displayNameForLabel(String label) =>
+      specificNameForLabel(label) ?? singularNameForLabel(label);
+
+  /// "detectado" ou "detectada", concordando com o nome específico.
+  static String detectedWordForLabel(String label) =>
+      _feminineLabels.contains(label) ? 'detectada' : 'detectado';
+
   static String? singularNameForLabel(String label) => switch (groupKeyForLabel(label)) {
         'person' => 'Pessoa',
         'vehicle' => 'Automóvel',

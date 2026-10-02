@@ -1,4 +1,15 @@
-# Arquitetura — Vigia IA 1.0.205+205
+# Arquitetura — Vigia IA 1.0.206+206
+
+## Identificação de pessoas, veículos e animais — 1.0.206
+
+Pipeline: detector (EfficientDet-Lite0, SSD MobileNet V1 como reserva) → `ObjectFilterPolicy` → `TemporalDetectionFilter` → zonas → rastreador → regras de alerta.
+
+- **Nome exibido:** `ObjectFilterCatalog.displayNameForLabel` devolve o nome específico (Pessoa, Carro, Moto, Ônibus, Caminhão, Pássaro, Gato, Cachorro, Cavalo, Ovelha, Vaca). `singularNameForLabel` (Pessoa/Automóvel/Animal) continua sendo o **grupo**, usado em ícones, estatísticas, regras e chaves de alerta. `Detection.label` não muda.
+- **Mensagens padrão:** vehicle e animal usam `{objeto} {detectado}.`; `{detectado}` concorda com o objeto (detectado/detectada). Textos padrão antigos (`Automóvel detectado.`, `Animal detectado.`) migram em `AlertMessages.fromJson`; textos personalizados são preservados.
+- **Voz:** os áudios gravados por slot (`vehicle_detected`, `animal_detected`) continuam genéricos; o nome específico aparece na notificação, no histórico e na voz sintética (TTS) quando ela é usada.
+- **Pista indireta de pessoa:** `PartialPersonDetectionService` (movimento + cor de pele) agora gera `Detection.inferred = true`, rótulo "Possível pessoa", confiança 0,42–0,62 e exige proporção de pele ≥ 0,22. `DetectionConfidencePolicy.isStrong` nunca é verdadeiro para inferidas, então elas não dispensam a segunda confirmação do `AlertRepeatGuard`.
+- **Confirmação:** `PersonHintConfirmer` só libera a pista depois de 3 quadros seguidos na mesma região e a mantém por 1,5 s; é reiniciado junto com o filtro temporal. O alerta de inferida usa texto próprio ("Possível pessoa detectada.") e voz sintética, nunca o áudio gravado "pessoa detectada".
+
 
 ## Rádio online — 1.0.205
 

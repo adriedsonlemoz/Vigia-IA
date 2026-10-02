@@ -47,7 +47,7 @@ class DetectionConfidencePolicy {
       detection.confidence >= acceptedThresholdForDetection(detection, baseThreshold);
 
   static bool isStrong(Detection detection, double baseThreshold) =>
-      detection.confidence >= baseThreshold;
+      !detection.inferred && detection.confidence >= baseThreshold;
 
   static int confirmationHits(Detection detection, double baseThreshold) {
     if (isStrong(detection, baseThreshold)) return 1;

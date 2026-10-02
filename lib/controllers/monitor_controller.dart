@@ -1074,13 +1074,13 @@ class MonitorController extends ChangeNotifier {
                     MonitoringZoneService.remapDetection(item, analysisZone),
               )
               .toList(growable: false);
-      final syntheticPeople = _alertLabels.contains('person')
-          ? PartialPersonDetectionService.infer(
-              frame,
-              motionResult,
-              selectedGlobal,
-            )
-          : const <Detection>[];
+      final syntheticPeople = _detectionFilter.confirmPersonHints(
+        _alertLabels.contains('person')
+            ? PartialPersonDetectionService.infer(frame, motionResult, selectedGlobal)
+            : const <Detection>[],
+        now: now,
+        observationWindow: observationWindow,
+      );
       final selectedWithHints = <Detection>[
         ...selectedGlobal,
         ...syntheticPeople,

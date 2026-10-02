@@ -8,8 +8,18 @@ import 'motion_detection_service.dart';
 /// Gera uma pista complementar de presença humana quando o modelo principal não
 /// consegue fechar um corpo inteiro, mas existe uma região móvel grande com cor
 /// de pele típica (ex.: mão ou braço muito próximo da câmera).
+///
+/// A pista é indireta: cor de pele também aparece em madeira, papelão e tons de
+/// bege ou marrom. Por isso ela sai marcada como [Detection.inferred] ("Possível
+/// pessoa"), com confiança baixa, nunca vale como evidência forte e só aparece
+/// depois de confirmada em vários quadros por `PersonHintConfirmer`.
 class PartialPersonDetectionService {
   const PartialPersonDetectionService._();
+
+  static const String displayLabel = 'Possível pessoa';
+
+  /// Proporção mínima de pixels com cor de pele na região em movimento.
+  static const double minimumSkinRatio = 0.22;
 
   static List<Detection> infer(
     RgbFrame frame,
@@ -38,19 +48,20 @@ class PartialPersonDetectionService {
 
       final sample = _sampleSkin(frame, region);
       if (sample.count < 90) continue;
-      if (sample.skinRatio < 0.16 || sample.skinRatio > 0.88) continue;
+      if (sample.skinRatio < minimumSkinRatio || sample.skinRatio > 0.88) continue;
       final aspect = _aspectRatio(region);
       if (aspect < 0.18 || aspect > 4.2) continue;
 
-      final confidence = (0.44 + sample.skinRatio * 0.38 + area * 0.28)
-          .clamp(0.46, 0.77)
+      final confidence = (0.38 + sample.skinRatio * 0.24 + area * 0.16)
+          .clamp(0.42, 0.62)
           .toDouble();
       results.add(
         Detection(
           label: 'person',
-          displayLabel: 'Pessoa',
+          displayLabel: displayLabel,
           confidence: confidence,
           box: region,
+          inferred: true,
         ),
       );
     }

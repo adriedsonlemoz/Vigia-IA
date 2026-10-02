@@ -155,11 +155,15 @@ extension _MonitorControllerEventSupport on MonitorController {
         _trackingZonesImpl(activeMonitoringZones),
       );
       final zone = zones.firstOrNull;
-      final message = _settings.alertMessages.resolve(
-        label: detection.label,
-        displayLabel: detection.displayLabel,
-        zoneName: zone?.name,
-      );
+      // Pista indireta (cor de pele + movimento) nunca fala como pessoa certa:
+      // usa texto próprio e voz sintética, sem o áudio gravado "pessoa detectada".
+      final message = detection.inferred
+          ? '${detection.displayLabel} ${ObjectFilterCatalog.detectedWordForLabel(detection.label)}.'
+          : _settings.alertMessages.resolve(
+              label: detection.label,
+              displayLabel: detection.displayLabel,
+              zoneName: zone?.name,
+            );
       if (_shouldDeliverRepeatedAlertImpl(
         detection,
         trackId: tracked?.trackId,
@@ -168,7 +172,9 @@ extension _MonitorControllerEventSupport on MonitorController {
         unawaited(
           _deliverAlertImpl(
             message,
-            audioSlot: _audioSlotForLabelImpl(detection.label),
+            audioSlot: detection.inferred
+                ? null
+                : _audioSlotForLabelImpl(detection.label),
             capturedAt: frame.capturedAt,
           ),
         );

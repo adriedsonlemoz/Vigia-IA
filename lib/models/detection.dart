@@ -21,6 +21,7 @@ class Detection {
     required this.confidence,
     required this.box,
     this.appearance,
+    this.inferred = false,
   });
 
   final String label;
@@ -29,12 +30,17 @@ class Detection {
   final NormalizedBox box;
   final ObjectAppearance? appearance;
 
+  /// `true` quando a detecção não veio do modelo de visão, e sim de uma pista
+  /// indireta (ex.: movimento com cor de pele). Nunca é tratada como evidência forte.
+  final bool inferred;
+
   Detection copyWith({
     String? label,
     String? displayLabel,
     double? confidence,
     NormalizedBox? box,
     ObjectAppearance? appearance,
+    bool? inferred,
   }) =>
       Detection(
         label: label ?? this.label,
@@ -42,5 +48,6 @@ class Detection {
         confidence: confidence ?? this.confidence,
         box: box ?? this.box,
         appearance: appearance ?? this.appearance,
+        inferred: inferred ?? this.inferred,
       );
 }

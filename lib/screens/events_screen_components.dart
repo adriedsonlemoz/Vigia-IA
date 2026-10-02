@@ -249,7 +249,9 @@ class _VideoMediaState extends State<_VideoMedia> {
 }
 
 String _categoryName(MonitorEvent event) =>
-    ObjectFilterCatalog.singularNameForLabel(event.label) ?? 'Detecção';
+    event.displayLabel.startsWith('Possível')
+        ? event.displayLabel
+        : ObjectFilterCatalog.displayNameForLabel(event.label) ?? 'Detecção';
 
 IconData _categoryIcon(MonitorEvent event) =>
     switch (ObjectFilterCatalog.groupKeyForLabel(event.label)) {
