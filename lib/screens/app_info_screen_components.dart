@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.216',
+          version: '1.0.217',
           current: true,
+          changes: [
+            'Prévia de rotas e alternativas antes de iniciar a navegação.',
+            'Plano de cicloviagem com horários de saída, pausas e chegada prevista.',
+            'Painel compacto e rota salva para consulta offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.216',
           changes: [
             'Cidades e comunidades próximas são buscadas automaticamente com consulta mais confiável.',
             'Botão Atualizar permite pesquisar novamente sem digitar o nome de uma cidade.',
@@ -1956,8 +1965,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.216',
+          version: '1.0.217',
           current: true,
+          changes: [
+            'Prévia de rotas e alternativas antes de iniciar a navegação.',
+            'Plano de cicloviagem com horários de saída, pausas e chegada prevista.',
+            'Painel compacto e rota salva para consulta offline.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.216',
           changes: [
             'Cidades e comunidades próximas são buscadas automaticamente com consulta mais confiável.',
             'Botão Atualizar permite pesquisar novamente sem digitar o nome de uma cidade.',

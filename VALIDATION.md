@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.216+216
+# Validação Vigia IA 1.0.217+217
+
+## Verificações locais da prévia e do planejamento (1.0.217)
+
+- [x] Separação entre prévia e `navigateTo`, botão explícito para iniciar.
+- [x] Métricas condensadas e informações de apoio em faixa rolável.
+- [x] Horários calculados com pausas ajustáveis (teste unitário adicionado).
+- [x] Serialização/validação estrutural do roteiro salvo (teste unitário adicionado).
+- [ ] Flutter analyze/test e Android real pendentes de SDK e CI.
+- [ ] Verificar visualização em tela estreita, rotas alternativas e gravação durante navegação.
+- [ ] Validar salvar/reabrir rota em Android online/offline e comportamento 3D após início.
 
 ## Verificações locais da busca automática (1.0.216)
 

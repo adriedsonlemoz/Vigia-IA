@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.216+216
+# Arquitetura — Vigia IA 1.0.217+217
+
+## Planejamento e prévia separados da navegação — 1.0.217
+
+`_previewTarget` / `_previewRoutes` são locais à tela e independentes de `MapRouteService.navigationTarget`. Escolher destino na pesquisa calcula Valhalla sem iniciar voz, gravação ou stream dedicado. O botão Iniciar transfere a alternativa selecionada para a navegação ativa. Requisições de prévia são descartadas por número serial ao cancelar/mudar destino. `SavedBikeRouteService` guarda localmente a última geometria e manobras em JSON privado, para consulta posterior; novos percursos offline não são calculados. O plano usa `BikeTripSchedule` com regras determinísticas de pausa/almoco sem fontes externas; não representa previsão meteorológica, confirmação de abastecimento ou cálculo de desvio por estrada. Cidades candidatas têm limite linear de 1,5 km, não autorização de acesso.
 
 ## Buildfix do seletor de modos — 1.0.212
 

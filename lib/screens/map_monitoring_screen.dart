@@ -34,6 +34,8 @@ import '../services/bike_pressure_safety_service.dart';
 import '../services/bike_sensor_service.dart';
 import '../services/bike_ride_history_service.dart';
 import '../services/bike_trip_planner.dart';
+import '../services/bike_trip_schedule.dart';
+import '../services/saved_bike_route_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/error_log_service.dart';
@@ -193,6 +195,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
   final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
   final BikeTripPlanner _bikeTripPlanner = const BikeTripPlanner();
+  final SavedBikeRouteService _savedBikeRoutes = const SavedBikeRouteService();
   final BikeRideHistoryService _bikeRideHistory = BikeRideHistoryService.instance;
   final BikeModeService _bikeMode = BikeModeService.instance;
   final BikeSensorService _bikeSensors = BikeSensorService.instance;
@@ -202,6 +205,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   MapCyclingRoute? _cyclingRoute;
   List<MapCyclingRoute> _cyclingRouteAlternatives = const <MapCyclingRoute>[];
   int _selectedCyclingRouteIndex = 0;
+  // Prévia independente: não inicia GPS contínuo, instruções ou gravação.
+  MapNavigationTarget? _previewTarget;
+  List<MapCyclingRoute> _previewRoutes = const <MapCyclingRoute>[];
+  int _previewIndex = 0;
+  bool _previewLoading = false;
+  int _previewSerial = 0;
+  BikeTripPlan? _previewPlan;
+  TimeOfDay _tripDeparture = const TimeOfDay(hour: 7, minute: 0);
+  int _tripBreakEveryKm = 20;
+  int _tripBreakMinutes = 10;
+  int _tripLunchMinutes = 40;
   MapNavigationProgress? _navigationProgress;
   BikeTripEstimate? _bikeTripEstimate;
   BikeTripPlan? _bikeTripPlan;
@@ -1957,11 +1971,258 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return true;
   }
 
+  Future<void> _savePreviewRoute() async {
+    final target = _previewTarget;
+    if (target == null || _previewRoutes.isEmpty) return;
+    try {
+      await _savedBikeRoutes.save(SavedBikeRoute(
+        target: target,
+        routes: List<MapCyclingRoute>.of(_previewRoutes),
+        selectedIndex: _previewIndex,
+      ));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Prévia salva neste aparelho. Abra-a em Vigia IA > Rota salva.',
+      )));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Não foi possível salvar a rota neste aparelho.',
+      )));
+    }
+  }
+
+  Future<void> _openSavedRoute() async {
+    final saved = await _savedBikeRoutes.load();
+    if (!mounted) return;
+    if (saved == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Nenhuma rota salva ou arquivo inválido. Salve uma prévia primeiro.',
+      )));
+      return;
+    }
+    if (_routeState.navigationTarget != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Encerre a navegação ativa antes de abrir uma prévia salva.',
+      )));
+      return;
+    }
+    final serial = ++_previewSerial;
+    setState(() {
+      _previewTarget = saved.target;
+      _previewRoutes = saved.routes;
+      _previewIndex = saved.selectedIndex;
+      _previewPlan = null;
+      _previewLoading = false;
+      _selectedMapLocation = null;
+      _selectedPoiId = null;
+      _followPosition = false;
+    });
+    _fitCyclingRoute(saved.routes[saved.selectedIndex].points);
+    if (saved.target.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshPreviewPlan(
+        saved.target, saved.routes[saved.selectedIndex], serial));
+    }
+  }
+
+  Future<void> _previewRouteToSearchResult(MapDestinationSearchResult item) async {
+    // Durante uma navegação existente, mantém o fluxo de navegação anterior.
+    if (_routeState.navigationTarget != null) {
+      await _navigateToSearchResult(item);
+      return;
+    }
+    final current = _routeState.current;
+    if (current == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aguarde uma posição GPS para calcular a prévia.')),
+      );
+      return;
+    }
+    final mode = await _chooseTravelMode();
+    if (!mounted || mode == null) return;
+    if (mode == MapTravelMode.bicycle && !await _prepareTravelPreferences(mode)) {
+      return;
+    }
+    if (!mounted) return;
+    if (_connectivity.isOffline || _offlineMaps.mode == OfflineMapMode.offline) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Novos cálculos de rota precisam de internet. Mapas offline não incluem roteamento offline.',
+      )));
+      return;
+    }
+    final target = MapNavigationTarget(
+      latitude: item.latitude,
+      longitude: item.longitude,
+      label: item.title,
+      startedAt: DateTime.now(),
+      sourceId: item.id,
+      travelMode: mode,
+    );
+    final serial = ++_previewSerial;
+    setState(() {
+      _previewTarget = target;
+      _previewLoading = true;
+      _previewRoutes = const <MapCyclingRoute>[];
+      _previewPlan = null;
+      _selectedMapLocation = null;
+      _selectedPoiId = null;
+      _followPosition = false;
+    });
+    try {
+      final routes = await _cyclingRoutes.fetchAlternatives(
+        origin: LatLng(current.latitude, current.longitude),
+        destination: LatLng(item.latitude, item.longitude),
+        travelMode: mode,
+        alternativeCount: 2,
+      );
+      if (!mounted || serial != _previewSerial) return;
+      setState(() {
+        _previewRoutes = routes;
+        _previewIndex = 0;
+        _previewLoading = false;
+      });
+      _fitCyclingRoutes(routes);
+      if (mode == MapTravelMode.bicycle) {
+        unawaited(_refreshPreviewPlan(target, routes.first, serial));
+      }
+    } catch (_) {
+      if (!mounted || serial != _previewSerial) return;
+      setState(() {
+        _previewLoading = false;
+        _previewTarget = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
+        'Não foi possível carregar a prévia. Confira a conexão e tente novamente.',
+      )));
+    }
+  }
+
+  Future<void> _refreshPreviewPlan(
+    MapNavigationTarget target, MapCyclingRoute route, int serial,
+  ) async {
+    final current = _routeState.current;
+    if (current == null) return;
+    final estimate = _bikeTripPlanner.estimate(
+      distanceMeters: route.distanceMeters,
+      preferences: _effectiveBikeTravelPreferences,
+    );
+    List<MapDestinationSearchResult> candidates = const <MapDestinationSearchResult>[];
+    // Primeiro mostra o plano básico sem aguardar a busca de apoios.
+    void apply(List<MapDestinationSearchResult> available) {
+      if (!mounted || serial != _previewSerial ||
+          _previewTarget != target ||
+          _previewRoutes.isEmpty ||
+          !identical(_previewRoutes[_previewIndex], route)) return;
+      final plan = _bikeTripPlanner.buildPlan(
+        routePoints: route.points,
+        routeDistanceMeters: route.distanceMeters,
+        preferences: _effectiveBikeTravelPreferences,
+        destinationLabel: target.label,
+        candidates: available,
+      );
+      setState(() => _previewPlan = plan);
+    }
+    apply(candidates);
+    if (estimate.dayCount <= 1) return;
+    try {
+      candidates = await _destinationSearch.placesAlongRoute(
+        route: route.points,
+        current: current,
+        onlineAllowed: !_connectivity.isOffline &&
+            _offlineMaps.mode != OfflineMapMode.offline,
+        offlineMaps: _offlineMaps.packages,
+        offlinePoiPackages: _routeExplorer.offlinePackages,
+      );
+      apply(<MapDestinationSearchResult>[
+        ..._manualTripStops,
+        ...candidates.where((candidate) =>
+            !_manualTripStops.any((manual) => manual.id == candidate.id)),
+      ]);
+    } catch (_) {
+      // Plano básico continua visível mesmo se localidades falharem.
+    }
+  }
+
+  void _choosePreviewAlternative(int index) {
+    if (index < 0 || index >= _previewRoutes.length) return;
+    final route = _previewRoutes[index];
+    setState(() {
+      _previewIndex = index;
+      _previewPlan = null;
+    });
+    _fitCyclingRoute(route.points);
+    final target = _previewTarget;
+    if (target != null && target.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshPreviewPlan(target, route, _previewSerial));
+    }
+  }
+
+  void _dismissRoutePreview() {
+    ++_previewSerial;
+    setState(() {
+      _previewTarget = null;
+      _previewRoutes = const <MapCyclingRoute>[];
+      _previewPlan = null;
+      _previewLoading = false;
+      _previewIndex = 0;
+    });
+  }
+
+  Future<void> _startPreviewNavigation() async {
+    final target = _previewTarget;
+    if (target == null || _previewRoutes.isEmpty || _previewLoading) return;
+    final routes = List<MapCyclingRoute>.of(_previewRoutes);
+    final selected = _previewIndex;
+    final route = routes[selected];
+    final current = _routeState.current;
+    ++_previewSerial;
+    _navigationVoice.resetRoute();
+    _routeExplorer.resetAnnouncementSession();
+    setState(() {
+      _previewTarget = null;
+      _previewRoutes = const <MapCyclingRoute>[];
+      _previewPlan = null;
+      _previewLoading = false;
+      _lastTravelMode = target.travelMode;
+      _cyclingRouteAlternatives = routes;
+      _selectedCyclingRouteIndex = selected;
+      _cyclingRoute = route;
+      _navigationProgress = current == null
+          ? null : _navigationGuidance.evaluate(route: route, position: current);
+      _bikeTripEstimate = target.travelMode == MapTravelMode.bicycle
+          ? _bikeTripPlanner.estimate(
+              distanceMeters: route.distanceMeters,
+              preferences: _effectiveBikeTravelPreferences,
+            ) : null;
+      _bikeTripPlan = null;
+      _bikeTripPlanLoading = false;
+      _routeFallback = null;
+      _navigation3dEnabled = true;
+      _navigation3dRendererReady = false;
+      _navigation3dRendererFailed = false;
+      _navigation3dFollowing = true;
+      _followPosition = true;
+      _navigationPanelMinimized = true;
+    });
+    await _routeState.navigateTo(target);
+    unawaited(_mapViewSettings.setLastTravelMode(target.travelMode));
+    unawaited(_syncNavigationForeground());
+    if (!mounted) return;
+    if (target.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshBikeTripPlan(route: route, target: target));
+    }
+    unawaited(_navigationVoice.handleProgress(_navigationProgress));
+  }
+
   Future<void> _navigateToSearchResult(MapDestinationSearchResult item) async {
     final travelMode = await _chooseTravelMode();
     if (!mounted || travelMode == null) return;
     if (!await _prepareTravelPreferences(travelMode)) return;
     if (!mounted) return;
+    ++_previewSerial;
+    _previewTarget = null;
+    _previewRoutes = const <MapCyclingRoute>[];
+    _previewPlan = null;
     _routeExplorer.resetAnnouncementSession();
     final current = _routeState.current;
     _navigationVoice.resetRoute();
@@ -2110,6 +2371,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         width: 4,
       ));
     }
+    if (_previewTarget != null && _previewRoutes.isNotEmpty) {
+      for (var index = 0; index < _previewRoutes.length; index++) {
+        final route = _previewRoutes[index];
+        lines.add(gmaps.Polyline(
+          polylineId: gmaps.PolylineId('route-preview-$index'),
+          points: route.points.map((p) =>
+              gmaps.LatLng(p.latitude, p.longitude)).toList(growable: false),
+          width: index == _previewIndex ? 8 : 4,
+          color: index == _previewIndex ? const Color(0xFF00BFA5) : const Color(0xFF7A8897),
+        ));
+      }
+    }
     if (_cyclingRoute != null) {
       final points = _cyclingRoute!.points
           .map((p) => gmaps.LatLng(p.latitude, p.longitude))
@@ -2174,64 +2447,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _navigateToPoi(RouteExplorerResult item) async {
-    final travelMode = await _chooseTravelMode();
-    if (!mounted || travelMode == null) return;
-    if (!await _prepareTravelPreferences(travelMode)) return;
-    if (!mounted) return;
-    _routeExplorer.resetAnnouncementSession();
-    final current = _routeState.current;
-    _navigationVoice.resetRoute();
-    final target = MapNavigationTarget(
+    await _previewRouteToSearchResult(MapDestinationSearchResult(
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
       latitude: item.latitude,
       longitude: item.longitude,
-      label: item.title,
-      startedAt: DateTime.now(),
-      sourceId: item.id,
-      travelMode: travelMode,
-    );
-    setState(() {
-      _lastTravelMode = travelMode;
-      _navigation3dEnabled = true;
-      _navigation3dRendererReady = false;
-      _navigation3dRendererFailed = false;
-      _navigation3dFollowing = true;
-      _followPosition = true;
-      _quickView = _MapQuickView.near;
-      _customFollowZoom = null;
-      _selectedPoiId = item.id;
-      _selectedMapLocation = null;
-      _cyclingRoute = null;
-      _cyclingRouteAlternatives = const <MapCyclingRoute>[];
-      _selectedCyclingRouteIndex = 0;
-      _navigationProgress = null;
-      _bikeTripEstimate = null;
-      _bikeTripPlan = null;
-      _bikeTripPlanLoading = false;
-      _offRouteSamples = 0;
-      _lastRouteRecalculatedAt = null;
-      _lastNavigationProgressPointAt = null;
-      _navigationPanelMinimized = true;
-    });
-    unawaited(_mapViewSettings.setLastTravelMode(travelMode));
-    await _routeState.navigateTo(target);
-    unawaited(_syncNavigationForeground());
-    if (current != null) {
-      await _requestCyclingRoute(
-        origin: LatLng(current.latitude, current.longitude),
-        target: target,
-        fitRoute: true,
-        announceFailure: true,
-      );
-      final using3d = _navigation3dEnabled &&
-          _navigation3dRendererReady &&
-          !_navigation3dRendererFailed &&
-          _cyclingRoute != null &&
-          !_connectivity.isOffline &&
-          _offlineMaps.mode != OfflineMapMode.offline;
-      if (!using3d) {
-        _applyFollowCamera(current, forceRotation: true);
-      }
-    }
+      distanceMeters: item.distanceMeters,
+      kind: MapDestinationKind.pointOfInterest,
+      source: item.source,
+      poiCategory: item.category,
+    ));
   }
 
   Future<void> _requestCyclingRoute({
@@ -2519,7 +2745,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Expanded(child: FilledButton.icon(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
-                    _navigateToSearchResult(item);
+                    _previewRouteToSearchResult(item);
                   },
                   icon: const Icon(Icons.navigation_rounded),
                   label: const Text('Navegar'),
@@ -2539,116 +2765,177 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (route != null && target?.travelMode == MapTravelMode.bicycle) {
       unawaited(_refreshBikeTripPlan(route: route, target: target!));
     }
+    final preview = _previewTarget;
+    if (preview != null && _previewRoutes.isNotEmpty &&
+        preview.travelMode == MapTravelMode.bicycle) {
+      unawaited(_refreshPreviewPlan(
+        preview, _previewRoutes[_previewIndex], _previewSerial));
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           alreadyAdded
-              ? 'Esse local já está no planejamento.'
-              : 'Parada adicionada ao planejamento da cicloviagem.',
+              ? 'Esse local já está nos candidatos de parada.'
+              : 'Candidato registrado; o plano usa locais a até 1,5 km da rota em linha reta.',
         ),
       ),
     );
   }
 
   Future<void> _showBikeTripPlan() async {
-    final plan = _bikeTripPlan;
+    final plan = _previewTarget != null ? _previewPlan : _bikeTripPlan;
     if (plan == null || plan.days.isEmpty || !mounted) return;
     await showMapCenteredDialog<void>(
       context: context,
       maxWidth: 620,
-      maxHeightFactor: 0.86,
-      expand: true,
+      maxHeightFactor: 0.83,
       barrierLabel: 'Fechar plano da cicloviagem',
-      builder: (sheetContext) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Plano da cicloviagem',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Fechar',
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${plan.estimate.distanceKm.toStringAsFixed(0)} km · '
-                    '${_formatTripDuration(plan.estimate.ridingDuration)} pedalando · '
-                    '${plan.estimate.dayCount} dia(s) · '
-                    '${plan.estimate.preferences.averageSpeedKmh.toStringAsFixed(1)} km/h'
-                    '${_mapViewSettings.bikeUseHistoricalSpeed && _bikeRideHistory.summary.reliable ? ' · média aprendida' : ''}',
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-                itemCount: plan.days.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 6),
-                itemBuilder: (context, index) {
-                  final day = plan.days[index];
-                  final km = day.distanceMeters / 1000;
-                  return Card(
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text('${day.day}'),
-                      ),
-                      title: Text(
-                        'Dia ${day.day} · ${km.toStringAsFixed(km < 100 ? 1 : 0)} km · ${_formatTripDuration(day.ridingDuration)}',
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: Text(
-                        '${day.stopLabel} · ${day.stopKind}\n'
-                        '${day.usesKnownPlace ? 'Local conhecido nos dados disponíveis.' : 'Ponto aproximado da rota; não presume água, comida ou hospedagem.'}',
-                      ),
-                      isThreeLine: true,
-                      trailing: Icon(
-                        day.usesKnownPlace
-                            ? Icons.place_rounded
-                            : Icons.route_rounded,
-                      ),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        try {
-                          _mapController.move(
-                            LatLng(day.stopLatitude, day.stopLongitude),
-                            math.max(_visibleMapZoom, 12.5),
-                          );
-                          setState(() => _followPosition = false);
-                        } catch (_) {}
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setDialogState) {
+          final departureMinute = _tripDeparture.hour * 60 + _tripDeparture.minute;
+          final scheme = Theme.of(sheetContext).colorScheme;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(children: [
+                  const Expanded(child: Text('Plano da cicloviagem',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900))),
+                  IconButton(tooltip: 'Fechar',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: const Icon(Icons.close_rounded)),
+                ]),
+                Text(
+                  '${plan.estimate.distanceKm.toStringAsFixed(1)} km · '
+                  '${_formatTripDuration(plan.estimate.ridingDuration)} pedalando · '
+                  '${plan.estimate.dayCount} dia(s) · '
+                  '${plan.estimate.preferences.averageSpeedKmh.toStringAsFixed(1)} km/h',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.schedule_rounded, size: 18),
+                      label: Text('Sair às ${_tripDeparture.format(sheetContext)}'),
+                      onPressed: () async {
+                        final selected = await showTimePicker(
+                          context: sheetContext, initialTime: _tripDeparture);
+                        if (selected != null && sheetContext.mounted) {
+                          setDialogState(() => _tripDeparture = selected);
+                        }
                       },
                     ),
-                  );
-                },
-              ),
+                    PopupMenuButton<int>(
+                      tooltip: 'Intervalo das pausas',
+                      initialValue: _tripBreakEveryKm,
+                      onSelected: (km) => setDialogState(() => _tripBreakEveryKm = km),
+                      itemBuilder: (_) => [15, 20, 30].map((km) =>
+                        PopupMenuItem(value: km, child: Text('Pausar a cada $km km'))).toList(),
+                      child: Chip(label: Text('Pausa a cada $_tripBreakEveryKm km'),
+                        avatar: const Icon(Icons.free_breakfast_rounded, size: 18)),
+                    ),
+                    PopupMenuButton<int>(
+                      tooltip: 'Duração das pausas curtas',
+                      initialValue: _tripBreakMinutes,
+                      onSelected: (minutes) => setDialogState(() => _tripBreakMinutes = minutes),
+                      itemBuilder: (_) => [5, 10, 15, 20].map((minutes) =>
+                        PopupMenuItem(value: minutes,
+                          child: Text('Pausa de $minutes min'))).toList(),
+                      child: Chip(label: Text('$_tripBreakMinutes min por pausa')),
+                    ),
+                    PopupMenuButton<int>(
+                      tooltip: 'Tempo de almoço',
+                      initialValue: _tripLunchMinutes,
+                      onSelected: (minutes) => setDialogState(() => _tripLunchMinutes = minutes),
+                      itemBuilder: (_) => [0, 30, 40, 60].map((minutes) =>
+                        PopupMenuItem(value: minutes,
+                          child: Text('Almoço de $minutes min'))).toList(),
+                      child: Chip(label: Text('Almoço $_tripLunchMinutes min')),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                for (final day in plan.days) ...[
+                  Builder(builder: (context) {
+                    final schedule = BikeTripSchedule.forDay(
+                      day: day,
+                      departureMinute: departureMinute,
+                      breakEveryKm: _tripBreakEveryKm,
+                      breakDurationMinutes: _tripBreakMinutes,
+                      lunchDurationMinutes: _tripLunchMinutes,
+                    );
+                    final km = day.distanceMeters / 1000;
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 7),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            CircleAvatar(radius: 18, child: Text('${day.day}')),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(
+                              'Dia ${day.day} · ${km.toStringAsFixed(1)} km · '
+                              '${_formatTripDuration(day.ridingDuration)} pedalando',
+                              style: const TextStyle(fontWeight: FontWeight.w900),
+                            )),
+                            IconButton(
+                              tooltip: 'Ver parada no mapa',
+                              icon: const Icon(Icons.map_outlined),
+                              onPressed: () {
+                                Navigator.of(sheetContext).pop();
+                                final point = LatLng(day.stopLatitude, day.stopLongitude);
+                                if (_usingGoogleMap) {
+                                  unawaited(_focusGooglePoint(point, zoom: 14));
+                                } else {
+                                  try {
+                                    _mapController.move(
+                                      point, math.max(_visibleMapZoom, 12.5));
+                                  } catch (_) {}
+                                }
+                                setState(() => _followPosition = false);
+                              },
+                            ),
+                          ]),
+                          const SizedBox(height: 5),
+                          Text('${day.stopLabel} · ${day.stopKind}'),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Saída ${BikeTripDaySchedule.formatMinute(schedule.departureMinute)}  ·  '
+                            'Chegada ${BikeTripDaySchedule.formatMinute(schedule.arrivalMinute)}',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          Text(
+                            '${schedule.breakCount} pausa(s) (${schedule.breakMinutes} min)'
+                            '${schedule.lunchMinutes > 0 ? ' · almoço ${schedule.lunchMinutes} min' : ''}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          Text(
+                            day.usesKnownPlace
+                                ? 'Localidade identificada; serviços e acesso não verificados.'
+                                : 'Ponto aproximado sobre a rota; sem serviços confirmados.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ]),
+                      ),
+                    );
+                  }),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  'Horários estimados para cada dia, com a mesma hora de saída. '
+                  'Pausas são hipóteses, não reservas. Não inclui vento, subidas, desvios '
+                  'até serviços, tráfego ou tempo de montagem do acampamento. '
+                  'Confirme água, alimentação, hospedagem e segurança antes de partir.',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text(
-                'As paradas usam cidades, comunidades ou campings conhecidos quando disponíveis. Pontos aproximados não garantem serviços no local.',
-                textAlign: TextAlign.center,
-                style: Theme.of(sheetContext).textTheme.bodySmall,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
+      ),
     );
   }
 
@@ -2742,6 +3029,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   void _stopNavigation() {
+    ++_previewSerial;
+    _previewTarget = null;
+    _previewRoutes = const <MapCyclingRoute>[];
+    _previewPlan = null;
     _cancelRouteRecovery();
     _cyclingRouteRequestSerial += 1;
     _navigationVoice.resetRoute();
@@ -3757,6 +4048,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
   void _showRouteOverview() {
     if (!_mapReady) return;
+    if (_previewRoutes.isNotEmpty) {
+      setState(() => _quickView = _MapQuickView.route);
+      _fitCyclingRoute(_previewRoutes[_previewIndex].points);
+      return;
+    }
     final coordinates = <LatLng>[
       for (final point in _routeState.route)
         LatLng(point.latitude, point.longitude),
@@ -4380,6 +4676,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               if (widget.onChooseWorkspaceMode != null ||
                   widget.onOpenWorkspaceTools != null)
                 const Divider(height: 8),
+              ListTile(
+                leading: const Icon(Icons.offline_pin_rounded),
+                title: const Text('Abrir rota salva'),
+                subtitle: const Text('Reabrir o último trajeto sem internet'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_openSavedRoute());
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.fullscreen_rounded),
                 title: const Text('Tela inteira no mapa'),
@@ -5561,7 +5866,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                       label: const Text('Navegar'),
                                       onPressed: () {
                                         Navigator.of(sheetContext).pop();
-                                        unawaited(_navigateToSearchResult(item));
+                                        unawaited(_previewRouteToSearchResult(item));
                                       },
                                     ),
                                   ),
@@ -6313,6 +6618,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           },
                         ),
                     ]),
+                  if (_previewTarget != null && _previewRoutes.isNotEmpty)
+                    PolylineLayer(polylines: <Polyline>[
+                      for (var index = 0; index < _previewRoutes.length; index++)
+                        Polyline(
+                          points: _previewRoutes[index].points,
+                          strokeWidth: index == _previewIndex ? 7 : 4,
+                          color: index == _previewIndex
+                              ? const Color(0xFF00BFA5)
+                              : const Color(0xFF7A8897).withValues(alpha: 0.65),
+                        ),
+                    ]),
                   if (_cyclingRouteAlternatives.isNotEmpty)
                     PolylineLayer(
                       polylines: <Polyline>[
@@ -6655,7 +6971,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       : _MapQuickViewBar(
                           selected: _quickView,
                           routeAvailable: _routeState.route.length >= 2 ||
-                              navigationTarget != null,
+                              navigationTarget != null ||
+                              _previewRoutes.isNotEmpty,
                           onSelected: _selectQuickView,
                           compact: compactHud,
                         ),
@@ -6953,7 +7270,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ),
                     onClose: () => setState(() => _selectedMapLocation = null),
                     onDetails: () => unawaited(_showMapLocationDetails(selectedMapLocation)),
-                    onNavigate: () => _navigateToSearchResult(selectedMapLocation),
+                    onNavigate: () => _previewRouteToSearchResult(selectedMapLocation),
                     onAddStop: () => _addManualTripStop(selectedMapLocation),
                   ),
                 ),
@@ -6982,6 +7299,24 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       poiCategory: selectedPoi.category,
                     )),
                     onNavigate: () => _navigateToPoi(selectedPoi),
+                  ),
+                ),
+              if (focusLevel == 0 && _previewTarget != null && navigationTarget == null)
+                Positioned(
+                  left: 8, right: 8,
+                  bottom: bottomInset + 38,
+                  child: _RoutePreviewCard(
+                    target: _previewTarget!,
+                    routes: _previewRoutes,
+                    selectedIndex: _previewIndex,
+                    loading: _previewLoading,
+                    plan: _previewPlan,
+                    onClose: _dismissRoutePreview,
+                    onChoose: _choosePreviewAlternative,
+                    onPlan: _previewPlan == null
+                        ? null : () => unawaited(_showBikeTripPlan()),
+                    onStart: _startPreviewNavigation,
+                    onSave: _savePreviewRoute,
                   ),
                 ),
               if (focusLevel == 0 && navigationTarget != null &&
@@ -7094,7 +7429,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 ),
               // Se o painel foi ocultado por um POI ou pelo modo foco,
               // o controle de gravação continua acessível.
-              if (navigationTarget == null || focusLevel != 0 ||
+              if ((navigationTarget == null && _previewTarget == null) || focusLevel != 0 ||
                   (!compactHud &&
                       (showSelectedPoiCard || showSelectedMapLocationCard)))
                 Positioned(
@@ -9907,6 +10242,119 @@ class _LiveRouteElapsedPillState extends State<_LiveRouteElapsedPill> {
   }
 }
 
+/// Visão de rota, sem alterar o estado de navegação nem ligar gravação.
+class _RoutePreviewCard extends StatelessWidget {
+  const _RoutePreviewCard({
+    required this.target,
+    required this.routes,
+    required this.selectedIndex,
+    required this.loading,
+    required this.plan,
+    required this.onClose,
+    required this.onChoose,
+    required this.onPlan,
+    required this.onStart,
+    required this.onSave,
+  });
+
+  final MapNavigationTarget target;
+  final List<MapCyclingRoute> routes;
+  final int selectedIndex;
+  final bool loading;
+  final BikeTripPlan? plan;
+  final VoidCallback onClose;
+  final ValueChanged<int> onChoose;
+  final VoidCallback? onPlan;
+  final VoidCallback onStart;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final chosen = routes.isEmpty ? null : routes[selectedIndex];
+    final speed = plan?.estimate.preferences.averageSpeedKmh ?? 15.0;
+    final rideMinutes = chosen == null ? 0 :
+        (target.travelMode == MapTravelMode.bicycle
+            ? chosen.distanceMeters / 1000 / speed * 60
+            : chosen.durationSeconds / 60).round();
+    return Material(
+      elevation: 10,
+      color: scheme.surface.withValues(alpha: 0.98),
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Column(mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            const Icon(Icons.alt_route_rounded, size: 19),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Prévia · ${target.label}',
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900))),
+            IconButton(tooltip: 'Fechar prévia', onPressed: onClose,
+              icon: const Icon(Icons.close_rounded),
+              visualDensity: VisualDensity.compact),
+          ]),
+          if (loading) ...[
+            const LinearProgressIndicator(),
+            const SizedBox(height: 8),
+            const Text('Calculando alternativas sem iniciar a navegação…'),
+          ] else if (chosen != null) ...[
+            Text(
+              '${(chosen.distanceMeters / 1000).toStringAsFixed(1)} km · '
+              '${rideMinutes ~/ 60}h ${(rideMinutes % 60).toString().padLeft(2, '0')}min · '
+              '${target.travelMode.routeLabel}',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            if (routes.length > 1) ...[
+              const SizedBox(height: 7),
+              SizedBox(height: 37,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: routes.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) => ChoiceChip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text('Rota ${index + 1} · '
+                      '${(routes[index].distanceMeters / 1000).toStringAsFixed(1)} km'),
+                    selected: selectedIndex == index,
+                    onSelected: (_) => onChoose(index),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(children: [
+              IconButton(
+                tooltip: 'Salvar prévia para consultar sem internet',
+                onPressed: onSave,
+                icon: const Icon(Icons.save_alt_rounded),
+              ),
+              if (target.travelMode == MapTravelMode.bicycle)
+                Expanded(child: OutlinedButton.icon(
+                  onPressed: onPlan,
+                  icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                  label: Text(plan == null ? 'Carregando plano' :
+                    'Plano ${plan!.estimate.dayCount}d'),
+                )),
+              if (target.travelMode == MapTravelMode.bicycle)
+                const SizedBox(width: 8),
+              Expanded(child: FilledButton.icon(
+                onPressed: onStart,
+                icon: const Icon(Icons.navigation_rounded, size: 18),
+                label: const Text('Iniciar'),
+              )),
+            ]),
+            const Text('Trajeto salvo pode ser consultado offline; novos cálculos exigem internet.',
+              style: TextStyle(fontSize: 10.5)),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
 class _NavigationBanner extends StatelessWidget {
   const _NavigationBanner({
     required this.target,
@@ -10256,289 +10704,157 @@ class _NavigationBanner extends StatelessWidget {
       );
     }
 
+    // Painel detalhado de baixa altura, sem grandes vazios verticais.
     return Material(
-      elevation: 12,
+      elevation: 10,
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(compact ? 22 : 26),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[
-              panelColor,
-              panelColor.withValues(alpha: 0.94),
-              scheme.surface.withValues(alpha: 0.98),
-            ],
-          ),
-          border: Border.all(
-            color: accent.withValues(alpha: 0.22),
-          ),
+          color: panelColor,
+          border: Border.all(color: accent.withValues(alpha: 0.25)),
         ),
-        padding: EdgeInsets.fromLTRB(
-          compact ? 12 : 16,
-          compact ? 9 : 12,
-          compact ? 10 : 14,
-          compact ? 10 : 14,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Spacer(),
-                Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: foreground.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Minimizar navegação',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onToggleMinimized,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                ),
-              ],
+        child: Column(mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(Icons.route_rounded, color: accent, size: 18),
+            const SizedBox(width: 7),
+            Expanded(child: Text('Navegação · ${target.label}',
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: foreground, fontSize: 12,
+                fontWeight: FontWeight.w800))),
+            if (recordControl != null) recordControl!,
+            _navigationSmallButton(
+              tooltip: following ? 'Seguindo posição' : 'Seguir minha localização',
+              icon: Icons.my_location_rounded,
+              onPressed: following ? null : onFollowRequested,
             ),
-            if (recordControl != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: recordControl!,
+            _navigationSmallButton(
+              tooltip: 'Minimizar navegação',
+              icon: Icons.keyboard_arrow_down_rounded,
+              onPressed: onToggleMinimized,
+            ),
+            _navigationSmallButton(
+              tooltip: 'Encerrar navegação', icon: Icons.close_rounded,
+              onPressed: onStop,
+            ),
+          ]),
+          const SizedBox(height: 6),
+          Row(children: [
+            Container(
+              width: 54, height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: accent.withValues(alpha: 0.15),
+                border: Border.all(color: accent.withValues(alpha: 0.55)),
               ),
-            if (!following && onFollowRequested != null)
-              Align(
-                alignment: Alignment.centerLeft,
+              child: Icon(networkOffline ? Icons.wifi_off_rounded :
+                  progress?.offRoute == true ? Icons.alt_route_rounded :
+                  _maneuverIcon(primaryInstruction),
+                size: 32, color: accent),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(primaryInstruction, maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: foreground, fontSize: 18,
+                  height: 1.05, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 3),
+              Text(secondaryInstruction, maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: foreground.withValues(alpha: 0.75),
+                  fontSize: 11)),
+            ])),
+          ]),
+          if (!following && onFollowRequested != null)
+            Align(alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: onFollowRequested,
+                icon: const Icon(Icons.pan_tool_alt_rounded, size: 16),
+                label: const Text('Mapa livre · tocar para seguir'),
+              )),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _NavigationMetricCell(
+              icon: Icons.flag_rounded, value: _distance(remainingDistance),
+              label: 'restantes', accent: accent,
+              foreground: foreground, compact: true)),
+            Expanded(child: _NavigationMetricCell(
+              icon: Icons.schedule_rounded, value: remainingTime,
+              label: 'estimado', accent: accent,
+              foreground: foreground, compact: true)),
+            Expanded(child: _NavigationMetricCell(
+              icon: Icons.speed_rounded, value: speedValue,
+              label: 'referência', accent: accent,
+              foreground: foreground, compact: true)),
+            Expanded(child: _NavigationMetricCell(
+              icon: Icons.route_rounded,
+              value: '${(progressFraction * 100).round()}%',
+              label: 'concluído', accent: accent,
+              foreground: foreground, compact: true)),
+            if (routeAlternatives.length > 1)
+              Expanded(child: _RouteAlternativesButton(
+                routes: routeAlternatives,
+                selectedIndex: selectedRouteIndex,
+                accent: accent,
+                foreground: foreground,
+                compact: true,
+                distanceLabel: _distance,
+                durationLabel: _routeDuration,
+                deltaLabel: _routeDelta,
+                onSelected: onRouteSelected,
+              )),
+          ]),
+          const SizedBox(height: 6),
+          ClipRRect(borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(value: progressFraction, minHeight: 4,
+              backgroundColor: foreground.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation<Color>(accent))),
+          const SizedBox(height: 7),
+          SizedBox(height: 60,
+            child: ListView(scrollDirection: Axis.horizontal, children: [
+              SizedBox(width: 100, child: _NavigationPoiChip(
+                icon: Icons.water_drop_rounded, label: 'Água',
+                distance: water == null ? '--' : _distance(water.distanceMeters),
+                foreground: foreground, accent: accent, compact: true)),
+              const SizedBox(width: 6),
+              SizedBox(width: 100, child: _NavigationPoiChip(
+                icon: Icons.restaurant_rounded, label: 'Comida',
+                distance: food == null ? '--' : _distance(food.distanceMeters),
+                foreground: foreground, accent: accent, compact: true)),
+              const SizedBox(width: 6),
+              SizedBox(width: 100, child: _NavigationPoiChip(
+                icon: Icons.chair_alt_rounded, label: 'Descanso',
+                distance: rest == null ? '--' : _distance(rest.distanceMeters),
+                foreground: foreground, accent: accent, compact: true)),
+              const SizedBox(width: 6),
+              SizedBox(width: 100, child: _NavigationPoiChip(
+                icon: Icons.local_gas_station_rounded, label: 'Parada',
+                distance: stop == null ? '--' : _distance(stop.distanceMeters),
+                foreground: foreground, accent: accent, compact: true)),
+            ]),
+          ),
+          Row(children: [
+            Expanded(child: Text('Pontos próximos por distância, não por estrada',
+              maxLines: 2, style: TextStyle(fontSize: 9,
+                color: foreground.withValues(alpha: 0.65)))),
+            if (bikeTripPlanLoading)
+              const SizedBox(width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2))
+            else if (bikeTripPlan != null && bikeTripPlan!.estimate.dayCount > 1)
+              Tooltip(
+                message: 'Ver plano por dias',
                 child: TextButton.icon(
-                  onPressed: onFollowRequested,
-                  icon: const Icon(Icons.pan_tool_alt_rounded, size: 16),
-                  label: const Text('Mapa livre · tocar para seguir'),
+                  onPressed: onTripPlan,
+                  icon: const Icon(Icons.calendar_month_rounded, size: 17),
+                  label: Text('${bikeTripPlan!.estimate.dayCount} dias'),
                 ),
               ),
-            SizedBox(height: compact ? 4 : 6),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: compact ? 68 : 80,
-                  height: compact ? 68 : 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withValues(alpha: 0.16),
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.72),
-                      width: 2,
-                    ),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: accent.withValues(alpha: 0.20),
-                        blurRadius: 14,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    networkOffline
-                        ? Icons.wifi_off_rounded
-                        : progress?.offRoute == true
-                            ? Icons.alt_route_rounded
-                            : _maneuverIcon(primaryInstruction),
-                    size: compact ? 40 : 48,
-                    color: accent,
-                  ),
-                ),
-                SizedBox(width: compact ? 12 : 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        primaryInstruction,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: foreground,
-                          fontSize: compact ? 18 : 22,
-                          height: 1.05,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        secondaryInstruction,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: foreground.withValues(alpha: 0.72),
-                          fontSize: compact ? 12 : 14,
-                          height: 1.1,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton.filledTonal(
-                  tooltip: 'Parar navegação',
-                  onPressed: onStop,
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-            SizedBox(height: compact ? 9 : 12),
-            Divider(height: 1, color: foreground.withValues(alpha: 0.12)),
-            SizedBox(height: compact ? 9 : 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _NavigationMetricCell(
-                    icon: Icons.flag_rounded,
-                    value: _distance(remainingDistance),
-                    label: 'restantes',
-                    accent: accent,
-                    foreground: foreground,
-                    compact: compact,
-                  ),
-                ),
-                Expanded(
-                  child: _NavigationMetricCell(
-                    icon: Icons.schedule_rounded,
-                    value: remainingTime,
-                    label: 'tempo estimado',
-                    accent: accent,
-                    foreground: foreground,
-                    compact: compact,
-                  ),
-                ),
-                Expanded(
-                  child: _NavigationMetricCell(
-                    icon: Icons.speed_rounded,
-                    value: speedValue,
-                    label: bikeEstimate == null ? 'modo da rota' : 'média no percurso',
-                    accent: accent,
-                    foreground: foreground,
-                    compact: compact,
-                  ),
-                ),
-                Expanded(
-                  child: _NavigationMetricCell(
-                    icon: Icons.route_rounded,
-                    value: '${(progressFraction * 100).round()}%',
-                    label: 'concluído',
-                    accent: accent,
-                    foreground: foreground,
-                    compact: compact,
-                  ),
-                ),
-                Expanded(
-                  child: _RouteAlternativesButton(
-                    routes: routeAlternatives,
-                    selectedIndex: selectedRouteIndex,
-                    accent: accent,
-                    foreground: foreground,
-                    compact: compact,
-                    distanceLabel: _distance,
-                    durationLabel: _routeDuration,
-                    deltaLabel: _routeDelta,
-                    onSelected: onRouteSelected,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: compact ? 9 : 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: progressFraction,
-                minHeight: compact ? 5 : 7,
-                backgroundColor: foreground.withValues(alpha: 0.13),
-                valueColor: AlwaysStoppedAnimation<Color>(accent),
-              ),
-            ),
-            SizedBox(height: compact ? 9 : 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _NavigationPoiChip(
-                    icon: Icons.water_drop_rounded,
-                    label: 'Água',
-                    distance: water == null ? '--' : _distance(water.distanceMeters),
-                    foreground: foreground,
-                    accent: accent,
-                    compact: compact,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _NavigationPoiChip(
-                    icon: Icons.restaurant_rounded,
-                    label: 'Comida',
-                    distance: food == null ? '--' : _distance(food.distanceMeters),
-                    foreground: foreground,
-                    accent: accent,
-                    compact: compact,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _NavigationPoiChip(
-                    icon: Icons.chair_alt_rounded,
-                    label: 'Descanso',
-                    distance: rest == null ? '--' : _distance(rest.distanceMeters),
-                    foreground: foreground,
-                    accent: accent,
-                    compact: compact,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _NavigationPoiChip(
-                    icon: Icons.local_gas_station_rounded,
-                    label: 'Parada',
-                    distance: stop == null ? '--' : _distance(stop.distanceMeters),
-                    foreground: foreground,
-                    accent: accent,
-                    compact: compact,
-                  ),
-                ),
-              ],
-            ),
-            if (bikeTripPlanLoading ||
-                (bikeTripPlan != null && bikeTripPlan!.estimate.dayCount > 1)) ...[
-              SizedBox(height: compact ? 8 : 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (bikeTripPlanLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  else if (bikeTripPlan != null &&
-                      bikeTripPlan!.estimate.dayCount > 1)
-                    Tooltip(
-                      message: 'Ver plano por dias',
-                      child: TextButton.icon(
-                        onPressed: onTripPlan,
-                        icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                        label: Text('Plano de ${bikeTripPlan!.estimate.dayCount} dias'),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ],
-        ),
+          ]),
+        ]),
       ),
     );
   }

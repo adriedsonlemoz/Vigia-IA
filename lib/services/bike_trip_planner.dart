@@ -97,7 +97,9 @@ class BikeTripPlanner {
           if (usedIds.contains(candidate.result.id)) continue;
           if (candidate.routeDistanceMeters <= previousEnd + 5000) continue;
           if (candidate.routeDistanceMeters >= routeDistanceMeters - 5000) continue;
-          if (candidate.routeProximityMeters > 15000) continue;
+          // Proximidade linear não equivale a desvio por estrada: evitar
+          // sugerir cidades remotas como paradas garantidas no trajeto.
+          if (candidate.routeProximityMeters > 1500) continue;
           final delta = (candidate.routeDistanceMeters - idealEnd).abs();
           if (delta > maxDelta) continue;
           final score = delta +

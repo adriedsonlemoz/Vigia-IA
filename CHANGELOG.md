@@ -1,3 +1,11 @@
+## 1.0.217+217 — 2026-10-11
+- Painel expandido de navegação reduzido: manobra, gravação e controles na mesma faixa; métricas e serviços próximos em linha rolável; padrão minimizado preservado.
+- Prévia de rota e alternativas sem iniciar navegação, voz ou gravação; seleção da alternativa pelo mapa e botão explícito de início.
+- Última rota pré-visualizada pode ser salva no armazenamento privado e reaberta em Vigia IA > Rota salva, inclusive sem internet; novos cálculos ainda exigem Valhalla online.
+- Plano por dias sem espaço vazio: horário de saída, intervalo de pausas, duração das pausas e almoço configuráveis; horários de chegada estimados, sem falsas garantias de apoio.
+- Paradas identificadas limitadas a 1,5 km em linha reta da geometria; desvio por estrada e disponibilidade de serviços permanecem não verificados.
+- Testes de cálculo de cronograma e serialização de rota adicionados.
+
 ## 1.0.216+216 — 2026-10-11
 
 - Pesquisa de cidades próximas corrigida: consulta geográfica Overpass bbox incluindo nós, caminhos e relações, com limites de tempo mais realistas.
