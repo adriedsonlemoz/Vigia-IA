@@ -1,3 +1,10 @@
+## 1.0.208+208 — 2026-10-11
+
+- Buildfix Android APK #172: ajustados os construtores `RadioCatalogCache` e `RadioHealthService` para eliminar as duas ocorrências `prefer_initializing_formals` que fizeram o `flutter analyze` retornar código 1.
+- Compatibilidade: preservada a API nomeada `file:` usada nos testes e na injeção de arquivos dos caches; persistência de rádio inalterada.
+- RTSP: mantidas as melhorias de diagnóstico e a alternativa de decodificação por software da 1.0.207, sem alegação de que o crash do dispositivo foi corrigido.
+- Metadados e informações de versão sincronizados em `1.0.208+208`.
+
 ## 1.0.207+207 — 2026-10-11
 
 - RTSP: opção por câmera de decodificação compatível por software para comparar problemas de codec; modo padrão preservado.

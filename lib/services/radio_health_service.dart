@@ -6,7 +6,10 @@ import 'package:path_provider/path_provider.dart';
 /// Memória local (persistida) de streams que falharam, usada para marcar
 /// estações instáveis e deixá-las no fim das listas.
 class RadioHealthService {
-  RadioHealthService({File? file}) : _file = file;
+  // Mantém a API `file:` para o cache de saúde e sua persistência.
+  factory RadioHealthService({File? file}) => RadioHealthService._(file);
+
+  RadioHealthService._(this._file);
 
   static final RadioHealthService instance = RadioHealthService();
 

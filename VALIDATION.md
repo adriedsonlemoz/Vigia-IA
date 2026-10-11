@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.207+207
+# Validação Vigia IA 1.0.208+208
+
+## Buildfix 1.0.208
+
+- Origem: Android APK #172 falhou em `flutter analyze` com 2 mensagens `info prefer_initializing_formals` nos construtores de `RadioCatalogCache` e `RadioHealthService`.
+- Confirme que os construtores públicos `RadioCatalogCache(file: ...)` e `RadioHealthService(file: ...)` funcionam, junto de `test/radio_improvements_test.dart`.
+- Executar `flutter analyze` sem mensagens pendentes e `flutter test --reporter expanded --coverage` no CI.
+- Compilar APK release assinado no CI; o log #172 terminou antes de chegar aos testes e à compilação APK.
+- Em dispositivo real, testar RTSP nos modos padrão e software com diagnóstico atualizado. O buildfix não demonstra solução do crash nativo.
 
 ## Conferências RTSP 1.0.207
 

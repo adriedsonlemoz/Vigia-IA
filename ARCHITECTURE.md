@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.207+207
+# Arquitetura — Vigia IA 1.0.208+208
+
+## Ajuste de compilação — 1.0.208
+
+`RadioCatalogCache` e `RadioHealthService` expõem uma fábrica pública com parâmetro nomeado `file:` e delegam a um construtor privado com initializing formal (`this._file`), atendendo a `prefer_initializing_formals` sem quebrar os testes e consumidores existentes. Não há mudança de protocolo RTSP nem de esquema de persistência.
 
 ## Compatibilidade de decodificação RTSP
 

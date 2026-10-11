@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.207',
+          version: '1.0.208',
           current: true,
+          changes: [
+            'O catálogo e o histórico de estabilidade das rádios mantêm o armazenamento local com construtores ajustados para a validação do aplicativo.',
+            'A compilação automática pode prosseguir após a análise estática, preservando as melhorias recentes de câmeras RTSP e diagnóstico.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.207',
           changes: [
             'O diagnóstico agora guarda a etapa da última abertura RTSP e consulta o motivo do último encerramento informado pelo Android.',
             'Ao abrir uma câmera RTSP, o monitor registra a tentativa antes de iniciar o VLC e mostra ocorrências de reprodução sem revelar a senha.',
@@ -1879,8 +1887,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.207',
+          version: '1.0.208',
           current: true,
+          changes: [
+            'O catálogo e o histórico de estabilidade das rádios mantêm o armazenamento local com construtores ajustados para a validação do aplicativo.',
+            'A compilação automática pode prosseguir após a análise estática, preservando as melhorias recentes de câmeras RTSP e diagnóstico.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.207',
           changes: [
             'O diagnóstico agora guarda a etapa da última abertura RTSP e consulta o motivo do último encerramento informado pelo Android.',
             'Ao abrir uma câmera RTSP, o monitor registra a tentativa antes de iniciar o VLC e mostra ocorrências de reprodução sem revelar a senha.',

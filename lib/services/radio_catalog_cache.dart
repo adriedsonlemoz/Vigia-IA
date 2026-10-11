@@ -8,7 +8,10 @@ import 'radio_browser_service.dart';
 /// Guarda as últimas buscas do catálogo para que o painel continue útil sem
 /// conexão ou quando os servidores do Radio Browser estiverem fora do ar.
 class RadioCatalogCache {
-  RadioCatalogCache({File? file}) : _file = file;
+  // Mantém a API `file:` usada pelos testes e ferramentas de diagnóstico.
+  factory RadioCatalogCache({File? file}) => RadioCatalogCache._(file);
+
+  RadioCatalogCache._(this._file);
 
   static const int _maxEntries = 8;
   static const int _maxStationsPerEntry = 60;
