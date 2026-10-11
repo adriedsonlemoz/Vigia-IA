@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.209', build: 209);
+      AppBuildVersion(version: '1.0.210', build: 210);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.209', build: 209),
+      version: AppBuildVersion(version: '1.0.210', build: 210),
       changes: <String>[
-        'A transmissão de imagem entre celulares ficou mais leve, evitando compressões simultâneas e reduzindo o trabalho com a câmera remota sem espectadores.',
-        'A exibição remota agora segue independente do processamento de IA, com menor uso de memória quando quadros se repetem.',
+        'O Vigia Maps usa GPS apenas quando necessário para acompanhar a localização, gravar o percurso ou navegar.',
+        'O clima não precisa ligar a comunicação ESP32 ao abrir o mapa, e o diagnóstico mostra mais dados sobre GPS e mapas offline.',
       ],
     ),
   ]);

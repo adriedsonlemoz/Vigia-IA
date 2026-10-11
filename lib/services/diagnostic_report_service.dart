@@ -12,6 +12,7 @@ import 'performance_telemetry_service.dart';
 import 'global_audio_service.dart';
 import 'system_health_service.dart';
 import 'rtsp_diagnostics_service.dart';
+import 'map_diagnostics_service.dart';
 
 class DiagnosticReport {
   DiagnosticReport({
@@ -19,6 +20,7 @@ class DiagnosticReport {
     required this.health,
     this.audioDiagnostics = const {},
     this.rtspDiagnostics = const {},
+    this.mapDiagnostics = const {},
     this.alertEvents = const [],
     this.esp32Modules = const [],
     required List<ErrorLogEntry> entries,
@@ -28,6 +30,7 @@ class DiagnosticReport {
   final SystemHealthSnapshot health;
   final Map<String, Object?> audioDiagnostics;
   final Map<String, Object?> rtspDiagnostics;
+  final Map<String, Object?> mapDiagnostics;
   final List<Map<String, Object?>> alertEvents;
   final List<Map<String, Object?>> esp32Modules;
   final List<ErrorLogEntry> entries;
@@ -100,6 +103,36 @@ class DiagnosticReport {
       ..writeln(
         'Armazenamento total: ${_formatBytes(h.totalStorageBytes)}',
       );
+
+    // Lista explícita de métricas: jamais exportar coordenadas nem nomes/path
+    // de pacotes, mesmo quando outros dados forem acrescentados no futuro.
+    final m = mapDiagnostics;
+    buffer
+      ..writeln()
+      ..writeln('=== VIGIA MAPS / GPS ===')
+      ..writeln('GPS e permissão: ${m['gpsAvailability'] ?? 'indisponível'}')
+      ..writeln('Assinatura GPS ativa: ${m['gpsStreamActive'] == true ? 'sim' : 'não'}')
+      ..writeln('Consumidores do GPS: ${m['gpsConsumers'] ?? 'indisponível'}')
+      ..writeln('Amostras GPS aceitas (último minuto): ${m['gpsUpdatesPerMinute'] ?? 'indisponível'}')
+      ..writeln('Assinaturas iniciadas nesta sessão: ${m['gpsStreamStarts'] ?? 'indisponível'}')
+      ..writeln('Erros de stream GPS: ${m['gpsStreamErrors'] ?? 'indisponível'}')
+      ..writeln('Idade da última amostra (s): ${m['gpsSampleAgeSeconds'] ?? 'sem leitura'}')
+      ..writeln('Precisão horizontal (m): ${m['accuracyMeters'] ?? 'sem leitura'}')
+      ..writeln('Leituras GPS rejeitadas: ${m['rejectedGpsPoints'] ?? 'indisponível'}')
+      ..writeln('Última rejeição: ${m['lastRejectionReason'] ?? 'nenhuma'}')
+      ..writeln('Gravando percurso: ${m['recording'] == true ? 'sim' : 'não'}')
+      ..writeln('Gravação pausada: ${m['paused'] == true ? 'sim' : 'não'}')
+      ..writeln('Navegação ativa: ${m['navigating'] == true ? 'sim' : 'não'}')
+      ..writeln('Pontos gravados: ${m['recordedPoints'] ?? 'indisponível'}')
+      ..writeln('Modo de mapa: ${m['offlineMode'] ?? 'indisponível'}')
+      ..writeln('Pacotes MBTiles cadastrados: ${m['offlinePackages'] ?? 'indisponível'}')
+      ..writeln('MBTiles selecionado: ${m['offlinePackageSelected'] == true ? 'sim' : 'não'}')
+      ..writeln('Operação offline em execução: ${m['offlineBusy'] == true ? 'sim' : 'não'}')
+      ..writeln('Erros ao abrir MBTiles nesta sessão: ${m['offlineOpenErrors'] ?? 'indisponível'}')
+      ..writeln('Última falha de abertura: ${m['lastOfflineOpenErrorAt'] ?? 'nenhuma'}')
+      ..writeln('Tela apagada: ${!h.screenInteractive ? 'sim' : 'não'}')
+      ..writeln('Serviço Android geral: ${h.androidServiceActive ? 'ativo' : 'inativo'}')
+      ..writeln('Observação: serviço Android ativo não comprova entrega contínua de GPS em segundo plano.');
 
     if (h.lanError?.isNotEmpty == true) {
       buffer.writeln('Erro LAN: ${h.lanError}');
@@ -193,6 +226,7 @@ class DiagnosticReportService {
     await Esp32TelemetryService.instance.initialize();
     final health = await _health.collect();
     final rtspDiagnostics = await RtspDiagnosticsService.instance.capture();
+    final mapDiagnostics = await MapDiagnosticsService.instance.capture();
     final nativeAudio = await _native.audioDiagnostics();
     await GlobalAudioService.instance.initialize();
     final globalAudio =
@@ -205,6 +239,7 @@ class DiagnosticReportService {
         ...globalAudio.toMap(),
       },
       rtspDiagnostics: rtspDiagnostics,
+      mapDiagnostics: mapDiagnostics,
       alertEvents: PerformanceTelemetryService.instance.createReport().alertEvents,
       esp32Modules: Esp32TelemetryService.instance.diagnostics,
       entries: List<ErrorLogEntry>.of(_logs.entries),

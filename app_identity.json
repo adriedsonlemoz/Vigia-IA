@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.209 diminui o custo de transmissão entre celulares com backpressure de JPEG, cadência ociosa e separação entre preview e análise de IA.",
-  "version": "1.0.209",
-  "build": 209
+  "notes": "A 1.0.210 isola a inicialização ESP32 do clima, evita GPS redundante e amplia o diagnóstico anônimo de mapas.",
+  "version": "1.0.210",
+  "build": 210
 }

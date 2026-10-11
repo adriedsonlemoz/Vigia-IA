@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.209+209
+# Validação Vigia IA 1.0.210+210
+
+## Testes de regressão Vigia Maps 1.0.210
+
+- [ ] Android real: abrir/fechar mapa, retornar ao app e contar assinaturas GPS (deve haver somente uma simultânea).
+- [ ] GPS: conferir fix, precisão, telemetria e navegação com percurso ativo, incluindo tela apagada e bateria otimizada pelo Android.
+- [ ] Clima: abrir somente o mapa com módulo ESP32 cadastrado e confirmar ausência de sondagens de rede do ESP32.
+- [ ] Offline: importar MBTiles raster, ativar offline, navegar visualmente sem dados móveis e conferir erros de abertura no diagnóstico.
+- [ ] Sem rede: confirmar que Valhalla remoto não é apresentado como roteamento offline; verificar recuperação após reconexão.
+- [ ] Câmeras, IA, RTSP, rádio e Bike: conferir fluxos anteriores sem novas regressões.
 
 ## Câmera remota e desempenho 1.0.209
 

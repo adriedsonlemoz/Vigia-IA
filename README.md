@@ -2,9 +2,9 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.209+209`
+> **Versão atual:** `1.0.210+210`
 
-A **1.0.209+209** reduz a carga da câmera remota entre celulares: limita o número de compressões JPEG simultâneas, economiza processamento sem espectadores e separa atualização do preview de análise por IA. O formato atual continua JPEG/HTTP, não vídeo H.264; teste a diferença de FPS, CPU e latência em dois aparelhos reais.
+A **1.0.210+210** prioriza o **Vigia Maps**: GPS sob demanda e diagnóstico de navegação sem coordenadas sensíveis. O clima deixa de iniciar telemetria ESP32 automaticamente. MBTiles raster funcionam sem internet após importação; cálculo de rotas Valhalla continua online. Câmeras, IA e Bike foram preservados.
 
 A `1.0.208+208` resolve as duas observações `prefer_initializing_formals` que interromperam o `flutter analyze` no workflow Android APK #172. Os caches do catálogo e da saúde de rádio preservam o parâmetro `file:` e a persistência. Não é uma correção confirmada de travamento do VLC/RTSP; o diagnóstico RTSP introduzido na versão anterior permanece disponível.
 

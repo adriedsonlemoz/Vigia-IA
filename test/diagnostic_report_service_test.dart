@@ -32,6 +32,30 @@ DiagnosticReport buildReport() {
       totalStorageBytes: 128_000_000_000,
       memoryUsedBytes: 820_000_000,
     ),
+    mapDiagnostics: const {
+      'gpsAvailability': 'ready',
+      'gpsStreamActive': true,
+      'gpsConsumers': 1,
+      'gpsUpdatesPerMinute': 24,
+      'gpsStreamStarts': 1,
+      'gpsStreamErrors': 0,
+      'gpsSampleAgeSeconds': 2,
+      'accuracyMeters': 6.3,
+      'rejectedGpsPoints': 3,
+      'lastRejectionReason': 'staleReading',
+      'recording': true,
+      'paused': false,
+      'navigating': true,
+      'recordedPoints': 440,
+      'offlineMode': 'offline',
+      'offlinePackages': 2,
+      'offlinePackageSelected': true,
+      'offlineBusy': false,
+      'offlineOpenErrors': 1,
+      'latitude': -19.9,
+      'longitude': -45.1,
+      'path': '/dados/segredo.mbtiles',
+    },
     rtspDiagnostics: const {
       'stage': 'preview_requested',
       'host': '192.168.1.5',
@@ -90,6 +114,13 @@ void main() {
     expect(text, contains('Última saída Android após a tentativa: NATIVE_CRASH'));
     expect(text, isNot(contains('senha@')));
     expect(text, contains('esp32-rear'));
+    expect(text, contains('=== VIGIA MAPS / GPS ==='));
+    expect(text, contains('Amostras GPS aceitas (último minuto): 24'));
+    expect(text, contains('Erros ao abrir MBTiles nesta sessão: 1'));
+    expect(text, contains('Tela apagada: não'));
+    expect(text, isNot(contains('/dados/segredo.mbtiles')));
+    expect(text, isNot(contains('-19.9')));
+    expect(text, isNot(contains('-45.1')));
     expect(text, contains('online'));
   });
 

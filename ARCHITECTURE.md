@@ -1,4 +1,14 @@
-# Arquitetura — Vigia IA 1.0.209+209
+# Arquitetura — Vigia IA 1.0.210+210
+
+## Vigia Maps, isolamento de sensores e diagnóstico — 1.0.210
+
+`MapRouteService` é o dono da única assinatura de `Geolocator.getPositionStream`. A nova `MapLocationSubscriptionPolicy` determina se há necessidade de stream, considerando tela/consumidores, gravação e navegação. A tela passiva não mantém GPS após `paused/hidden`; percurso ou navegação continuam requerendo stream, mas execução real com tela apagada depende de permissões/foreground service e deve ser testada em Android físico. Leituras pontuais não são duplicadas quando já se precisa de stream. Snapshots imutáveis de `route`/`routeSegments` e a conversão de geometria para exibição são reutilizados enquanto os pontos não mudam, evitando cópias de percursos longos a cada rebuild. Precisão GPS `high` e distância mínima de 8 m foram mantidas.
+
+`MapWeatherService` lê sensores ESP32 se já iniciados por outro módulo; iniciar apenas o clima não chama `Esp32TelemetryService.initialize()` nem inicia polling ESP32. A ponte com o cadastro `Esp32ModuleService` e notificações permanecem. Câmeras/IA não foram modificadas.
+
+`MapDiagnosticsService` coleta sob demanda métricas não identificáveis: permissão/status do GPS sem prompt, contadores de stream, amostras aceitas/minuto, idade e precisão da última leitura, estado da gravação/navegação, quantidades e modo MBTiles e erros ao abrir tiles. Diagnóstico geral já inclui bateria, temperatura e memória do dispositivo. Nenhuma coordenada, rota, caminho de arquivo MBTiles nem detalhe da exceção entra nessa nova seção. Os erros de abertura são contabilizados no ponto real de `MbTilesTileProvider.fromPath`.
+
+**Matriz offline:** MBTiles raster carregam sem rede se pacote compatível estiver selecionado; histórico de trajeto e GPX usam armazenamento local. `MapCyclingRouteService` usa HTTP Valhalla hospedado em `valhalla1.openstreetmap.de` e não calcula rotas offline. Pesquisas/POIs, clima online, camadas Overpass, estilos vetoriais externos e Google Maps dependem de rede. A visualização 3D não equivale a motor offline. Versões futuras devem estudar dados de roteamento regionais sem prometer suporte já nesta etapa.
 
 ## Ajuste de compilação — 1.0.208
 

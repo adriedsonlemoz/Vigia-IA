@@ -61,10 +61,9 @@ class MapWeatherService extends ChangeNotifier {
 
   Future<void> _initializeInternal() async {
     if (_initialized) return;
-    await Future.wait<void>([
-      _esp32.initialize(),
-      _modules.initialize(),
-    ]);
+    // O clima pode ler telemetria ESP32 *já disponível* sem iniciar
+    // sondagens de rede nem o serviço de sensores ao abrir apenas o mapa.
+    await _modules.initialize();
     final root = await getApplicationSupportDirectory();
     _cacheFile = File(
       '${root.path}${Platform.pathSeparator}map_weather_cache.json',
@@ -193,7 +192,7 @@ class MapWeatherService extends ChangeNotifier {
       ..connectionTimeout = const Duration(seconds: 5);
     final request = await client.getUrl(uri);
     request.headers.set('accept', 'application/json');
-    request.headers.set('user-agent', 'VigiaIA/1.0.209 (weather)');
+    request.headers.set('user-agent', 'VigiaIA/1.0.210 (weather)');
     final response = await request.close().timeout(const Duration(seconds: 8));
     final body = await utf8.decoder
         .bind(response)

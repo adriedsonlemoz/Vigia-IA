@@ -10,6 +10,7 @@ import '../models/map_route_point.dart';
 import 'location_tracking_service.dart';
 import 'map_gps_filter.dart';
 import 'map_bike_consolidation_policy.dart';
+import 'map_location_subscription_policy.dart';
 
 enum MonitorMapVisibilityMode { automatic, always, hidden }
 
@@ -27,6 +28,15 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   final MapGpsFilter _gpsFilter = MapGpsFilter();
   final List<MapRoutePoint> _route = <MapRoutePoint>[];
   final List<int> _segmentStarts = <int>[];
+  // Snapshots imutáveis reutilizados entre rebuilds; invalidados apenas ao
+  // alterar a geometria, não a cada leitura de telemetria do GPS.
+  List<MapRoutePoint>? _cachedRouteSnapshot;
+  List<List<MapRoutePoint>>? _cachedSegmentSnapshot;
+
+  void _invalidateRouteSnapshots() {
+    _cachedRouteSnapshot = null;
+    _cachedSegmentSnapshot = null;
+  }
 
   StreamSubscription<MapRoutePoint>? _positionSubscription;
   Timer? _persistDebounce;
@@ -50,6 +60,11 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   int _rejectedGpsPoints = 0;
   final Set<Object> _locationConsumers = <Object>{};
   bool _passiveLocationSuspended = false;
+  bool _appForeground = true;
+  final List<DateTime> _recentGpsUpdates = <DateTime>[];
+  DateTime? _lastGpsSampleReceivedAt;
+  int _gpsStreamErrors = 0;
+  int _gpsStreamStarts = 0;
   MapGpsRejectionReason? _lastGpsRejectionReason;
   DateTime? _lastGpsRejectedAt;
   MonitorMapVisibilityMode _monitorVisibility =
@@ -87,9 +102,15 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     return duration.isNegative ? Duration.zero : duration;
   }
 
-  List<MapRoutePoint> get route => List<MapRoutePoint>.unmodifiable(_route);
+  int get routePointCount => _route.length;
+  List<MapRoutePoint> get route =>
+      _cachedRouteSnapshot ??= List<MapRoutePoint>.unmodifiable(_route);
   List<List<MapRoutePoint>> get routeSegments {
-    if (_route.isEmpty) return const <List<MapRoutePoint>>[];
+    final cached = _cachedSegmentSnapshot;
+    if (cached != null) return cached;
+    if (_route.isEmpty) {
+      return _cachedSegmentSnapshot = const <List<MapRoutePoint>>[];
+    }
     final starts = _normalizedSegmentStarts();
     final segments = <List<MapRoutePoint>>[];
     for (var index = 0; index < starts.length; index++) {
@@ -101,7 +122,8 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
         );
       }
     }
-    return List<List<MapRoutePoint>>.unmodifiable(segments);
+    return _cachedSegmentSnapshot =
+        List<List<MapRoutePoint>>.unmodifiable(segments);
   }
 
   MonitorMapVisibilityMode get monitorVisibility => _monitorVisibility;
@@ -116,6 +138,21 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   int get locationConsumers => _locationConsumers.length;
+  bool get gpsStreamActive => _positionSubscription != null;
+  int get gpsStreamStarts => _gpsStreamStarts;
+  int get gpsStreamErrors => _gpsStreamErrors;
+  DateTime? get lastGpsSampleReceivedAt => _lastGpsSampleReceivedAt;
+  int gpsUpdatesInLastMinute({DateTime? now}) {
+    final threshold = (now ?? DateTime.now()).subtract(const Duration(minutes: 1));
+    return _recentGpsUpdates.where((timestamp) => !timestamp.isBefore(threshold)).length;
+  }
+
+  bool get _needsContinuousLocation => MapLocationSubscriptionPolicy.keepStream(
+        hasConsumer: _locationConsumers.isNotEmpty,
+        recording: _tracking,
+        navigating: navigating,
+        appForeground: _appForeground,
+      );
 
   Future<void> acquireLocationConsumer(
     Object consumer, {
@@ -136,7 +173,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void releaseLocationIfIdle() {
-    if (_locationConsumers.isNotEmpty || _tracking || navigating) return;
+    if (_needsContinuousLocation) return;
     final subscription = _positionSubscription;
     _positionSubscription = null;
     if (subscription != null) unawaited(subscription.cancel());
@@ -145,7 +182,8 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_passiveLocationSuspended && _locationConsumers.isNotEmpty) {
+      _appForeground = true;
+      if (_passiveLocationSuspended && _needsContinuousLocation) {
         _passiveLocationSuspended = false;
         unawaited(ensureLocation(requestPermission: false));
       }
@@ -155,6 +193,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
+      _appForeground = false;
       if (!_tracking && !navigating && _positionSubscription != null) {
         _passiveLocationSuspended = true;
         final subscription = _positionSubscription;
@@ -190,30 +229,44 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     }
     _loading = true;
     notifyListeners();
-    final availability = await _location.ensureAvailable(
-      requestPermission: requestPermission,
-    );
-    _availability = availability;
-    _loading = false;
-    notifyListeners();
+    late final LocationTrackingAvailability availability;
+    try {
+      availability = await _location.ensureAvailable(
+        requestPermission: requestPermission,
+      );
+      _availability = availability;
+    } finally {
+      // Uma exceção da plataforma não pode deixar o GPS travado em loading.
+      _loading = false;
+      notifyListeners();
+    }
     if (availability != LocationTrackingAvailability.ready) {
       await _positionSubscription?.cancel();
       _positionSubscription = null;
       return availability;
     }
-    _passiveLocationSuspended = false;
-
-    try {
-      final point = await _location.currentPosition();
-      _acceptPosition(point);
-    } catch (_) {
-      // O stream contínuo ainda pode se recuperar se a leitura pontual falhar.
+    // Para o mapa/gravação/navegação basta um único stream. Uma busca
+    // isolada recebe leitura pontual sem manter assinatura em segundo plano.
+    if (MapLocationSubscriptionPolicy.needsOneShotFix(
+      streamActive: gpsStreamActive,
+      keepStream: _needsContinuousLocation,
+    )) {
+      try {
+        final point = await _location.currentPosition();
+        _acceptPosition(point);
+      } catch (_) {
+        // Uma consulta pontual pode falhar sem comprometer futuras leituras.
+      }
     }
-
-    _positionSubscription ??= _location.positionStream().listen(
-      _acceptPosition,
-      onError: (_) {},
-    );
+    // Verifica demanda após o await: a tela pode ter sido fechada nesse meio.
+    if (_needsContinuousLocation) {
+      if (!gpsStreamActive) _gpsStreamStarts++;
+      _positionSubscription ??= _location.positionStream().listen(
+        _acceptPosition,
+        onError: (_) { _gpsStreamErrors++; },
+      );
+    }
+    _passiveLocationSuspended = !_needsContinuousLocation && !_appForeground;
     return availability;
   }
 
@@ -234,6 +287,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     _route
       ..clear()
       ..add(currentPoint);
+    _invalidateRouteSnapshots();
     _segmentStarts
       ..clear()
       ..add(0);
@@ -247,6 +301,10 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     _paused = false;
     _startNewSegmentOnNextPoint = false;
     _tracking = true;
+    // O início da gravação deve manter o único stream mesmo sem tela consumidora.
+    if (!gpsStreamActive) {
+      await ensureLocation(requestPermission: false);
+    }
     notifyListeners();
     await _persistNow();
     return true;
@@ -304,6 +362,9 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> navigateTo(MapNavigationTarget target) async {
     await initialize(requestPermission: true);
     _navigationTarget = target;
+    if (!gpsStreamActive) {
+      await ensureLocation(requestPermission: false);
+    }
     notifyListeners();
     await _persistNow();
   }
@@ -353,6 +414,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     _paused = false;
     _route.clear();
     _segmentStarts.clear();
+    _invalidateRouteSnapshots();
     _start = null;
     _end = null;
     _distanceMeters = 0;
@@ -436,6 +498,11 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     _current = point;
+    final receivedAt = DateTime.now();
+    _lastGpsSampleReceivedAt = receivedAt;
+    _recentGpsUpdates.add(receivedAt);
+    final cutoff = receivedAt.subtract(const Duration(minutes: 1));
+    _recentGpsUpdates.removeWhere((at) => at.isBefore(cutoff));
     if (_tracking &&
         !_paused &&
         MapGpsFilter.isSuitableForRecording(point)) {
@@ -475,6 +542,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _schedulePersist() {
+    _invalidateRouteSnapshots();
     if (_persistDebounce?.isActive ?? false) return;
     _persistDebounce = Timer(const Duration(seconds: 10), () {
       _persistDebounce = null;
@@ -539,6 +607,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
         );
       }
       if (_route.isNotEmpty && _segmentStarts.isEmpty) _segmentStarts.add(0);
+      _invalidateRouteSnapshots();
       if (_tracking && _routeStartedAt == null) {
         _tracking = false;
         _paused = false;
@@ -556,6 +625,7 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       _route.clear();
       _segmentStarts.clear();
+      _invalidateRouteSnapshots();
       _tracking = false;
       _paused = false;
       _distanceMeters = 0;

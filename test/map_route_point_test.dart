@@ -38,6 +38,18 @@ void main() {
     expect(restored.headingAccuracyDegrees, point.headingAccuracyDegrees);
   });
 
+  test('snapshot de rota permanece imutável e é invalidado ao limpar', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final routes = MapRouteService.instance;
+    final before = routes.route;
+    final segments = routes.routeSegments;
+    expect(identical(before, routes.route), isTrue);
+    expect(identical(segments, routes.routeSegments), isTrue);
+    await routes.clearRoute();
+    expect(routes.routePointCount, 0);
+    expect(routes.route, isEmpty);
+  });
+
   test('mapa do Monitor mantém as três políticas de visibilidade', () {
     expect(
       MonitorMapVisibilityMode.values.map((value) => value.name),

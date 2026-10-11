@@ -45,6 +45,7 @@ import '../services/map_destination_search_service.dart';
 import '../services/map_compass_service.dart';
 import '../services/map_cycling_route_service.dart';
 import '../services/map_gps_filter.dart';
+import '../services/map_diagnostics_service.dart';
 import '../services/map_navigation_guidance.dart';
 import '../services/map_navigation_voice_service.dart';
 import '../services/map_offline_navigation_policy.dart';
@@ -170,6 +171,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _cyclingRouteLoading = false;
   int _cyclingRouteRequestSerial = 0;
   int _offRouteSamples = 0;
+  List<List<MapRoutePoint>>? _lastRenderedSourceSegments;
+  List<List<LatLng>>? _lastRenderedRouteSegments;
   DateTime? _lastRouteRecalculatedAt;
   DateTime? _lastNavigationProgressPointAt;
   final NativePlatformService _native = NativePlatformService.instance;
@@ -1084,9 +1087,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         _offlineMaxNativeZoom = maxZoom.toInt();
         _offlineTileProvider = provider;
       } catch (error) {
-        debugPrint(
-          'Falha ao abrir mapa offline ${active.id}: $error',
-        );
+        MapDiagnosticsService.instance.recordOfflineOpenFailure();
+        debugPrint('Falha ao abrir MBTiles (${error.runtimeType}).');
       }
     }
     setState(() {});
@@ -2720,11 +2722,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   List<List<LatLng>> _routeSegmentsForDisplay() {
     const maximumDisplayPoints = 2200;
     final segments = _routeState.routeSegments;
+    if (identical(segments, _lastRenderedSourceSegments) &&
+        _lastRenderedRouteSegments != null) {
+      return _lastRenderedRouteSegments!;
+    }
     final totalPoints = segments.fold<int>(0, (sum, item) => sum + item.length);
     final stride = totalPoints <= maximumDisplayPoints
         ? 1
         : (totalPoints / maximumDisplayPoints).ceil();
-    return segments
+    final rendered = segments
         .map((segment) {
           if (segment.length < 2) return const <LatLng>[];
           final points = <LatLng>[];
@@ -2743,6 +2749,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         })
         .where((segment) => segment.length >= 2)
         .toList(growable: false);
+    _lastRenderedSourceSegments = segments;
+    _lastRenderedRouteSegments = rendered;
+    return rendered;
   }
 
   String _formatDistance() {

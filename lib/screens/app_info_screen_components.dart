@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.209',
+          version: '1.0.210',
           current: true,
+          changes: [
+            'Mapas passam a manter a localização ativa apenas durante uso, gravação ou navegação, reduzindo consultas redundantes ao GPS.',
+            'Clima não precisa iniciar a comunicação ESP32 quando você abre apenas o mapa.',
+            'Diagnóstico de mapas inclui GPS, gravação e MBTiles sem revelar coordenadas do percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.209',
           changes: [
             'Recepção de câmera remota com vídeo independente da análise por IA, sem decodificar novamente quadros repetidos.',
             'Transmissão entre celulares reduz processamento sem espectadores e evita compressões JPEG simultâneas.',
@@ -1896,8 +1905,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.209',
+          version: '1.0.210',
           current: true,
+          changes: [
+            'Mapas passam a manter a localização ativa apenas durante uso, gravação ou navegação, reduzindo consultas redundantes ao GPS.',
+            'Clima não precisa iniciar a comunicação ESP32 quando você abre apenas o mapa.',
+            'Diagnóstico de mapas inclui GPS, gravação e MBTiles sem revelar coordenadas do percurso.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.209',
           changes: [
             'Recepção de câmera remota com vídeo independente da análise por IA, sem decodificar novamente quadros repetidos.',
             'Transmissão entre celulares reduz processamento sem espectadores e evita compressões JPEG simultâneas.',

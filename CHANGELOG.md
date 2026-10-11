@@ -1,3 +1,14 @@
+## 1.0.210+210 — 2026-10-11
+
+- Vigia Maps: stream GPS único ativado apenas com consumidores, gravação ou navegação; sem leitura pontual redundante quando já há stream, com suspensão do consumidor passivo em segundo plano.
+- A consulta pontual de geolocalização fica reservada às solicitações isoladas; iniciar gravação/navegação mantém stream mesmo sem tela consumidora.
+- Snapshots imutáveis do trajeto e dos segmentos ficam em cache até que pontos sejam adicionados/removidos, reduzindo alocações e conversões durante reconstruções do mapa.
+- Nova política testável de ciclo de vida GPS (`MapLocationSubscriptionPolicy`), sem reduzir precisão alta nem alterar filtro espacial de 8 m.
+- Inicialização do clima não aciona mais sondagens do ESP32. A integração dos sensores permanece disponível caso já estejam ativos por outro módulo.
+- Diagnóstico de mapas: status GPS/permissões, stream, amostras/minuto, precisão, rejeições, gravação, MBTiles e erros de abertura. Sem exportar coordenadas, trajetos ou caminhos dos arquivos.
+- Mantidas as câmeras, RTSP, LAN, IA, Bike, GPX, Valhalla remoto e mapas MBTiles raster, sem alteração de seus protocolos.
+- Limitação: gravação/navegação com tela apagada depende das condições do serviço foreground e das restrições reais do Android. Roteamento Valhalla ainda exige internet.
+
 ## 1.0.209+209 — 2026-10-11
 
 - Câmera entre celulares: transmissor descarta frames sob carga, impede compressões JPEG paralelas e limita a cadência real por receptor.
