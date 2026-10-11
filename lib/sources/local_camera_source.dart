@@ -19,6 +19,15 @@ class LocalCameraSource implements VideoSource {
 
   final Duration analysisInterval;
   final bool emitFrames;
+  Duration? _dynamicFrameInterval;
+
+  /// Permite reduzir conversões RGB com o receptor desconectado.
+  void setFrameInterval(Duration interval) {
+    _dynamicFrameInterval = interval;
+    if (_started) _shared.updateConsumerInterval(_consumerId, interval);
+  }
+
+  Duration get _effectiveFrameInterval => _dynamicFrameInterval ?? analysisInterval;
   final String _consumerId;
   final SharedLocalCameraService _shared = SharedLocalCameraService.instance;
   final StreamController<RgbFrame> _frames = StreamController<RgbFrame>.broadcast();
@@ -63,7 +72,7 @@ class LocalCameraSource implements VideoSource {
     try {
       await _shared.acquire(
         consumerId: _consumerId,
-        analysisInterval: analysisInterval,
+        analysisInterval: _effectiveFrameInterval,
       );
       if (!_statuses.isClosed && _shared.running) {
         _statuses.add(const VideoSourceStatus(VideoSourceState.streaming));
@@ -81,7 +90,7 @@ class LocalCameraSource implements VideoSource {
 
   void _onSharedFrame(RgbFrame frame) {
     if (!_started || _disposed) return;
-    if (frame.capturedAt.difference(_lastForwardedAt) < analysisInterval) return;
+    if (frame.capturedAt.difference(_lastForwardedAt) < _effectiveFrameInterval) return;
     _lastForwardedAt = frame.capturedAt;
     if (!_frames.isClosed) _frames.add(frame);
   }

@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.208',
+          version: '1.0.209',
           current: true,
+          changes: [
+            'Recepção de câmera remota com vídeo independente da análise por IA, sem decodificar novamente quadros repetidos.',
+            'Transmissão entre celulares reduz processamento sem espectadores e evita compressões JPEG simultâneas.',
+            'Redução de cópias de memória e atualização da cadência sem reiniciar a câmera física.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.208',
           changes: [
             'O catálogo e o histórico de estabilidade das rádios mantêm o armazenamento local com construtores ajustados para a validação do aplicativo.',
             'A compilação automática pode prosseguir após a análise estática, preservando as melhorias recentes de câmeras RTSP e diagnóstico.',
@@ -1887,8 +1896,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.208',
+          version: '1.0.209',
           current: true,
+          changes: [
+            'Recepção de câmera remota com vídeo independente da análise por IA, sem decodificar novamente quadros repetidos.',
+            'Transmissão entre celulares reduz processamento sem espectadores e evita compressões JPEG simultâneas.',
+            'Redução de cópias de memória e atualização da cadência sem reiniciar a câmera física.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.208',
           changes: [
             'O catálogo e o histórico de estabilidade das rádios mantêm o armazenamento local com construtores ajustados para a validação do aplicativo.',
             'A compilação automática pode prosseguir após a análise estática, preservando as melhorias recentes de câmeras RTSP e diagnóstico.',

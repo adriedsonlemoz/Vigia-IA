@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.208 mantém as correções RTSP da 1.0.207 e ajusta os construtores do cache e da saúde de rádio para liberar flutter analyze, preservando a API file:.",
-  "version": "1.0.208",
-  "build": 208
+  "notes": "A 1.0.209 diminui o custo de transmissão entre celulares com backpressure de JPEG, cadência ociosa e separação entre preview e análise de IA.",
+  "version": "1.0.209",
+  "build": 209
 }

@@ -52,6 +52,9 @@ class RemoteCameraServerService extends ChangeNotifier {
   Timer? _receiverActivityTimer;
   DateTime? _lastReceiverRequestAt;
   bool _receiverConnected = false;
+  bool _encoding = false;
+  int _streamGeneration = 0;
+  DateTime? _lastEncodingAttemptAt;
   bool _bikeLowBatteryAlerted = false;
 
   bool get running => _server != null && _source != null;
@@ -105,9 +108,11 @@ class RemoteCameraServerService extends ChangeNotifier {
       final source = LocalCameraSource(
         analysisInterval: _bikeConfig.transmissionFrameInterval,
       );
+      _streamGeneration++;
       _source = source;
       _subscription = source.frames.listen(_onFrame);
       await source.start();
+      source.setFrameInterval(const Duration(seconds: 2));
       await _native.setBikeScreenBrightness(_bikeConfig.rearScreenBrightness);
       final server = await HttpServer.bind(InternetAddress.anyIPv4, _port, shared: true);
       _server = server;
@@ -206,56 +211,78 @@ class RemoteCameraServerService extends ChangeNotifier {
       await oldSource?.dispose();
     } catch (_) {}
     if (_server == null) return;
+    _streamGeneration++;
     final source = LocalCameraSource(
       analysisInterval: _bikeConfig.transmissionFrameInterval,
     );
     _source = source;
     _subscription = source.frames.listen(_onFrame);
     await source.start();
+    if (!_receiverConnected) {
+      source.setFrameInterval(const Duration(seconds: 2));
+    }
   }
 
   Future<void> _onFrame(RgbFrame frame) async {
-    final previousFrameAt = _lastFpsFrameAt;
-    if (previousFrameAt != null) {
-      final elapsedMs = frame.capturedAt.difference(previousFrameAt).inMilliseconds;
-      if (elapsedMs > 0) {
-        final instant = 1000 / elapsedMs;
-        _streamFps = _streamFps == 0
-            ? instant
-            : (_streamFps * 0.75 + instant * 0.25);
-      }
+    if (_encoding) return; // Descarte: jamais acumular compressões em paralelo.
+    final now = DateTime.now();
+    final minInterval = _receiverConnected
+        ? Duration(milliseconds: (1000 / targetStreamFps).round())
+        : const Duration(seconds: 2);
+    if (_lastEncodingAttemptAt != null &&
+        now.difference(_lastEncodingAttemptAt!) < minInterval) {
+      return;
     }
-    _lastFpsFrameAt = frame.capturedAt;
-    _lastFrameAt = frame.capturedAt;
-    final lastUpdate = _lastNotificationUpdateAt;
-    if (lastUpdate == null ||
-        frame.capturedAt.difference(lastUpdate) >= const Duration(seconds: 5)) {
-      _lastNotificationUpdateAt = frame.capturedAt;
-      unawaited(
-        BackgroundMonitorService.updateStatus(
-          'Transmissão ativa • enviando imagens pela rede local.',
-        ),
-      );
-    }
+    _encoding = true;
+    _lastEncodingAttemptAt = now;
+    final generation = _streamGeneration;
     try {
       final maxWidth = targetStreamWidth;
-      final scale = frame.width > maxWidth ? maxWidth / frame.width : 1.0;
-      _streamWidth = (frame.width * scale).round();
-      _streamHeight = (frame.height * scale).round();
-      _latestJpeg = await compute<Map<String, Object>, Uint8List>(
+      final jpeg = await compute<Map<String, Object>, Uint8List>(
         _encodeJpeg,
         <String, Object>{
           'width': frame.width,
           'height': frame.height,
-          'bytes': Uint8List.fromList(frame.rgbBytes),
+          'bytes': frame.rgbBytes,
           'maxWidth': maxWidth,
           'quality': targetStreamQuality,
         },
       );
+      if (generation != _streamGeneration || _source == null) return;
+      final previousFrameAt = _lastFpsFrameAt;
+      if (previousFrameAt != null) {
+        final elapsedMs = frame.capturedAt.difference(previousFrameAt).inMilliseconds;
+        if (elapsedMs > 0) {
+          final instant = 1000 / elapsedMs;
+          _streamFps = _streamFps == 0
+              ? instant
+              : (_streamFps * 0.75 + instant * 0.25);
+        }
+      }
+      _lastFpsFrameAt = frame.capturedAt;
+      _lastFrameAt = frame.capturedAt;
+      final scale = frame.width > maxWidth ? maxWidth / frame.width : 1.0;
+      _streamWidth = (frame.width * scale).round();
+      _streamHeight = (frame.height * scale).round();
+      _latestJpeg = jpeg;
       _latestJpegCapturedAt = frame.capturedAt;
       _latestJpegSequence++;
-    } catch (_) {}
-    notifyListeners();
+      final lastUpdate = _lastNotificationUpdateAt;
+      if (lastUpdate == null ||
+          frame.capturedAt.difference(lastUpdate) >= const Duration(seconds: 5)) {
+        _lastNotificationUpdateAt = frame.capturedAt;
+        unawaited(
+          BackgroundMonitorService.updateStatus(
+            'Transmissão ativa • enviando imagens pela rede local.',
+          ),
+        );
+      }
+      notifyListeners();
+    } catch (_) {
+      // Frame isolado inválido não encerra o serviço.
+    } finally {
+      _encoding = false;
+    }
   }
 
   Future<void> _serve(HttpServer server) async {
@@ -345,6 +372,7 @@ class RemoteCameraServerService extends ChangeNotifier {
     _lastReceiverRequestAt = DateTime.now();
     if (!_receiverConnected) {
       _receiverConnected = true;
+      _source?.setFrameInterval(_bikeConfig.transmissionFrameInterval);
       notifyListeners();
     }
     _receiverActivityTimer ??= Timer.periodic(
@@ -356,6 +384,7 @@ class RemoteCameraServerService extends ChangeNotifier {
           return;
         }
         _receiverConnected = false;
+        _source?.setFrameInterval(const Duration(seconds: 2));
         _receiverActivityTimer?.cancel();
         _receiverActivityTimer = null;
         notifyListeners();
@@ -370,6 +399,8 @@ class RemoteCameraServerService extends ChangeNotifier {
       await _source?.dispose();
     } catch (_) {}
     _source = null;
+    _streamGeneration++;
+    _lastEncodingAttemptAt = null;
     try {
       await _server?.close(force: true);
     } catch (_) {}

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.208', build: 208);
+      AppBuildVersion(version: '1.0.209', build: 209);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.208', build: 208),
+      version: AppBuildVersion(version: '1.0.209', build: 209),
       changes: <String>[
-        'A preparação do aplicativo para atualização foi aprimorada mantendo a estabilidade do catálogo de rádio e das estações favoritas.',
-        'As melhorias de compatibilidade RTSP e diagnóstico da versão anterior continuam disponíveis.',
+        'A transmissão de imagem entre celulares ficou mais leve, evitando compressões simultâneas e reduzindo o trabalho com a câmera remota sem espectadores.',
+        'A exibição remota agora segue independente do processamento de IA, com menor uso de memória quando quadros se repetem.',
       ],
     ),
   ]);

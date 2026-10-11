@@ -33,6 +33,9 @@ class RemotePhoneCameraSource implements VideoSource {
   Timer? _statusTimer;
   bool _busy = false;
   bool _statusBusy = false;
+  bool _analysisBusy = false;
+  int _analysisGeneration = 0;
+  DateTime? _lastAnalysisStartedAt;
   bool _disposed = false;
   bool _hasConnected = false;
   int _consecutiveFailures = 0;
@@ -63,6 +66,9 @@ class RemotePhoneCameraSource implements VideoSource {
     if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty) {
       throw ArgumentError('Endereço do $deviceLabel inválido.');
     }
+    _analysisGeneration++;
+    _analysisBusy = false;
+    _lastAnalysisStartedAt = null;
     _client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
     _publishStatus(VideoSourceStatus(
       VideoSourceState.connecting,
@@ -77,7 +83,8 @@ class RemotePhoneCameraSource implements VideoSource {
   }
 
   Duration get _framePollInterval {
-    final normalizedMs = analysisInterval.inMilliseconds.clamp(250, 400).toInt();
+    // Preview não deve esperar a análise de IA, que tem cadência separada.
+    final normalizedMs = analysisInterval.inMilliseconds.clamp(200, 250).toInt();
     return Duration(milliseconds: normalizedMs);
   }
 
@@ -90,6 +97,7 @@ class RemotePhoneCameraSource implements VideoSource {
   Future<void> _poll() async {
     if (_busy || _disposed || _client == null) return;
     _busy = true;
+    final pollGeneration = _analysisGeneration;
     final startedAt = DateTime.now();
     try {
       final root = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
@@ -106,6 +114,7 @@ class RemotePhoneCameraSource implements VideoSource {
       final response = await request.close().timeout(const Duration(seconds: 5));
       if (response.statusCode == HttpStatus.noContent) {
         await response.drain<void>();
+        if (pollGeneration != _analysisGeneration || _disposed) return;
         _frameNetworkLatencyMs =
             DateTime.now().difference(startedAt).inMilliseconds;
         _hasConnected = true;
@@ -130,15 +139,15 @@ class RemotePhoneCameraSource implements VideoSource {
         DataUsageModule.cameras,
         received: bytes.length,
       );
+      if (pollGeneration != _analysisGeneration || _disposed) return;
       final receivedAt = DateTime.now();
       _frameNetworkLatencyMs = receivedAt.difference(startedAt).inMilliseconds;
-      _latestJpeg.value = bytes;
       if (!emitFrames &&
           (_previewAspectRatio == null ||
               receivedAt.difference(_lastAspectRatioProbe) >=
                   const Duration(seconds: 2))) {
         _lastAspectRatioProbe = receivedAt;
-        final ratio = await compute<Uint8List, double?>(_decodeJpegAspectRatio, bytes);
+        final ratio = _decodeJpegAspectRatio(bytes);
         if (ratio != null && ratio.isFinite && ratio > 0) {
           _previewAspectRatio = ratio;
         }
@@ -161,20 +170,18 @@ class RemotePhoneCameraSource implements VideoSource {
       final frameCapturedAt = capturedAt ?? receivedAt;
       _lastFrameSequence = sequence ?? _lastFrameSequence;
       _lastRemoteCapturedAt = frameCapturedAt;
-      if (emitFrames) {
-        final decodeWatch = Stopwatch()..start();
-        final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, bytes);
-        decodeWatch.stop();
-        if (decoded != null && !_frames.isClosed) {
-          _frames.add(RgbFrame(
-            width: decoded['width']! as int,
-            height: decoded['height']! as int,
-            rgbBytes: decoded['bytes']! as Uint8List,
-            capturedAt: frameCapturedAt,
-            sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
-            sourceTransportMs: _frameNetworkLatencyMs?.toDouble(),
-          ));
-        }
+      _latestJpeg.value = bytes;
+      if (emitFrames && !_analysisBusy &&
+          (_lastAnalysisStartedAt == null ||
+              receivedAt.difference(_lastAnalysisStartedAt!) >= analysisInterval)) {
+        _analysisBusy = true;
+        _lastAnalysisStartedAt = receivedAt;
+        unawaited(_emitAnalysisFrame(
+          bytes,
+          frameCapturedAt,
+          _frameNetworkLatencyMs?.toDouble(),
+          _analysisGeneration,
+        ));
       }
       _hasConnected = true;
       _consecutiveFailures = 0;
@@ -183,6 +190,7 @@ class RemotePhoneCameraSource implements VideoSource {
         message: '${_sentenceCase(deviceLabel)} online',
       ));
     } catch (error) {
+      if (pollGeneration != _analysisGeneration || _disposed) return;
       _consecutiveFailures++;
       final state = _hasConnected || _consecutiveFailures <= 3
           ? VideoSourceState.reconnecting
@@ -194,6 +202,34 @@ class RemotePhoneCameraSource implements VideoSource {
     } finally {
       _busy = false;
       _scheduleNextPoll();
+    }
+  }
+
+  Future<void> _emitAnalysisFrame(
+    Uint8List jpeg,
+    DateTime capturedAt,
+    double? transportMs,
+    int generation,
+  ) async {
+    final decodeWatch = Stopwatch()..start();
+    try {
+      final decoded = await compute<Uint8List, Map<String, Object>?>(_decodeJpeg, jpeg);
+      decodeWatch.stop();
+      if (generation != _analysisGeneration || _disposed || _frames.isClosed) return;
+      if (decoded != null) {
+        _frames.add(RgbFrame(
+          width: decoded['width']! as int,
+          height: decoded['height']! as int,
+          rgbBytes: decoded['bytes']! as Uint8List,
+          capturedAt: capturedAt,
+          sourceConversionMs: decodeWatch.elapsedMicroseconds / 1000.0,
+          sourceTransportMs: transportMs,
+        ));
+      }
+    } catch (_) {
+      // Quadro isolado ilegível não bloqueia o preview nem próximas análises.
+    } finally {
+      if (generation == _analysisGeneration) _analysisBusy = false;
     }
   }
 
@@ -250,6 +286,9 @@ class RemotePhoneCameraSource implements VideoSource {
 
   @override
   Future<void> stop() async {
+    _analysisGeneration++;
+    _analysisBusy = false;
+    _lastAnalysisStartedAt = null;
     _pollTimer?.cancel();
     _pollTimer = null;
     _statusTimer?.cancel();
@@ -291,13 +330,38 @@ Map<String, Object>? _decodeJpeg(Uint8List bytes) {
   return <String, Object>{
     'width': image.width,
     'height': image.height,
-    'bytes': Uint8List.fromList(rgb),
+    'bytes': rgb,
   };
 }
 
 
 double? _decodeJpegAspectRatio(Uint8List bytes) {
-  final image = img.decodeJpg(bytes);
-  if (image == null || image.width <= 0 || image.height <= 0) return null;
-  return image.width / image.height;
+  // Lê dimensões SOF do JPEG sem descomprimir todos os pixels.
+  if (bytes.length < 4 || bytes[0] != 0xff || bytes[1] != 0xd8) return null;
+  var i = 2;
+  while (i + 3 < bytes.length) {
+    if (bytes[i] != 0xff) return null;
+    while (i < bytes.length && bytes[i] == 0xff) {
+      i++;
+    }
+    if (i >= bytes.length) return null;
+    final marker = bytes[i++];
+    if (marker == 0xd9 || marker == 0xda) return null;
+    if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (i + 1 >= bytes.length) return null;
+    final length = (bytes[i] << 8) | bytes[i + 1];
+    if (length < 2 || i + length > bytes.length) return null;
+    final isSof = (marker >= 0xc0 && marker <= 0xc3) ||
+        (marker >= 0xc5 && marker <= 0xc7) ||
+        (marker >= 0xc9 && marker <= 0xcb) ||
+        (marker >= 0xcd && marker <= 0xcf);
+    if (isSof) {
+      if (length < 7) return null;
+      final height = (bytes[i + 3] << 8) | bytes[i + 4];
+      final width = (bytes[i + 5] << 8) | bytes[i + 6];
+      return width > 0 && height > 0 ? width / height : null;
+    }
+    i += length;
+  }
+  return null;
 }

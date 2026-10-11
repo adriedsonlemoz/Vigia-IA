@@ -46,6 +46,12 @@ class SharedLocalCameraService extends ChangeNotifier {
     });
   }
 
+  /// Atualiza a cadência sem recriar CameraX nem afetar outros consumidores.
+  void updateConsumerInterval(String consumerId, Duration interval) {
+    if (!_consumers.containsKey(consumerId)) return;
+    _consumers[consumerId] = _normalizeInterval(interval);
+  }
+
   Future<void> release(String consumerId) async {
     _consumers.remove(consumerId);
     await _enqueue(() async {

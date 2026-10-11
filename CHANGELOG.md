@@ -1,3 +1,12 @@
+## 1.0.209+209 — 2026-10-11
+
+- Câmera entre celulares: transmissor descarta frames sob carga, impede compressões JPEG paralelas e limita a cadência real por receptor.
+- Sem clientes conectados, conversões RGB e compactação JPEG são reduzidas a um frame aproximadamente a cada 2 segundos, mantendo a câmera e a prévia do sistema ativas.
+- Recepção remota: o preview JPEG não aguarda o trabalho de decodificação RGB para IA; análise com cadência própria, máximo de uma decodificação por vez, descartando o excesso sem fila crescente.
+- Não decodifica novamente quadros já recebidos e sem sequência nova; leitura de dimensão no preview secundário sem descomprimir JPEG completo.
+- Cadência de captura alterada sem reiniciar CameraX, mantendo consumidores existentes e o pipeline central do aplicativo.
+- Mantidos RTSP e suporte a ESP32. Exige validação de FPS, memória, CPU e bateria em dois aparelhos reais.
+
 ## 1.0.208+208 — 2026-10-11
 
 - Buildfix Android APK #172: ajustados os construtores `RadioCatalogCache` e `RadioHealthService` para eliminar as duas ocorrências `prefer_initializing_formals` que fizeram o `flutter analyze` retornar código 1.

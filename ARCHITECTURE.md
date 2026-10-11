@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.208+208
+# Arquitetura — Vigia IA 1.0.209+209
 
 ## Ajuste de compilação — 1.0.208
 
@@ -1918,3 +1918,8 @@ O `_NavigationBanner` do mapa foi convertido em card de navegação ampliado com
 ## Mapa Bike — 1.0.193
 
 `MapRideSettingsService` persiste foco, tela inteira, alertas, estações e camada de vias. `MapSpeedPolicy` prioriza ESP32/Hall recente e usa GPS fresco como alternativa. `MapRoadOverlayService` consulta Overpass em raio limitado e desenha tags explícitas de vias e rios. `MapRadioService` controla `RadioPlaybackService` Android. O lease `mapNavigation` mantém a notificação foreground durante navegação com localização. `StartupGuard` protege a abertura inicial.
+
+
+### Otimização câmera entre celulares (1.0.209)
+
+O Modo Câmera e o receptor `RemotePhoneCameraSource` continuam usando snapshot JPEG em HTTP na rede local, sem alegar H.264/WebRTC. A origem limita conversões/codificação sem receptor, impede sobreposição de compactações, e usa um quadro mais recente no servidor. A captura compartilhada altera a cadência do consumidor sem religar CameraX e sem interferir nas outras fontes. No receptor, a UI atualiza JPEG sem aguardar o `compute` de RGB para IA; a análise respeita intervalo próprio e descarta quadros intermediários em vez de enfileirar. A próxima evolução de fluidez deve avaliar transporte H.264 por encoder/decoder de hardware com teste real de compatibilidade.

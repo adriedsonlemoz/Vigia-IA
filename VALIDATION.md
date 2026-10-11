@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.208+208
+# Validação Vigia IA 1.0.209+209
+
+## Câmera remota e desempenho 1.0.209
+
+- Executar `flutter analyze` e `flutter test`, inclusive `test/remote_phone_camera_source_test.dart` com os dois casos de stream HTTP e preview-only.
+- Dois celulares na mesma rede: medir taxa de frames recebidos, atraso, memória, CPU, aquecimento e consumo com IA ativada e desligada.
+- Sem receptor: confirmar que a fonte ainda mantém preview da câmera mas reduz conversões/codificação. Ao conectar, deve retomar automaticamente; após desconectar deve reduzir novamente, sem reiniciar CameraX.
+- Abrir e fechar monitor rapidamente, trocar fontes, manter stream por 30 minutos, usar dupla câmera, ir ao segundo plano e retornar.
+- Testar com JPEG malformado, conexão lenta, respostas HTTP 204 e interrupções de rede; descartar quadros em vez de acumular processos.
+- Confirmar que RTSP, ESP32 e LAN principal continuam funcionando. JPEG remoto permanece transporte simples; para FPS alto/latência baixa, prototipar H.264 via hardware em versão futura.
+- `tool/verify_project.sh` e checagens estáticas não substituem validação em Android físico.
 
 ## Buildfix 1.0.208
 

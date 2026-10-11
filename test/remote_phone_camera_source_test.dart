@@ -6,6 +6,41 @@ import 'package:image/image.dart' as img;
 import 'package:vigiaia/sources/remote_phone_camera_source.dart';
 
 void main() {
+  test('preview remoto lê dimensões do JPEG sem solicitar RGB para IA', () async {
+    final jpeg = _testJpeg(width: 4, height: 2);
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final requests = server.listen((request) async {
+      if (request.uri.path == '/frame.jpg') {
+        request.response.headers
+          ..contentType = ContentType('image', 'jpeg')
+          ..set('x-vigia-frame-sequence', '1');
+        request.response.add(jpeg);
+      } else {
+        request.response.statusCode = HttpStatus.notFound;
+      }
+      await request.response.close();
+    });
+    final source = RemotePhoneCameraSource(
+      baseUrl: 'http://${server.address.address}:${server.port}',
+      accessKey: 'test-key',
+      emitFrames: false,
+    );
+    final emitted = <DateTime>[];
+    final subscription = source.frames.listen((frame) => emitted.add(frame.capturedAt));
+    addTearDown(() async {
+      await subscription.cancel();
+      await source.dispose();
+      await requests.cancel();
+      await server.close(force: true);
+    });
+
+    await source.start();
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+
+    expect(source.previewAspectRatio, 2.0);
+    expect(emitted, isEmpty);
+  });
+
   test('consulta rapidamente e não emite novamente o mesmo quadro remoto',
       () async {
     final jpeg = _testJpeg();
@@ -58,12 +93,12 @@ void main() {
   });
 }
 
-Uint8List _testJpeg() {
-  final image = img.Image(width: 2, height: 2);
-  image
-    ..setPixelRgb(0, 0, 18, 42, 64)
-    ..setPixelRgb(1, 0, 18, 42, 64)
-    ..setPixelRgb(0, 1, 18, 42, 64)
-    ..setPixelRgb(1, 1, 18, 42, 64);
+Uint8List _testJpeg({int width = 2, int height = 2}) {
+  final image = img.Image(width: width, height: height);
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      image.setPixelRgb(x, y, 18, 42, 64);
+    }
+  }
   return Uint8List.fromList(img.encodeJpg(image, quality: 70));
 }
