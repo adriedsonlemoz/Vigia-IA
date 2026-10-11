@@ -4,7 +4,7 @@ import 'package:vigiaia/core/app_metadata.dart';
 void main() {
   test('metadados publicos do Vigia IA estao sincronizados', () {
     expect(AppMetadata.name, 'Vigia IA');
-    expect(AppMetadata.version, '1.0.212');
-    expect(AppMetadata.build, 212);
+    expect(AppMetadata.version, '1.0.213');
+    expect(AppMetadata.build, 213);
   });
 }

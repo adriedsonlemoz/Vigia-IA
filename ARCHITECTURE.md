@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.212+212
+# Arquitetura — Vigia IA 1.0.213+213
 
 ## Buildfix do seletor de modos — 1.0.212
 
@@ -1944,3 +1944,6 @@ O `_NavigationBanner` do mapa foi convertido em card de navegação ampliado com
 ### Otimização câmera entre celulares (1.0.209)
 
 O Modo Câmera e o receptor `RemotePhoneCameraSource` continuam usando snapshot JPEG em HTTP na rede local, sem alegar H.264/WebRTC. A origem limita conversões/codificação sem receptor, impede sobreposição de compactações, e usa um quadro mais recente no servidor. A captura compartilhada altera a cadência do consumidor sem religar CameraX e sem interferir nas outras fontes. No receptor, a UI atualiza JPEG sem aguardar o `compute` de RGB para IA; a análise respeita intervalo próprio e descarta quadros intermediários em vez de enfileirar. A próxima evolução de fluidez deve avaliar transporte H.264 por encoder/decoder de hardware com teste real de compatibilidade.
+
+## Vigia IA 1.0.213+213
+Marcador selecionavel de localizacao.

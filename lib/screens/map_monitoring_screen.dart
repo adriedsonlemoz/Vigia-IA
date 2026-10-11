@@ -144,6 +144,34 @@ class MapMonitoringScreen extends StatefulWidget {
 
 class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     with WidgetsBindingObserver {
+  int _locationMarkerStyle = 0; // Bicicleta por padrão.
+  static const _locationMarkerIcons = <IconData>[
+    Icons.directions_bike_rounded, Icons.directions_walk_rounded,
+    Icons.directions_car_rounded, Icons.two_wheeler_rounded,
+    Icons.navigation_rounded,
+  ];
+
+  Future<void> _chooseLocationMarker() async {
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const ListTile(title: Text('Marcador de localização'),
+            subtitle: Text('Escolha como sua posição aparece no mapa')),
+          for (var i = 0; i < _locationMarkerIcons.length; i++)
+            ListTile(
+              leading: Icon(_locationMarkerIcons[i]),
+              title: Text(const ['Bicicleta', 'A pé', 'Carro', 'Moto', 'Seta'][i]),
+              trailing: i == _locationMarkerStyle ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.of(context).pop(i),
+            ),
+        ])),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() => _locationMarkerStyle = selected);
+  }
+
   static const String _openFreeMapVectorStyleUrl =
       'https://tiles.openfreemap.org/styles/liberty';
   static const String _openFreeMapAttribution =
@@ -6480,21 +6508,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                   ),
                                 ],
                               ),
-                              child: current.headingDegrees == null
-                                  ? const Icon(
-                                      Icons.circle,
-                                      size: 10,
-                                      color: Colors.white,
-                                    )
-                                  : Transform.rotate(
-                                      angle:
-                                          current.headingDegrees! * math.pi / 180,
-                                      child: const Icon(
-                                        Icons.navigation_rounded,
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                              child: GestureDetector(
+                                onLongPress: _chooseLocationMarker,
+                                onTap: _chooseLocationMarker,
+                                child: Transform.rotate(
+                                  // O rumo GPS só é usado quando fornecido pelo serviço.
+                                  angle: (current.headingDegrees ?? 0) * math.pi / 180,
+                                  child: Icon(
+                                    _locationMarkerIcons[_locationMarkerStyle],
+                                    size: 21,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

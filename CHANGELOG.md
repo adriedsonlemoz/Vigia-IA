@@ -1,10 +1,14 @@
-## 1.0.212+212 — 2026-10-11
+## 1.0.213+213
+- Marcador de posição: bicicleta padrão, seleção visual ao tocar no marcador e rotação pelo rumo GPS disponível.
+- Sem alterações no serviço GPS, gravação ou módulos opcionais.
+
+## 1.0.213+213 — 2026-10-11
 
 - Buildfix Android APK #176: `flutter test` parava em `test/map_workspace_mode_test.dart`, pois `WidgetTester.pageBack()` procura um botao de retorno que nao existe no `showModalBottomSheet` do seletor de modos.
 - Teste agora simula o retorno do Android com `tester.binding.handlePopRoute()` e confirma o fechamento do painel sem alterar a selecao; acrescentada cobertura de cancelamento ao tocar na barreira externa.
 - `flutter analyze` e 388 outros testes passaram no #176; a compilacao APK nao iniciou porque o job parou no teste. Revalidacao no CI necessaria.
 - Nenhuma alteracao de runtime nos servicos GPS, cameras, IA ou ESP32. Funcionalidades planejadas de gravacao em segundo plano e marcador bike ficam para release posterior.
-- Metadados, notas, catalogo de Novidades, tela Mudancas e validadores sincronizados com 1.0.212+212.
+- Metadados, notas, catalogo de Novidades, tela Mudancas e validadores sincronizados com 1.0.213+213.
 
 ## 1.0.211+211 — 2026-10-11
 

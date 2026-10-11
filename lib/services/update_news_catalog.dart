@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.212', build: 212);
+      AppBuildVersion(version: '1.0.213', build: 213);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.212', build: 212),
+      version: AppBuildVersion(version: '1.0.213', build: 213),
       changes: <String>[
-        'O seletor de modos do mapa foi revisado para manter sua escolha ao sair sem selecionar outra.',
-        'Os modos Explorar, Pedalar, Navegar e Monitorar continuam disponiveis no mesmo mapa.',
+        'O marcador da posição usa bicicleta por padrão e pode ser alterado tocando nele.',
+        'Escolha entre bicicleta, caminhada, carro, moto ou seta.',
       ],
     ),
   ]);

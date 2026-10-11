@@ -77,11 +77,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.212',
+          version: '1.0.213',
           current: true,
           changes: [
-            'A verificacao de retorno pelo botao Voltar do Android no seletor de modos foi reforcada.',
-            'A interface e as ferramentas de mapas da versao anterior foram preservadas.',
+            'Marcador de localizacao com bicicleta por padrao.',
+            'Toque no marcador para escolher bicicleta, caminhada, carro, moto ou seta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.212',
+          changes: [
+            'Teste do seletor de modos corrigido para o retorno Android.',
           ],
         ),
         SizedBox(height: 10),
@@ -1922,11 +1929,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.212',
+          version: '1.0.213',
           current: true,
           changes: [
-            'A verificacao de retorno pelo botao Voltar do Android no seletor de modos foi reforcada.',
-            'A interface e as ferramentas de mapas da versao anterior foram preservadas.',
+            'Marcador de localizacao com bicicleta por padrao.',
+            'Toque no marcador para escolher bicicleta, caminhada, carro, moto ou seta.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.212',
+          changes: [
+            'Teste do seletor de modos corrigido para o retorno Android.',
           ],
         ),
         SizedBox(height: 10),
