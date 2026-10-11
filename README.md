@@ -1,11 +1,13 @@
 # Vigia IA
 
-A 1.0.213+213 adiciona marcador de localização com bicicleta padrão e seleção por toque no marcador (bicicleta, caminhada, carro, moto ou seta). A escolha é temporária nesta etapa; GPS e gravação permanecem inalterados.
+A 1.0.214+214 reorganiza o Vigia Maps: proximidades e rota na mesma faixa, menus de modos/ferramentas dentro de Vigia IA, seleção de locais por toque longo, gravação junto às instruções e crédito OSM no rodapé esquerdo.
 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.213+213`
+> **Versão atual:** `1.0.214+214`
+
+A **1.0.214+214** reorganiza a experiência no mapa sem alterar os serviços de GPS, roteamento ou captura. A tela deve ser validada em um Android real em retrato/paisagem, inclusive com rota minimizada/expandida e gravação ativa.
 
 A **1.0.213+213** corrige o teste que interrompeu o workflow Android APK #176: o seletor de modos e um painel modal sem botao de retorno embutido. O teste agora simula o Voltar do Android, e tambem verifica o cancelamento ao tocar fora do painel. No #176, `flutter analyze` concluiu sem avisos, mas um dos 389 testes falhou; a etapa de compilacao Android nao foi executada. A interface e os modulos existentes nao foram reescritos. A nova versao requer validacao em Flutter/Android no CI.
 

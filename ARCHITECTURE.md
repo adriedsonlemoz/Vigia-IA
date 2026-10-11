@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.213+213
+# Arquitetura — Vigia IA 1.0.214+214
 
 ## Buildfix do seletor de modos — 1.0.212
 
@@ -1947,3 +1947,12 @@ O Modo Câmera e o receptor `RemotePhoneCameraSource` continuam usando snapshot 
 
 ## Vigia IA 1.0.213+213
 Marcador selecionavel de localizacao.
+
+## Vigia IA 1.0.214+214 — interface de navegação
+
+- `MapMonitoringScreen` concentra os cartões Proximidades/Rota na faixa horizontal abaixo da telemetria, com apresentação compacta da rota ativa quando disponível; distância/horário continuam calculados com os serviços anteriores.
+- `MapWorkspaceShell` mantém `MapMonitoringScreen` montado e passa ações de modo e ferramentas ao menu superior pelo `onChooseWorkspaceMode`/`onOpenWorkspaceTools`, eliminando os dois botões fixos no mapa.
+- Somente `onLongPress` dos provedores Google Maps/FlutterMap inicia geocodificação reversa; `onTap` descarta seleção livre e invalida consultas pendentes. Marcadores de POI continuam interativos.
+- A barra de navegação minimizada contém as ações seguir, expandir e fechar em coluna, e o controle compacto de gravação/pausa/encerramento/GPX na mesma ficha. A gravação independente permanece quando não há navegação.
+- A atribuição de dados do mapa permanece visível no rodapé esquerdo com a faixa de navegação elevada. Não altera licenças, fontes de tile nem cache offline.
+- Validação visual em telas estreitas, modo horizontal, modo foco, zoom do Android e com diferentes comprimentos de texto deve ser feita no dispositivo/CI.

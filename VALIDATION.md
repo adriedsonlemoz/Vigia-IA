@@ -1,4 +1,18 @@
-# Validação Vigia IA 1.0.213+213
+# Validação Vigia IA 1.0.214+214
+
+## Mapa e navegação 1.0.214
+
+- [x] Código: menus Modos/Ferramentas dentro do botão Vigia IA; removidos botões flutuantes inferiores.
+- [x] Código: cabeçalhos Próximos/Rota compartilham faixa horizontal quando há rota.
+- [x] Código: seleção livre no mapa exige toque longo; toque curto fecha a ficha.
+- [x] Código: gravação incorporada às instruções minimizadas; GPX/pausa/parar permanecem acessíveis.
+- [x] Código: atribuição no canto inferior esquerdo.
+- [ ] `flutter analyze` e `flutter test` no workflow Android.
+- [ ] Android real: retrato 320 a 420 dp e paisagem; sem overflow/colisão nas duas fichas.
+- [ ] Android real: toque breve não abre localização; toque longo abre ficha; POIs seguem selecionáveis.
+- [ ] Android real: navegação normal e minimizada, seguir/expandir/parar, iniciar/pausar/parar gravação, exportar GPX, incluindo modo foco.
+- [ ] Confirmar que atribuições OSM/provedor continuam legíveis, não encobertas por painel.
+
 
 ## Buildfix Android APK #176 — 1.0.212
 

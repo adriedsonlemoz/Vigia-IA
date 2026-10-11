@@ -77,8 +77,18 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.213',
+          version: '1.0.214',
           current: true,
+          changes: [
+            'Cartões de próximos pontos e rota ativa dividem a mesma linha.',
+            'Modos e ferramentas foram movidos para o menu Vigia IA.',
+            'Toque longo no mapa seleciona o local; toque simples não abre ficha.',
+            'Gravação integrada às instruções, com comandos compactos e crédito no rodapé.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.213',
           changes: [
             'Marcador de localizacao com bicicleta por padrao.',
             'Toque no marcador para escolher bicicleta, caminhada, carro, moto ou seta.',
@@ -1929,8 +1939,18 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.213',
+          version: '1.0.214',
           current: true,
+          changes: [
+            'Cartões de próximos pontos e rota ativa dividem a mesma linha.',
+            'Modos e ferramentas foram movidos para o menu Vigia IA.',
+            'Toque longo no mapa seleciona o local; toque simples não abre ficha.',
+            'Gravação integrada às instruções, com comandos compactos e crédito no rodapé.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.213',
           changes: [
             'Marcador de localizacao com bicicleta por padrao.',
             'Toque no marcador para escolher bicicleta, caminhada, carro, moto ou seta.',

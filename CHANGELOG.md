@@ -1,3 +1,12 @@
+## 1.0.214+214 — 2026-10-11
+
+- Resumo de próximos pontos e rota ativa em uma única faixa superior, reduzindo a área encoberta sobre o mapa.
+- Controles inferiores Explorar/Ferramentas removidos; entrada preservada nas configurações do botão Vigia IA.
+- Toque simples no fundo do mapa somente fecha seleção; geocodificação de locais por toque longo, evitando consultas de rede acidentais.
+- Navegação minimizada com controles Seguir/Expandir/Parar em coluna e gravação inline, com acesso a pausa, encerramento e GPX.
+- Crédito do mapa fixado no canto inferior esquerdo sem cruzar as cartas do topo.
+- Sem mudanças em protocolos ESP32, câmera/IA, roteamento ou persistência de gravação. Validação Flutter/Android pendente no workflow.
+
 ## 1.0.213+213
 - Marcador de posição: bicicleta padrão, seleção visual ao tocar no marcador e rotação pelo rumo GPS disponível.
 - Sem alterações no serviço GPS, gravação ou módulos opcionais.

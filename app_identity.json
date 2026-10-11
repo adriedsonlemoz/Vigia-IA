@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Buildfix 1.0.213: teste de cancelamento do seletor de modos compatível com a rota modal do Android.",
-  "version": "1.0.213",
-  "build": 213
+  "notes": "Mapa 1.0.214: cartões superiores lado a lado, controles integrados e toque longo para selecionar local.",
+  "version": "1.0.214",
+  "build": 214
 }

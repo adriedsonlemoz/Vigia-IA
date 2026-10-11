@@ -118,6 +118,9 @@ class MapMonitoringScreen extends StatefulWidget {
     this.initialPointOfInterest,
     this.workspaceVisible = true,
     this.navigationSearchRequests,
+    this.onChooseWorkspaceMode,
+    this.onOpenWorkspaceTools,
+    this.workspaceModeLabel,
   });
 
   final WidgetBuilder? cameraPreviewBuilder;
@@ -137,6 +140,9 @@ class MapMonitoringScreen extends StatefulWidget {
   final RouteExplorerResult? initialPointOfInterest;
   final bool workspaceVisible;
   final ValueListenable<int>? navigationSearchRequests;
+  final VoidCallback? onChooseWorkspaceMode;
+  final VoidCallback? onOpenWorkspaceTools;
+  final String? workspaceModeLabel;
 
   @override
   State<MapMonitoringScreen> createState() => _MapMonitoringScreenState();
@@ -2418,6 +2424,18 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     return rest == 0 ? '${hours}h' : '${hours}h ${rest}min';
   }
 
+  // Um toque normal apenas fecha a ficha livre. O gesto longo identifica
+  // o endereço e abre a ficha, evitando geocodificação por acidente ao mover.
+  void _dismissFreeMapSelection() {
+    ++_mapTapLookupSerial; // invalida reverse-lookup em andamento
+    if (_selectedMapLocation != null || _selectedPoiId != null) {
+      setState(() {
+        _selectedMapLocation = null;
+        _selectedPoiId = null;
+      });
+    }
+  }
+
   Future<void> _selectFreeMapPoint(LatLng point) async {
     final current = _routeState.current;
     final serial = ++_mapTapLookupSerial;
@@ -2453,54 +2471,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     setState(() => _selectedMapLocation = resolved);
   }
 
-  Future<void> _showLongPressActions(LatLng point) async {
-    unawaited(_selectFreeMapPoint(point));
-    final current = _routeState.current;
-    final item = MapDestinationSearchResult(
-      id: 'coordinate:${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}',
-      title: 'Ponto selecionado',
-      subtitle: '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
-      latitude: point.latitude,
-      longitude: point.longitude,
-      distanceMeters: current == null ? 0 : const Distance().as(
-        LengthUnit.Meter,
-        LatLng(current.latitude, current.longitude), point,
-      ),
-      kind: MapDestinationKind.place,
-      source: 'coordinate',
-    );
-    await showMapCenteredDialog<void>(
-      context: context,
-      maxWidth: 480,
-      maxHeightFactor: 0.68,
-      barrierLabel: 'Fechar ações do ponto',
-      builder: (sheetContext) => SafeArea(child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(title: const Text('Ponto no mapa'), subtitle: Text(item.subtitle)),
-          ListTile(leading: const Icon(Icons.navigation_rounded),
-            title: const Text('Ir até aqui'), onTap: () {
-              Navigator.of(sheetContext).pop();
-              unawaited(_navigateToSearchResult(item));
-            }),
-          ListTile(leading: const Icon(Icons.add_location_alt_outlined),
-            title: const Text('Adicionar parada'), onTap: () {
-              Navigator.of(sheetContext).pop();
-              _addManualTripStop(item);
-            }),
-          ListTile(leading: const Icon(Icons.bookmark_add_outlined),
-            title: const Text('Salvar local'), onTap: () {
-              Navigator.of(sheetContext).pop();
-              unawaited(_destinationSearch.savePlace(item));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Local salvo para pesquisa offline.')),
-              );
-            }),
-        ],
-      )),
-    );
-  }
-
   Future<void> _showMapLocationDetails(MapDestinationSearchResult item) async {
     await showMapCenteredDialog<void>(
       context: context,
@@ -2521,6 +2491,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   '${item.longitude.toStringAsFixed(5)}'),
               Text('Fonte: ${item.offline ? 'Offline' : item.storedLocally ? 'Salvo no aparelho' : 'Online'}'),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await _destinationSearch.savePlace(item);
+                    if (!mounted || !sheetContext.mounted) return;
+                    Navigator.of(sheetContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Local salvo para consulta offline.')),
+                    );
+                  },
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  label: const Text('Salvar local offline'),
+                ),
+              ),
               Row(children: [
                 Expanded(child: OutlinedButton.icon(
                   onPressed: () {
@@ -4370,6 +4355,31 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ],
                 ),
               ),
+              if (widget.onChooseWorkspaceMode != null)
+                ListTile(
+                  leading: const Icon(Icons.explore_outlined),
+                  title: const Text('Modo do mapa'),
+                  subtitle: Text(widget.workspaceModeLabel ?? 'Explorar'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    widget.onChooseWorkspaceMode?.call();
+                  },
+                ),
+              if (widget.onOpenWorkspaceTools != null)
+                ListTile(
+                  leading: const Icon(Icons.apps_rounded),
+                  title: const Text('Ferramentas do Vigia IA'),
+                  subtitle: const Text('Câmeras, IA, Bike, histórico e ajustes'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    widget.onOpenWorkspaceTools?.call();
+                  },
+                ),
+              if (widget.onChooseWorkspaceMode != null ||
+                  widget.onOpenWorkspaceTools != null)
+                const Divider(height: 8),
               ListTile(
                 leading: const Icon(Icons.fullscreen_rounded),
                 title: const Text('Tela inteira no mapa'),
@@ -6099,29 +6109,27 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
           );
           final showDockedNavigationBanner = focusLevel == 0 && compactHud &&
               navigationTarget != null &&
-              _navigationPanelMinimized &&
-              !_routeState.recording;
+              _navigationPanelMinimized;
           final floatingCardBottomInset = !compactHud
               ? 82.0
               : navigationTarget == null
                   ? 82.0
                   : showDockedNavigationBanner
-                      ? 96.0
+                      ? 152.0
                       : (_navigationPanelMinimized ? 176.0 : 360.0);
           final telemetryTop = topInset + MapUxPolicy.controlSize + 10;
           final telemetryHeight = compactHud ? 42.0 : 64.0;
           final nearbyTop = telemetryTop + telemetryHeight + 8;
-          final nearbyHeight = compactHud ? 44.0 : 52.0;
-          final routeOverviewTop = nearbyTop + nearbyHeight + 7;
-          final cameraButtonTop = focusLevel == 0 ? routeOverviewTop +
-              (navigationTarget != null && !compactHud ? 70.0 : 0.0) + 8
+          // A ficha de locais e o resumo da rota compartilham uma única
+          // faixa para ampliar a janela útil do mapa no modo retrato.
+          final showRouteOverview = navigationTarget != null && !horizontalControls;
+          final nearbyHeight = showRouteOverview ? 64.0 : (compactHud ? 44.0 : 52.0);
+          final cameraButtonTop = focusLevel == 0
+              ? nearbyTop + nearbyHeight + 9
               : topInset + MapUxPolicy.controlSize + 12;
           final controlDockTop = cameraButtonTop;
-          final attributionBottom = MapUxPolicy.attributionBottom(
-            safeBottom: safePadding.bottom,
-            hasSelectedPoi: showSelectedPoiCard,
-            hasNavigation: navigationTarget != null,
-          );
+          // Crédito de tiles sempre no rodapé esquerdo, sem flutuar pelo mapa.
+          final attributionBottom = safePadding.bottom + 5;
           _mapViewportSize = Size(constraints.maxWidth, constraints.maxHeight);
           _compactLandscape = horizontalControls;
           return Stack(
@@ -6188,10 +6196,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       ));
                     }
                   },
-                  onTap: (point) => unawaited(_selectFreeMapPoint(
-                    LatLng(point.latitude, point.longitude),
-                  )),
-                  onLongPress: (point) => unawaited(_showLongPressActions(
+                  onTap: (_) => _dismissFreeMapSelection(),
+                  onLongPress: (point) => unawaited(_selectFreeMapPoint(
                     LatLng(point.latitude, point.longitude),
                   )),
                 )
@@ -6243,12 +6249,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       }
                     });
                   },
-                  onTap: (_, point) {
-                    unawaited(_selectFreeMapPoint(point));
-                  },
-                  onLongPress: (_, point) {
-                    unawaited(_showLongPressActions(point));
-                  },
+                  onTap: (_, __) => _dismissFreeMapSelection(),
+                  onLongPress: (_, point) =>
+                      unawaited(_selectFreeMapPoint(point)),
                 ),
                 children: [
                   if (useOfflineLayer)
@@ -6680,37 +6683,45 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   compact: compactHud,
                 ),
               ),
-              if (focusLevel == 0) Positioned(
-                top: nearbyTop,
-                left: MapUxPolicy.controlEdge,
-                right: MapUxPolicy.controlEdge,
-                height: nearbyHeight,
-                child: _NearbyPointsBanner(
-                  count: _routeExplorer.activeResults.length,
-                  loading: _routeExplorer.loading,
-                  offline: _routeExplorer.lastSource == 'offline' || networkOffline,
-                  routeActive: navigationTarget != null && _routeExplorer.settings.searchAheadWhenMoving,
-                  points: _routeExplorer.activeResults,
-                  onTap: () => unawaited(_showNearbyPoints()),
-                ),
-              ),
-              if (navigationTarget != null && !compactHud && focusLevel == 0)
+              if (focusLevel == 0)
                 Positioned(
-                  top: routeOverviewTop,
+                  top: nearbyTop,
                   left: MapUxPolicy.controlEdge,
                   right: MapUxPolicy.controlEdge,
-                  height: 70,
-                  child: _MapRouteOverview(
-                    target: navigationTarget,
-                    route: _cyclingRoute,
-                    progress: _navigationProgress,
-                    bikeEstimate: _bikeTripEstimate,
-                    speedReading: speedReading,
-                    onTap: () => setState(() {
-                      _selectedPoiId = null;
-                      _selectedMapLocation = null;
-                      _navigationPanelMinimized = false;
-                    }),
+                  height: nearbyHeight,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _NearbyPointsBanner(
+                          count: _routeExplorer.activeResults.length,
+                          loading: _routeExplorer.loading,
+                          offline: _routeExplorer.lastSource == 'offline' || networkOffline,
+                          routeActive: navigationTarget != null &&
+                              _routeExplorer.settings.searchAheadWhenMoving,
+                          points: _routeExplorer.activeResults,
+                          compact: showRouteOverview,
+                          onTap: () => unawaited(_showNearbyPoints()),
+                        ),
+                      ),
+                      if (showRouteOverview) ...[
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: _MapRouteOverview(
+                            target: navigationTarget,
+                            route: _cyclingRoute,
+                            progress: _navigationProgress,
+                            bikeEstimate: _bikeTripEstimate,
+                            speedReading: speedReading,
+                            compact: true,
+                            onTap: () => setState(() {
+                              _selectedPoiId = null;
+                              _selectedMapLocation = null;
+                              _navigationPanelMinimized = false;
+                            }),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               if (rapidPressureLoss != null)
@@ -6962,7 +6973,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: 8,
                   right: 8,
-                  bottom: bottomInset + 74,
+                  bottom: bottomInset + 28,
                   child: _NavigationBanner(
                     target: navigationTarget,
                     distanceMeters: _routeState.navigationDistanceMeters,
@@ -6980,6 +6991,17 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     compact: compactHud,
                     minimized: _navigationPanelMinimized,
                     docked: false,
+                    recordControl: _NavigationRecordControl(
+                      recording: _routeState.recording,
+                      paused: _routeState.paused,
+                      canRecord: current != null,
+                      hasRoute: _routeState.route.length >= 2,
+                      onToggleRecording: _routeState.recording
+                          ? () => unawaited(_finishRecording())
+                          : () => unawaited(_startRecording()),
+                      onTogglePause: _togglePauseRecording,
+                      onExport: () => unawaited(_exportGpx()),
+                    ),
                     following: navigation3dActive ? _navigation3dFollowing : _followPosition,
                     nearbyPoints: _routeExplorer.activeResults,
                     onRouteSelected: _selectCyclingRoute,
@@ -7004,75 +7026,60 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               if (showDockedNavigationBanner)
                 Positioned(
                   left: 8,
-                  right: MapUxPolicy.controlEdge,
-                  bottom: bottomInset + 2,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: _NavigationBanner(
-                          target: navigationTarget,
-                          distanceMeters: _routeState.navigationDistanceMeters,
-                          bearingDegrees: _routeState.navigationBearingDegrees,
-                          roadRoute: _cyclingRoute,
-                          routeAlternatives: _cyclingRouteAlternatives,
-                          selectedRouteIndex: _selectedCyclingRouteIndex,
-                          guidance: _navigationProgress,
-                          bikeEstimate: _bikeTripEstimate,
-                          bikeTripPlan: _bikeTripPlan,
-                          bikeTripPlanLoading: _bikeTripPlanLoading,
-                          loadingRoadRoute: _cyclingRouteLoading,
-                          fallbackMessage: _routeFallback?.message,
-                          networkOffline: networkOffline,
-                          compact: true,
-                          minimized: true,
-                          docked: true,
-                          following: navigation3dActive
-                              ? _navigation3dFollowing
-                              : _followPosition,
-                          nearbyPoints: _routeExplorer.activeResults,
-                          onRouteSelected: _selectCyclingRoute,
-                          onToggleMinimized: () => setState(
-                            () => _navigationPanelMinimized = false,
-                          ),
-                          onFollowRequested: current == null
-                              ? null
-                              : () {
-                                  if (navigation3dActive) {
-                                    _recenterNavigation3d();
-                                  } else if (!_followPosition) {
-                                    _toggleFollow();
-                                  }
-                                },
-                          onTripPlan: _bikeTripPlan == null
-                              ? null
-                              : () => unawaited(_showBikeTripPlan()),
-                          onStop: _stopNavigation,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _RouteButtonBar(
-                        recording: _routeState.recording,
-                        paused: _routeState.paused,
-                        hasRoute: _routeState.route.length >= 2,
-                        routeState: _routeState,
-                        distanceLabel: _formatDistance(),
-                        onToggleRecording: current == null
-                            ? null
-                            : _routeState.recording
-                                ? () => unawaited(_finishRecording())
-                                : () => unawaited(_startRecording()),
-                        onTogglePause: _routeState.recording
-                            ? _togglePauseRecording
-                            : null,
-                        onExport: _routeState.route.length >= 2
-                            ? () => unawaited(_exportGpx())
-                            : null,
-                      ),
-                    ],
+                  right: 8,
+                  bottom: bottomInset + 28,
+                  child: _NavigationBanner(
+                    target: navigationTarget,
+                    distanceMeters: _routeState.navigationDistanceMeters,
+                    bearingDegrees: _routeState.navigationBearingDegrees,
+                    roadRoute: _cyclingRoute,
+                    routeAlternatives: _cyclingRouteAlternatives,
+                    selectedRouteIndex: _selectedCyclingRouteIndex,
+                    guidance: _navigationProgress,
+                    bikeEstimate: _bikeTripEstimate,
+                    bikeTripPlan: _bikeTripPlan,
+                    bikeTripPlanLoading: _bikeTripPlanLoading,
+                    loadingRoadRoute: _cyclingRouteLoading,
+                    fallbackMessage: _routeFallback?.message,
+                    networkOffline: networkOffline,
+                    compact: true,
+                    minimized: true,
+                    docked: true,
+                    recordControl: _NavigationRecordControl(
+                      recording: _routeState.recording,
+                      paused: _routeState.paused,
+                      canRecord: current != null,
+                      hasRoute: _routeState.route.length >= 2,
+                      onToggleRecording: _routeState.recording
+                          ? () => unawaited(_finishRecording())
+                          : () => unawaited(_startRecording()),
+                      onTogglePause: _togglePauseRecording,
+                      onExport: () => unawaited(_exportGpx()),
+                    ),
+                    following: navigation3dActive
+                        ? _navigation3dFollowing : _followPosition,
+                    nearbyPoints: _routeExplorer.activeResults,
+                    onRouteSelected: _selectCyclingRoute,
+                    onToggleMinimized: () => setState(
+                      () => _navigationPanelMinimized = false,
+                    ),
+                    onFollowRequested: current == null ? null : () {
+                      if (navigation3dActive) {
+                        _recenterNavigation3d();
+                      } else if (!_followPosition) {
+                        _toggleFollow();
+                      }
+                    },
+                    onTripPlan: _bikeTripPlan == null
+                        ? null : () => unawaited(_showBikeTripPlan()),
+                    onStop: _stopNavigation,
                   ),
-                )
-              else
+                ),
+              // Se o painel foi ocultado por um POI ou pelo modo foco,
+              // o controle de gravação continua acessível.
+              if (navigationTarget == null || focusLevel != 0 ||
+                  (!compactHud &&
+                      (showSelectedPoiCard || showSelectedMapLocationCard)))
                 Positioned(
                   right: MapUxPolicy.controlEdge,
                   bottom: bottomInset + 2,
@@ -7090,8 +7097,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onTogglePause:
                         _routeState.recording ? _togglePauseRecording : null,
                     onExport: _routeState.route.length >= 2
-                        ? () => unawaited(_exportGpx())
-                        : null,
+                        ? () => unawaited(_exportGpx()) : null,
                   ),
                 ),
               if (_camerasVisible &&
@@ -7816,8 +7822,10 @@ class _MapRouteOverview extends StatelessWidget {
     required this.bikeEstimate,
     required this.speedReading,
     required this.onTap,
+    this.compact = false,
   });
 
+  final bool compact;
   final MapNavigationTarget target;
   final MapCyclingRoute? route;
   final MapNavigationProgress? progress;
@@ -7866,8 +7874,28 @@ class _MapRouteOverview extends StatelessWidget {
                 bottom: BorderSide(color: accent.withValues(alpha: 0.25))),
             borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 9),
-          child: Row(children: [
+          padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 9),
+          child: compact
+              ? Row(children: [
+                  const Icon(Icons.near_me_rounded, color: accent, size: 18),
+                  const SizedBox(width: 5),
+                  Expanded(child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Rota ativa', style: TextStyle(
+                        color: accent, fontSize: 10, fontWeight: FontWeight.w900)),
+                      Text(target.label, maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 9.5)),
+                      Text('$eta · $distanceLabel', maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFFB6C8D7), fontSize: 9)),
+                    ],
+                  )),
+                  const Icon(Icons.chevron_right_rounded, color: accent, size: 16),
+                ])
+              : Row(children: [
             const Icon(Icons.near_me_rounded, color: accent, size: 24),
             const SizedBox(width: 7),
             Expanded(
@@ -8228,8 +8256,10 @@ class _NearbyPointsBanner extends StatelessWidget {
     required this.routeActive,
     required this.points,
     required this.onTap,
+    this.compact = false,
   });
 
+  final bool compact;
   final int count;
   final bool loading;
   final bool offline;
@@ -8287,15 +8317,15 @@ class _NearbyPointsBanner extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 10, vertical: 4),
           child: Row(
             children: [
               Icon(
                 Icons.location_on_rounded,
-                size: 26,
+                size: compact ? 18 : 26,
                 color: const Color(0xFF12BDFC),
               ),
-              const SizedBox(width: 7),
+              SizedBox(width: compact ? 3 : 7),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -8310,7 +8340,7 @@ class _NearbyPointsBanner extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 12.5,
+                              fontSize: compact ? 10.5 : 12.5,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -8329,13 +8359,13 @@ class _NearbyPointsBanner extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color(0xFFB6C8D7),
-                            fontSize: 9.5),
+                          style: TextStyle(color: const Color(0xFFB6C8D7),
+                            fontSize: compact ? 8.5 : 9.5),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: compact ? 2 : 6),
               Container(
                 constraints: const BoxConstraints(minWidth: 24),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -8353,6 +8383,7 @@ class _NearbyPointsBanner extends StatelessWidget {
                   ),
                 ),
               ),
+              if (!compact) ...[
               const SizedBox(width: 5),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -8370,11 +8401,12 @@ class _NearbyPointsBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              Icon(
+              const Icon(
                 Icons.chevron_right_rounded,
                 size: 19,
                 color: Colors.white,
               ),
+              ],
             ],
           ),
         ),
@@ -9006,12 +9038,12 @@ class _MapAttribution extends StatelessWidget {
     return IgnorePointer(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: 0.82),
-          borderRadius: BorderRadius.circular(7),
+          color: scheme.surface.withValues(alpha: 0.68),
+          borderRadius: BorderRadius.circular(5),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-          child: Text(text, style: const TextStyle(fontSize: 9.5)),
+          child: Text(text, style: const TextStyle(fontSize: 8.5)),
         ),
       ),
     );
@@ -9876,6 +9908,7 @@ class _NavigationBanner extends StatelessWidget {
     required this.compact,
     required this.minimized,
     this.docked = false,
+    this.recordControl,
     required this.following,
     required this.nearbyPoints,
     required this.onRouteSelected,
@@ -9901,6 +9934,7 @@ class _NavigationBanner extends StatelessWidget {
   final bool compact;
   final bool minimized;
   final bool docked;
+  final Widget? recordControl;
   final bool following;
   final List<RouteExplorerResult> nearbyPoints;
   final ValueChanged<int> onRouteSelected;
@@ -10010,6 +10044,19 @@ class _NavigationBanner extends StatelessWidget {
         : '${timeDeltaMinutes >= 0 ? '+' : '−'}${timeDeltaMinutes.abs()} min';
     return <String>[?distanceText, ?timeText].join(' · ');
   }
+
+  Widget _navigationSmallButton({
+    required String tooltip,
+    required IconData icon,
+    VoidCallback? onPressed,
+  }) => IconButton(
+    tooltip: tooltip,
+    onPressed: onPressed,
+    visualDensity: VisualDensity.compact,
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints.tightFor(width: 30, height: 27),
+    icon: Icon(icon, size: 20),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -10161,33 +10208,30 @@ class _NavigationBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!docked && !following && onFollowRequested != null)
-                  IconButton(
-                    tooltip: 'Voltar a seguir posição',
-                    onPressed: onFollowRequested,
-                    icon: const Icon(Icons.my_location_rounded),
-                  ),
-                IconButton(
-                  tooltip: 'Expandir navegação',
-                  onPressed: onToggleMinimized,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 32,
-                    height: 32,
-                  ),
-                  icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                ),
-                if (!docked)
-                  IconButton(
-                    tooltip: 'Parar navegação',
-                    onPressed: onStop,
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 32,
-                      height: 32,
+                if (recordControl != null) ...[
+                  const SizedBox(width: 4),
+                  recordControl!,
+                ],
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _navigationSmallButton(
+                      tooltip: following ? 'Já está seguindo posição' : 'Seguir posição',
+                      icon: Icons.my_location_rounded,
+                      onPressed: following ? null : onFollowRequested,
                     ),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
+                    _navigationSmallButton(
+                      tooltip: 'Expandir navegação',
+                      icon: Icons.keyboard_arrow_up_rounded,
+                      onPressed: onToggleMinimized,
+                    ),
+                    _navigationSmallButton(
+                      tooltip: 'Parar navegação',
+                      icon: Icons.close_rounded,
+                      onPressed: onStop,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -10244,6 +10288,11 @@ class _NavigationBanner extends StatelessWidget {
                 ),
               ],
             ),
+            if (recordControl != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: recordControl!,
+              ),
             if (!following && onFollowRequested != null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -10699,6 +10748,78 @@ class _NavigationPoiChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Gravacao integrada ao aviso de navegacao, sem segunda barra flutuante.
+class _NavigationRecordControl extends StatelessWidget {
+  const _NavigationRecordControl({
+    required this.recording,
+    required this.paused,
+    required this.canRecord,
+    required this.hasRoute,
+    required this.onToggleRecording,
+    required this.onTogglePause,
+    required this.onExport,
+  });
+
+  final bool recording;
+  final bool paused;
+  final bool canRecord;
+  final bool hasRoute;
+  final VoidCallback onToggleRecording;
+  final VoidCallback onTogglePause;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.error;
+    if (!recording) {
+      return Tooltip(
+        message: canRecord ? 'Gravar percurso' : 'GPS indisponível',
+        child: TextButton(
+          onPressed: canRecord ? onToggleRecording : null,
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            minimumSize: const Size(45, 32),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.fiber_manual_record_rounded, size: 16, color: color),
+            const Text('Gravar', style: TextStyle(fontSize: 9)),
+          ]),
+        ),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: paused ? 'Retomar gravação' : 'Pausar gravação',
+          onPressed: onTogglePause,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints.tightFor(width: 32, height: 30),
+          icon: Icon(paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+            color: color, size: 20),
+        ),
+        PopupMenuButton<String>(
+          tooltip: 'Gravação: encerrar ou exportar GPX',
+          padding: EdgeInsets.zero,
+          iconSize: 20,
+          constraints: const BoxConstraints(minWidth: 180),
+          onSelected: (action) {
+            if (action == 'stop') onToggleRecording();
+            if (action == 'gpx') onExport();
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: 'stop', child: Text('Encerrar gravação')),
+            if (hasRoute)
+              const PopupMenuItem(value: 'gpx', child: Text('Exportar GPX')),
+          ],
+          icon: Icon(Icons.stop_circle_outlined, color: color),
+        ),
+      ],
     );
   }
 }
