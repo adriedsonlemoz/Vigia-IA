@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.214',
+          version: '1.0.215',
           current: true,
+          changes: [
+            'Estabilidade e compatibilidade da interface do mapa aprimoradas.',
+            'Navegação compacta, gravação e toque longo preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.214',
           changes: [
             'Cartões de próximos pontos e rota ativa dividem a mesma linha.',
             'Modos e ferramentas foram movidos para o menu Vigia IA.',
@@ -1939,8 +1947,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.214',
+          version: '1.0.215',
           current: true,
+          changes: [
+            'Estabilidade e compatibilidade da interface do mapa aprimoradas.',
+            'Navegação compacta, gravação e toque longo preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.214',
           changes: [
             'Cartões de próximos pontos e rota ativa dividem a mesma linha.',
             'Modos e ferramentas foram movidos para o menu Vigia IA.',

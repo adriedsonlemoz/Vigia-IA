@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.214+214
+# Arquitetura — Vigia IA 1.0.215+215
 
 ## Buildfix do seletor de modos — 1.0.212
 
@@ -1956,3 +1956,9 @@ Marcador selecionavel de localizacao.
 - A barra de navegação minimizada contém as ações seguir, expandir e fechar em coluna, e o controle compacto de gravação/pausa/encerramento/GPX na mesma ficha. A gravação independente permanece quando não há navegação.
 - A atribuição de dados do mapa permanece visível no rodapé esquerdo com a faixa de navegação elevada. Não altera licenças, fontes de tile nem cache offline.
 - Validação visual em telas estreitas, modo horizontal, modo foco, zoom do Android e com diferentes comprimentos de texto deve ser feita no dispositivo/CI.
+
+## Vigia IA 1.0.215+215 — buildfix Flutter analyze
+
+- Ajuste restrito ao `MapMonitoringScreen` após workflow Android APK #179: o título do cartão compacto deve usar `TextStyle` não constante, pois `fontSize` é selecionado em tempo de execução pela variável `compact`.
+- Os dois argumentos não utilizados do callback `FlutterMap.MapOptions.onTap` são declarados como `(_, _)`, de acordo com os parâmetros curinga de Dart 3.12/Flutter 3.44.
+- Mudanças funcionais da interface 1.0.214 preservadas; sem alterações na camada de GPS, gravação GPX, mapas ou rotas.

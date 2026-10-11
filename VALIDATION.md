@@ -1,4 +1,14 @@
-# Validação Vigia IA 1.0.214+214
+# Validação Vigia IA 1.0.215+215
+
+## Correção do workflow Android APK #179 — 1.0.215
+
+- [x] Lido o erro do `flutter analyze` do build #179: `invalid_constant` (linha 8343), `unnecessary_underscores` (linha 6252).
+- [x] Removido `const` apenas do `TextStyle` que depende de `compact` em tempo de execução.
+- [x] Alterado callback do FlutterMap de `(_, __)` para `(_, _)`, sem mudar o comportamento de toque curto/toque longo.
+- [x] Incremento de versão e metadados para 1.0.215+215.
+- [ ] Confirmar `flutter analyze` e `flutter test` no novo workflow (SDK não disponível neste ambiente).
+- [ ] Confirmar `flutter build apk --release` e validar em Android real.
+
 
 ## Mapa e navegação 1.0.214
 

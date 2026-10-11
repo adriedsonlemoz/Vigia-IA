@@ -1,3 +1,10 @@
+## 1.0.215+215 — 2026-10-11
+
+- Buildfix Android APK #179: removido `const` de um `TextStyle` com `fontSize` dependente de `compact` em tempo de execução, eliminando o `invalid_constant` da linha 8343.
+- Normalizados parâmetros ignorados do callback `FlutterMap` para `(_, _)`, eliminando o aviso `unnecessary_underscores` da linha 6252.
+- Mantidos os cartões lado a lado, o menu compacto, a gravação integrada e a seleção por toque longo introduzidos na 1.0.214.
+- Versionamento, catálogos de Novidades, tela Sobre/Mudanças, User-Agents e verificador sincronizados. Compilação completa do Android pendente de novo workflow.
+
 ## 1.0.214+214 — 2026-10-11
 
 - Resumo de próximos pontos e rota ativa em uma única faixa superior, reduzindo a área encoberta sobre o mapa.

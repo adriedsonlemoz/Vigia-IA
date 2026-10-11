@@ -8,17 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.214', build: 214);
+      AppBuildVersion(version: '1.0.215', build: 215);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.214', build: 214),
+      version: AppBuildVersion(version: '1.0.215', build: 215),
       changes: <String>[
-        'Resumo de próximos pontos e rota lado a lado para liberar espaço no mapa.',
-        'Modos e ferramentas agora ficam dentro do menu Vigia IA.',
-        'Segure um ponto no mapa para abrir a ficha e navegar até ele.',
-        'Gravação junto das instruções e três comandos alinhados verticalmente.',
-        'Crédito do mapa no canto inferior esquerdo.',
+        'Interface do mapa aprimorada para melhor compatibilidade com o Flutter.',
+        'Navegação e gravação mantêm os controles compactos da versão anterior.',
+        'Toque longo continua selecionando pontos sem abrir fichas em toques simples.',
       ],
     ),
   ]);

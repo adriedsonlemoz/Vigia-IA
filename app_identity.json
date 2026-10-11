@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Mapa 1.0.214: cartões superiores lado a lado, controles integrados e toque longo para selecionar local.",
-  "version": "1.0.214",
-  "build": 214
+  "notes": "Compatibilidade Flutter: estilo responsivo sem const inválido e parâmetros ignorados normalizados na tela de mapa.",
+  "version": "1.0.215",
+  "build": 215
 }

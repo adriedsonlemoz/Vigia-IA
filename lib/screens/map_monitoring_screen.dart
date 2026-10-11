@@ -6249,7 +6249,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       }
                     });
                   },
-                  onTap: (_, __) => _dismissFreeMapSelection(),
+                  onTap: (_, _) => _dismissFreeMapSelection(),
                   onLongPress: (_, point) =>
                       unawaited(_selectFreeMapPoint(point)),
                 ),
@@ -8338,7 +8338,7 @@ class _NearbyPointsBanner extends StatelessWidget {
                             title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: compact ? 10.5 : 12.5,
                               fontWeight: FontWeight.w900,
