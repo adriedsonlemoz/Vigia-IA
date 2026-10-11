@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.206 mostra o nome específico do que foi visto (cachorro, gato, moto, carro, ônibus...) nos alertas e no histórico e trata a pista de movimento com cor de pele como \"Possível pessoa\", só confirmada em vários quadros.",
-  "version": "1.0.206",
-  "build": 206
+  "notes": "A 1.0.207 adiciona rastreamento persistente da abertura RTSP e motivo do encerramento Android ao diagnóstico, sem exportar credenciais de câmeras.",
+  "version": "1.0.207",
+  "build": 207
 }

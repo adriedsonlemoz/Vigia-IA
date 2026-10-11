@@ -8,25 +8,33 @@ import '../core/video_source_status.dart';
 import '../models/rgb_frame.dart';
 import '../services/error_log_service.dart';
 import '../services/frame_converter.dart';
+import '../services/rtsp_diagnostics_service.dart';
 
 class RtspCameraSource implements VideoSource {
   RtspCameraSource({
     required this.url,
     required this.analysisInterval,
     this.emitFrames = true,
+    this.softwareDecoding = false,
   });
 
   final String url;
   final Duration analysisInterval;
   final bool emitFrames;
+  final bool softwareDecoding;
   final _frames = StreamController<RgbFrame>.broadcast();
   final _statuses = StreamController<VideoSourceStatus>.broadcast();
   final ErrorLogService _logs = ErrorLogService.instance;
+  final RtspDiagnosticsService _diagnostics = RtspDiagnosticsService.instance;
 
   VlcPlayerController? _controller;
   Timer? _snapshotTimer;
   bool _snapshotInFlight = false;
   bool _disposed = false;
+  bool _previewLogged = false;
+  bool _playingLogged = false;
+  bool _bufferingLogged = false;
+  String? _lastPlayerError;
   DateTime _lastSuccessfulFrame = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastReconnect = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -40,10 +48,15 @@ class RtspCameraSource implements VideoSource {
 
   VlcMediaSource get _mediaSource => VlcMediaSource(
         uri: Uri.parse(url),
-        mediaOptions: const <String>[
+        mediaOptions: <String>[
           ':network-caching=500',
           ':rtsp-tcp',
           ':no-audio',
+          if (softwareDecoding) ...<String>[
+            ':avcodec-hw=none',
+            ':no-mediacodec',
+            ':no-omxil',
+          ],
         ],
       );
 
@@ -55,6 +68,15 @@ class RtspCameraSource implements VideoSource {
       throw FormatException('Informe uma URL RTSP valida.');
     }
     if (_controller != null) return;
+
+    await _diagnostics.mark('source_start', address: url);
+    // Inicio registrado antes da criacao do LibVLC nativo.
+    await _logs.record(
+      level: ErrorLogLevel.info,
+      source: 'RTSP',
+      message: 'Fonte RTSP iniciada; aguardando o player VLC.',
+      context: <String, Object?>{'host': RtspDiagnosticsService.safeHost(url), 'softwareDecoding': softwareDecoding},
+    );
 
     _statuses.add(const VideoSourceStatus(
       VideoSourceState.connecting,
@@ -68,6 +90,7 @@ class RtspCameraSource implements VideoSource {
       eventThrottleInterval: const Duration(milliseconds: 250),
     );
     _controller = controller;
+    await _diagnostics.mark('controller_created', address: url);
     _lastSuccessfulFrame = DateTime.now();
     controller.addListener(_onPlayerChanged);
 
@@ -82,6 +105,18 @@ class RtspCameraSource implements VideoSource {
     final value = _controller?.value;
     if (value == null || _statuses.isClosed) return;
     if (value.hasError) {
+      final message = value.errorDescription ?? 'Falha no stream RTSP.';
+      if (_lastPlayerError != message) {
+        _lastPlayerError = message;
+        unawaited(_diagnostics.mark('player_error', address: url));
+        unawaited(_logs.record(
+          level: ErrorLogLevel.error,
+          source: 'RTSP',
+          message: 'O player VLC reportou uma falha na transmissão RTSP.',
+          details: message,
+          context: <String, Object?>{'host': RtspDiagnosticsService.safeHost(url), 'softwareDecoding': softwareDecoding},
+        ));
+      }
       _statuses.add(VideoSourceStatus(
         VideoSourceState.error,
         message: value.errorDescription ?? 'Falha no stream RTSP.',
@@ -90,8 +125,22 @@ class RtspCameraSource implements VideoSource {
       return;
     }
     if (value.isPlaying) {
+      if (!_playingLogged) {
+        _playingLogged = true;
+        unawaited(_diagnostics.mark('playing', address: url));
+        unawaited(_logs.record(
+          level: ErrorLogLevel.info,
+          source: 'RTSP',
+          message: 'O player VLC informou reprodução em andamento.',
+          context: <String, Object?>{'host': RtspDiagnosticsService.safeHost(url), 'softwareDecoding': softwareDecoding},
+        ));
+      }
       _statuses.add(const VideoSourceStatus(VideoSourceState.streaming));
     } else if (value.isBuffering) {
+      if (!_bufferingLogged) {
+        _bufferingLogged = true;
+        unawaited(_diagnostics.mark('buffering', address: url));
+      }
       _statuses.add(const VideoSourceStatus(
         VideoSourceState.connecting,
         message: 'Bufferizando stream RTSP...',
@@ -175,6 +224,10 @@ class RtspCameraSource implements VideoSource {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (!_previewLogged) {
+      _previewLogged = true;
+      unawaited(_diagnostics.mark('preview_requested', address: url));
+    }
     return VlcPlayer(
       controller: controller,
       fit: VlcVideoFit.contain,
@@ -183,6 +236,7 @@ class RtspCameraSource implements VideoSource {
 
   @override
   Future<void> stop() async {
+    await _diagnostics.mark('stopped', address: url);
     _snapshotTimer?.cancel();
     _snapshotTimer = null;
     final controller = _controller;

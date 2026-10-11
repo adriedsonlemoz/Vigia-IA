@@ -1,3 +1,13 @@
+## 1.0.207+207 — 2026-10-11
+
+- RTSP: opção por câmera de decodificação compatível por software para comparar problemas de codec; modo padrão preservado.
+- RTSP: gravação persistente de etapa de abertura, controlador VLC, preview, buffering e reprodução, para auxiliar em encerramentos abruptos do Android.
+- Diagnóstico: seção RTSP/Android com último marco e último motivo de saída após a tentativa (quando disponível no Android 11+).
+- Rastreio da tentativa antes da navegação; erros Dart no player e na segunda câmera agora são registrados, sem exportar URL RTSP integral ou credenciais.
+- RTSP não abre o player VLC quando a porta TCP está indisponível; apresenta orientação e registra o motivo.
+- Porta RTSP online passa a ser descrita corretamente como teste de conectividade TCP, não como confirmação do vídeo.
+- Observação: corrigir um crash nativo específico de codec ou LibVLC ainda depende do logcat/tombstone no dispositivo real.
+
 ## 1.0.206+206 — 2026-10-02
 
 - Tela, histórico de eventos, notificações e frases de alerta passam a mostrar o nome específico (Carro, Moto, Ônibus, Caminhão, Pássaro, Gato, Cachorro, Cavalo, Ovelha, Vaca) em vez de só Automóvel/Animal. O grupo continua em ícones, estatísticas e regras.

@@ -115,7 +115,7 @@ class CameraRegistryService {
         stopwatch.stop();
         return CameraProbeResult(
           true,
-          message: 'Host RTSP acessível',
+          message: 'Porta RTSP acessível (vídeo não verificado)',
           checkedAt: checkedAt,
           latency: stopwatch.elapsed,
         );

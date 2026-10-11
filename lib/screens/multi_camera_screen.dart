@@ -12,6 +12,8 @@ import '../services/camera_registry_service.dart';
 import '../services/event_history_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
+import '../services/error_log_service.dart';
+import '../services/rtsp_diagnostics_service.dart';
 import '../widgets/main_navigation_bar.dart';
 import 'events_screen.dart';
 import 'esp32_settings_screen.dart';
@@ -302,6 +304,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     final address = TextEditingController(text: existing?.address ?? '');
     final key = TextEditingController(text: existing?.accessKey ?? '');
     String? error;
+    bool softwareDecoding = existing?.rtspSoftwareDecoding ?? false;
 
     final result = await showDialog<CameraEndpoint>(
       context: context,
@@ -369,6 +372,18 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                         : 'http://192.168.1.10:8765',
                   ),
                 ),
+                if (isRtsp) ...[
+                  const SizedBox(height: 10),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Compatibilidade (decodificação por software)'),
+                    subtitle: const Text(
+                      'Teste se o vídeo fechar o app. Pode usar mais CPU e bateria.',
+                    ),
+                    value: softwareDecoding,
+                    onChanged: (value) => setDialogState(() => softwareDecoding = value),
+                  ),
+                ],
                 if (type == CameraEndpointType.remotePhone) ...[
                   const SizedBox(height: 10),
                   TextField(
@@ -431,6 +446,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                         ? key.text.trim()
                         : null,
                     enabled: existing?.enabled ?? true,
+                    rtspSoftwareDecoding: isRtsp && softwareDecoding,
                   ),
                 );
               },

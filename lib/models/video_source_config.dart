@@ -16,6 +16,7 @@ class VideoSourceConfig {
   const VideoSourceConfig({
     required this.type,
     this.rtspUrl,
+    this.rtspSoftwareDecoding = false,
     this.remoteBaseUrl,
     this.remoteAccessKey,
     this.displayName,
@@ -25,6 +26,7 @@ class VideoSourceConfig {
 
   final VideoSourceType type;
   final String? rtspUrl;
+  final bool rtspSoftwareDecoding;
   final String? remoteBaseUrl;
   final String? remoteAccessKey;
   final String? displayName;
@@ -38,6 +40,7 @@ class VideoSourceConfig {
     VideoSourceType? type,
     String? rtspUrl,
     bool clearRtspUrl = false,
+    bool? rtspSoftwareDecoding,
     String? remoteBaseUrl,
     String? remoteAccessKey,
     String? displayName,
@@ -47,6 +50,7 @@ class VideoSourceConfig {
       VideoSourceConfig(
         type: type ?? this.type,
         rtspUrl: clearRtspUrl ? null : (rtspUrl ?? this.rtspUrl),
+        rtspSoftwareDecoding: rtspSoftwareDecoding ?? this.rtspSoftwareDecoding,
         remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
         remoteAccessKey: remoteAccessKey ?? this.remoteAccessKey,
         displayName: displayName ?? this.displayName,
@@ -57,6 +61,7 @@ class VideoSourceConfig {
   Map<String, Object?> toJson({bool includeSensitive = true}) => <String, Object?>{
         'type': type.name,
         'rtspUrl': includeSensitive ? rtspUrl : null,
+        'rtspSoftwareDecoding': rtspSoftwareDecoding,
         'remoteBaseUrl': remoteBaseUrl,
         'remoteAccessKey': includeSensitive ? remoteAccessKey : null,
         'displayName': displayName,
@@ -73,6 +78,7 @@ class VideoSourceConfig {
     return VideoSourceConfig(
       type: type,
       rtspUrl: json['rtspUrl'] as String?,
+      rtspSoftwareDecoding: json['rtspSoftwareDecoding'] as bool? ?? false,
       remoteBaseUrl: json['remoteBaseUrl'] as String?,
       remoteAccessKey: json['remoteAccessKey'] as String?,
       displayName: json['displayName'] as String?,

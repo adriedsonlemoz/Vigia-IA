@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.206',
+          version: '1.0.207',
           current: true,
+          changes: [
+            'O diagnóstico agora guarda a etapa da última abertura RTSP e consulta o motivo do último encerramento informado pelo Android.',
+            'Ao abrir uma câmera RTSP, o monitor registra a tentativa antes de iniciar o VLC e mostra ocorrências de reprodução sem revelar a senha.',
+            'O teste de porta não garante vídeo e a câmera ganhou uma opção de compatibilidade por software para testar aparelhos e codecs.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.206',
           changes: [
             'Tela, histórico, notificações e frases de alerta mostram o nome específico: cachorro, gato, moto, carro, ônibus, caminhão, cavalo e outros.',
             'Pista indireta de pessoa (movimento com cor de pele) agora aparece como Possível pessoa, com confiança menor e sem tratamento de evidência forte.',
@@ -1870,8 +1879,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.206',
+          version: '1.0.207',
           current: true,
+          changes: [
+            'O diagnóstico agora guarda a etapa da última abertura RTSP e consulta o motivo do último encerramento informado pelo Android.',
+            'Ao abrir uma câmera RTSP, o monitor registra a tentativa antes de iniciar o VLC e mostra ocorrências de reprodução sem revelar a senha.',
+            'O teste de porta não garante vídeo e a câmera ganhou uma opção de compatibilidade por software para testar aparelhos e codecs.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.206',
           changes: [
             'Tela, histórico, notificações e frases de alerta mostram o nome específico: cachorro, gato, moto, carro, ônibus, caminhão, cavalo e outros.',
             'Pista indireta de pessoa (movimento com cor de pele) agora aparece como Possível pessoa, com confiança menor e sem tratamento de evidência forte.',

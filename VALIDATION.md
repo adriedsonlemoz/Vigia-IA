@@ -1,4 +1,16 @@
-# Validação Vigia IA 1.0.206+206
+# Validação Vigia IA 1.0.207+207
+
+## Conferências RTSP 1.0.207
+
+- Executar `python3 tool/check_version_sync.py` e `bash tool/verify_project.sh`.
+- Instalar APK em dispositivo físico, cadastrar câmera RTSP e tocar em Monitorar.
+- Se o Android encerrar o processo, reabrir Vigia IA, gerar novo diagnóstico e conferir `RTSP / ENCERRAMENTO ANDROID`: etapa persistida, horário, motivo de saída, status.
+- Confirmar que usuário, senha, caminho RTSP e query **não** aparecem no diagnóstico exportado nem na Central de Erros.
+- Verificar `REASON_CRASH_NATIVE` / `NATIVE_CRASH` contra captura de `adb logcat` para concluir a causa.
+- Testar player no modo padrão e no modo compatibilidade (software); comparar CPU, aquecimento e autonomia.
+- Repetir com câmera inacessível, URL inválida, segundo stream, troca de câmera e retorno do segundo plano.
+- `flutter analyze`, `flutter test` e `flutter build apk` continuam obrigatórios no CI/aparelho com SDK.
+
 
 ## Cobertura da 1.0.206
 

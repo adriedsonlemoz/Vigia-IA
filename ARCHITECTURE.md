@@ -1,4 +1,13 @@
-# Arquitetura — Vigia IA 1.0.206+206
+# Arquitetura — Vigia IA 1.0.207+207
+
+## Compatibilidade de decodificação RTSP
+
+`CameraEndpoint.rtspSoftwareDecoding` persiste a escolha do usuário e é propagada por `VideoSourceConfig` a `RtspCameraSource`. A mídia VLC recebe opções de desativação do decoder por hardware quando habilitada. É uma alternativa de teste, não garantia de solução de erro nativo, e impacta o consumo.
+
+## Diagnóstico RTSP/Android — 1.0.207
+
+`RtspDiagnosticsService` sinaliza no canal `vigiaia/native` etapas persistidas com `SharedPreferences.commit()`: solicitação de abertura, criação do controlador VLC, preview, buffering, playback, erro e encerramento. O monitor grava eventos antes de navegar para o player. `MainActivity` consulta `ActivityManager.getHistoricalProcessExitReasons()` (Android 11+), permitindo diferenciar encerramentos Java, nativos, ANR e pressão de memória quando o sistema fornece histórico. A etapa não prova causa. O relatório só expõe host sem usuário/senha/path/query e dados estruturados de saída; tombstones e descrições sensíveis não são anexados. Em aparelhos sem histórico, usar ADB logcat para causa exata. A probe RTSP via `Socket.connect` comprova só porta acessível, não autenticação ou reprodução.
+
 
 ## Identificação de pessoas, veículos e animais — 1.0.206
 

@@ -51,6 +51,17 @@ void main() {
     expect(renamed.address, original.address);
   });
 
+  test('RTSP preserva modo compatibilidade ao salvar e renomear', () {
+    const camera = CameraEndpoint(
+      id: 'rtsp1', name: 'H265', type: CameraEndpointType.rtsp,
+      address: 'rtsp://192.168.0.30/live', rtspSoftwareDecoding: true,
+    );
+    final restored = CameraEndpoint.fromJson(camera.toJson().cast<String, dynamic>());
+    expect(restored.rtspSoftwareDecoding, isTrue);
+    expect(restored.copyWith(name: 'Renomeada').rtspSoftwareDecoding, isTrue);
+    expect(restored.toJson()['rtspSoftwareDecoding'], true);
+  });
+
   test('ESP32 preserva sensores, calibração e câmera futura', () {
     const original = CameraEndpoint(
       id: 'esp32-bike',

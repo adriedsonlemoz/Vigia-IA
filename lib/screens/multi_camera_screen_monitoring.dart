@@ -14,6 +14,7 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
         CameraEndpointType.rtsp => VideoSourceConfig(
             type: VideoSourceType.rtsp,
             rtspUrl: camera.address,
+            rtspSoftwareDecoding: camera.rtspSoftwareDecoding,
             displayName: camera.name,
             cameraId: camera.id,
             analysisInterval: analysisInterval,
@@ -100,6 +101,54 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
       );
       return;
     }
+    if (camera.type == CameraEndpointType.rtsp ||
+        secondary?.type == CameraEndpointType.rtsp) {
+      final rtsp = camera.type == CameraEndpointType.rtsp ? camera : secondary!;
+      // Persistir antes de navegar: uma falha de codec nativo pode matar o
+      // processo sem passar pelos handlers Dart ou pela Central de Erros.
+      await RtspDiagnosticsService.instance.mark(
+        'open_requested', address: rtsp.address,
+      );
+      await ErrorLogService.instance.record(
+        level: ErrorLogLevel.info,
+        source: 'RTSP',
+        message: 'Abertura de câmera RTSP solicitada.',
+        context: <String, Object?>{
+          'cameraId': rtsp.id,
+          'host': RtspDiagnosticsService.safeHost(rtsp.address),
+          'segundaCamera': secondary?.type == CameraEndpointType.rtsp,
+        },
+      );
+    }
+    // Porta fechada ou IP inacessível não deve inicializar o player nativo.
+    // Isso NÃO substitui a negociação RTSP nem valida o codec.
+    for (final rtsp in <CameraEndpoint>[
+      if (camera.type == CameraEndpointType.rtsp) camera,
+      if (secondary?.type == CameraEndpointType.rtsp) secondary!,
+    ]) {
+      final probe = await _registry.probe(rtsp);
+      if (!mounted) return;
+      if (!probe.online) {
+        await RtspDiagnosticsService.instance.mark(
+          'source_error', address: rtsp.address,
+        );
+        await ErrorLogService.instance.record(
+          level: ErrorLogLevel.warning,
+          source: 'RTSP',
+          message: 'A porta RTSP não respondeu. O player não foi iniciado.',
+          context: <String, Object?>{
+            'cameraId': rtsp.id,
+            'host': RtspDiagnosticsService.safeHost(rtsp.address),
+          },
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Câmera RTSP inacessível. Confira IP, porta e rede.'),
+          ));
+        }
+        return;
+      }
+    }
     final profile = await _settings.initialize();
     if (camera.type == CameraEndpointType.local ||
         secondary?.type == CameraEndpointType.local) {
@@ -131,16 +180,30 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
     if (!mounted) return;
     _statusTimer?.cancel();
     _statusTimer = null;
-    await Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => MonitorScreen(
-          initialSource: source,
-          settings: profile.settings,
-          secondarySource: secondarySource,
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => MonitorScreen(
+            initialSource: source,
+            settings: profile.settings,
+            secondarySource: secondarySource,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error, stackTrace) {
+      await ErrorLogService.instance.recordException(
+        source: 'Abertura RTSP/multicâmera',
+        error: error,
+        stackTrace: stackTrace,
+        message: 'Não foi possível abrir o monitor.',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Não foi possível abrir o monitor. Veja o diagnóstico.'),
+        ));
+      }
+    }
     await _history.initialize();
     if (!mounted) return;
     _statusTimer = Timer.periodic(

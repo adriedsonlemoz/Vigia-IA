@@ -3,6 +3,7 @@ package com.vigiaia.app
 import android.Manifest
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.ApplicationExitInfo
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -290,6 +291,71 @@ class MainActivity : FlutterActivity() {
 
     private fun handleNativeCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "markRtspStage" -> {
+                try {
+                    val stage = call.argument<String>("stage").orEmpty()
+                    val host = call.argument<String>("host").orEmpty().take(255)
+                    val allowed = setOf(
+                        "open_requested", "source_start", "controller_created",
+                        "preview_requested", "buffering", "playing", "player_error",
+                        "source_error", "stopped"
+                    )
+                    if (stage !in allowed) {
+                        result.error("rtsp_stage", "Etapa RTSP desconhecida", null)
+                    } else {
+                        val preferences = getSharedPreferences("rtsp_diagnostics", Context.MODE_PRIVATE)
+                        val now = System.currentTimeMillis()
+                        val editor = preferences.edit()
+                            .putString("stage", stage)
+                            .putLong("updatedAtMs", now)
+                            .putBoolean("active", stage !in setOf("stopped", "player_error", "source_error"))
+                        if (stage == "open_requested") {
+                            editor.putLong("attemptAtMs", now).putString("host", host)
+                        }
+                        // commit sincrono: o proximo processo consegue ler a ultima etapa
+                        // mesmo se o LibVLC encerrar o processo antes do log Dart.
+                        result.success(editor.commit())
+                    }
+                } catch (error: Throwable) {
+                    result.error("rtsp_stage", error.message, null)
+                }
+            }
+            "getRtspDiagnostics" -> {
+                try {
+                    val preferences = getSharedPreferences("rtsp_diagnostics", Context.MODE_PRIVATE)
+                    val attempt = preferences.getLong("attemptAtMs", 0L)
+                    val state = mutableMapOf<String, Any?>(
+                        "stage" to preferences.getString("stage", "none"),
+                        "host" to preferences.getString("host", ""),
+                        "attemptAtMs" to attempt,
+                        "updatedAtMs" to preferences.getLong("updatedAtMs", 0L),
+                        "active" to preferences.getBoolean("active", false),
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && attempt > 0L) {
+                        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                        val exit = manager.getHistoricalProcessExitReasons(packageName, 0, 10)
+                            .firstOrNull { it.timestamp >= attempt }
+                        if (exit != null) {
+                            val reason = when (exit.reason) {
+                                ApplicationExitInfo.REASON_CRASH -> "JAVA_CRASH"
+                                ApplicationExitInfo.REASON_CRASH_NATIVE -> "NATIVE_CRASH"
+                                ApplicationExitInfo.REASON_ANR -> "ANR"
+                                ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
+                                ApplicationExitInfo.REASON_USER_REQUESTED -> "USER_REQUESTED"
+                                ApplicationExitInfo.REASON_EXIT_SELF -> "NORMAL_EXIT"
+                                else -> "OUTRO_${exit.reason}"
+                            }
+                            state["lastExitReason"] = reason
+                            state["lastExitAtMs"] = exit.timestamp
+                            state["lastExitStatus"] = exit.status
+                            // Nao exporta description/tombstone: pode conter URL/senha.
+                        }
+                    }
+                    result.success(state)
+                } catch (error: Throwable) {
+                    result.error("rtsp_diagnostics", error.message, null)
+                }
+            }
             "appVersionInfo" -> {
                 try {
                     @Suppress("DEPRECATION")

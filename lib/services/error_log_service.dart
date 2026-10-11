@@ -248,9 +248,11 @@ class ErrorLogService extends ChangeNotifier {
 
   static String _compact(String value, {int maxLength = 2000}) {
     var normalized = value.trim();
-    normalized = normalized.replaceAllMapped(
-      RegExp(r'(rtsp://[^\s:/@]+:)[^@\s]+@', caseSensitive: false),
-      (match) => '${match.group(1)}***@',
+    // Enderecos de cameras podem levar senhas no userinfo, path ou query.
+    // Exportacoes tecnicas nunca devem incluir a URI completa.
+    normalized = normalized.replaceAll(
+      RegExp(r'rtsp://[^\s\x00-\x1F]+', caseSensitive: false),
+      'rtsp://[endereço omitido]',
     );
     normalized = normalized.replaceAllMapped(
       RegExp(r'(password|senha|token)=([^&\s]+)', caseSensitive: false),

@@ -2,7 +2,11 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.206+206`
+> **Versão atual:** `1.0.207+207`
+
+Câmeras RTSP podem ativar **Compatibilidade (decodificação por software)** na edição. É uma alternativa de teste para drivers/codec; aumenta o consumo e não garante resolver crashes nativos.
+
+A `1.0.207+207` registra antecipadamente as tentativas de abertura RTSP e informa a etapa de conexão e os encerramentos anteriores do Android no diagnóstico. O teste TCP só verifica a porta: não confirma vídeo, usuário, senha ou codec. Credenciais RTSP não são exportadas no log.
 
 A `1.0.206+206` mostra o nome específico do que foi visto (cachorro, gato, moto, carro, ônibus...) na tela, no histórico, nas notificações e nas frases de alerta, e trata a pista de movimento com cor de pele como "Possível pessoa": confiança menor, sem status de evidência forte e confirmada em vários quadros antes de aparecer.
 

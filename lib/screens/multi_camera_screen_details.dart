@@ -19,7 +19,7 @@ class _CameraDetails extends StatelessWidget {
       CameraEndpointType.local =>
         'Dispositivo: este celular · sensor disponível ao iniciar',
       CameraEndpointType.rtsp =>
-        'Endereço RTSP cadastrado · resolução informada ao abrir o vídeo',
+        'Endereço RTSP cadastrado · teste online verifica só a porta. ${camera.rtspSoftwareDecoding ? 'Decodificação por software ativa. ' : ''}Falhas: Diagnóstico.',
       CameraEndpointType.esp32 => _esp32Detail(),
       CameraEndpointType.remotePhone => _remoteDetail(),
     };

@@ -9,6 +9,7 @@ class CameraEndpoint {
     this.accessKey,
     this.enabled = true,
     this.countingEnabled = false,
+    this.rtspSoftwareDecoding = false,
     this.esp32CameraEnabled = false,
     this.temperatureSensorEnabled = true,
     this.hallSensorEnabled = true,
@@ -30,6 +31,8 @@ class CameraEndpoint {
   /// Reserva de arquitetura para uma futura contagem opcional por câmera.
   /// Não é usada pelo pipeline atual e permanece desativada por padrão.
   final bool countingEnabled;
+  /// Modo de compatibilidade VLC para RTSP H.264/H.265 (mais CPU/bateria).
+  final bool rtspSoftwareDecoding;
   final bool esp32CameraEnabled;
   final bool temperatureSensorEnabled;
   final bool hallSensorEnabled;
@@ -46,6 +49,7 @@ class CameraEndpoint {
     String? accessKey,
     bool? enabled,
     bool? countingEnabled,
+    bool? rtspSoftwareDecoding,
     bool? esp32CameraEnabled,
     bool? temperatureSensorEnabled,
     bool? hallSensorEnabled,
@@ -64,6 +68,7 @@ class CameraEndpoint {
         accessKey: accessKey ?? this.accessKey,
         enabled: enabled ?? this.enabled,
         countingEnabled: countingEnabled ?? this.countingEnabled,
+        rtspSoftwareDecoding: rtspSoftwareDecoding ?? this.rtspSoftwareDecoding,
         esp32CameraEnabled: esp32CameraEnabled ?? this.esp32CameraEnabled,
         temperatureSensorEnabled:
             temperatureSensorEnabled ?? this.temperatureSensorEnabled,
@@ -86,6 +91,7 @@ class CameraEndpoint {
         'accessKey': accessKey,
         'enabled': enabled,
         'countingEnabled': countingEnabled,
+        'rtspSoftwareDecoding': rtspSoftwareDecoding,
         'esp32CameraEnabled': esp32CameraEnabled,
         'temperatureSensorEnabled': temperatureSensorEnabled,
         'hallSensorEnabled': hallSensorEnabled,
@@ -129,6 +135,7 @@ class CameraEndpoint {
       accessKey: json['accessKey'] as String?,
       enabled: json['enabled'] as bool? ?? true,
       countingEnabled: json['countingEnabled'] as bool? ?? false,
+      rtspSoftwareDecoding: json['rtspSoftwareDecoding'] as bool? ?? false,
       esp32CameraEnabled: json['esp32CameraEnabled'] as bool? ?? false,
       temperatureSensorEnabled:
           json['temperatureSensorEnabled'] as bool? ?? true,

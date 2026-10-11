@@ -32,6 +32,16 @@ DiagnosticReport buildReport() {
       totalStorageBytes: 128_000_000_000,
       memoryUsedBytes: 820_000_000,
     ),
+    rtspDiagnostics: const {
+      'stage': 'preview_requested',
+      'host': '192.168.1.5',
+      'attemptAtMs': 1791760000000,
+      'updatedAtMs': 1791760001000,
+      'active': true,
+      'lastExitReason': 'NATIVE_CRASH',
+      'lastExitAtMs': 1791760002000,
+      'lastExitStatus': 11,
+    },
     audioDiagnostics: const {
       'state': 'failed',
       'lastPlaybackResult': 'failed',
@@ -75,6 +85,10 @@ void main() {
     expect(text, contains('Erro: MEDIA_ERROR_UNSUPPORTED'));
     expect(text, contains('Etapa: prepare_async'));
     expect(text, contains('=== MÓDULOS ESP32 (1) ==='));
+    expect(text, contains('=== RTSP / ENCERRAMENTO ANDROID ==='));
+    expect(text, contains('Etapa persistida: preview_requested'));
+    expect(text, contains('Última saída Android após a tentativa: NATIVE_CRASH'));
+    expect(text, isNot(contains('senha@')));
     expect(text, contains('esp32-rear'));
     expect(text, contains('online'));
   });

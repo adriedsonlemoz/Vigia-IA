@@ -11,12 +11,14 @@ import 'native_platform_service.dart';
 import 'performance_telemetry_service.dart';
 import 'global_audio_service.dart';
 import 'system_health_service.dart';
+import 'rtsp_diagnostics_service.dart';
 
 class DiagnosticReport {
   DiagnosticReport({
     required this.generatedAt,
     required this.health,
     this.audioDiagnostics = const {},
+    this.rtspDiagnostics = const {},
     this.alertEvents = const [],
     this.esp32Modules = const [],
     required List<ErrorLogEntry> entries,
@@ -25,6 +27,7 @@ class DiagnosticReport {
   final DateTime generatedAt;
   final SystemHealthSnapshot health;
   final Map<String, Object?> audioDiagnostics;
+  final Map<String, Object?> rtspDiagnostics;
   final List<Map<String, Object?>> alertEvents;
   final List<Map<String, Object?>> esp32Modules;
   final List<ErrorLogEntry> entries;
@@ -138,7 +141,18 @@ class DiagnosticReport {
       }
     }
     buffer
-      ..writeln('\n=== ÁUDIO ===')
+      ..writeln('\n=== RTSP / ENCERRAMENTO ANDROID ===')
+      ..writeln('Etapa persistida: ${rtspDiagnostics['stage'] ?? 'não disponível'}')
+      ..writeln('Host (sem credenciais): ${rtspDiagnostics['host'] ?? 'não disponível'}')
+      ..writeln('Início da tentativa (ms Unix): ${rtspDiagnostics['attemptAtMs'] ?? 'não disponível'}')
+      ..writeln('Última etapa (ms Unix): ${rtspDiagnostics['updatedAtMs'] ?? 'não disponível'}')
+      ..writeln('Ativa na última gravação: ${rtspDiagnostics['active'] == true ? 'sim' : 'não'}')
+      ..writeln('Última saída Android após a tentativa: ${rtspDiagnostics['lastExitReason'] ?? 'sem registro'}')
+      ..writeln('Saída Android (ms Unix): ${rtspDiagnostics['lastExitAtMs'] ?? 'sem registro'}')
+      ..writeln('Status/sinal Android: ${rtspDiagnostics['lastExitStatus'] ?? 'não disponível'}')
+      ..writeln('Observação: a etapa anterior não prova a causa. Crash nativo pode exigir logcat/tombstone.')
+      ..writeln()
+      ..writeln('=== ÁUDIO ===')
       ..writeln('Estado: ${audioDiagnostics['state'] ?? 'indisponível'}')
       ..writeln('Último resultado: ${audioDiagnostics['lastPlaybackResult'] ?? 'indisponível'}')
       ..writeln('Origem: ${audioDiagnostics['lastSource'] ?? 'indisponível'}')
@@ -178,6 +192,7 @@ class DiagnosticReportService {
     await _logs.initialize();
     await Esp32TelemetryService.instance.initialize();
     final health = await _health.collect();
+    final rtspDiagnostics = await RtspDiagnosticsService.instance.capture();
     final nativeAudio = await _native.audioDiagnostics();
     await GlobalAudioService.instance.initialize();
     final globalAudio =
@@ -189,6 +204,7 @@ class DiagnosticReportService {
         ...nativeAudio,
         ...globalAudio.toMap(),
       },
+      rtspDiagnostics: rtspDiagnostics,
       alertEvents: PerformanceTelemetryService.instance.createReport().alertEvents,
       esp32Modules: Esp32TelemetryService.instance.diagnostics,
       entries: List<ErrorLogEntry>.of(_logs.entries),

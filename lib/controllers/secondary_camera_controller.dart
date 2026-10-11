@@ -12,6 +12,8 @@ import '../sources/front_camera_preview_source.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
 import '../sources/rtsp_camera_source.dart';
+import '../services/error_log_service.dart';
+import '../services/rtsp_diagnostics_service.dart';
 
 /// Mantém uma segunda visualização sem abrir outro pipeline de IA.
 class SecondaryCameraController extends ChangeNotifier {
@@ -78,6 +80,7 @@ class SecondaryCameraController extends ChangeNotifier {
         ),
       VideoSourceType.rtsp => RtspCameraSource(
           url: sourceConfig.rtspUrl ?? '',
+          softwareDecoding: sourceConfig.rtspSoftwareDecoding,
           analysisInterval: sourceConfig.analysisInterval,
           emitFrames: false,
         ),
@@ -106,7 +109,18 @@ class SecondaryCameraController extends ChangeNotifier {
     });
     try {
       await source.start();
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (sourceConfig.type == VideoSourceType.rtsp) {
+        unawaited(RtspDiagnosticsService.instance.mark(
+          'source_error', address: sourceConfig.rtspUrl,
+        ));
+        unawaited(ErrorLogService.instance.recordException(
+          source: 'Segunda câmera RTSP',
+          error: error,
+          stackTrace: stackTrace,
+          message: 'A segunda câmera RTSP não conseguiu iniciar.',
+        ));
+      }
       await _statusSubscription?.cancel();
       _statusSubscription = null;
       if (source is RemotePhoneCameraSource) {
