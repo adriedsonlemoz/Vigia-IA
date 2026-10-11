@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'data_usage_service.dart';
+import 'nearby_place_query.dart';
 
 import '../models/map_destination_search.dart';
 import '../models/map_route_point.dart';
@@ -51,9 +51,12 @@ class MapDestinationSearchService extends ChangeNotifier {
   DateTime? _nearbyUpdatedAt;
   LatLng? _nearbyOrigin;
   DateTime? _lastNominatimRequestAt;
+  DateTime? _nearbyRetryAfter;
+  bool _nearbyLastFetchFailed = false;
 
   bool get loading => _suggestionsLoading || _searchLoading;
   bool get suggestionsLoading => _suggestionsLoading;
+  bool get nearbyLastFetchFailed => _nearbyLastFetchFailed;
   bool get searchLoading => _searchLoading;
   String? get statusMessage => _searchStatusMessage ?? _suggestionsStatusMessage;
   String? get suggestionsStatusMessage => _suggestionsStatusMessage;
@@ -89,6 +92,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     required MapRoutePoint current,
     required bool onlineAllowed,
     required List<OfflineMapPackage> offlineMaps,
+    bool forceRefresh = false,
   }) async {
     await initialize();
     _suggestions = _buildLocalSuggestions(
@@ -98,74 +102,110 @@ class MapDestinationSearchService extends ChangeNotifier {
     );
     notifyListeners();
 
-    if (!onlineAllowed || !_needsNearbyRefresh(current)) {
-      _suggestionsStatusMessage = onlineAllowed
-          ? 'Sugestões locais prontas.'
-          : 'Offline · pesquisando somente dados salvos.';
+    if (!onlineAllowed) {
+      _suggestionsStatusMessage = 'Offline · cidades disponíveis somente nos dados salvos.';
       notifyListeners();
       return;
     }
     if (_nearbyRefreshInFlight) {
       _suggestionsStatusMessage = _suggestions.isEmpty
-          ? 'Atualizando cidades próximas em segundo plano…'
-          : 'Sugestões salvas prontas · atualização regional em andamento.';
+          ? 'Buscando cidades e comunidades próximas…'
+          : 'Mostrando dados salvos · atualização em andamento.';
+      notifyListeners();
+      return;
+    }
+    if (!forceRefresh && !_needsNearbyRefresh(current)) {
+      _suggestionsStatusMessage = 'Cidades e comunidades próximas salvas.';
+      notifyListeners();
+      return;
+    }
+    if (!forceRefresh && _nearbyRetryAfter != null &&
+        DateTime.now().isBefore(_nearbyRetryAfter!)) {
+      _suggestionsStatusMessage = _suggestions.isEmpty
+          ? 'Serviço de localidades indisponível. Toque em Atualizar para tentar novamente.'
+          : 'Exibindo localidades salvas. Toque em Atualizar para buscar novas.';
       notifyListeners();
       return;
     }
 
     _nearbyRefreshInFlight = true;
+    _nearbyLastFetchFailed = false;
+    _suggestionsStatusMessage = 'Buscando cidades e comunidades próximas…';
     _setSuggestionsLoading(true);
     try {
+      // A janela anterior de 5 s encerrava a consulta antes de muitos
+      // servidores Overpass responderem. A busca rápida inclui um espelho.
       final quick = await _fetchNearbyPlaces(
         current,
         radiusKm: quickNearbyRadiusKm,
-        timeout: const Duration(seconds: 5),
-        maximumItems: 80,
-      ).timeout(const Duration(seconds: 5));
-      _mergeKnownPlaces(quick);
-      _suggestions = _buildLocalSuggestions(
-        current: current,
-        offlineMaps: offlineMaps,
-        onlyDownloaded: false,
+        timeout: const Duration(seconds: 18),
+        maximumItems: 250,
+        allowMirror: true,
       );
-      _suggestionsStatusMessage = quick.isEmpty
-          ? (_suggestions.isEmpty
-              ? 'Buscando uma região maior em segundo plano…'
-              : 'Sugestões salvas prontas · ampliando a região em segundo plano…')
-          : 'Sugestões próximas prontas.';
-      notifyListeners();
+      var fetchedAny = quick.isNotEmpty;
+      var expandedFailed = false;
+      if (quick.isNotEmpty) {
+        _mergeKnownPlaces(quick);
+        _suggestions = _buildLocalSuggestions(
+          current: current,
+          offlineMaps: offlineMaps,
+          onlyDownloaded: false,
+        );
+        _suggestionsStatusMessage = 'Localidades próximas encontradas.';
+        notifyListeners();
+      }
+      // Não reter o indicador de carregamento durante a expansão regional.
       _setSuggestionsLoading(false);
-
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      if (_suggestions.length < maximumSuggestions && !_searchLoading) {
+      if (quick.isEmpty || _suggestions.length < maximumSuggestions) {
+        _suggestionsStatusMessage = _suggestions.isEmpty
+            ? 'Ampliando a busca regional…'
+            : 'Localidades próximas prontas · ampliando a região…';
+        notifyListeners();
         try {
           final expanded = await _fetchNearbyPlaces(
             current,
             radiusKm: nearbyRadiusKm,
-            timeout: const Duration(seconds: 9),
-            maximumItems: 120,
+            timeout: const Duration(seconds: 24),
+            maximumItems: 350,
+            allowMirror: false,
           );
-          _mergeKnownPlaces(expanded);
-          _suggestions = _buildLocalSuggestions(
-            current: current,
-            offlineMaps: offlineMaps,
-            onlyDownloaded: false,
-          );
+          if (expanded.isNotEmpty) {
+            fetchedAny = true;
+            _mergeKnownPlaces(expanded);
+            _suggestions = _buildLocalSuggestions(
+              current: current,
+              offlineMaps: offlineMaps,
+              onlyDownloaded: false,
+            );
+          }
         } catch (_) {
-          // A fase curta já liberou a interface. A ampliação é best-effort.
+          expandedFailed = true;
+          // Não apagar resultados da fase curta por instabilidade da região.
         }
       }
-      _nearbyUpdatedAt = DateTime.now();
-      _nearbyOrigin = LatLng(current.latitude, current.longitude);
-      _suggestionsStatusMessage = _suggestions.isEmpty
-          ? 'Nenhuma cidade/comunidade encontrada nesta região.'
-          : 'Cidades e comunidades próximas prontas.';
-      await _persist();
+      if (!fetchedAny) {
+        // Dados antigos em memória NÃO validam uma consulta online vazia.
+        _nearbyLastFetchFailed = expandedFailed;
+        _nearbyRetryAfter = DateTime.now().add(const Duration(minutes: 2));
+        _suggestionsStatusMessage = _suggestions.isNotEmpty
+            ? 'Mostrando locais salvos. Toque em Atualizar para tentar novamente.'
+            : expandedFailed
+                ? 'Servidor de localidades indisponível. Toque em Atualizar.'
+                : 'Nenhuma localidade recebida. Toque em Atualizar.';
+      } else {
+        _nearbyUpdatedAt = DateTime.now();
+        _nearbyOrigin = LatLng(current.latitude, current.longitude);
+        _nearbyRetryAfter = null;
+        _suggestionsStatusMessage = 'Cidades e comunidades próximas prontas.';
+        await _persist();
+      }
       notifyListeners();
     } catch (_) {
+      _nearbyLastFetchFailed = true;
+      _nearbyRetryAfter = DateTime.now().add(const Duration(minutes: 2));
       _suggestionsStatusMessage = _suggestions.isEmpty
-          ? 'Não foi possível atualizar cidades próximas agora.'
-          : 'Usando sugestões já salvas.';
+          ? 'Serviço de localidades indisponível. Toque em Atualizar para tentar novamente.'
+          : 'Não foi possível atualizar. Mostrando localidades salvas.';
       notifyListeners();
     } finally {
       _nearbyRefreshInFlight = false;
@@ -451,7 +491,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.215');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.216');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -531,7 +571,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.215');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.216');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -589,25 +629,88 @@ class MapDestinationSearchService extends ChangeNotifier {
     required double radiusKm,
     required Duration timeout,
     required int maximumItems,
+    required bool allowMirror,
   }) async {
-    final radiusMeters = (radiusKm * 1000).round();
-    final queryTimeout = math.max(4, timeout.inSeconds - 1);
-    final query = '[out:json][timeout:$queryTimeout];'
-        'node(around:$radiusMeters,${current.latitude},${current.longitude})'
-        '["place"~"city|town|village|hamlet"]["name"];'
-        'out body $maximumItems;';
-    final request = await _client
-        .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
-        .timeout(const Duration(seconds: 5));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.215');
+    final query = NearbyPlaceQuery.build(
+      latitude: current.latitude,
+      longitude: current.longitude,
+      radiusKm: radiusKm,
+      maximumItems: maximumItems,
+      queryTimeoutSeconds: timeout.inSeconds - 2,
+    );
+    // Instâncias públicas podem responder com 429/504 ou não responder.
+    // Usar espelho apenas para a consulta inicial evita multiplicar cargas.
+    final endpoints = <Uri>[
+      Uri.parse('https://overpass-api.de/api/interpreter'),
+      if (allowMirror)
+        Uri.parse('https://overpass.private.coffee/api/interpreter'),
+    ];
+    Object? lastFailure;
+    for (final endpoint in endpoints) {
+      try {
+        // O limite engloba conexão, resposta e leitura, não cada etapa
+        // separadamente. Assim um servidor lento não prende o painel.
+        final body = await _readNearbyResponse(endpoint, query).timeout(timeout);
+        final decoded = jsonDecode(body);
+        if (decoded is! Map || decoded['elements'] is! List) {
+          throw const FormatException('Resposta Overpass inválida');
+        }
+        final elements = decoded['elements'] as List;
+        final results = <MapDestinationSearchResult>[];
+        for (final raw in elements.whereType<Map>()) {
+          final item = raw.cast<String, dynamic>();
+          final tagsRaw = item['tags'];
+          if (tagsRaw is! Map) continue;
+          final tags = tagsRaw.map(
+            (key, value) => MapEntry(key.toString(), value.toString()),
+          );
+          final name = tags['name']?.trim();
+          if (name == null || name.isEmpty) continue;
+          final center = item['center'];
+          final lat = (item['lat'] as num?)?.toDouble() ??
+              (center is Map ? (center['lat'] as num?)?.toDouble() : null);
+          final lon = (item['lon'] as num?)?.toDouble() ??
+              (center is Map ? (center['lon'] as num?)?.toDouble() : null);
+          if (lat == null || lon == null) continue;
+          final distance = _meters(
+            current.latitude, current.longitude, lat, lon,
+          );
+          // A caixa de busca contém cantos além do círculo solicitado.
+          if (distance > radiusKm * 1000) continue;
+          final placeType = tags['place'];
+          final state = tags['addr:state'] ?? tags['state'];
+          final subtitleParts = <String>[
+            MapDestinationKindX.fromOsmType(placeType).label,
+            if (state != null && state.trim().isNotEmpty) state.trim(),
+          ];
+          results.add(MapDestinationSearchResult(
+            id: 'osm:${item['type']}:${item['id']}',
+            title: name,
+            subtitle: subtitleParts.join(' · '),
+            latitude: lat,
+            longitude: lon,
+            distanceMeters: distance,
+            kind: MapDestinationKindX.fromOsmType(placeType),
+            source: 'online',
+          ));
+        }
+        return _dedupeAndSort(results);
+      } catch (error) {
+        lastFailure = error;
+      }
+    }
+    throw StateError('Todas as instâncias Overpass falharam: $lastFailure');
+  }
+
+  Future<String> _readNearbyResponse(Uri endpoint, String query) async {
+    final request = await _client.postUrl(endpoint);
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.216');
     request.headers.contentType = ContentType(
-      'application',
-      'x-www-form-urlencoded',
-      charset: 'utf-8',
+      'application', 'x-www-form-urlencoded', charset: 'utf-8',
     );
     request.write('data=${Uri.encodeQueryComponent(query)}');
-    final response = await request.close().timeout(timeout);
-    final body = await utf8.decoder.bind(response).join().timeout(timeout);
+    final response = await request.close();
+    final body = await utf8.decoder.bind(response).join();
     DataUsageService.instance.record(
       DataUsageModule.nearby,
       received: utf8.encode(body).length,
@@ -615,49 +718,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Overpass HTTP ${response.statusCode}');
     }
-    final decoded = jsonDecode(body);
-    if (decoded is! Map) return const <MapDestinationSearchResult>[];
-    final elements = decoded['elements'];
-    if (elements is! List) return const <MapDestinationSearchResult>[];
-    final results = <MapDestinationSearchResult>[];
-    for (final raw in elements.whereType<Map>()) {
-      final item = raw.cast<String, dynamic>();
-      final tagsRaw = item['tags'];
-      if (tagsRaw is! Map) continue;
-      final tags = tagsRaw.map((key, value) => MapEntry(key.toString(), value.toString()));
-      final name = tags['name']?.trim();
-      if (name == null || name.isEmpty) continue;
-      final center = item['center'];
-      final lat = (item['lat'] as num?)?.toDouble() ??
-          (center is Map ? (center['lat'] as num?)?.toDouble() : null);
-      final lon = (item['lon'] as num?)?.toDouble() ??
-          (center is Map ? (center['lon'] as num?)?.toDouble() : null);
-      if (lat == null || lon == null) continue;
-      final placeType = tags['place'];
-      final state = tags['addr:state'] ?? tags['state'];
-      final subtitleParts = <String>[
-        MapDestinationKindX.fromOsmType(placeType).label,
-        if (state != null && state.trim().isNotEmpty) state.trim(),
-      ];
-      results.add(
-        MapDestinationSearchResult(
-          id: 'osm:${item['type']}:${item['id']}',
-          title: name,
-          subtitle: subtitleParts.join(' · '),
-          latitude: lat,
-          longitude: lon,
-          distanceMeters: _meters(
-            current.latitude,
-            current.longitude,
-            lat,
-            lon,
-          ),
-          kind: MapDestinationKindX.fromOsmType(placeType),
-          source: 'online',
-        ),
-      );
-    }
-    return _dedupeAndSort(results);
+    return body;
   }
 
   Future<MapDestinationSearchResult> reverseLookup({
@@ -729,7 +790,7 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.215 map-reverse-search',
+          'VigiaIA/1.0.216 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
@@ -809,7 +870,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.215 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.216 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
@@ -1001,7 +1062,9 @@ class MapDestinationSearchService extends ChangeNotifier {
       final map = decoded.cast<String, dynamic>();
       final updatedAt = DateTime.tryParse(map['nearbyUpdatedAt'] as String? ?? '');
       final origin = map['nearbyOrigin'];
-      _nearbyUpdatedAt = updatedAt;
+      // Índices anteriores podiam registrar uma consulta vazia como sucesso
+      // e impedir novas buscas por três dias. Migrar sem apagar os locais.
+      _nearbyUpdatedAt = map['version'] == 2 ? updatedAt : null;
       if (origin is Map) {
         final lat = (origin['latitude'] as num?)?.toDouble();
         final lon = (origin['longitude'] as num?)?.toDouble();
@@ -1038,7 +1101,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final temp = File('${file.path}.tmp');
     await temp.writeAsString(
       jsonEncode(<String, Object?>{
-        'version': 1,
+        'version': 2,
         'nearbyUpdatedAt': _nearbyUpdatedAt?.toIso8601String(),
         'nearbyOrigin': _nearbyOrigin == null
             ? null

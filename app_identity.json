@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "Compatibilidade Flutter: estilo responsivo sem const inválido e parâmetros ignorados normalizados na tela de mapa.",
-  "version": "1.0.215",
-  "build": 215
+  "notes": "Busca de cidades próximas: Overpass com bbox, espelho, atualização manual e cache recuperável.",
+  "version": "1.0.216",
+  "build": 216
 }

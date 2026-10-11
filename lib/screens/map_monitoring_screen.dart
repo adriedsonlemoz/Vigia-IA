@@ -5474,6 +5474,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               style: const TextStyle(fontWeight: FontWeight.w900),
                             ),
                           ),
+                          if (showingSuggestions && !offlineOnly)
+                            IconButton(
+                              tooltip: 'Atualizar cidades próximas',
+                              icon: const Icon(Icons.refresh_rounded),
+                              onPressed: service.suggestionsLoading
+                                  ? null
+                                  : () => unawaited(
+                                        service.prepareSuggestions(
+                                          current: current,
+                                          onlineAllowed: true,
+                                          offlineMaps: _offlineMaps.packages,
+                                          forceRefresh: true,
+                                        ),
+                                      ),
+                            ),
                           if (offlineOnly)
                             const Chip(
                               visualDensity: VisualDensity.compact,
@@ -5502,7 +5517,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                               message: showingSuggestions && service.suggestionsLoading
                                   ? 'Buscando cidades e comunidades próximas… Você já pode pesquisar acima.'
                                   : showingSuggestions
-                                      ? 'Ainda não há sugestões salvas para esta região.'
+                                      ? offlineOnly
+                                          ? 'Nenhuma cidade salva nesta região. Baixe mapas e pesquise enquanto estiver online.'
+                                          : 'Nenhuma cidade disponível. Use Atualizar acima para tentar outra consulta.'
                                       : service.searchLoading
                                           ? 'Pesquisando…'
                                           : offlineOnly

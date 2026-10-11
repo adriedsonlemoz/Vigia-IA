@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.215+215
+# Validação Vigia IA 1.0.216+216
+
+## Verificações locais da busca automática (1.0.216)
+
+- [x] Consulta bbox incluindo cidade, vila, comunidade e relações OSM.
+- [x] Timeout ampliado e espelho somente na primeira fase.
+- [x] Cache negativo legado inválido para novas buscas.
+- [x] Botão de atualização e estados sem dados/offline.
+- [ ] `flutter analyze` e `flutter test` pendentes de SDK Flutter.
+- [ ] Compilação e teste em Android pendentes de GitHub Actions.
 
 ## Correção do workflow Android APK #179 — 1.0.215
 

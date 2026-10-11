@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.215', build: 215);
+      AppBuildVersion(version: '1.0.216', build: 216);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.215', build: 215),
+      version: AppBuildVersion(version: '1.0.216', build: 216),
       changes: <String>[
-        'Interface do mapa aprimorada para melhor compatibilidade com o Flutter.',
-        'Navegação e gravação mantêm os controles compactos da versão anterior.',
-        'Toque longo continua selecionando pontos sem abrir fichas em toques simples.',
+        'Cidades e comunidades próximas aparecem automaticamente quando a rede permite.',
+        'Busca regional mais estável, com opção Atualizar na pesquisa do mapa.',
+        'Dados de cidades já salvos continuam disponíveis sem conexão.',
       ],
     ),
   ]);

@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.215+215
+# Arquitetura — Vigia IA 1.0.216+216
 
 ## Buildfix do seletor de modos — 1.0.212
 
@@ -1962,3 +1962,7 @@ Marcador selecionavel de localizacao.
 - Ajuste restrito ao `MapMonitoringScreen` após workflow Android APK #179: o título do cartão compacto deve usar `TextStyle` não constante, pois `fontSize` é selecionado em tempo de execução pela variável `compact`.
 - Os dois argumentos não utilizados do callback `FlutterMap.MapOptions.onTap` são declarados como `(_, _)`, de acordo com os parâmetros curinga de Dart 3.12/Flutter 3.44.
 - Mudanças funcionais da interface 1.0.214 preservadas; sem alterações na camada de GPS, gravação GPX, mapas ou rotas.
+
+## Vigia IA 1.0.216+216 — pesquisa automática de localidades
+
+`MapDestinationSearchService.prepareSuggestions` consulta Overpass por bbox via `NearbyPlaceQuery` e usa espelho quando necessário, exibe dados locais imediatamente e expande regionalmente depois. Falhas de rede não invalidam caches nem gravam um sucesso negativo prolongado. A UI oferece atualização explícita; Nominatim continua somente para pesquisas enviadas e localização por toque longo.

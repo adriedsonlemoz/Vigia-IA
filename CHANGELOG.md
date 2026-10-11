@@ -1,3 +1,12 @@
+## 1.0.216+216 — 2026-10-11
+
+- Pesquisa de cidades próximas corrigida: consulta geográfica Overpass bbox incluindo nós, caminhos e relações, com limites de tempo mais realistas.
+- Espelho de Overpass na primeira consulta para recuperação de falhas temporárias do serviço principal.
+- Cache negativo legado deixa de bloquear novas tentativas por três dias; preservados os locais antigos salvos.
+- Botão de atualização na lista de localidades; indicador e mensagens compatíveis com estado de rede e modo offline.
+- Novos testes da construção da consulta e sincronização do versionamento 1.0.216+216.
+- Validação estática do projeto disponível; Flutter analyze, Flutter test e compilação Android pendentes de CI.
+
 ## 1.0.215+215 — 2026-10-11
 
 - Buildfix Android APK #179: removido `const` de um `TextStyle` com `fontSize` dependente de `compact` em tempo de execução, eliminando o `invalid_constant` da linha 8343.

@@ -1,13 +1,13 @@
 # Vigia IA
 
-A 1.0.215+215 corrige incompatibilidades de análise estática do Flutter nas melhorias da 1.0.214. A versão anterior reorganizou o Vigia Maps: proximidades e rota na mesma faixa, menus de modos/ferramentas dentro de Vigia IA, seleção de locais por toque longo, gravação junto às instruções e crédito OSM no rodapé esquerdo.
+A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas no mapa, com consulta Overpass mais resiliente, atualização manual e cache recuperável. A 1.0.215+215 corrigiu incompatibilidades de análise estática do Flutter nas melhorias da 1.0.214. A versão anterior reorganizou o Vigia Maps: proximidades e rota na mesma faixa, menus de modos/ferramentas dentro de Vigia IA, seleção de locais por toque longo, gravação junto às instruções e crédito OSM no rodapé esquerdo.
 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.215+215`
+> **Versão atual:** `1.0.216+216`
 
-A **1.0.215+215** corrige `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
+A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 
 A **1.0.214+214** reorganiza a experiência no mapa sem alterar os serviços de GPS, roteamento ou captura. A tela deve ser validada em um Android real em retrato/paisagem, inclusive com rota minimizada/expandida e gravação ativa.
 
