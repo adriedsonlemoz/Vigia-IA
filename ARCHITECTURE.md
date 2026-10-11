@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.210+210
+# Arquitetura — Vigia IA 1.0.211+211
+
+## Shell de navegação centrado no mapa — 1.0.211
+
+A entrada do papel `AppLaunchMode.normal` mostra `MapWorkspaceShell`, que monta uma única instância preservada de `MapMonitoringScreen`. `MapWorkspaceMode` descreve somente apresentação (`explore/ride/navigate/monitor`), sem iniciar ou encerrar diretamente serviços ou alterar `AppLaunchMode`. O seletor é implementado em `map_workspace_mode_picker.dart`. O botão Ferramentas abre telas existentes somente sob ação do usuário. A seleção de Pedalar mostra estado/dimensão do percurso a partir do singleton `MapRouteService`; Navegar utiliza o painel atual do mapa; Monitorar dá acesso explícito ao monitoramento legado. Mapa e GPS continuam funcionando independentemente do painel.
+
+Quando uma ferramenta cobre o mapa, `MapMonitoringScreen.workspaceVisible` libera sua inscrição GPS passiva e suspende câmeras de propriedade do mapa. Atividades de gravação/navegação continuam gerenciadas por `MapRouteService` e não são canceladas. A preferência de modo visual não é persistida nesta etapa; ao reiniciar, volta a `Explorar`. A retomada intencional do monitoramento Android (`consumeResumeRequest`) prioriza `HomeScreen(startMonitorOnLoad: true)` para preservar o fluxo existente. Papéis `monitor/transmission` continuam com suas telas dedicadas. A câmera do mapa só inicializa registro sob pedido quando o mapa é aberto isoladamente. O onboarding original não foi redesenhado.
+
 
 ## Vigia Maps, isolamento de sensores e diagnóstico — 1.0.210
 

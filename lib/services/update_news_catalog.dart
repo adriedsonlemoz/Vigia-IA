@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.210', build: 210);
+      AppBuildVersion(version: '1.0.211', build: 211);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.210', build: 210),
+      version: AppBuildVersion(version: '1.0.211', build: 211),
       changes: <String>[
-        'O Vigia Maps usa GPS apenas quando necessário para acompanhar a localização, gravar o percurso ou navegar.',
-        'O clima não precisa ligar a comunicação ESP32 ao abrir o mapa, e o diagnóstico mostra mais dados sobre GPS e mapas offline.',
+        'O Vigia IA abre diretamente no mapa e permite alternar entre Explorar, Pedalar, Navegar e Monitorar sem perder seu percurso.',
+        'Um menu reuniu monitoramento, historico, cameras, Bike e configuracoes. O mapa so prepara cameras e sensores quando voce solicita.',
       ],
     ),
   ]);

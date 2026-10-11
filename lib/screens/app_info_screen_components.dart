@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.210',
+          version: '1.0.211',
           current: true,
+          changes: [
+            'O aplicativo abre direto no mapa, com modos Explorar, Pedalar, Navegar e Monitorar.',
+            'Trocar de modo nao encerra percurso ou destino. Ferramentas e cameras so abrem quando solicitadas.',
+            'Acesso a Historico, Vigia Bike, Monitoramento e Ajustes pelo novo menu de ferramentas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.210',
           changes: [
             'Mapas passam a manter a localização ativa apenas durante uso, gravação ou navegação, reduzindo consultas redundantes ao GPS.',
             'Clima não precisa iniciar a comunicação ESP32 quando você abre apenas o mapa.',
@@ -1905,8 +1914,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.210',
+          version: '1.0.211',
           current: true,
+          changes: [
+            'O aplicativo abre direto no mapa, com modos Explorar, Pedalar, Navegar e Monitorar.',
+            'Trocar de modo nao encerra percurso ou destino. Ferramentas e cameras so abrem quando solicitadas.',
+            'Acesso a Historico, Vigia Bike, Monitoramento e Ajustes pelo novo menu de ferramentas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.210',
           changes: [
             'Mapas passam a manter a localização ativa apenas durante uso, gravação ou navegação, reduzindo consultas redundantes ao GPS.',
             'Clima não precisa iniciar a comunicação ESP32 quando você abre apenas o mapa.',

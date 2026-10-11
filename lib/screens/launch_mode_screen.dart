@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/app_launch_mode_service.dart';
 import 'camera_mode_screen.dart';
 import 'home_screen.dart';
+import 'map_workspace_shell.dart';
 import 'monitor_connect_screen.dart';
 
 class LaunchModeScreen extends StatefulWidget {
@@ -57,13 +58,11 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
   }
 
   Widget _screenFor(AppLaunchMode mode) => switch (mode) {
-        AppLaunchMode.normal => HomeScreen(
-            startMonitorOnLoad: widget.startMonitorOnLoad,
-          ),
+        AppLaunchMode.normal => widget.startMonitorOnLoad
+            ? const HomeScreen(startMonitorOnLoad: true)
+            : const MapWorkspaceShell(),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
-        AppLaunchMode.bike => HomeScreen(
-            startMonitorOnLoad: widget.startMonitorOnLoad,
-          ),
+        AppLaunchMode.bike => const MapWorkspaceShell(),
         AppLaunchMode.transmission => const CameraModeScreen(),
       };
 

@@ -1,3 +1,13 @@
+## 1.0.211+211 — 2026-10-11
+
+- O papel normal do Vigia IA abre diretamente `MapWorkspaceShell` sobre o `MapMonitoringScreen` já existente; não recria mapa nem interrompe trajetos ao alternar de modo.
+- Botão Modos com seleção Explorar/Pedalar/Navegar/Monitorar. Painel Bike informa gravação e distância; Navegar orienta a seleção de destino; Monitorar oferece abertura explícita do monitor.
+- Menu Ferramentas com Monitoramento/IA, Histórico, Câmeras, Vigia Bike, Configurações e troca do papel do aparelho.
+- Permissões de câmera/rede local não são exigidas novamente ao abrir apenas mapa, preservando os requisitos dos papéis dedicados.
+- Inicialização automática ESP32 restrita aos papéis dedicados; câmera registrada só é carregada no mapa quando solicitada. Transmissão, monitor remoto e restauração automática do monitor mantêm suas rotas.
+- Ao abrir ferramentas, mapa libera consumidor passivo de GPS e suspende fontes próprias de câmera; restaura ao voltar, sem encerrar uma gravação/navegação ativa.
+- Testes automatizados do modelo e seletor de modos adicionados; exige validação no SDK Flutter e aparelhos Android.
+
 ## 1.0.210+210 — 2026-10-11
 
 - Vigia Maps: stream GPS único ativado apenas com consumidores, gravação ou navegação; sem leitura pontual redundante quando já há stream, com suspensão do consumidor passivo em segundo plano.

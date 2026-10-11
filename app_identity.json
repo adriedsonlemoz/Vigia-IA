@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.210 isola a inicialização ESP32 do clima, evita GPS redundante e amplia o diagnóstico anônimo de mapas.",
-  "version": "1.0.210",
-  "build": 210
+  "notes": "A 1.0.211 abre direto no Vigia Maps, inclui quatro modos visuais e inicializacao sob demanda de recursos opcionais.",
+  "version": "1.0.211",
+  "build": 211
 }

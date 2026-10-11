@@ -116,6 +116,8 @@ class MapMonitoringScreen extends StatefulWidget {
     this.aiVoiceEnabledProvider,
     this.onAiVoiceChanged,
     this.initialPointOfInterest,
+    this.workspaceVisible = true,
+    this.navigationSearchRequests,
   });
 
   final WidgetBuilder? cameraPreviewBuilder;
@@ -133,6 +135,8 @@ class MapMonitoringScreen extends StatefulWidget {
   final bool Function()? aiVoiceEnabledProvider;
   final ValueChanged<bool>? onAiVoiceChanged;
   final RouteExplorerResult? initialPointOfInterest;
+  final bool workspaceVisible;
+  final ValueListenable<int>? navigationSearchRequests;
 
   @override
   State<MapMonitoringScreen> createState() => _MapMonitoringScreenState();
@@ -267,10 +271,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _bikeSensors.addListener(_onBikeSensorChanged);
     _bikePressureSafety.addListener(_onBikeSensorChanged);
     _rideSettings.addListener(_onRideSettingsChanged);
+    widget.navigationSearchRequests?.addListener(_onWorkspaceNavigationRequest);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
     _hudTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
+      if (!mounted || !widget.workspaceVisible) return;
+      setState(() {});
       unawaited(_refreshBattery());
       unawaited(_refreshRadioStatus());
     });
@@ -281,11 +287,52 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     unawaited(_connectivity.acquire(this));
     unawaited(_destinationSearch.initialize());
     unawaited(_bikePressureSafety.initialize());
-    _compassSubscription = _compass.readings().listen(
+    _startCompassListener();
+    unawaited(_initialize());
+  }
+
+  void _onWorkspaceNavigationRequest() {
+    if (!mounted || !widget.workspaceVisible) return;
+    if (_routeState.current == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ative o GPS para iniciar uma rota a partir de sua posicao.')),
+      );
+      return;
+    }
+    unawaited(_showDestinationSearch());
+  }
+
+  void _startCompassListener() {
+    _compassSubscription ??= _compass.readings().listen(
       _onCompassReading,
       onError: _onCompassError,
     );
-    unawaited(_initialize());
+  }
+
+  @override
+  void didUpdateWidget(covariant MapMonitoringScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationSearchRequests != widget.navigationSearchRequests) {
+      oldWidget.navigationSearchRequests?.removeListener(_onWorkspaceNavigationRequest);
+      widget.navigationSearchRequests?.addListener(_onWorkspaceNavigationRequest);
+    }
+    if (oldWidget.workspaceVisible == widget.workspaceVisible) return;
+    if (!widget.workspaceVisible) {
+      _routeState.releaseLocationConsumer(this);
+      _appActive = false;
+      final oldCompass = _compassSubscription;
+      _compassSubscription = null;
+      if (oldCompass != null) unawaited(oldCompass.cancel());
+      unawaited(_primaryMapCamera?.suspend());
+      unawaited(_secondaryMapCamera?.suspend());
+    } else {
+      _appActive = true;
+      _startCompassListener();
+      if (_routeState.initialized) {
+        unawaited(_routeState.acquireLocationConsumer(this));
+      }
+      unawaited(_resumeVisibleInternalCameras());
+    }
   }
 
   @override
@@ -303,6 +350,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _bikeSensors.removeListener(_onBikeSensorChanged);
     _bikePressureSafety.removeListener(_onBikeSensorChanged);
     _rideSettings.removeListener(_onRideSettingsChanged);
+    widget.navigationSearchRequests?.removeListener(_onWorkspaceNavigationRequest);
     _hudTimer?.cancel();
     _roadOverlay.dispose();
     if (_rideSettings.immersive) unawaited(SystemUiService.edgeToEdge());
@@ -330,10 +378,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _initializeCameraOverlays() async {
-    await Future.wait<void>([
-      _cameraOverlaySettings.initialize(),
-      _cameraRegistry.initialize(),
-    ]);
+    await _cameraOverlaySettings.initialize();
+    // No mapa principal nao carregar catalogo de cameras antes de o usuario
+    // solicitar o monitoramento ou adicionar uma camera ao mapa.
+    if (_openedFromMonitor) await _cameraRegistry.initialize();
     if (!mounted) return;
     setState(() {
       // Entrada direta no mapa começa sem câmera. Câmeras herdadas só existem
@@ -429,8 +477,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final active = state == AppLifecycleState.resumed;
-    _appActive = active;
-    if (active) {
+    _appActive = active && widget.workspaceVisible;
+    if (_appActive) {
       unawaited(_resumeVisibleInternalCameras());
       unawaited(_connectivity.checkNow(force: true));
       return;
@@ -1113,6 +1161,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       this,
       requestPermission: true,
     );
+    if (!widget.workspaceVisible) _routeState.releaseLocationConsumer(this);
     if (MapTelemetryPolicy.isFresh(_routeState.current)) {
       _telemetrySession.add(_routeState.current);
       final weatherPoint = _routeState.current!;

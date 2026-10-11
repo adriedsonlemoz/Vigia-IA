@@ -2,7 +2,9 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.210+210`
+> **Versão atual:** `1.0.211+211`
+
+A `1.0.211+211` abre no Vigia Maps (papel normal), com botão **Modos** para Explorar, Pedalar, Navegar e Monitorar e menu de ferramentas para Histórico, Câmeras, Vigia Bike e Ajustes. O modo é apenas visual, sem encerrar gravação, rota ou ativar câmeras; papéis dedicados de transmissão e monitor remoto continuam. Solicitações de câmera e rede local deixam de interromper a abertura normal do mapa. **Importante:** compilação e testes Flutter/Android devem ser confirmados em CI com SDK.
 
 A **1.0.210+210** prioriza o **Vigia Maps**: GPS sob demanda e diagnóstico de navegação sem coordenadas sensíveis. O clima deixa de iniciar telemetria ESP32 automaticamente. MBTiles raster funcionam sem internet após importação; cálculo de rotas Valhalla continua online. Câmeras, IA e Bike foram preservados.
 

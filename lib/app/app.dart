@@ -6,6 +6,8 @@ import '../core/vigia_design.dart';
 import '../screens/access_guide_screen.dart';
 import '../screens/camera_mode_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/map_workspace_shell.dart';
+import '../services/background_monitor_service.dart';
 import '../screens/launch_mode_screen.dart';
 import '../screens/monitor_connect_screen.dart';
 import '../services/appearance_settings_service.dart';
@@ -57,6 +59,7 @@ class _StartupGateState extends State<_StartupGate> {
   bool? _onboardingCompleted;
   AppLaunchMode? _launchMode;
   bool _launchModeLoaded = false;
+  bool _resumeMonitoring = false;
 
   @override
   void initState() {
@@ -88,8 +91,16 @@ class _StartupGateState extends State<_StartupGate> {
           )
         : null;
 
+    final resumeMonitoring = completed && launchMode == AppLaunchMode.normal
+        ? (await _startupGuard.run<bool>(
+                BackgroundMonitorService.consumeResumeRequest,
+                timeout: _requiredStartupTimeout,
+              ) ?? false)
+        : false;
+
     if (!mounted) return;
     setState(() {
+      _resumeMonitoring = resumeMonitoring;
       _onboardingCompleted = completed;
       _launchMode = launchMode;
       _launchModeLoaded = true;
@@ -105,14 +116,16 @@ class _StartupGateState extends State<_StartupGate> {
 
   Future<void> _initializeOptionalServices() async {
     await Future.wait<void>(<Future<void>>[
-      _initializeOptionalService(
-        'ESP32',
-        Esp32TelemetryService.instance.initialize,
-      ),
-      _initializeOptionalService(
-        'segurança Bike',
-        BikePressureSafetyService.instance.initialize,
-      ),
+      if (_launchMode != AppLaunchMode.normal && _launchMode != AppLaunchMode.bike) ...[
+        _initializeOptionalService(
+          'ESP32',
+          Esp32TelemetryService.instance.initialize,
+        ),
+        _initializeOptionalService(
+          'segurança Bike',
+          BikePressureSafetyService.instance.initialize,
+        ),
+      ],
       _initializeOptionalService(
         'áudio global',
         GlobalAudioService.instance.initialize,
@@ -155,13 +168,19 @@ class _StartupGateState extends State<_StartupGate> {
     if (completed) {
       final launchMode = _launchMode;
       final destination = switch (launchMode) {
-        AppLaunchMode.normal => const HomeScreen(),
+        AppLaunchMode.normal => _resumeMonitoring
+            ? const HomeScreen(startMonitorOnLoad: true)
+            : const MapWorkspaceShell(),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
-        AppLaunchMode.bike => const HomeScreen(),
+        AppLaunchMode.bike => const MapWorkspaceShell(),
         AppLaunchMode.transmission => const CameraModeScreen(),
         null => const LaunchModeScreen(),
       };
-      return _PermissionReminderHost(child: destination);
+      return _PermissionReminderHost(
+        checkCameraAndNetwork: launchMode == AppLaunchMode.monitor ||
+            launchMode == AppLaunchMode.transmission || _resumeMonitoring,
+        child: destination,
+      );
     }
     return const UpdateNewsHost(child: AccessGuideScreen());
   }
@@ -170,9 +189,13 @@ class _StartupGateState extends State<_StartupGate> {
 /// Orienta novamente sobre permissões obrigatórias removidas após o onboarding,
 /// sem reiniciar a seleção de modo nem apagar a preferência do usuário.
 class _PermissionReminderHost extends StatefulWidget {
-  const _PermissionReminderHost({required this.child});
+  const _PermissionReminderHost({
+    required this.child,
+    required this.checkCameraAndNetwork,
+  });
 
   final Widget child;
+  final bool checkCameraAndNetwork;
 
   @override
   State<_PermissionReminderHost> createState() => _PermissionReminderHostState();
@@ -184,6 +207,7 @@ class _PermissionReminderHostState extends State<_PermissionReminderHost> {
   Future<void> _checkPermissions() async {
     if (_checked || !mounted) return;
     _checked = true;
+    if (!widget.checkCameraAndNetwork) return;
     final native = NativePlatformService.instance;
     final results = await Future.wait<Object>([
       native.cameraPermissionStatus(),

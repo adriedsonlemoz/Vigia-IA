@@ -1,4 +1,17 @@
-# Validação Vigia IA 1.0.210+210
+# Validação Vigia IA 1.0.211+211
+
+## Verificação da interface 1.0.211
+
+- [ ] `flutter analyze`, `flutter test` e `flutter build apk --release` no workflow com SDK.
+- [ ] Após onboarding, perfil normal abre mapa; botão Modos alterna os quatro painéis sem recriar mapa.
+- [ ] Iniciar gravação, trocar pelos quatro modos: trilha/tempo/distância continuam iguais; fechar ferramenta não encerra percurso.
+- [ ] Escolher Navegar, selecionar destino pela lupa; voltar a Explorar e verificar que rota e estado continuam.
+- [ ] Abrir Histórico/Câmeras/Bike/Configurações via Ferramentas, voltar; GPS passivo não deixa assinaturas duplicadas.
+- [ ] Sem permissão câmera, mapa do perfil normal continua acessível. Perfis remoto/transmissão preservam o aviso de permissões.
+- [ ] Com câmera/ESP32 cadastrados, abrir apenas mapa e verificar que não surgem capturas/sondagens automáticas.
+- [ ] Simular pedido de retomada do monitor em segundo plano e verificar que abre `HomeScreen(startMonitorOnLoad: true)`.
+- [ ] Comparar em retrato/paisagem com banners de navegação e cartões POI; corrigir qualquer sobreposição do botão Modos.
+
 
 ## Testes de regressão Vigia Maps 1.0.210
 
