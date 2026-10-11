@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.211+211
+# Validação Vigia IA 1.0.212+212
+
+## Buildfix Android APK #176 — 1.0.212
+
+- [x] Log do workflow inspecionado: `flutter analyze` sem problemas, testes `+388 -1` e interrupcao no `test/map_workspace_mode_test.dart` pela expectativa incorreta do `tester.pageBack()`.
+- [x] Corrigido teste: simular o Voltar do Android (`binding.handlePopRoute`) e validar fechamento da rota modal sem escolha.
+- [x] Adicionado teste de cancelamento tocando na barreira do painel (nao escolhe outro modo).
+- [ ] Executar `flutter analyze` e `flutter test --reporter expanded --coverage` na versao 1.0.212 em CI.
+- [ ] Compilar APK release na mesma execucao apos testes. Confirmar download do artefato Android.
+- [ ] Em aparelho real: abrir Modos, pressionar Voltar, tocar fora do painel e confirmar que o modo anterior foi mantido.
 
 ## Verificação da interface 1.0.211
 

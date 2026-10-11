@@ -39,7 +39,7 @@ void main() {
     expect(result, MapWorkspaceMode.ride);
   });
 
-  testWidgets('cancelamento do seletor nao altera o modo', (tester) async {
+  testWidgets('voltar do Android cancela o seletor sem alterar o modo', (tester) async {
     MapWorkspaceMode? result;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
@@ -55,8 +55,37 @@ void main() {
     ));
     await tester.tap(find.text('Modos'));
     await tester.pumpAndSettle();
-    await tester.pageBack();
+    // Botao Voltar do Android fecha a rota modal; pageBack() procura um
+    // BackButton/ CupertinoNavigationBarBackButton, inexistente neste sheet.
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('workspace-navigate')), findsNothing);
+    expect(result, isNull);
+  });
+
+  testWidgets('toque fora do seletor cancela sem escolher outro modo', (tester) async {
+    MapWorkspaceMode? result;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(builder: (context) => TextButton(
+          onPressed: () async {
+            result = await showMapWorkspaceModePicker(
+              context, selected: MapWorkspaceMode.ride,
+            );
+          },
+          child: const Text('Modos'),
+        )),
+      ),
+    ));
+
+    await tester.tap(find.text('Modos'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('workspace-ride')), findsOneWidget);
+    // A barreira escura acima do bottom sheet o dispensa sem selecionar.
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('workspace-ride')), findsNothing);
     expect(result, isNull);
   });
 }
+

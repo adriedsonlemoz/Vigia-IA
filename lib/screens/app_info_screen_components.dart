@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.211',
+          version: '1.0.212',
           current: true,
+          changes: [
+            'A verificacao de retorno pelo botao Voltar do Android no seletor de modos foi reforcada.',
+            'A interface e as ferramentas de mapas da versao anterior foram preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.211',
           changes: [
             'O aplicativo abre direto no mapa, com modos Explorar, Pedalar, Navegar e Monitorar.',
             'Trocar de modo nao encerra percurso ou destino. Ferramentas e cameras so abrem quando solicitadas.',
@@ -1914,8 +1922,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.211',
+          version: '1.0.212',
           current: true,
+          changes: [
+            'A verificacao de retorno pelo botao Voltar do Android no seletor de modos foi reforcada.',
+            'A interface e as ferramentas de mapas da versao anterior foram preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.211',
           changes: [
             'O aplicativo abre direto no mapa, com modos Explorar, Pedalar, Navegar e Monitorar.',
             'Trocar de modo nao encerra percurso ou destino. Ferramentas e cameras so abrem quando solicitadas.',

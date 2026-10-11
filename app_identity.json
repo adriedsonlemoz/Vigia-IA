@@ -4,7 +4,7 @@
   "applicationId": "com.vigiaia.app",
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
-  "notes": "A 1.0.211 abre direto no Vigia Maps, inclui quatro modos visuais e inicializacao sob demanda de recursos opcionais.",
-  "version": "1.0.211",
-  "build": 211
+  "notes": "Buildfix 1.0.212: teste de cancelamento do seletor de modos compatível com a rota modal do Android.",
+  "version": "1.0.212",
+  "build": 212
 }

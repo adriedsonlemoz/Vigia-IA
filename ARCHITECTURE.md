@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.211+211
+# Arquitetura — Vigia IA 1.0.212+212
+
+## Buildfix do seletor de modos — 1.0.212
+
+O painel `MapWorkspaceModePicker` e apresentado via `showModalBottomSheet`, sem `AppBar` e sem `BackButton`. O Flutter `WidgetTester.pageBack()` nao reproduz a rota modal: ele busca explicitamente um botao de retorno da interface e, por isso, falhou no Android APK #176. O teste deve chamar `tester.binding.handlePopRoute()` para simular Voltar do sistema e tambem validar o descarte via barreira modal (`tapAt`). O resultado nulo representa cancelamento e nao muda `MapWorkspaceMode`. Nao houve alteracao de runtime nos serviços nesta entrega.
 
 ## Shell de navegação centrado no mapa — 1.0.211
 

@@ -2,7 +2,9 @@
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.211+211`
+> **Versão atual:** `1.0.212+212`
+
+A **1.0.212+212** corrige o teste que interrompeu o workflow Android APK #176: o seletor de modos e um painel modal sem botao de retorno embutido. O teste agora simula o Voltar do Android, e tambem verifica o cancelamento ao tocar fora do painel. No #176, `flutter analyze` concluiu sem avisos, mas um dos 389 testes falhou; a etapa de compilacao Android nao foi executada. A interface e os modulos existentes nao foram reescritos. A nova versao requer validacao em Flutter/Android no CI.
 
 A `1.0.211+211` abre no Vigia Maps (papel normal), com botão **Modos** para Explorar, Pedalar, Navegar e Monitorar e menu de ferramentas para Histórico, Câmeras, Vigia Bike e Ajustes. O modo é apenas visual, sem encerrar gravação, rota ou ativar câmeras; papéis dedicados de transmissão e monitor remoto continuam. Solicitações de câmera e rede local deixam de interromper a abertura normal do mapa. **Importante:** compilação e testes Flutter/Android devem ser confirmados em CI com SDK.
 
