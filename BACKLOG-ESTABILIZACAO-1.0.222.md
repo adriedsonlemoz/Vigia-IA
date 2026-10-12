@@ -1,4 +1,4 @@
-# Backlog Vigia IA após 1.0.226
+# Backlog Vigia IA após 1.0.227
 
 | Prioridade | Versão prevista | Ação | Aceitação | Pendência |
 |---|---|---|---|---|
@@ -7,19 +7,25 @@
 | P0 | 1.0.223 | Bússola, altitude, clima | Fonte/idade diferenciadas; dado antigo não vira atual | Políticas aplicadas; ESP32 simulado, teste widget e sensores reais pendentes |
 | P0 | 1.0.224 | Busca localidades | Títulos canônicos, sem duplicação indevida, contexto local e grupos distantes | Implementado em código; testes Flutter/Android pendentes; API pública exige escala moderada |
 | P0 | 1.0.226 | POIs | Fontes e idade; serviços não verificados indicados, HTTP 429/504 mantém cache | Proveniência e backoff implementados; injeção HTTP e teste físico pendentes |
-| P1 | 1.0.226 | HUD e diálogos responsivos | 320/360/412 dp com texto 1.0/1.5, teclado e barra de sistema | Widget/golden + Android |
-| P1 | 1.0.227 | Prévia vs navegação | Prévia não ativa voz/gravação; rota offline consultável sem falso recálculo | Widget/integração + modo avião |
+| P1 | 1.0.228+ | HUD e diálogos responsivos | 320/360/412 dp com texto 1.0/1.5, teclado e barra de sistema | Widget/golden + Android |
+| P1 | 1.0.228+ | Prévia vs navegação | Prévia não ativa voz/gravação; rota offline consultável sem falso recálculo | Widget/integração + modo avião |
 | P1 | 1.0.228 | Bike/rádio/ESP32 | Sem limite universal PSI, simulação explícita; rádio preserva recursos | Sensores + áudio no Android |
 | P1 | 1.0.229 | Offline e autonomia | Tiles, rota, POIs e instruções testados separadamente; consumo medido | Viagem em modo avião; medições reais |
 | P2 | 1.0.230+ | Modularização gradual | Comportamento estável, cobertura e métricas comparáveis | Extrações pequenas de map_monitoring_screen.dart |
 
-Testes manuais por lotes: 1.0.226, 1.0.228, 1.0.231. O CI precisa executar analyze/test/build em cada versão.
+Testes manuais por lotes: após APK validado no CI, manter ciclos acumulados sem obrigar instalação a cada versão. O CI precisa executar analyze/test/build em cada versão.
 
 Não afirmar sucesso do APK 1.0.221/#185 nem da 1.0.222 sem artefato/log. Prioridades mudam somente com evidência.
 
 ## Ajuste após Android APK #187
 
 - **1.0.226 (feito no código, CI pendente):** corrigir 3 lints do analyzer e reforçar regressão preventiva; preservar POIs e geocodificação.
-- **1.0.227 (próximo funcional):** HUD e menus responsivos, sem novos fluxos de GPS desnecessários. Adia a reorganização visual originalmente proposta para 1.0.226.
+- **1.0.228+ (próximo funcional):** HUD e menus responsivos, sem novos fluxos de GPS desnecessários. Adia a reorganização visual originalmente proposta para 1.0.226.
 - **Teste no aparelho:** aguardar APK com `flutter analyze`, testes e build aprovados. O workflow #187 analisou 1.0.224+224, apesar de 1.0.225 já ter sido entregue como ZIP.
 - **1.0.228+:** rever planejamento de rota, rádio, telemetria Bike e offline conforme prioridades e risco observado; replanejar após validação real.
+
+## Ajuste após Android APK #188
+
+- **1.0.227:** buildfix isolado do `RenderFlex` da ficha de POI. CI #188 (1.0.226) aprovou análise estática e 429 testes; 1 teste widget falhou, impedindo build Android.
+- **1.0.228+:** retomar HUD adaptativo e fluxo de prévia/navegação somente com CI de 1.0.227 aprovado, preservando regressões de 320/360/412 dp e texto ampliado.
+- **Ciclo físico de testes:** instalar apenas APK produzido por CI completo (análise + testes + assinatura), mantendo frequência manual agrupada por versões.

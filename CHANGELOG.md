@@ -1,3 +1,10 @@
+## 1.0.227+227 — 2026-10-12
+
+- Buildfix do workflow **Android APK #188**: o `flutter analyze` passou em 1.0.226, mas `flutter test` falhou em uma ficha compacta de POI por dois `RenderFlex overflowed` (60 px e 35 px) no `_InfoPill` (`map_poi_details_sheet.dart`).
+- O texto das etiquetas agora usa `Flexible` e quebra de linha sem ocultar nomes, procedência ou distância. Ações de mapa/navegação ficam empilhadas em áreas estreitas ou com fonte ampliada.
+- Adicionado teste de widget de layout para larguras 320/360/412 dp e escalas 1.0/1.5, além de teste preventivo de mutações Python. A aprovação do teste Flutter e da compilação Android requer novo CI.
+- Preservados GPS, busca offline, cache dos POIs, rota, câmera, IA, rádio e ESP32; a reorganização ampla do HUD foi adiada para 1.0.228 para isolar este buildfix.
+
 ## 1.0.226+226 — 2026-10-12
 
 - Buildfix do workflow **Android APK #187**: chaves explícitas em três condições Dart (uma em `map_monitoring_screen.dart`, duas em `map_destination_ranking.dart`) para eliminar `curly_braces_in_flow_control_structures` sob `flutter analyze --fatal-infos --fatal-warnings`.

@@ -1,4 +1,15 @@
-# Validação Vigia IA 1.0.226+226
+# Validação Vigia IA 1.0.227+227
+
+## Android APK #188 — regressão de layout tratada na 1.0.227
+
+O workflow #188 executou a versão **1.0.226+226**, aprovou 25 testes Python e `flutter analyze` (`No issues found!`). Na etapa `flutter test --reporter expanded --coverage`, **429 testes passaram e 1 falhou**: `test/map_poi_details_sheet_test.dart`, por estouros `RenderFlex overflowed by 60/35 pixels` no `_InfoPill` (`lib/widgets/map_poi_details_sheet.dart:360`). Portanto **não houve build APK** nesse workflow.
+
+- [x] `_InfoPill` passou a restringir e quebrar o texto de procedência/distância, sem ocultar conteúdo.
+- [x] Rodapé com ações adaptativas, preservando ambos os callbacks.
+- [x] Adicionado teste widget em 320/360/412 dp com fonte 1,0/1,5x.
+- [x] Teste preventivo Python de mutações adicionado ao verificador.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings` e `flutter test` da versão **1.0.227**, no GitHub Actions.
+- [ ] `flutter build apk`, assinatura e validação manual no Android após CI verde.
 
 ## Android APK #187 — regressão tratada na 1.0.226
 
@@ -6,8 +17,9 @@ O log `Vigia-IA-Android-APK-187-logs.zip` mostra que a versão efetivamente anal
 
 - [x] Alteração das três guardas com blocos Dart e preservação do fluxo.
 - [x] Regressão Python `tool/test_build187_lints.py` inclui a reprodução das três infrações e mutações negativas.
-- [ ] `flutter analyze`, `flutter test`, APK e testes físicos: requerem execução no CI/SDK externo.
-- [ ] Confirmar no log do próximo workflow `version=1.0.226+226` antes de avaliar sua aprovação.
+- [x] `flutter analyze` da 1.0.226 aprovado no CI #188; `flutter test` da 1.0.226 reprovou em uma ficha de POI (corrigido no código 227).
+- [x] Log #188 confirma checkout/versão 1.0.226+226.
+- [ ] `flutter test` corrigido da 1.0.227, build APK e testes físicos ainda requerem execução no CI/Android.
 
 
 ## POIs e primeiro ciclo de teste Android (1.0.223 a 1.0.226)
@@ -18,7 +30,7 @@ O log `Vigia-IA-Android-APK-187-logs.zip` mostra que a versão efetivamente anal
 - [ ] Testar pesquisa `Santo Antônio`, `Iguatama`, `Divinópolis`, região distante; salvos/recentes offline, teclado e resultados duplicados.
 - [ ] Abrir posto/hospital/camping sem nome ou sem horário. Verificar fonte, data, distância **em linha reta** e aviso de serviço não verificado.
 - [ ] Fazer consulta Overpass sem rede, esperar HTTP 429/504 com ambiente controlado e verificar cache preservado; simulações Dart não substituem teste de rede real.
-- [ ] Tela 320/360 dp, fator de texto 1,5, teclado, modais sem grandes vazios; reformulação ampla do HUD permanece na 1.0.226.
+- [ ] Tela 320/360 dp, fator de texto 1,5, teclado, modais sem grandes vazios; reformulação ampla do HUD foi reagendada para 1.0.228+.
 
 
 ## Pesquisa de localidades 1.0.224
@@ -28,7 +40,7 @@ O log `Vigia-IA-Android-APK-187-logs.zip` mostra que a versão efetivamente anal
 - [ ] `flutter test test/map_destination_ranking_test.dart` e suíte completa pendentes no CI.
 - [ ] `flutter build apk` e inspeção em aparelho pendentes no CI e lote manual da 1.0.226.
 - [ ] Validar na rede respostas concretas para `Santo Antônio`, `Iguatama`, `Divinópolis` e uma localidade remota, usando as fontes de dados que estiverem disponíveis naquele momento.
-- [ ] Abrir teclado em 320/360 dp e fator de texto 1,5, observar rolagem e eventuais cortes; ajuste amplo previsto na 1.0.226.
+- [ ] Abrir teclado em 320/360 dp e fator de texto 1,5, observar rolagem e eventuais cortes; ajuste amplo previsto na 1.0.228+.
 - [ ] Avaliar conformidade e escala do uso do Nominatim público, incluindo possibilidade de substituição remota do provedor antes de distribuição ampla.
 
 

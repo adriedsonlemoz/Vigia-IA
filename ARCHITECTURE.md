@@ -1,4 +1,12 @@
-# Arquitetura — Vigia IA 1.0.226+226
+# Arquitetura — Vigia IA 1.0.227+227
+
+## Buildfix Android APK #188 — 1.0.227
+
+- Layout adaptativo fica encapsulado em `lib/widgets/map_poi_details_sheet.dart` (sem aumentar `map_monitoring_screen.dart`).
+- `_InfoPill` mantém `Row` com ícone e `Flexible(Text(... softWrap: true))` para limitar largura e permitir múltiplas linhas sem truncamento.
+- Rodapé da ficha usa `LayoutBuilder` e escala do texto para colocar as ações em coluna quando a largura disponível for inferior a 310 dp ou a fonte exceder 1,3x. A navegação só começa ao acionar o botão existente.
+- `test/map_poi_details_sheet_test.dart` cobre 320/360/412 dp e escala 1,0/1,5; contratos Python são auxiliares e não substituem `flutter test`.
+- A reformulação abrangente de HUD foi movida para backlog da 1.0.228, mantendo esta alteração pequena e reversível.
 
 ## Buildfix Android APK #187 — 1.0.226
 

@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.226',
+          version: '1.0.227',
           current: true,
+          changes: [
+            'Ficha de pontos úteis ajustada para telas compactas.',
+            'Textos e botões da ficha se adaptam ao tamanho da fonte.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.226',
           changes: [
             'Maior estabilidade nas leituras e na pesquisa do mapa.',
             'Preparação para a próxima organização da interface.',
@@ -2044,8 +2052,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.226',
+          version: '1.0.227',
           current: true,
+          changes: [
+            'Ficha de pontos úteis ajustada para telas compactas.',
+            'Textos e botões da ficha se adaptam ao tamanho da fonte.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.226',
           changes: [
             'Maior estabilidade nas leituras e na pesquisa do mapa.',
             'Preparação para a próxima organização da interface.',

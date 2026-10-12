@@ -37,6 +37,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ficha POI nao estoura em larguras pequenas e texto ampliado',
+      (tester) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const item = RouteExplorerResult(
+      id: 'node-99-fuel',
+      category: RouteExplorerCategory.fuel,
+      title: 'Posto sem nome',
+      subtitle: 'Combustível',
+      latitude: -20,
+      longitude: -45,
+      distanceMeters: 800,
+      source: 'cache',
+    );
+    for (final width in <double>[320, 360, 412]) {
+      for (final scale in <double>[1.0, 1.5]) {
+        await tester.binding.setSurfaceSize(Size(width, 720));
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: MapPoiDetailsSheet(
+                item: item,
+                icon: Icons.local_gas_station,
+                distanceLabel: '800 m',
+                centered: true,
+                onNavigate: () {},
+                onShowOnMap: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(find.text('Cache local (OSM)'), findsOneWidget);
+        expect(find.text('800 m em linha reta'), findsOneWidget);
+        expect(tester.takeException(), isNull,
+            reason: 'Overflow no POI em $width dp e escala $scale');
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    }
+  });
+
   testWidgets('painel completo mostra detalhes do POI e ação de navegação',
       (tester) async {
     var navigateCount = 0;

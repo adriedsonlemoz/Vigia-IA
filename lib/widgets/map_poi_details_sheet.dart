@@ -250,24 +250,42 @@ class MapPoiDetailsSheet extends StatelessWidget {
                   top: BorderSide(color: scheme.outlineVariant),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onShowOnMap,
-                      icon: const Icon(Icons.map_rounded),
-                      label: const Text('Mostrar no mapa'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: onNavigate,
-                      icon: const Icon(Icons.navigation_rounded),
-                      label: const Text('Ir até lá'),
-                    ),
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Botoes em coluna quando a area livre ou a fonte nao
+                  // comportam os dois rotulos, sem ocultar nenhuma acao.
+                  final textScale =
+                      MediaQuery.textScalerOf(context).scale(14) / 14;
+                  final useColumn =
+                      constraints.maxWidth < 310 || textScale > 1.3;
+                  final showOnMap = OutlinedButton.icon(
+                    onPressed: onShowOnMap,
+                    icon: const Icon(Icons.map_rounded),
+                    label: const Text('Mostrar no mapa'),
+                  );
+                  final navigate = FilledButton.icon(
+                    onPressed: onNavigate,
+                    icon: const Icon(Icons.navigation_rounded),
+                    label: const Text('Ir até lá'),
+                  );
+                  if (useColumn) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: double.infinity, child: showOnMap),
+                        const SizedBox(height: 8),
+                        SizedBox(width: double.infinity, child: navigate),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: showOnMap),
+                      const SizedBox(width: 10),
+                      Expanded(child: navigate),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -362,12 +380,15 @@ class _InfoPill extends StatelessWidget {
           children: [
             Icon(icon, size: 15, color: scheme.onSurfaceVariant),
             const SizedBox(width: 5),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
+            Flexible(
+              child: Text(
+                text,
+                softWrap: true,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
             ),
           ],
         ),

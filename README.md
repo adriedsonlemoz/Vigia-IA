@@ -1,5 +1,8 @@
 # Vigia IA
 
+**1.0.227+227 (correção do Android APK #188):** ajuste de layout na ficha de pontos úteis, corrigindo estouros horizontais nos rótulos de origem e distância. Etiquetas quebram linhas sem perder conteúdo e botões se adaptam à largura e à escala de texto. O `flutter analyze` da 1.0.226 passou no CI #188; `flutter test` ainda precisa ser reexecutado após a correção. HUD geral permanece para versão posterior.
+
+
 **1.0.226+226 (buildfix do Android APK #187):** três retornos condicionais agora utilizam blocos `if` no HUD e na classificação de destinos, eliminando os avisos `curly_braces_in_flow_control_structures` do `flutter analyze --fatal-infos` executado no CI. Esta versão preserva todas as funções da 1.0.225. A reorganização visual ampla do HUD fica para 1.0.227, para evitar misturar correção de compilação com refatoração.
 
 A **1.0.225+225** diferencia local mapeado de serviço comprovadamente disponível, apresenta fonte e idade da consulta dos pontos próximos, melhora cache em falhas e reduz novas requisições a instâncias Overpass após HTTP 429/504. A distância é indicada em linha reta. Nesta etapa, o APK ainda depende do Flutter/CI e o primeiro teste manual cobre 1.0.223–1.0.225.
@@ -23,7 +26,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.226+226`
+> **Versão atual:** `1.0.227+227`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 
