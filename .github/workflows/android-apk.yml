@@ -20,23 +20,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Preparar assinatura release
-        shell: bash
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: |
-          set -euo pipefail
-          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Secret ANDROID_KEYSTORE_BASE64 ausente" >&2; exit 1; }
-          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Secret ANDROID_KEYSTORE_PASSWORD ausente" >&2; exit 1; }
-          test -n "$ANDROID_KEY_ALIAS" || { echo "Secret ANDROID_KEY_ALIAS ausente" >&2; exit 1; }
-          KEYSTORE_PATH="$RUNNER_TEMP/vigiaia-release.jks"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-          test -s "$KEYSTORE_PATH" || { echo "Keystore reconstruida esta vazia" >&2; exit 1; }
-          keytool -list             -keystore "$KEYSTORE_PATH"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
-          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.9'
@@ -77,9 +60,6 @@ jobs:
             bash ./tool/bootstrap_android.sh
           fi
 
-      - name: Baixar modelo TensorFlow Lite
-        run: bash ./tool/fetch_model.sh
-
       - name: Dependencias
         run: flutter pub get
 
@@ -87,7 +67,10 @@ jobs:
         run: bash ./tool/verify_project.sh
 
       - name: Analise estatica
-        run: flutter analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Baixar modelo TensorFlow Lite
+        run: bash ./tool/fetch_model.sh
 
       - name: Testes
         run: flutter test --reporter expanded --coverage
@@ -99,6 +82,23 @@ jobs:
           name: flutter-test-coverage
           path: coverage/lcov.info
           if-no-files-found: ignore
+
+      - name: Preparar assinatura release
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Secret ANDROID_KEYSTORE_BASE64 ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Secret ANDROID_KEYSTORE_PASSWORD ausente" >&2; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Secret ANDROID_KEY_ALIAS ausente" >&2; exit 1; }
+          KEYSTORE_PATH="$RUNNER_TEMP/vigiaia-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH" || { echo "Keystore reconstruida esta vazia" >&2; exit 1; }
+          keytool -list             -keystore "$KEYSTORE_PATH"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
 
       - name: Build APKs release em uma unica compilacao
         env:
@@ -147,6 +147,10 @@ jobs:
           import sys
 
           version = sys.argv[1]
+          version_name, separator, version_number = version.partition('+')
+          if not separator or not version_name or not version_number.isdigit():
+              raise SystemExit(f'Versao de release invalida: {version}')
+          version_code = int(version_number)
           release_dir = Path(sys.argv[2])
           apk_dir = Path('build/app/outputs/apk/release')
           metadata = apk_dir / 'output-metadata.json'
@@ -154,6 +158,8 @@ jobs:
               raise SystemExit(f'Metadata de APKs nao encontrada: {metadata}')
 
           data = json.loads(metadata.read_text(encoding='utf-8'))
+          if data.get('applicationId') != 'com.vigiaia.app':
+              raise SystemExit('applicationId inesperado no metadata dos APKs')
           found = set()
           expected = {'universal', 'armeabi-v7a', 'arm64-v8a', 'x86_64'}
           for element in data.get('elements', []):
@@ -162,6 +168,8 @@ jobs:
               kind = abi or 'universal'
               if kind not in expected:
                   continue
+              if element.get('versionName') != version_name or element.get('versionCode') != version_code:
+                  raise SystemExit(f'APK {kind} diverge da versao solicitada: {element.get("versionName")}+{element.get("versionCode")}')
               source = apk_dir / element['outputFile']
               if not source.is_file() or source.stat().st_size == 0:
                   raise SystemExit(f'APK ausente/vazia para {kind}: {source}')

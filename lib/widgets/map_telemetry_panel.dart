@@ -353,9 +353,13 @@ class MapGpsQualityIndicator extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            accuracyMeters == null
-                ? 'Precisão horizontal não informada pelo GPS.'
-                : 'Raio informado pelo GPS: ±${accuracyMeters!.toStringAsFixed(1)} m.',
+            quality == MapGpsQuality.stale
+                ? accuracyMeters == null
+                    ? 'Último GPS antigo; precisão histórica desconhecida.'
+                    : 'Última precisão histórica: ±${accuracyMeters!.toStringAsFixed(1)} m. Não é a posição atual.'
+                : accuracyMeters == null
+                    ? 'Precisão horizontal não informada pelo GPS.'
+                    : 'Raio informado pelo GPS: ±${accuracyMeters!.toStringAsFixed(1)} m.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

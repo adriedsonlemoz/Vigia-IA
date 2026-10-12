@@ -28,6 +28,7 @@ Antes de entregar:
 1. confirmar que a versão é maior que a última já entregue;
 2. executar `tool/verify_project.sh`;
 3. executar `flutter analyze`, quando o SDK estiver disponível;
+   - os checadores de imports e contrato de CI ajudam, mas não substituem o analisador Dart;
 4. executar `flutter test`, quando o SDK estiver disponível;
 5. validar a integridade do ZIP;
 6. não reintroduzir nomes antigos do aplicativo;

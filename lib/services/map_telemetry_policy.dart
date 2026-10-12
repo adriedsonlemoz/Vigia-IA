@@ -87,14 +87,22 @@ class MapTelemetryPolicy {
   static const double maximumUsefulHorizontalAccuracyMeters = 100;
   static const double maximumUsefulVerticalAccuracyMeters = 60;
 
-  static bool isFresh(
-    MapRoutePoint? point, {
+  /// Uma precisão boa não torna uma coordenada antiga em posição atual.
+  static bool isFresh(MapRoutePoint? point, {DateTime? now}) =>
+      point != null && isRecentTimestamp(point.recordedAt,
+          maximumAge: freshReadingWindow, now: now);
+
+  static bool isRecentTimestamp(DateTime recordedAt, {
+    required Duration maximumAge,
     DateTime? now,
   }) {
-    if (point == null) return false;
-    final age = (now ?? DateTime.now()).difference(point.recordedAt);
-    return !age.isNegative && age <= freshReadingWindow;
+    final age = (now ?? DateTime.now()).difference(recordedAt);
+    return !age.isNegative && age <= maximumAge;
   }
+
+  /// Retorna null ao perder frescor, sem alterar os dados históricos salvos.
+  static MapRoutePoint? freshPoint(MapRoutePoint? point, {DateTime? now}) =>
+      isFresh(point, now: now) ? point : null;
 
   static double? currentSpeedKmh(MapRoutePoint? point) {
     if (point == null || !point.speedAvailable) return null;
@@ -142,7 +150,7 @@ class MapTelemetryPolicy {
   }) {
     if (point == null) return null;
     final age = (now ?? DateTime.now()).difference(point.recordedAt);
-    return age.isNegative ? Duration.zero : age;
+    return age.isNegative ? null : age;
   }
 
   static MapElevationSummary elevationSummary(

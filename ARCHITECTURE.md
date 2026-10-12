@@ -1,4 +1,17 @@
-# Arquitetura — Vigia IA 1.0.221+221
+# Arquitetura — Vigia IA 1.0.224+224
+
+## Pesquisa de destinos 1.0.224 · normalização e classificação isoladas
+
+`lib/services/map_destination_ranking.dart` concentra nomes próprios, normalização de acentos, ranking por correspondência textual e proximidade, identificação OSM e deduplicação de candidatos próximos. `MapDestinationSearchService` usa a política tanto em cache quanto nas buscas Nominatim confirmadas. O resultado distingue título do objeto OSM e endereço/município no subtítulo. A migração do índice antigo corrige títulos do Nominatim baseados em cidades administrativas. A pesquisa por tecla permanece **somente local**, inclusive em modo avião; seleção de região aproximada na busca online usa `viewbox` não restritiva e não impede destinos intencionalmente distantes. Solicitações Nominatim são serializadas localmente e resultados repetidos são cacheados em sessão. Não há garantia de limite global por todos os usuários do serviço público; para crescimento de tráfego, trocar por serviço próprio/licenciado. A interface mostra grupos por correspondência, salvos, recentes, próximos e distantes. Nenhuma nova dependência foi adicionada.
+
+
+## Telemetria 1.0.223 · separação entre leitura atual e histórico
+
+`MapTelemetryPolicy.freshPoint` concentra a janela GPS de 20 s e rejeita timestamps futuros. HUD, rumo e painéis de altitude/GPS usam apenas o fix vigente; histórico de percurso permanece intacto. O sensor físico de bússola tem janela de 3 s. `MapWeatherPolicy.currentValue` respeita fontes ESP32 (90 s) e dados online (45 min desde atualização + idade da observação) e evita falar previsões vencidas. O `Timer` de HUD reavalia estado a cada 10 s; consultas de bateria e rádio continuam limitadas a 30 s. Ainda não há teste de consumo ou build Android validado.
+
+## Estabilização 1.0.222 · contratos da integração contínua
+
+O workflow mantém as portas `verify_project`, `flutter analyze` e `flutter test` antes de preparar credenciais de assinatura e gerar APKs. Dessa forma, ausências de Secrets não impedem detectar regressões Dart previamente. A transferência dos modelos TFLite ocorre após a análise e antes dos testes. O script `tool/check_import_targets.py` checa existência de targets de imports/parts locais e `tool/check_ci_contract.py` confirma a sequência de gates; dez testes Python executam também mutações desses contratos. As verificações textuais não substituem o analisador Dart, o teste widget ou a compilação Gradle.
 
 ## Buildfix 1.0.221 · Flutter Map e Canvas
 

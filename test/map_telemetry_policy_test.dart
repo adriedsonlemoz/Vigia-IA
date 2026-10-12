@@ -89,6 +89,22 @@ void main() {
     );
   });
 
+  test('GPS de dois minutos permanece antigo mesmo com precisão de 7 m', () {
+    final at = DateTime.utc(2026, 10, 12, 12);
+    final sample = point(at: at, accuracyMeters: 7);
+    final now = at.add(const Duration(minutes: 2));
+
+    expect(MapTelemetryPolicy.isFresh(sample, now: now), isFalse);
+    expect(
+      MapTelemetryPolicy.readingAge(sample, now: now),
+      const Duration(minutes: 2),
+    );
+    expect(
+      MapTelemetryPolicy.gpsQuality(sample, now: now),
+      MapGpsQuality.stale,
+    );
+  });
+
   test('qualidade GPS combina precisao e idade sem fabricar sinal', () {
     final at = DateTime.utc(2026, 9, 26, 12);
     expect(
@@ -147,6 +163,38 @@ void main() {
     expect(summary.maximumMeters, 715);
     expect(summary.rangeMeters, 15);
     expect(summary.recentDeltaMeters, 15);
+  });
+
+  test('HUD nao recebe fix antigo mesmo quando precisao e velocidade parecem boas', () {
+    final at = DateTime.utc(2026, 10, 12, 12);
+    final gps = point(at: at, accuracyMeters: 7, speedMps: 8,
+        heading: 210, altitudeMeters: 812);
+    expect(MapTelemetryPolicy.freshPoint(gps, now: at.add(const Duration(seconds: 20))), same(gps));
+    final stale = MapTelemetryPolicy.freshPoint(gps,
+        now: at.add(const Duration(minutes: 2)));
+    expect(stale, isNull);
+    expect(MapTelemetryPolicy.currentSpeedKmh(stale), isNull);
+    expect(MapTelemetryPolicy.gpsHeadingDegrees(stale), isNull);
+    expect(MapTelemetryPolicy.validAccuracyMeters(stale?.accuracyMeters), isNull);
+  });
+
+  test('amostra com timestamp futuro nao deve ser aceita como atual', () {
+    final now = DateTime.utc(2026, 10, 12, 12);
+    final gps = point(at: now.add(const Duration(minutes: 1)), accuracyMeters: 3);
+    expect(MapTelemetryPolicy.isFresh(gps, now: now), isFalse);
+    expect(MapTelemetryPolicy.freshPoint(gps, now: now), isNull);
+    expect(MapTelemetryPolicy.isRecentTimestamp(now.add(const Duration(seconds: 1)),
+        maximumAge: const Duration(seconds: 3), now: now), isFalse);
+  });
+
+  test('sensor de bussola so vale no intervalo de 3 segundos', () {
+    final at = DateTime.utc(2026, 10, 12, 12);
+    expect(MapTelemetryPolicy.isRecentTimestamp(at,
+        maximumAge: const Duration(seconds: 3),
+        now: at.add(const Duration(seconds: 3))), isTrue);
+    expect(MapTelemetryPolicy.isRecentTimestamp(at,
+        maximumAge: const Duration(seconds: 3),
+        now: at.add(const Duration(seconds: 4))), isFalse);
   });
 
 }

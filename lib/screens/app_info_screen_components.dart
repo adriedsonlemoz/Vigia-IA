@@ -77,8 +77,35 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.221',
+          version: '1.0.224',
           current: true,
+          changes: [
+            'Busca de localidades prioriza o nome do destino.',
+            'Cidades salvas, próximas e distantes são organizadas por grupo.',
+            'Destinos homônimos permanecem disponíveis sem duplicatas próximas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.223',
+          changes: [
+            'Leituras GPS antigas não aparecem como posição e precisão atuais.',
+            'Bússola e altitude respeitam o horário de cada leitura.',
+            'Clima antigo é identificado e não vira condição atual.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.222',
+          changes: [
+            'Verificações adicionais de código e pipeline Android.',
+            'Regressões de GPS antigo cobertas por teste.',
+            'Funcionalidades existentes preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.221',
           changes: [
             'Miniaturas das camadas de mapas com melhor compatibilidade.',
             'Ajustes de estabilidade nos filtros da rádio online.',
@@ -2000,8 +2027,35 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.221',
+          version: '1.0.224',
           current: true,
+          changes: [
+            'Busca de localidades prioriza o nome do destino.',
+            'Cidades salvas, próximas e distantes são organizadas por grupo.',
+            'Destinos homônimos permanecem disponíveis sem duplicatas próximas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.223',
+          changes: [
+            'Leituras GPS antigas não aparecem como posição e precisão atuais.',
+            'Bússola e altitude respeitam o horário de cada leitura.',
+            'Clima antigo é identificado e não vira condição atual.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.222',
+          changes: [
+            'Verificações adicionais de código e pipeline Android.',
+            'Regressões de GPS antigo cobertas por teste.',
+            'Funcionalidades existentes preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.221',
           changes: [
             'Miniaturas das camadas de mapas com melhor compatibilidade.',
             'Ajustes de estabilidade nos filtros da rádio online.',

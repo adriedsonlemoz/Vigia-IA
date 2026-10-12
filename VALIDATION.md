@@ -1,4 +1,32 @@
-# Validação Vigia IA 1.0.221+221
+# Validação Vigia IA 1.0.224+224
+
+## Pesquisa de localidades 1.0.224
+
+- [x] Verificações estruturais e sintáticas locais dos arquivos editados; testes Python de contratos do projeto.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings` pendente no CI, SDK Flutter ausente localmente.
+- [ ] `flutter test test/map_destination_ranking_test.dart` e suíte completa pendentes no CI.
+- [ ] `flutter build apk` e inspeção em aparelho pendentes no CI e lote manual da 1.0.225.
+- [ ] Validar na rede respostas concretas para `Santo Antônio`, `Iguatama`, `Divinópolis` e uma localidade remota, usando as fontes de dados que estiverem disponíveis naquele momento.
+- [ ] Abrir teclado em 320/360 dp e fator de texto 1,5, observar rolagem e eventuais cortes; ajuste amplo previsto na 1.0.226.
+- [ ] Avaliar conformidade e escala do uso do Nominatim público, incluindo possibilidade de substituição remota do provedor antes de distribuição ampla.
+
+
+## Confiabilidade das leituras 1.0.223
+
+Verificar por `flutter test test/map_telemetry_policy_test.dart test/map_weather_policy_test.dart`, além de `flutter analyze` e `flutter test` integrais. Em Android real, manter 2 minutos sem fix GPS: topo e detalhes não podem indicar posição/precisão atuais; testar sensor de bússola ausente, meteorologia cacheada, modo avião e progresso do percurso. O teste manual completo será feito na 1.0.225 a pedido do usuário. **Sem SDK Flutter local, estes itens ainda estão pendentes.**
+
+## Estabilização 1.0.222
+
+- [x] ZIP original 1.0.221 conferido; 244 fontes Dart em `lib`, 111 testes Dart e tela principal de 11.424 linhas.
+- [x] Verificador original 1.0.221 aprovado antes das alterações. Isto **não** comprova compilação.
+- [x] `tool/check_import_targets.py`: caminhos de import/export/part do projeto válidos, sem resolver símbolos ou tipos.
+- [x] `tool/check_ci_contract.py`: ordem de gates, consistência Gradle e metadata dos APKs.
+- [x] Dez testes Python `tool/test_stabilization_contracts.py` com cenários de falha simulada.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings` pendente do GitHub Actions.
+- [ ] `flutter test --reporter expanded --coverage` pendente do GitHub Actions, inclusive novo teste GPS.
+- [ ] Android Gradle `:app:assembleRelease`, assinatura e APK instalado pendentes do GitHub Actions e testes reais.
+- [ ] Validação definitiva do workflow #185 da 1.0.221 não demonstrada por log/artefato nesta entrega.
+- [ ] Teste de UI e GPS em Android com tela bloqueada e modo avião pendente.
 
 ## Buildfix 1.0.221 (workflow #185)
 

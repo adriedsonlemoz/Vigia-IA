@@ -3,6 +3,38 @@ import '../models/map_weather.dart';
 class MapWeatherPolicy {
   const MapWeatherPolicy._();
 
+  static const Duration esp32LiveWindow = Duration(seconds: 90);
+
+  /// O estado stale persistido pode envelhecer mesmo sem nova notificação.
+  static bool onlineOutdated(MapWeatherSnapshot snapshot, {DateTime? now}) {
+    if (snapshot.onlineStale) return true;
+    final updated = snapshot.onlineUpdatedAt;
+    if (updated == null) return false;
+    final age = (now ?? DateTime.now()).difference(updated);
+    return age.isNegative || age > staleAfter;
+  }
+
+  /// Apenas leituras vigentes são exibidas como telemetria atual.
+  /// Os dados antigos permanecem no histórico/cache para consulta identificada.
+  static MapWeatherValue<T>? currentValue<T>(
+    MapWeatherSnapshot snapshot,
+    MapWeatherValue<T>? reading, {
+    DateTime? now,
+  }) {
+    if (reading == null) return null;
+    final instant = now ?? DateTime.now();
+    if (reading.source == MapWeatherSource.online) {
+      if (onlineOutdated(snapshot, now: instant)) return null;
+      // Open-Meteo pode usar o início da hora como instante de observação.
+      final age = instant.difference(reading.observedAt);
+      if (age.isNegative || age > const Duration(hours: 2)) return null;
+    } else {
+      final age = instant.difference(reading.observedAt);
+      if (age.isNegative || age > esp32LiveWindow) return null;
+    }
+    return reading;
+  }
+
   static const Duration cacheTtl = Duration(minutes: 15);
   static const Duration staleAfter = Duration(minutes: 45);
   static const Duration minimumAutomaticRefreshInterval = Duration(minutes: 2);
@@ -61,9 +93,9 @@ class MapWeatherPolicy {
     return labels[((normalized + 22.5) ~/ 45) % 8];
   }
 
-  static String buildVoiceMessage(MapWeatherSnapshot snapshot) {
+  static String buildVoiceMessage(MapWeatherSnapshot snapshot, {DateTime? now}) {
     final parts = <String>[];
-    final temperature = snapshot.temperatureC;
+    final temperature = currentValue(snapshot, snapshot.temperatureC, now: now);
     if (temperature != null) {
       final rounded = temperature.value.round();
       parts.add(
@@ -72,8 +104,10 @@ class MapWeatherPolicy {
             : 'Temperatura online: $rounded graus.',
       );
     }
-    final condition = conditionLabel(snapshot.weatherCode?.value);
-    final chance = snapshot.precipitationProbabilityPercent;
+    final condition = conditionLabel(
+      currentValue(snapshot, snapshot.weatherCode, now: now)?.value,
+    );
+    final chance = currentValue(snapshot, snapshot.precipitationProbabilityPercent, now: now);
     if (condition != null || chance != null) {
       final forecast = <String>[];
       if (condition != null) forecast.add(condition.toLowerCase());
@@ -87,7 +121,14 @@ class MapWeatherPolicy {
     return parts.join(' ').trim();
   }
 
-  static MapRideWeatherAssessment assessForRide(MapWeatherSnapshot snapshot) {
+  static MapRideWeatherAssessment assessForRide(MapWeatherSnapshot snapshot, {DateTime? now}) {
+    if (onlineOutdated(snapshot, now: now)) {
+      return const MapRideWeatherAssessment(
+        level: MapRideWeatherLevel.unavailable,
+        summary: 'Previsão desatualizada',
+        detail: 'Dados meteorológicos guardados não confirmam as condições atuais.',
+      );
+    }
     if (!snapshot.hasValues) {
       return const MapRideWeatherAssessment(
         level: MapRideWeatherLevel.unavailable,

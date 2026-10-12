@@ -45,5 +45,5 @@ check('height: items.isEmpty && !service.loading ? 470 : 690' in mapui and
       'diálogos vazios não foram compactados')
 check('class RadioSleepTimer' in text('lib/services/radio_sleep_timer.dart') and
       'RadioSleepTimer.schedule(' in radio, 'temporizador local da rádio ausente')
-check('1.0.221+221' in text('pubspec.yaml'), 'versão divergente')
+check('1.0.224+224' in text('pubspec.yaml'), 'versão divergente')
 print('Regressões locais de mapa/rádio 1.0.219: OK')

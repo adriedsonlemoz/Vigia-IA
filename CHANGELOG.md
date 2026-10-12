@@ -1,3 +1,29 @@
+## 1.0.224+224 — 2026-10-12
+
+- Pesquisa Nominatim usa nome próprio/namedetails em vez de município do endereço no título; migração dos títulos armazenados anteriormente.
+- Relevância textual acentuada/sem acento antecede proximidade; igualdade de nome de destino remoto supera localidade próxima com texto só no endereço.
+- Preferência regional aproximada via viewbox não restritiva e serialização de solicitações Nominatim com intervalo mínimo de 1,1 s; buscas em cache de sessão por até 1 h.
+- Deduplicação por identidade OSM e mesmo nome a até 85 m, sem juntar homônimos distantes; índice local, recentes e favoritos acessíveis sem rede.
+- Interface apresenta correspondências diretas, locais salvos, recentes, região e outros lugares; distância rotulada como linha reta; botão compacto de prévia de rota.
+- Adicionados testes Dart de nome, cache legado, relevância e deduplicação. Executar `flutter analyze`, `flutter test` e build no CI antes de aprovar APK.
+
+## 1.0.223+223 — 2026-10-12
+
+- Mapa passa a mostrar GPS antigo sem exibir a precisão anterior como precisão atual; idade da última amostra identificada no HUD e nos detalhes.
+- Direção GPS e rota dependem de localização recente; bússola física com timestamp futuro/antigo é ignorada no fallback.
+- Altitude atual separada do perfil histórico; velocidade e precisão dependem da amostra vigente e da fonte.
+- Clima online e ESP32 distinguem leituras atuais e antigas; resumo falado não reaproveita dados online vencidos.
+- Testes unitários de fronteira temporal e fontes, atualização de metadados; testes manuais agrupados para a versão 1.0.225.
+- Flutter analyze, testes Dart e geração de APK **ainda não executados localmente**.
+
+## 1.0.222+222 — 2026-10-12
+- Estabilização do pipeline: análise estática e testes executados antes da preparação obrigatória da assinatura release.
+- Download dos modelos de IA ocorre após a análise Flutter, permitindo diagnosticar erros Dart sem esperar a transferência dos modelos.
+- Conferência de applicationId, versionName e versionCode no metadata de cada APK antes de sua publicação.
+- Guardas locais de imports/parts e CI, com testes que simulam falhas de gates, versões Gradle incompatíveis e imports ausentes.
+- Regressão Dart para confirmar que fix GPS de 2 minutos continua classificado como antigo mesmo quando tem precisão horizontal de 7 m.
+- Mantidos módulos e interfaces de câmera, IA, Bike, sensores, rádio, mapas e navegação. Compilação e testes Flutter/Android ainda não executados localmente.
+
 ## 1.0.221+221 — 2026-10-12
 - Buildfix do APK #185: conflito de `Path` resolvido por `ui.Path` nas miniaturas de estilo (Flutter Map continua disponível para rotas geográficas).
 - Corrigido tipo genérico dos filtros do rádio e blocos de controle indicados pelo analisador; o histórico preserva a API pública.

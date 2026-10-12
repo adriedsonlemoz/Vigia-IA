@@ -76,7 +76,8 @@ void main() {
       precipitationProbabilityPercent: value(60, MapWeatherSource.online),
     );
 
-    final phrase = MapWeatherPolicy.buildVoiceMessage(snapshot);
+    final phrase = MapWeatherPolicy.buildVoiceMessage(snapshot,
+        now: DateTime.utc(2026, 9, 26, 12, 0, 10));
     expect(phrase, contains('Temperatura medida pelo sensor: 27 graus.'));
     expect(phrase, contains('60 por cento'));
     expect(phrase, isNot(contains('ensolarado')));
@@ -138,4 +139,43 @@ void main() {
     expect(assessment.level, MapRideWeatherLevel.critical);
     expect(assessment.summary, contains('Trovoadas'));
   });
+  test('sensor ESP32 atual tem janela distinta do cache meteorologico', () {
+    final at = DateTime.utc(2026, 10, 12, 12);
+    final reading = MapWeatherValue<double>(
+      value: 27, source: MapWeatherSource.esp32, observedAt: at,
+    );
+    final snapshot = MapWeatherSnapshot(temperatureC: reading);
+    expect(MapWeatherPolicy.currentValue(snapshot, reading,
+        now: at.add(const Duration(seconds: 90))), same(reading));
+    expect(MapWeatherPolicy.currentValue(snapshot, reading,
+        now: at.add(const Duration(seconds: 91))), isNull);
+  });
+
+  test('clima online de duas horas atras nao vira leitura atual', () {
+    final at = DateTime.utc(2026, 10, 12, 12);
+    final reading = MapWeatherValue<double>(
+      value: 25, source: MapWeatherSource.online, observedAt: at,
+    );
+    final snapshot = MapWeatherSnapshot(
+      temperatureC: reading,
+      onlineUpdatedAt: at,
+    );
+    final after = at.add(const Duration(hours: 2));
+    expect(MapWeatherPolicy.onlineOutdated(snapshot, now: after), isTrue);
+    expect(MapWeatherPolicy.currentValue(snapshot, reading, now: after), isNull);
+    expect(MapWeatherPolicy.assessForRide(snapshot, now: after).level,
+        MapRideWeatherLevel.unavailable);
+  });
+
+  test('clima com cache marcado antigo nao gera voz com dado online historico', () {
+    final at = DateTime.now().subtract(const Duration(hours: 4));
+    final snapshot = MapWeatherSnapshot(
+      temperatureC: MapWeatherValue<double>(
+        value: 25, source: MapWeatherSource.online, observedAt: at),
+      onlineUpdatedAt: at,
+      onlineStale: true,
+    );
+    expect(MapWeatherPolicy.buildVoiceMessage(snapshot), isEmpty);
+  });
+
 }

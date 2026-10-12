@@ -59,11 +59,13 @@ class MapDestinationSearchResult {
   MapDestinationSearchResult copyWith({
     double? distanceMeters,
     String? source,
+    String? title,
+    String? subtitle,
   }) {
     return MapDestinationSearchResult(
       id: id,
-      title: title,
-      subtitle: subtitle,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
       latitude: latitude,
       longitude: longitude,
       distanceMeters: distanceMeters ?? this.distanceMeters,

@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'data_usage_service.dart';
+import 'map_destination_ranking.dart';
 import 'nearby_place_query.dart';
 
 import '../models/map_destination_search.dart';
@@ -53,6 +54,10 @@ class MapDestinationSearchService extends ChangeNotifier {
   DateTime? _nearbyUpdatedAt;
   LatLng? _nearbyOrigin;
   DateTime? _lastNominatimRequestAt;
+  Future<void> _nominatimGate = Future<void>.value();
+  final Map<String, ({DateTime at, List<MapDestinationSearchResult> items})>
+      _queryCache = {};
+  int _searchRevision = 0;
   DateTime? _nearbyRetryAfter;
   bool _nearbyLastFetchFailed = false;
 
@@ -69,6 +74,25 @@ class MapDestinationSearchService extends ChangeNotifier {
       List<MapDestinationSearchResult>.unmodifiable(_results);
   List<MapDestinationSearchResult> get savedPlaces =>
       List<MapDestinationSearchResult>.unmodifiable(_savedPlaces);
+  bool isRecentPlace(MapDestinationSearchResult item) =>
+      _recentPlaces.any((place) => place.id == item.id);
+  bool isSavedPlace(MapDestinationSearchResult item) =>
+      _savedPlaces.any((place) => place.id == item.id);
+
+  String resultSection(MapDestinationSearchResult item, String query) {
+    final typed = _fold(query.split(',').first);
+    final title = _fold(item.title);
+    if (typed.isNotEmpty &&
+        title.contains(typed)) {
+      return 'Correspondências pelo nome';
+    }
+    if (isSavedPlace(item)) return 'Locais salvos';
+    if (isRecentPlace(item)) return 'Recentes';
+    return item.distanceMeters <= nearbyRadiusKm * 1000
+        ? 'Na região'
+        : 'Outros lugares';
+  }
+
 
   /// Guarda até 20 destinos escolhidos, sem consultar o servidor a cada tecla.
   Future<void> rememberRecentPlace(MapDestinationSearchResult item) async {
@@ -310,6 +334,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     required bool onlyDownloaded,
   }) {
     final text = query.trim();
+    _searchRevision++;
     if (text.isEmpty) {
       _results = const <MapDestinationSearchResult>[];
       _searchStatusMessage = null;
@@ -324,26 +349,9 @@ class MapDestinationSearchService extends ChangeNotifier {
       offlinePoiPackages: offlinePoiPackages,
       onlyDownloaded: onlyDownloaded,
     );
-    final needle = _fold(text);
-    final ranked = matches.toList(growable: false)
-      ..sort((a, b) {
-        int score(MapDestinationSearchResult item) {
-          var value = 0;
-          final title = _fold(item.title);
-          if (title == needle) value += 1000;
-          if (title.startsWith(needle)) value += 500;
-          if (item.kind != MapDestinationKind.pointOfInterest) value += 120;
-          if (item.offline) value += 80;
-          if (item.source == 'cache') value += 60;
-          return value;
-        }
-
-        final byScore = score(b).compareTo(score(a));
-        return byScore != 0
-            ? byScore
-            : a.distanceMeters.compareTo(b.distanceMeters);
-      });
-    _results = ranked.take(maximumSuggestions).toList(growable: false);
+    _results = MapDestinationRanking.ranked(
+      matches, text, limit: maximumSuggestions,
+    );
     _searchStatusMessage = _results.isEmpty
         ? 'Nenhuma sugestão local para “$text”. Confirme para pesquisar online.'
         : '${_results.length} sugestão(ões) local(is) · confirme para ampliar online.';
@@ -358,6 +366,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     required List<OfflinePoiPackage> offlinePoiPackages,
   }) async {
     await initialize();
+    final revision = ++_searchRevision;
     final text = query.trim();
     if (text.length < 2) {
       _results = const <MapDestinationSearchResult>[];
@@ -373,7 +382,9 @@ class MapDestinationSearchService extends ChangeNotifier {
       offlinePoiPackages: offlinePoiPackages,
       onlyDownloaded: !onlineAllowed,
     );
-    _results = local;
+    _results = MapDestinationRanking.ranked(
+      local, text, limit: maximumResults,
+    );
     _searchStatusMessage = onlineAllowed
         ? 'Pesquisando também online…'
         : 'Offline · resultados limitados ao que está salvo.';
@@ -387,23 +398,28 @@ class MapDestinationSearchService extends ChangeNotifier {
         current,
       ).timeout(const Duration(seconds: 10));
       _mergeKnownPlaces(remote.where((item) => item.kind != MapDestinationKind.pointOfInterest));
-      _results = _dedupeAndSort(<MapDestinationSearchResult>[
-        ...local,
-        ...remote,
-      ]).take(maximumResults).toList(growable: false);
+      if (revision != _searchRevision) return;
+      _results = MapDestinationRanking.ranked(
+        <MapDestinationSearchResult>[...local, ...remote],
+        text,
+        limit: maximumResults,
+      );
       _searchStatusMessage = _results.isEmpty
           ? 'Nenhum resultado encontrado.'
           : '${_results.length} resultado(s) · online + dados salvos.';
       await _persist();
     } on TimeoutException {
+      if (revision != _searchRevision) return;
       _searchStatusMessage = local.isEmpty
           ? 'A pesquisa online demorou demais.'
           : 'Pesquisa online indisponível · mostrando dados salvos.';
     } on SocketException {
+      if (revision != _searchRevision) return;
       _searchStatusMessage = local.isEmpty
           ? 'Sem internet e sem resultado offline para esta busca.'
           : 'Sem internet · mostrando dados salvos.';
     } catch (_) {
+      if (revision != _searchRevision) return;
       _searchStatusMessage = local.isEmpty
           ? 'Não foi possível concluir a pesquisa.'
           : 'Mostrando resultados salvos.';
@@ -426,11 +442,13 @@ class MapDestinationSearchService extends ChangeNotifier {
           ),
         )
         .where((item) => item.distanceMeters <= nearbyRadiusKm * 1000)
-        .where((item) => !onlyDownloaded || item.offline)
+        .where((item) => !onlyDownloaded || item.storedLocally ||
+            isRecentPlace(item))
         .where((item) => item.kind != MapDestinationKind.pointOfInterest)
         .toList(growable: true);
-    places.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
-    return places.take(maximumSuggestions).toList(growable: false);
+    final unique = MapDestinationRanking.deduplicate(places)
+      ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    return unique.take(maximumSuggestions).toList(growable: false);
   }
 
   List<MapDestinationSearchResult> _searchLocal(
@@ -450,7 +468,12 @@ class MapDestinationSearchService extends ChangeNotifier {
         current: current,
         offlineMaps: offlineMaps,
       );
-      if (!onlyDownloaded || resolved.offline) found.add(resolved);
+      // Índice persistido, favoritos e recentes são pesquisáveis sem rede,
+      // mesmo se o mapa-base dessa região ainda não foi baixado.
+      if (!onlyDownloaded || resolved.storedLocally ||
+          isRecentPlace(resolved)) {
+        found.add(resolved);
+      }
     }
 
     final poiIds = <String>{};
@@ -483,7 +506,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       }
     }
 
-    return _dedupeAndSort(found).take(maximumResults).toList(growable: false);
+    return _dedupeAndSort(found);
   }
 
   Future<List<MapDestinationSearchResult>> _fetchRoutePlaces(
@@ -512,7 +535,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.221');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.224');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -592,7 +615,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.221');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.224');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -725,7 +748,7 @@ class MapDestinationSearchService extends ChangeNotifier {
 
   Future<String> _readNearbyResponse(Uri endpoint, String query) async {
     final request = await _client.postUrl(endpoint);
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.221');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.224');
     request.headers.contentType = ContentType(
       'application', 'x-www-form-urlencoded', charset: 'utf-8',
     );
@@ -811,7 +834,7 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.221 map-reverse-search',
+          'VigiaIA/1.0.224 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
@@ -820,19 +843,13 @@ class MapDestinationSearchService extends ChangeNotifier {
           DataUsageModule.nearby,
           received: utf8.encode(body).length,
         );
-        _lastNominatimRequestAt = DateTime.now();
+    
         if (response.statusCode == HttpStatus.ok) {
           final decoded = jsonDecode(body);
           if (decoded is Map) {
             final item = decoded.cast<String, dynamic>();
             final displayName = item['display_name']?.toString().trim() ?? '';
-            final addressRaw = item['address'];
-            final address = addressRaw is Map
-                ? addressRaw.map(
-                    (key, value) => MapEntry(key.toString(), value.toString()),
-                  )
-                : const <String, String>{};
-            final title = _bestTitle(address, displayName);
+            final title = MapDestinationRanking.canonicalTitle(item);
             final type = item['type']?.toString();
             final category = item['category']?.toString();
             final kind = category == 'place'
@@ -878,7 +895,29 @@ class MapDestinationSearchService extends ChangeNotifier {
     String query,
     MapRoutePoint current,
   ) async {
+    final cacheKey = '${MapDestinationRanking.fold(query)}:'
+        '${(current.latitude * 2).round()}:${(current.longitude * 2).round()}';
+    final cached = _queryCache[cacheKey];
+    if (cached != null &&
+        DateTime.now().difference(cached.at) < const Duration(hours: 1)) {
+      return cached.items
+          .map((item) => item.copyWith(distanceMeters: _meters(
+              current.latitude, current.longitude,
+              item.latitude, item.longitude)))
+          .toList(growable: false);
+    }
     await _respectNominatimRateLimit();
+    // Caixa aproximada arredondada a 0,5 grau para reduzir precisão enviada.
+    // bounded=0: preferência geográfica, sem bloquear lugares remotos.
+    final approxLat = (current.latitude * 2).round() / 2;
+    final approxLon = (current.longitude * 2).round() / 2;
+    final regionalBox = approxLon.abs() < 170 && approxLat.abs() < 80
+        ? <String, String>{
+            'viewbox': '${approxLon - 2.5},${approxLat + 2.0},'
+                '${approxLon + 2.5},${approxLat - 2.0}',
+            'bounded': '0',
+          }
+        : const <String, String>{};
     final uri = Uri.https(
       'nominatim.openstreetmap.org',
       '/search',
@@ -886,12 +925,14 @@ class MapDestinationSearchService extends ChangeNotifier {
         'q': query,
         'format': 'jsonv2',
         'addressdetails': '1',
-        'limit': '12',
+        'namedetails': '1',
+        'limit': '20',
         'accept-language': 'pt-BR,pt,en',
+        ...regionalBox,
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.221 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.224 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
@@ -899,7 +940,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       DataUsageModule.nearby,
       received: utf8.encode(body).length,
     );
-    _lastNominatimRequestAt = DateTime.now();
+
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Nominatim HTTP ${response.statusCode}');
     }
@@ -912,13 +953,9 @@ class MapDestinationSearchService extends ChangeNotifier {
       final lon = double.tryParse(item['lon']?.toString() ?? '');
       if (lat == null || lon == null) continue;
       final displayName = item['display_name']?.toString().trim() ?? '';
-      final addressRaw = item['address'];
-      final address = addressRaw is Map
-          ? addressRaw.map((key, value) => MapEntry(key.toString(), value.toString()))
-          : const <String, String>{};
       final type = item['type']?.toString();
       final category = item['category']?.toString();
-      final title = _bestTitle(address, displayName);
+      final title = MapDestinationRanking.canonicalTitle(item);
       final kind = category == 'place'
           ? MapDestinationKindX.fromOsmType(type)
           : MapDestinationKind.pointOfInterest;
@@ -940,34 +977,33 @@ class MapDestinationSearchService extends ChangeNotifier {
         ),
       );
     }
-    return _dedupeAndSort(results);
-  }
-
-  String _bestTitle(Map<String, String> address, String displayName) {
-    for (final key in const <String>[
-      'amenity',
-      'shop',
-      'tourism',
-      'city',
-      'town',
-      'village',
-      'hamlet',
-      'municipality',
-      'road',
-    ]) {
-      final value = address[key]?.trim();
-      if (value != null && value.isNotEmpty) return value;
+    final unique = _dedupeAndSort(results);
+    // Cache pequeno e somente em memória para evitar buscas repetidas.
+    if (_queryCache.length >= 24) {
+      _queryCache.remove(_queryCache.keys.first);
     }
-    final comma = displayName.indexOf(',');
-    return comma > 0 ? displayName.substring(0, comma).trim() : displayName;
+    _queryCache[cacheKey] = (at: DateTime.now(), items: unique);
+    return unique;
   }
 
+  /// Reserva uma janela antes de enviar qualquer busca/reversa ao Nominatim.
+  /// A reserva é serializada mesmo se duas ações forem iniciadas juntas.
   Future<void> _respectNominatimRateLimit() async {
-    final last = _lastNominatimRequestAt;
-    if (last == null) return;
-    final elapsed = DateTime.now().difference(last);
-    const minimum = Duration(milliseconds: 1100);
-    if (elapsed < minimum) await Future<void>.delayed(minimum - elapsed);
+    final previous = _nominatimGate;
+    final turn = Completer<void>();
+    _nominatimGate = turn.future;
+    try {
+      await previous;
+      final last = _lastNominatimRequestAt;
+      if (last != null) {
+        final wait = const Duration(milliseconds: 1100) -
+            DateTime.now().difference(last);
+        if (wait > Duration.zero) await Future<void>.delayed(wait);
+      }
+      _lastNominatimRequestAt = DateTime.now();
+    } finally {
+      turn.complete();
+    }
   }
 
   bool _needsNearbyRefresh(MapRoutePoint current) {
@@ -1020,32 +1056,12 @@ class MapDestinationSearchService extends ChangeNotifier {
     return haystack.contains(needle);
   }
 
-  String _fold(String value) {
-    return value
-        .toLowerCase()
-        .replaceAll(RegExp(r'[áàâãä]'), 'a')
-        .replaceAll(RegExp(r'[éèêë]'), 'e')
-        .replaceAll(RegExp(r'[íìîï]'), 'i')
-        .replaceAll(RegExp(r'[óòôõö]'), 'o')
-        .replaceAll(RegExp(r'[úùûü]'), 'u')
-        .replaceAll('ç', 'c')
-        .trim();
-  }
+  String _fold(String value) => MapDestinationRanking.fold(value);
 
   List<MapDestinationSearchResult> _dedupeAndSort(
     Iterable<MapDestinationSearchResult> source,
   ) {
-    final byKey = <String, MapDestinationSearchResult>{};
-    for (final item in source) {
-      final key = '${_fold(item.title)}:'
-          '${item.latitude.toStringAsFixed(4)}:'
-          '${item.longitude.toStringAsFixed(4)}';
-      final existing = byKey[key];
-      if (existing == null || (item.offline && !existing.offline)) {
-        byKey[key] = item;
-      }
-    }
-    final values = byKey.values.toList(growable: false)
+    final values = MapDestinationRanking.deduplicate(source)
       ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
     return values;
   }
@@ -1059,7 +1075,9 @@ class MapDestinationSearchService extends ChangeNotifier {
     for (final item in _knownPlaces) {
       merged.putIfAbsent(item.id, () => item);
     }
-    _knownPlaces = merged.values.take(600).toList(growable: false);
+    _knownPlaces = MapDestinationRanking.deduplicate(
+      merged.values,
+    ).take(600).toList(growable: false);
   }
 
   void _setSuggestionsLoading(bool value) {
@@ -1095,14 +1113,16 @@ class MapDestinationSearchService extends ChangeNotifier {
       final rawPlaces = (map['places'] as List?) ?? const <Object>[];
       _savedPlaces = ((map['savedPlaces'] as List?) ?? const <Object>[])
           .whereType<Map>()
-          .map((item) => MapDestinationSearchResult.fromJson(
-              item.cast<String, dynamic>()).copyWith(source: 'offline'))
+          .map((item) => MapDestinationRanking.repairCachedTitle(
+              MapDestinationSearchResult.fromJson(
+                  item.cast<String, dynamic>())).copyWith(source: 'offline'))
           .where((item) => item.id.isNotEmpty)
           .toList(growable: false);
       _recentPlaces = ((map['recentPlaces'] as List?) ?? const <Object>[])
           .whereType<Map>()
-          .map((item) => MapDestinationSearchResult.fromJson(
-              item.cast<String, dynamic>()))
+          .map((item) => MapDestinationRanking.repairCachedTitle(
+              MapDestinationSearchResult.fromJson(
+                  item.cast<String, dynamic>())))
           .where((item) => item.id.isNotEmpty)
           .take(20)
           .toList(growable: false);
@@ -1114,6 +1134,7 @@ class MapDestinationSearchService extends ChangeNotifier {
             return cachedAt == null || now.difference(cachedAt) <= cacheRetention;
           })
           .map(MapDestinationSearchResult.fromJson)
+          .map(MapDestinationRanking.repairCachedTitle)
           .where((item) => item.id.isNotEmpty)
           .toList(growable: false);
     } catch (_) {

@@ -254,6 +254,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _navigationLeaseActive = false;
   DateTime? _lastNavigationStatusAt;
   Timer? _hudTimer;
+  int _hudFreshnessTicks = 0;
   int? _phoneBattery;
   String _radioState = 'parado';
 
@@ -291,6 +292,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   DateTime? _lastFollowCameraPointAt;
   StreamSubscription<MapCompassReading>? _compassSubscription;
   final ValueNotifier<int> _compassPanelTick = ValueNotifier<int>(0);
+  final ValueNotifier<int> _telemetryPanelTick = ValueNotifier<int>(0);
   MapCompassReading? _compassReading;
   double? _smoothedSensorHeading;
   _MapPoiQuickFilter _poiFilter = _MapPoiQuickFilter.all;
@@ -325,11 +327,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     widget.navigationSearchRequests?.addListener(_onWorkspaceNavigationRequest);
     _selectedPoiId = widget.initialPointOfInterest?.id;
     unawaited(SystemUiService.edgeToEdge());
-    _hudTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _hudTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!mounted || !widget.workspaceVisible) return;
-      setState(() {});
-      unawaited(_refreshBattery());
-      unawaited(_refreshRadioStatus());
+      setState(() {}); // Revê a idade de GPS, bússola e clima sem rede.
+      _telemetryPanelTick.value += 1;
+      _hudFreshnessTicks += 1;
+      if (_hudFreshnessTicks % 3 == 0) {
+        unawaited(_refreshBattery());
+        unawaited(_refreshRadioStatus());
+      }
     });
     unawaited(_refreshBattery());
     unawaited(_initializeOfflineMaps());
@@ -410,6 +416,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     _routeRecoveryTimer?.cancel();
     unawaited(_compassSubscription?.cancel());
     _compassPanelTick.dispose();
+    _telemetryPanelTick.dispose();
     _offlineTileProvider?.dispose();
     _navigationVoice.resetRoute();
     _mapController.dispose();
@@ -1402,10 +1409,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   double? get _sensorHeadingDegrees {
     final reading = _compassReading;
     if (reading == null || _smoothedSensorHeading == null) return null;
-    if (DateTime.now().difference(reading.recordedAt) >
-        const Duration(seconds: 3)) {
-      return null;
-    }
+    if (!MapTelemetryPolicy.isRecentTimestamp(
+      reading.recordedAt,
+      maximumAge: const Duration(seconds: 3),
+    )) return null;
     return _smoothedSensorHeading;
   }
 
@@ -1415,22 +1422,26 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         routePoints: _cyclingRoute?.points ?? const <LatLng>[],
       );
 
-  MapHeadingDecision _displayHeadingFor(MapRoutePoint? current) =>
-      MapViewPolicy.displayHeading(
-        speedKmh: current?.speedKilometersPerHour ?? 0,
-        sensorHeadingDegrees: _sensorHeadingDegrees,
-        gpsHeadingDegrees: current?.headingDegrees,
-        routeHeadingDegrees: _routeHeadingFor(current),
-      );
+  MapHeadingDecision _displayHeadingFor(MapRoutePoint? current) {
+    final live = MapTelemetryPolicy.freshPoint(current);
+    return MapViewPolicy.displayHeading(
+      speedKmh: live?.speedKilometersPerHour ?? 0,
+      sensorHeadingDegrees: _sensorHeadingDegrees,
+      gpsHeadingDegrees: MapTelemetryPolicy.gpsHeadingDegrees(live),
+      routeHeadingDegrees: live == null ? null : _routeHeadingFor(live),
+    );
+  }
 
-  MapHeadingDecision _orientationHeadingFor(MapRoutePoint? current) =>
-      MapViewPolicy.orientationHeading(
-        mode: _mapViewSettings.orientationMode,
-        speedKmh: current?.speedKilometersPerHour ?? 0,
-        sensorHeadingDegrees: _sensorHeadingDegrees,
-        gpsHeadingDegrees: current?.headingDegrees,
-        routeHeadingDegrees: _routeHeadingFor(current),
-      );
+  MapHeadingDecision _orientationHeadingFor(MapRoutePoint? current) {
+    final live = MapTelemetryPolicy.freshPoint(current);
+    return MapViewPolicy.orientationHeading(
+      mode: _mapViewSettings.orientationMode,
+      speedKmh: live?.speedKilometersPerHour ?? 0,
+      sensorHeadingDegrees: _sensorHeadingDegrees,
+      gpsHeadingDegrees: MapTelemetryPolicy.gpsHeadingDegrees(live),
+      routeHeadingDegrees: live == null ? null : _routeHeadingFor(live),
+    );
+  }
 
   void _onCompassError(Object error, StackTrace stackTrace) {
     unawaited(
@@ -3435,9 +3446,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted) return;
 
     Widget buildPanel(BuildContext panelContext) {
-      final animation = listenables.length == 1
-          ? listenables.first
-          : Listenable.merge(listenables);
+      final animation = Listenable.merge(<Listenable>[
+        ...listenables,
+        _telemetryPanelTick,
+      ]);
       return AnimatedBuilder(
         animation: animation,
         builder: (context, _) {
@@ -3503,7 +3515,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         final current = _routeState.current;
         final reading = _speedReading;
         final speed = reading?.kmh;
-        final speedAccuracy = MapTelemetryPolicy.speedAccuracyKmh(current);
+        final speedAccuracy = reading?.source == 'GPS'
+            ? MapTelemetryPolicy.speedAccuracyKmh(MapTelemetryPolicy.freshPoint(current))
+            : null;
         final average = _telemetrySession.averageSpeedKmh;
         final maximum = _telemetrySession.maximumSpeedKmh;
         final difference = speed == null || average == null ? null : speed - average;
@@ -3591,13 +3605,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       listenables: <Listenable>[_routeState],
       contentBuilder: (context) {
         final current = _routeState.current;
+        final live = MapTelemetryPolicy.freshPoint(current);
         final summary = MapTelemetryPolicy.elevationSummary(
           _routeState.route,
-          current: current,
+          current: live,
         );
         final accuracy = MapTelemetryPolicy.validAccuracyMeters(
-          current?.altitudeAccuracyMeters,
+          live?.altitudeAccuracyMeters,
         );
+        final liveAltitude = live?.altitudeMeters;
         final delta = summary.recentDeltaMeters;
         final trend = delta == null
             ? '--'
@@ -3615,9 +3631,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               children: [
                 MapTelemetryMetricTile(
                   label: 'Altitude atual',
-                  value: summary.currentMeters == null
+                  value: liveAltitude == null
                       ? '--'
-                      : '${summary.currentMeters!.toStringAsFixed(1)} m',
+                      : '${liveAltitude.toStringAsFixed(1)} m',
+                  detail: live == null ? 'Sem GPS recente; perfil histórico preservado.' : null,
                   icon: Icons.height_rounded,
                   emphasized: true,
                 ),
@@ -3693,7 +3710,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   Future<void> _refreshWeatherManually() async {
-    final current = _routeState.current;
+    final current = MapTelemetryPolicy.freshPoint(_routeState.current);
     if (current == null) return;
     await _weather.refreshForLocation(
       latitude: current.latitude,
@@ -3710,7 +3727,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       listenables: <Listenable>[_weather, _routeState],
       contentBuilder: (context) {
         final snapshot = _weather.snapshot;
-        final condition = MapWeatherPolicy.conditionLabel(snapshot.weatherCode?.value);
+        final liveCondition = MapWeatherPolicy.currentValue(snapshot, snapshot.weatherCode);
+        final liveTemperature = MapWeatherPolicy.currentValue(snapshot, snapshot.temperatureC);
+        final liveFeels = MapWeatherPolicy.currentValue(snapshot, snapshot.apparentTemperatureC);
+        final liveRain = MapWeatherPolicy.currentValue(snapshot, snapshot.precipitationProbabilityPercent);
+        final liveWind = MapWeatherPolicy.currentValue(snapshot, snapshot.windSpeedKmh);
+        final liveWindDirection = MapWeatherPolicy.currentValue(snapshot, snapshot.windDirectionDegrees);
+        final liveHumidity = MapWeatherPolicy.currentValue(snapshot, snapshot.humidityPercent);
+        final livePressure = MapWeatherPolicy.currentValue(snapshot, snapshot.surfacePressureHpa);
+        final condition = MapWeatherPolicy.conditionLabel(liveCondition?.value);
         final assessment = MapWeatherPolicy.assessForRide(snapshot);
         final current = _routeState.current;
         return Column(
@@ -3721,76 +3746,87 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               const SizedBox(height: 12),
             ],
             MapWeatherAssessmentBanner(assessment: assessment),
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              child: Text(snapshot.latestObservedAt == null
+                  ? 'Sem horário de observação informado.'
+                  : 'Última observação há ${_formatReadingAge(DateTime.now().difference(snapshot.latestObservedAt!))}. '
+                    'Dados guardados não representam necessariamente a condição atual.'),
+            ),
             const SizedBox(height: 14),
             MapTelemetryMetricGrid(
               children: [
                 MapTelemetryMetricTile(
                   label: 'Temperatura',
-                  value: snapshot.temperatureC == null
+                  value: liveTemperature == null
                       ? '--'
-                      : '${snapshot.temperatureC!.value.toStringAsFixed(1)} °C',
-                  detail: snapshot.temperatureC?.source.label,
+                      : '${liveTemperature.value.toStringAsFixed(1)} °C',
+                  detail: liveTemperature?.source.label ?? 'Leitura indisponível ou antiga',
                   icon: Icons.device_thermostat_rounded,
                   emphasized: true,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Sensação',
-                  value: snapshot.apparentTemperatureC == null
+                  value: liveFeels == null
                       ? '--'
-                      : '${snapshot.apparentTemperatureC!.value.toStringAsFixed(1)} °C',
+                      : '${liveFeels.value.toStringAsFixed(1)} °C',
                   icon: Icons.thermostat_rounded,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Condição',
                   value: condition ?? '--',
-                  icon: _weatherIcon(snapshot.weatherCode?.value),
+                  icon: _weatherIcon(liveCondition?.value),
                 ),
                 MapTelemetryMetricTile(
                   label: 'Chuva · próximas horas',
-                  value: snapshot.precipitationProbabilityPercent == null
+                  value: liveRain == null
                       ? '--'
-                      : '${snapshot.precipitationProbabilityPercent!.value.toStringAsFixed(0)}%',
+                      : '${liveRain.value.toStringAsFixed(0)}%',
                   icon: Icons.umbrella_rounded,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Vento',
-                  value: snapshot.windSpeedKmh == null
+                  value: liveWind == null
                       ? '--'
-                      : '${snapshot.windSpeedKmh!.value.toStringAsFixed(1)} km/h',
-                  detail: snapshot.windDirectionDegrees == null
+                      : '${liveWind.value.toStringAsFixed(1)} km/h',
+                  detail: liveWindDirection == null
                       ? null
                       : MapWeatherPolicy.windDirectionLabel(
-                          snapshot.windDirectionDegrees!.value,
+                          liveWindDirection.value,
                         ),
                   icon: Icons.air_rounded,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Umidade',
-                  value: snapshot.humidityPercent == null
+                  value: liveHumidity == null
                       ? '--'
-                      : '${snapshot.humidityPercent!.value.toStringAsFixed(0)}%',
-                  detail: snapshot.humidityPercent?.source.label,
+                      : '${liveHumidity.value.toStringAsFixed(0)}%',
+                  detail: liveHumidity?.source.label,
                   icon: Icons.water_drop_outlined,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Pressão atmosférica',
-                  value: snapshot.surfacePressureHpa == null
+                  value: livePressure == null
                       ? '--'
-                      : '${snapshot.surfacePressureHpa!.value.toStringAsFixed(1)} hPa',
-                  detail: snapshot.surfacePressureHpa?.source.label,
+                      : '${livePressure.value.toStringAsFixed(1)} hPa',
+                  detail: livePressure?.source.label,
                   icon: Icons.compress_rounded,
                 ),
                 MapTelemetryMetricTile(
                   label: 'Origem dos dados',
                   value: snapshot.origin.label,
-                  detail: snapshot.onlineStale ? 'Cache online antigo' : MapWeatherService.providerLabel,
+                  detail: MapWeatherPolicy.onlineOutdated(snapshot)
+                      ? 'Cache meteorológico antigo'
+                      : MapWeatherService.providerLabel,
                   icon: Icons.hub_rounded,
                 ),
               ],
             ),
             const SizedBox(height: 18),
             Text(
-              'Previsão horária',
+              MapWeatherPolicy.onlineOutdated(snapshot)
+                  ? 'Previsão horária · histórico antigo'
+                  : 'Previsão horária',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -3810,7 +3846,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               runSpacing: 8,
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: current == null || _weather.loading
+                  onPressed: !MapTelemetryPolicy.isFresh(current) || _weather.loading
                       ? null
                       : () => unawaited(_refreshWeatherManually()),
                   icon: const Icon(Icons.refresh_rounded),
@@ -3847,19 +3883,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       listenables: <Listenable>[_routeState],
       contentBuilder: (context) {
         final current = _routeState.current;
+        final live = MapTelemetryPolicy.freshPoint(current);
         final accuracy = MapTelemetryPolicy.validAccuracyMeters(
           current?.accuracyMeters,
         );
         final quality = MapTelemetryPolicy.gpsQuality(current);
-        final speed = MapTelemetryPolicy.currentSpeedKmh(current);
-        final speedAccuracy = MapTelemetryPolicy.speedAccuracyKmh(current);
-        final heading = MapTelemetryPolicy.gpsHeadingDegrees(current);
+        final speed = MapTelemetryPolicy.currentSpeedKmh(live);
+        final speedAccuracy = MapTelemetryPolicy.speedAccuracyKmh(live);
+        final heading = MapTelemetryPolicy.gpsHeadingDegrees(live);
         final headingAccuracy = MapTelemetryPolicy.validAccuracyMeters(
-          current?.headingAccuracyDegrees,
+          live?.headingAccuracyDegrees,
         );
         final altitudeAccuracy = MapTelemetryPolicy.validAccuracyMeters(
-          current?.altitudeAccuracyMeters,
+          live?.altitudeAccuracyMeters,
         );
+        final liveAltitude = live?.altitudeMeters;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -3867,6 +3905,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
               quality: quality,
               accuracyMeters: accuracy,
             ),
+            if (current != null && live == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  'Última posição histórica há ${_formatReadingAge(MapTelemetryPolicy.readingAge(current))}. '
+                  'As coordenadas abaixo não são uma localização em tempo real.',
+                ),
+              ),
             const SizedBox(height: 14),
             MapTelemetryMetricGrid(
               children: [
@@ -3902,7 +3948,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   icon: Icons.speed_rounded,
                 ),
                 MapTelemetryMetricTile(
-                  label: 'Heading GPS',
+                  label: 'Rumo do GPS (movimento)',
                   value: heading == null ? '--' : '${heading.toStringAsFixed(0)}°',
                   detail: headingAccuracy == null
                       ? null
@@ -3911,9 +3957,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 ),
                 MapTelemetryMetricTile(
                   label: 'Altitude',
-                  value: current?.altitudeMeters == null
+                  value: liveAltitude == null
                       ? '--'
-                      : '${current!.altitudeMeters!.toStringAsFixed(1)} m',
+                      : '${liveAltitude.toStringAsFixed(1)} m',
                   detail: altitudeAccuracy == null
                       ? 'Precisão vertical não informada'
                       : '±${altitudeAccuracy.toStringAsFixed(1)} m',
@@ -5505,8 +5551,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   }
 
   String _searchSourceLabel(MapDestinationSearchResult item) {
-    if (item.offline) return 'Offline';
-    if (item.storedLocally) return 'Salvo';
+    if (_destinationSearch.isSavedPlace(item)) return 'Favorito';
+    if (_destinationSearch.isRecentPlace(item)) return 'Recente';
+    if (item.offline) return 'Dados locais';
+    if (item.storedLocally) return 'Cache local';
     return 'Online';
   }
 
@@ -5704,6 +5752,20 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 final items = showingSuggestions
                     ? service.suggestions
                     : service.results;
+                // Grupos são apenas apresentação. Mantemos a relevância
+                // calculada pelo serviço dentro de cada seção.
+                const groups = <String>[
+                  'Correspondências pelo nome',
+                  'Locais salvos',
+                  'Recentes',
+                  'Na região',
+                  'Outros lugares',
+                ];
+                final orderedItems = <MapDestinationSearchResult>[
+                  for (final group in groups)
+                    ...items.where((item) =>
+                        service.resultSection(item, query) == group),
+                ];
                 return SizedBox(
                   height: items.isEmpty && !service.loading ? 470 : 690,
                   child: Column(
@@ -5881,45 +5943,61 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-                              itemCount: items.length,
+                              itemCount: orderedItems.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 5),
                               itemBuilder: (context, index) {
-                                final item = items[index];
-                                return Card(
-                                  margin: EdgeInsets.zero,
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      child: Icon(
-                                        _destinationKindIcon(item),
-                                        size: 19,
+                                final item = orderedItems[index];
+                                final section = service.resultSection(item, query);
+                                final showHeader = index == 0 ||
+                                    service.resultSection(
+                                        orderedItems[index - 1], query) != section;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    if (showHeader)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(8, 9, 8, 5),
+                                        child: Text(section,
+                                            style: Theme.of(context)
+                                                .textTheme.titleSmall),
+                                      ),
+                                    Card(
+                                      margin: EdgeInsets.zero,
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          child: Icon(
+                                            _destinationKindIcon(item),
+                                            size: 19,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          item.title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle: Text(
+                                          '${item.kind.label} · ${_searchSourceLabel(item)} · ${_formatSearchDistance(item.distanceMeters)} em linha reta\n${item.subtitle}',
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        onTap: () {
+                                          unawaited(service.rememberRecentPlace(item));
+                                          Navigator.of(sheetContext).pop();
+                                          _focusSearchResult(item);
+                                        },
+                                        trailing: IconButton.filledTonal(
+                                          tooltip: 'Visualizar rota até o destino',
+                                          icon: const Icon(Icons.route_rounded),
+                                          onPressed: () {
+                                            unawaited(service.rememberRecentPlace(item));
+                                            Navigator.of(sheetContext).pop();
+                                            unawaited(_previewRouteToSearchResult(item));
+                                          },
+                                        ),
                                       ),
                                     ),
-                                    title: Text(
-                                      item.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      '${item.kind.label} · ${_searchSourceLabel(item)} · ${_formatSearchDistance(item.distanceMeters)}\n${item.subtitle}',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    onTap: () {
-                                      unawaited(service.rememberRecentPlace(item));
-                                      Navigator.of(sheetContext).pop();
-                                      _focusSearchResult(item);
-                                    },
-                                    trailing: FilledButton.tonalIcon(
-                                      icon: const Icon(Icons.navigation_rounded, size: 17),
-                                      label: const Text('Navegar'),
-                                      onPressed: () {
-                                        unawaited(service.rememberRecentPlace(item));
-                                        Navigator.of(sheetContext).pop();
-                                        unawaited(_previewRouteToSearchResult(item));
-                                      },
-                                    ),
-                                  ),
+                                  ],
                                 );
                               },
                             ),
@@ -5928,7 +6006,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                         child: Text(
-                          'Distâncias da lista são aproximadas em linha reta; ao criar a rota, o app calcula percurso e tempo. Busca: OpenStreetMap/Nominatim · localidades: OpenStreetMap/Overpass.',
+                          'Distâncias em linha reta. A busca online envia o texto e uma região aproximada ao Nominatim (OSM); não limita destinos distantes. Localidades próximas: Overpass.',
                           textAlign: TextAlign.center,
                           style: Theme.of(sheetContext).textTheme.labelSmall,
                         ),
@@ -6364,6 +6442,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final mapPalette = MapAppearancePolicy.palette(mapAppearance);
     final safePadding = MediaQuery.paddingOf(context);
     final current = _routeState.current;
+    final liveGps = MapTelemetryPolicy.freshPoint(current);
     final navigationTarget = _routeState.navigationTarget;
     final center = current == null
         ? const LatLng(-14.2350, -51.9253)
@@ -7053,10 +7132,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 child: _MapTelemetryStrip(
                   speedKmh: speedReading?.kmh,
                   speedSource: speedReading?.source,
-                  altitudeMeters: current?.altitudeMeters,
+                  altitudeMeters: liveGps?.altitudeMeters,
                   headingDegrees: _displayHeadingFor(current).headingDegrees,
+                  headingSource: _displayHeadingFor(current).source,
                   gpsAccuracyMeters:
-                      MapTelemetryPolicy.validAccuracyMeters(current?.accuracyMeters),
+                      MapTelemetryPolicy.validAccuracyMeters(liveGps?.accuracyMeters),
+                  gpsReadingAge: MapTelemetryPolicy.readingAge(current),
+                  gpsIsFresh: liveGps != null,
+                  gpsHasFix: current != null,
                   orientationMode: _mapViewSettings.orientationMode,
                   weather: _weather.snapshot,
                   onSpeedTap: () => unawaited(_showSpeedDetails()),
@@ -10005,7 +10088,11 @@ class _MapTelemetryStrip extends StatelessWidget {
     required this.speedSource,
     required this.altitudeMeters,
     required this.headingDegrees,
+    required this.headingSource,
     required this.gpsAccuracyMeters,
+    required this.gpsReadingAge,
+    required this.gpsIsFresh,
+    required this.gpsHasFix,
     required this.orientationMode,
     required this.weather,
     required this.onSpeedTap,
@@ -10020,7 +10107,11 @@ class _MapTelemetryStrip extends StatelessWidget {
   final String? speedSource;
   final double? altitudeMeters;
   final double? headingDegrees;
+  final MapHeadingSource headingSource;
   final double? gpsAccuracyMeters;
+  final Duration? gpsReadingAge;
+  final bool gpsIsFresh;
+  final bool gpsHasFix;
   final MapOrientationMode orientationMode;
   final MapWeatherSnapshot weather;
   final VoidCallback onSpeedTap;
@@ -10058,6 +10149,20 @@ class _MapTelemetryStrip extends StatelessWidget {
     final gpsValue = gpsAccuracyMeters == null
         ? '--'
         : '±${gpsAccuracyMeters!.toStringAsFixed(0)}';
+    final gpsStale = gpsHasFix && !gpsIsFresh;
+    final gpsAgeText = gpsReadingAge == null
+        ? null
+        : gpsReadingAge!.inMinutes > 0
+            ? '${gpsReadingAge!.inMinutes} min'
+            : '${gpsReadingAge!.inSeconds} s';
+    final temperature = MapWeatherPolicy.currentValue(
+      weather, weather.temperatureC,
+    );
+    final weatherCode = MapWeatherPolicy.currentValue(
+      weather, weather.weatherCode,
+    );
+    final weatherOutdated = weather.hasValues &&
+        temperature == null && weatherCode == null;
 
     return Row(
       children: [
@@ -10066,7 +10171,7 @@ class _MapTelemetryStrip extends StatelessWidget {
             icon: Icons.speed_rounded,
             value: speedKmh == null ? '--' : speedKmh!.toStringAsFixed(1),
             unit: speedKmh == null ? null : 'km/h',
-            label: 'Velocidade',
+            label: speedSource == 'Simulação' ? 'Vel. simulada' : 'Velocidade',
             source: speedSource,
             emphasized: true,
             onTap: onSpeedTap,
@@ -10091,7 +10196,12 @@ class _MapTelemetryStrip extends StatelessWidget {
           child: _MapTelemetryCard(
             icon: Icons.explore_rounded,
             value: _direction(headingDegrees),
-            label: 'Bússola',
+            label: switch (headingSource) {
+              MapHeadingSource.sensor => 'Sensor',
+              MapHeadingSource.gps => 'Rumo GPS',
+              MapHeadingSource.route => 'Rumo rota',
+              MapHeadingSource.unavailable => 'Direção',
+            },
             emphasized: orientationMode != MapOrientationMode.northUp,
             onTap: onCompassTap,
             tooltip:
@@ -10105,24 +10215,30 @@ class _MapTelemetryStrip extends StatelessWidget {
             icon: Icons.gps_fixed_rounded,
             value: gpsValue,
             unit: gpsAccuracyMeters == null ? null : 'm',
-            label: 'GPS',
+            label: gpsStale ? 'GPS antigo' : 'GPS',
+            source: gpsStale
+                ? gpsAgeText == null ? 'horário inválido' : 'há $gpsAgeText'
+                : null,
             onTap: onGpsTap,
-            tooltip: 'GPS: toque para ver posição e qualidade da leitura.',
+            tooltip: gpsStale
+                ? 'Amostra GPS inválida ou antiga. A precisão anterior não descreve a posição atual.'
+                : 'GPS: toque para ver posição e qualidade da leitura.', 
             compact: compact,
           ),
         ),
         const SizedBox(width: 5),
         Expanded(
           child: _MapTelemetryCard(
-            icon: _weatherIcon(weather.weatherCode?.value),
-            value: weather.temperatureC == null
+            icon: _weatherIcon(weatherCode?.value),
+            value: temperature == null
                 ? '--'
-                : weather.temperatureC!.value.toStringAsFixed(0),
-            unit: weather.temperatureC == null ? null : '°C',
-            label: weather.origin == MapWeatherOrigin.unavailable
-                ? 'Clima'
-                : 'Clima · ${weather.origin.label}',
-            emphasized: weather.onlineStale,
+                : temperature.value.toStringAsFixed(0),
+            unit: temperature == null ? null : '°C',
+            label: weatherOutdated ? 'Clima antigo'
+                : weather.origin == MapWeatherOrigin.unavailable
+                    ? 'Clima'
+                    : 'Clima · ${weather.origin.label}',
+            emphasized: weatherOutdated,
             onTap: onWeatherTap,
             tooltip:
                 'Clima: toque para ver sensores ESP32, dados online e fontes.',

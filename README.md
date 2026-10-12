@@ -1,5 +1,11 @@
 # Vigia IA
 
+A **1.0.224+224** melhora a pesquisa de localidades: títulos OSM, relevância por nome, viés regional sem bloquear destinos remotos, deduplicação e grupos no mapa. A busca digitada consulta somente dados locais; Nominatim é acionado apenas ao confirmar. Versão preparada para validação no CI, sem APK local aprovado.
+
+A **1.0.223+223** diferencia leituras atuais e antigas no HUD do mapa e nos painéis de GPS, altitude, rumo e meteorologia. O histórico é preservado e não deve ser confundido com o sinal em tempo real. A análise Flutter e o APK dependem de validação em CI.
+
+A **1.0.222+222** fortalece a etapa de estabilização: valida destinos de imports locais, protege gates e metadata dos APKs do GitHub Actions com testes de mutação, executa checagens mesmo sem Secrets e adiciona regressão de leitura GPS com dois minutos. O APK, o `flutter analyze` e o `flutter test` ainda exigem execução real no CI.
+
 A **1.0.221+221** resolve os diagnósticos do APK #185, restaurando `dart:ui.Path` nas miniaturas dos estilos de mapa, corrigindo os filtros do rádio, o histórico e os avisos de componentes não utilizados. O gerenciador offline, o plano de cicloviagem e as prévias de rota da versão 1.0.220 foram preservados. Flutter/Android ainda requerem validação em CI.
 
 A **1.0.219+219** torna a descoberta de pontos úteis progressiva (até 5/10 km e raio configurado com alternativa Overpass), evita apagar resultados após falhas temporárias, mantém autocomplete local e histórico de destinos pesquisados. A rádio ganha aba Recentes persistente, filtros de estilo/idioma/bitrate, layout renovado, temporizador e ações distintas de minimizar e parar. Os diálogos vazios são menores. A compilação Android ainda precisa ser validada no CI.
@@ -13,7 +19,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.221+221`
+> **Versão atual:** `1.0.224+224`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 
