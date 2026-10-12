@@ -36,6 +36,7 @@ import '../services/bike_sensor_service.dart';
 import '../services/bike_ride_history_service.dart';
 import '../services/bike_trip_planner.dart';
 import '../services/bike_trip_schedule.dart';
+import '../services/map_route_preview_metrics.dart';
 import '../services/saved_bike_route_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
@@ -63,6 +64,7 @@ import '../services/map_weather_policy.dart';
 import '../services/map_weather_service.dart';
 import '../services/map_voice_service.dart';
 import '../services/map_ux_policy.dart';
+import '../services/map_hud_presentation.dart';
 import '../services/map_view_policy.dart';
 import '../services/google_maps_key_service.dart';
 import '../services/map_view_settings_service.dart';
@@ -83,6 +85,7 @@ import '../widgets/map_ai_status_overlay.dart';
 import '../widgets/map_centered_dialog.dart';
 import '../widgets/map_radio_panel.dart';
 import '../widgets/map_telemetry_panel.dart';
+import '../widgets/map_hud_context_pill.dart';
 
 part 'map_monitoring_offline_support.dart';
 
@@ -279,6 +282,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _stopMapOwnedSourcesWhenHidden = true;
   bool? _fullscreenCameraSecondary;
   bool _navigationPanelMinimized = true;
+  // null = HUD automático por contexto; tocar no indicador alterna a exibição.
+  bool? _hudExpandedOverride;
 
   bool _followPosition = true;
   bool _mapReady = false;
@@ -2058,9 +2063,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     }
     final mode = await _chooseTravelMode();
     if (!mounted || mode == null) return;
-    if (mode == MapTravelMode.bicycle && !await _prepareTravelPreferences(mode)) {
-      return;
-    }
+    // Para a prévia, reutiliza o ritmo persistido. Editar é uma ação
+    // voluntária dentro do cartão e não força o diálogo em cada destino.
     if (!mounted) return;
     if (_connectivity.isOffline || _offlineMaps.mode == OfflineMapMode.offline) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(
@@ -2175,6 +2179,21 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final target = _previewTarget;
     if (target != null && target.travelMode == MapTravelMode.bicycle) {
       unawaited(_refreshPreviewPlan(target, route, _previewSerial));
+    }
+  }
+
+  Future<void> _editPreviewBikePace() async {
+    final target = _previewTarget;
+    if (target == null || target.travelMode != MapTravelMode.bicycle) return;
+    final selection = await _chooseBikeTravelPreferences();
+    if (!mounted || selection == null || _previewTarget != target) return;
+    await _mapViewSettings.setBikeTravelPreferences(selection.preferences);
+    await _mapViewSettings.setBikeUseHistoricalSpeed(selection.useHistoricalSpeed);
+    if (!mounted || _previewTarget != target) return;
+    setState(() => _previewPlan = null);
+    if (_previewRoutes.isNotEmpty) {
+      unawaited(_refreshPreviewPlan(
+        target, _previewRoutes[_previewIndex], _previewSerial));
     }
   }
 
@@ -2958,9 +2977,11 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
-                            day.usesKnownPlace
-                                ? 'Localidade identificada; serviços e acesso não verificados.'
-                                : 'Ponto aproximado sobre a rota; sem serviços confirmados.',
+                            day.usesKnownPlace && day.routeProximityMeters != null
+                                ? 'Localidade a ${day.routeProximityMeters!.round()} m em linha reta do traçado; acesso por vias e serviços não verificados.'
+                                : day.usesKnownPlace
+                                    ? 'Localidade identificada; serviços e acesso não verificados.'
+                                    : 'Ponto aproximado sobre a rota; sem serviços confirmados.',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ]),
@@ -4845,6 +4866,24 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.pedal_bike_rounded),
+                title: const Text('Bike e sensores'),
+                subtitle: const Text('Abrir telemetria da bicicleta'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showBikePanel());
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.volume_up_rounded),
+                title: const Text('Áudio do mapa'),
+                subtitle: const Text('Voz da navegação e demais avisos'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_showAudioQuickControls());
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.radio_rounded),
                 title: const Text('Rádio online'),
                 subtitle: const Text('Streams salvos e reprodução'),
@@ -6559,6 +6598,22 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
             width: constraints.maxWidth,
             height: constraints.maxHeight,
           );
+          final hud = MapHudPresentationPolicy.resolve(
+            hasNavigation: navigationTarget != null,
+            recording: _routeState.recording,
+            speedKmh: speedReading?.source == 'Simulação'
+                ? null : speedReading?.kmh,
+            pedalingModeSelected: widget.workspaceModeLabel == 'Pedalar',
+            compactScreen: compactHud,
+            cameraOverlayVisible: _hasCameraOverlay && _camerasVisible,
+            radioActive: _radioState == 'tocando' ||
+                _radioState == 'conectando' || _radioState == 'pausado',
+            bikeConnected: bikeSnapshot?.connected == true,
+            bikeAlert: rapidPressureLoss != null ||
+                bikeHealth == BikeSensorHealth.critical ||
+                bikeHealth == BikeSensorHealth.warning,
+            manuallyExpanded: _hudExpandedOverride,
+          );
           final showDockedNavigationBanner = focusLevel == 0 && compactHud &&
               navigationTarget != null &&
               _navigationPanelMinimized;
@@ -6569,15 +6624,19 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   : showDockedNavigationBanner
                       ? 152.0
                       : (_navigationPanelMinimized ? 176.0 : 360.0);
-          final telemetryTop = topInset + MapUxPolicy.controlSize + 10;
+          final hudContextTop = topInset + MapUxPolicy.controlSize + 10;
+          const hudContextHeight = 36.0;
+          final telemetryTop = hudContextTop + hudContextHeight + 6;
           final telemetryHeight = compactHud ? 42.0 : 64.0;
-          final nearbyTop = telemetryTop + telemetryHeight + 8;
-          // A ficha de locais e o resumo da rota compartilham uma única
-          // faixa para ampliar a janela útil do mapa no modo retrato.
+          final nearbyTop = telemetryTop +
+              (hud.showTelemetry ? telemetryHeight + 8 : 0);
+          // O resumo da rota compartilha a faixa dos POIs apenas quando
+          // o usuário expande os instrumentos. O banner de navegação principal
+          // continua independente desta camada.
           final showRouteOverview = navigationTarget != null && !horizontalControls;
           final nearbyHeight = showRouteOverview ? 64.0 : (compactHud ? 44.0 : 52.0);
           final cameraButtonTop = focusLevel == 0
-              ? nearbyTop + nearbyHeight + 9
+              ? nearbyTop + (hud.showNearbyBanner ? nearbyHeight + 9 : 0)
               : topInset + MapUxPolicy.controlSize + 12;
           final controlDockTop = cameraButtonTop;
           // Crédito de tiles sempre no rodapé esquerdo, sem flutuar pelo mapa.
@@ -7125,7 +7184,23 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   },
                 ),
               ),
-              if (focusLevel == 0) Positioned(
+              if (focusLevel == 0)
+                Positioned(
+                  top: hudContextTop,
+                  left: MapUxPolicy.controlEdge,
+                  right: MapUxPolicy.controlEdge,
+                  height: hudContextHeight,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: MapHudContextPill(
+                      presentation: hud,
+                      onToggleTelemetry: () => setState(() {
+                        _hudExpandedOverride = !hud.showTelemetry;
+                      }),
+                    ),
+                  ),
+                ),
+              if (focusLevel == 0 && hud.showTelemetry) Positioned(
                 top: telemetryTop,
                 left: MapUxPolicy.controlEdge,
                 right: MapUxPolicy.controlEdge,
@@ -7151,7 +7226,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   compact: compactHud,
                 ),
               ),
-              if (focusLevel == 0)
+              if (focusLevel == 0 && hud.showNearbyBanner)
                 Positioned(
                   top: nearbyTop,
                   left: MapUxPolicy.controlEdge,
@@ -7220,7 +7295,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
-              if (focusLevel == 0) Positioned(
+              if (focusLevel == 0 && hud.showCameraShortcut) Positioned(
                 top: cameraButtonTop,
                 left: MapUxPolicy.controlEdge,
                 child: _MapControlButton(
@@ -7237,7 +7312,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   ),
                 ),
               ),
-              if (focusLevel == 0)
+              if (focusLevel == 0 && hud.showRadioShortcut)
                 Positioned(
                   top: cameraButtonTop + MapUxPolicy.controlSize + 8,
                   left: MapUxPolicy.controlEdge,
@@ -7291,7 +7366,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       ),
                     if (canRenderNavigation3d && focusLevel == 0)
                       _MapControlGap(horizontal: horizontalControls),
-                    if (focusLevel == 0) _MapControlButton(
+                    if (focusLevel == 0 && enabledAudioChannels > 0) _MapControlButton(
                       tooltip: enabledAudioChannels == 0
                           ? 'Áudio do mapa silenciado'
                           : 'Áudio do mapa',
@@ -7299,7 +7374,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       active: enabledAudioChannels > 0,
                       onPressed: () => unawaited(_showAudioQuickControls()),
                     ),
-                    if (focusLevel == 0) _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0 && enabledAudioChannels > 0) _MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
                       tooltip: 'Pesquisar no mapa',
                       icon: Icons.search_rounded,
@@ -7321,8 +7396,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       onPressed: () => unawaited(_rideSettings.update(
                         focus: (focusLevel + 1) % 3)),
                     ),
-                    if (focusLevel == 0) _MapControlGap(horizontal: horizontalControls),
-                    if (focusLevel == 0) _MapControlButton(
+                    if (focusLevel == 0 && hud.showBikeShortcut) _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0 && hud.showBikeShortcut) _MapControlButton(
                       tooltip: rapidPressureLoss != null
                           ? 'Bike · perda rápida de pressão'
                           : bikeSnapshot?.connected == true
@@ -7347,12 +7422,12 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     ],
                     if (!navigation3dActive && focusLevel == 0) ...[
                       _MapControlGap(horizontal: horizontalControls),
-                      _MapZoomCluster(
+                      if (hud.showZoomControls) _MapZoomCluster(
                         horizontal: horizontalControls,
                         onZoomIn: () => _zoomBy(1),
                         onZoomOut: () => _zoomBy(-1),
                       ),
-                      _MapControlGap(horizontal: horizontalControls),
+                      if (hud.showZoomControls) _MapControlGap(horizontal: horizontalControls),
                       _MapControlButton(
                         tooltip: _followPosition
                             ? 'Posição sendo seguida'
@@ -7363,8 +7438,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         active: _followPosition,
                         onPressed: current == null ? null : _toggleFollow,
                       ),
-                      _MapControlGap(horizontal: horizontalControls),
-                      _MapControlButton(
+                      if (!hud.showNearbyBanner) _MapControlGap(horizontal: horizontalControls),
+                      if (!hud.showNearbyBanner) _MapControlButton(
                         tooltip: 'Próximos pontos',
                         icon: Icons.location_on_rounded,
                         badge: MapUxPolicy.compactCountBadge(
@@ -7445,6 +7520,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     selectedIndex: _previewIndex,
                     loading: _previewLoading,
                     plan: _previewPlan,
+                    bikePreferences: _effectiveBikeTravelPreferences,
+                    onEditPace: () => unawaited(_editPreviewBikePace()),
                     collapsed: _previewCollapsed,
                     onToggleCollapsed: () => setState(
                         () => _previewCollapsed = !_previewCollapsed),
@@ -10500,6 +10577,8 @@ class _RoutePreviewCard extends StatelessWidget {
     required this.selectedIndex,
     required this.loading,
     required this.plan,
+    required this.bikePreferences,
+    required this.onEditPace,
     required this.collapsed,
     required this.onToggleCollapsed,
     required this.onShowRoute,
@@ -10515,6 +10594,8 @@ class _RoutePreviewCard extends StatelessWidget {
   final int selectedIndex;
   final bool loading;
   final BikeTripPlan? plan;
+  final BikeTravelPreferences bikePreferences;
+  final VoidCallback onEditPace;
   final bool collapsed;
   final VoidCallback onToggleCollapsed;
   final VoidCallback onShowRoute;
@@ -10528,11 +10609,10 @@ class _RoutePreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final chosen = routes.isEmpty ? null : routes[selectedIndex];
-    final speed = plan?.estimate.preferences.averageSpeedKmh ?? 15.0;
-    final rideMinutes = chosen == null ? 0 :
-        (target.travelMode == MapTravelMode.bicycle
-            ? chosen.distanceMeters / 1000 / speed * 60
-            : chosen.durationSeconds / 60).round();
+    final metrics = chosen == null ? null : MapRoutePreviewMetrics.forRoute(
+      route: chosen, mode: target.travelMode, bikePreferences: bikePreferences);
+    final firstMetrics = routes.isEmpty ? null : MapRoutePreviewMetrics.forRoute(
+      route: routes.first, mode: target.travelMode, bikePreferences: bikePreferences);
     return Material(
       elevation: 10,
       color: scheme.surface.withValues(alpha: 0.98),
@@ -10559,21 +10639,29 @@ class _RoutePreviewCard extends StatelessWidget {
               icon: const Icon(Icons.close_rounded),
               visualDensity: VisualDensity.compact),
           ]),
-          if (collapsed && chosen != null)
-            Text('${(chosen.distanceMeters / 1000).toStringAsFixed(1)} km · '
+          if (collapsed && metrics != null)
+            Text('${metrics.distanceLabel} · ${metrics.durationLabel} · '
                 'Toque na seta para ver opções',
                 style: Theme.of(context).textTheme.bodySmall),
           if (!collapsed && loading) ...[
             const LinearProgressIndicator(),
             const SizedBox(height: 8),
             const Text('Calculando alternativas sem iniciar a navegação…'),
-          ] else if (!collapsed && chosen != null) ...[
+          ] else if (!collapsed && metrics != null) ...[
             Text(
-              '${(chosen.distanceMeters / 1000).toStringAsFixed(1)} km · '
-              '${rideMinutes ~/ 60}h ${(rideMinutes % 60).toString().padLeft(2, '0')}min · '
+              '${metrics.distanceLabel} · ${metrics.durationLabel} · '
               '${target.travelMode.routeLabel}',
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
+            const SizedBox(height: 3),
+            Text(metrics.durationSource,
+              style: Theme.of(context).textTheme.bodySmall),
+            if (target.travelMode == MapTravelMode.bicycle)
+              Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+                onPressed: onEditPace,
+                icon: const Icon(Icons.tune_rounded, size: 17),
+                label: const Text('Editar ritmo do pedal'),
+              )),
             if (routes.length > 1) ...[
               const SizedBox(height: 7),
               SizedBox(height: 37,
@@ -10583,14 +10671,14 @@ class _RoutePreviewCard extends StatelessWidget {
                   separatorBuilder: (_, _) => const SizedBox(width: 6),
                   itemBuilder: (context, index) {
                     final option = routes[index];
-                    final duration = target.travelMode == MapTravelMode.bicycle
-                        ? (option.distanceMeters / 1000 / speed * 60).round()
-                        : (option.durationSeconds / 60).round();
+                    final optionMetrics = MapRoutePreviewMetrics.forRoute(
+                      route: option, mode: target.travelMode,
+                      bikePreferences: bikePreferences);
                     return ChoiceChip(
                     visualDensity: VisualDensity.compact,
                     label: Text('Rota ${index + 1} · '
-                      '${(option.distanceMeters / 1000).toStringAsFixed(1)} km · '
-                      '${duration ~/ 60}h${(duration % 60).toString().padLeft(2, '0')}'),
+                      '${optionMetrics.distanceLabel} · '
+                      '${optionMetrics.durationLabel}'),
                     selected: selectedIndex == index,
                     onSelected: (_) => onChoose(index),
                   );
@@ -10598,6 +10686,11 @@ class _RoutePreviewCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (routes.length > 1 && firstMetrics != null && selectedIndex > 0)
+              Text(metrics.distanceDifference(firstMetrics),
+                style: Theme.of(context).textTheme.bodySmall),
+            Text('Relevo, qualidade e tipo de via: sem dados comparáveis nesta prévia.',
+              style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
             Row(children: [
               Expanded(child: OutlinedButton.icon(

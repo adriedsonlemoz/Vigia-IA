@@ -144,6 +144,7 @@ class BikeTripPlanner {
                   ? 'Sem local confirmado'
                   : selected.result.kind.label,
           usesKnownPlace: finalDay || selected != null,
+          routeProximityMeters: selected?.routeProximityMeters,
         ),
       );
       previousEnd = endDistance;
@@ -176,43 +177,46 @@ class BikeTripPlanner {
     required List<MapDestinationSearchResult> candidates,
   }) {
     const distance = Distance();
-    final step = math.max(1, routePoints.length ~/ 450).toInt();
+    // A projeção por trecho evita confundir um ponto no meio de uma via
+    // com outro a muitos quilômetros de um vértice. Amostragem limitada
+    // mantém custo previsível em geometria extensa (até ~450 trechos).
+    final step = math.max(1, (routePoints.length / 450).ceil()).toInt();
     final mapped = <_MappedTripCandidate>[];
     for (final result in candidates) {
       final candidatePoint = LatLng(result.latitude, result.longitude);
-      var nearestIndex = 0;
       var nearestMeters = double.infinity;
-      for (var index = 0; index < routePoints.length; index += step) {
-        final meters = distance.as(
-          LengthUnit.Meter,
-          candidatePoint,
-          routePoints[index],
+      var nearestGeometryMeters = 0.0;
+      for (var index = 0; index < routePoints.length - 1; index += step) {
+        final next = math.min(index + step, routePoints.length - 1).toInt();
+        final a = routePoints[index];
+        final b = routePoints[next];
+        // Plano local equiretangular: somente para localizar o ponto mais
+        // próximo no segmento. A distância exibida usa geodesia (Distance).
+        final cosLat = math.cos(candidatePoint.latitude * math.pi / 180);
+        final dx = (b.longitude - a.longitude) * cosLat;
+        final dy = b.latitude - a.latitude;
+        final px = (candidatePoint.longitude - a.longitude) * cosLat;
+        final py = candidatePoint.latitude - a.latitude;
+        final squared = dx * dx + dy * dy;
+        final t = squared < 1e-20
+            ? 0.0 : ((px * dx + py * dy) / squared).clamp(0.0, 1.0).toDouble();
+        final point = LatLng(
+          a.latitude + (b.latitude - a.latitude) * t,
+          a.longitude + (b.longitude - a.longitude) * t,
         );
+        final meters = distance.as(LengthUnit.Meter, candidatePoint, point);
         if (meters < nearestMeters) {
           nearestMeters = meters;
-          nearestIndex = index;
+          nearestGeometryMeters = cumulativeGeometryMeters[index] +
+              (cumulativeGeometryMeters[next] - cumulativeGeometryMeters[index]) * t;
         }
       }
-      if (nearestIndex != routePoints.length - 1) {
-        final meters = distance.as(
-          LengthUnit.Meter,
-          candidatePoint,
-          routePoints.last,
-        );
-        if (meters < nearestMeters) {
-          nearestMeters = meters;
-          nearestIndex = routePoints.length - 1;
-        }
-      }
-      mapped.add(
-        _MappedTripCandidate(
-          result: result,
-          routeDistanceMeters:
-              cumulativeGeometryMeters[nearestIndex] * geometryScale,
-          routeProximityMeters: nearestMeters,
-          score: double.infinity,
-        ),
-      );
+      mapped.add(_MappedTripCandidate(
+        result: result,
+        routeDistanceMeters: nearestGeometryMeters * geometryScale,
+        routeProximityMeters: nearestMeters,
+        score: double.infinity,
+      ));
     }
     return mapped;
   }
@@ -224,8 +228,18 @@ class BikeTripPlanner {
     required double targetMeters,
   }) {
     for (var index = 1; index < cumulativeGeometryMeters.length; index++) {
-      if (cumulativeGeometryMeters[index] * geometryScale >= targetMeters) {
-        return routePoints[index];
+      final endMeters = cumulativeGeometryMeters[index] * geometryScale;
+      if (endMeters >= targetMeters) {
+        final startMeters = cumulativeGeometryMeters[index - 1] * geometryScale;
+        final interval = endMeters - startMeters;
+        final fraction = interval <= 0 ? 0.0 :
+            ((targetMeters - startMeters) / interval).clamp(0.0, 1.0).toDouble();
+        final a = routePoints[index - 1];
+        final b = routePoints[index];
+        return LatLng(
+          a.latitude + (b.latitude - a.latitude) * fraction,
+          a.longitude + (b.longitude - a.longitude) * fraction,
+        );
       }
     }
     return routePoints.last;

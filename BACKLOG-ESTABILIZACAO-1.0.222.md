@@ -1,4 +1,4 @@
-# Backlog Vigia IA após 1.0.227
+# Backlog Vigia IA após 1.0.229
 
 | Prioridade | Versão prevista | Ação | Aceitação | Pendência |
 |---|---|---|---|---|
@@ -29,3 +29,18 @@ Não afirmar sucesso do APK 1.0.221/#185 nem da 1.0.222 sem artefato/log. Priori
 - **1.0.227:** buildfix isolado do `RenderFlex` da ficha de POI. CI #188 (1.0.226) aprovou análise estática e 429 testes; 1 teste widget falhou, impedindo build Android.
 - **1.0.228+:** retomar HUD adaptativo e fluxo de prévia/navegação somente com CI de 1.0.227 aprovado, preservando regressões de 320/360/412 dp e texto ampliado.
 - **Ciclo físico de testes:** instalar apenas APK produzido por CI completo (análise + testes + assinatura), mantendo frequência manual agrupada por versões.
+
+## Ciclo acordado 1.0.228 a 1.0.231 (teste manual somente no final)
+
+- **1.0.228:** HUD contextual inicial e exposição progressiva de instrumentos/atalhos. Implementado no código; widgets e APK pendentes do CI. Passos restantes: golden/inspeção visual, teclado e paisagem.
+- **1.0.229:** fluxo de prévia, rotas e planejamento de paradas, sem início automático de gravação/voz; manter geometrias offline.
+- **1.0.230:** rádio, clima, Bike, sensores e ESP32, incluindo diferenciação de simulação e limites configuráveis.
+- **1.0.231:** camadas offline e autonomia; teste manual acumulado do ciclo antes de iniciar 1.0.232+ (refatoração gradual).
+- Gates de CI (analyze/test/APK) continuam necessários a cada versão, apesar do teste de instalação ser agrupado.
+
+## Situação após 1.0.229
+
+- **Feito em código (CI pendente):** métricas isoladas para alternativas, tempo de bicicleta com preferência persistida, ritmo editável na prévia, maior precisão geométrica das paradas e aviso de distância reta sem acesso viário confirmado.
+- **Pendente até 1.0.231:** testes Dart no CI, layout real 320/360/412 dp, análise de rotas alternativas longas, percursos no modo avião e validação da geometria salva após reinício do processo.
+- **1.0.230:** revisão delimitada de Bike, rádio e sensores, sem exigir hardware ESP32 para mapas.
+- **1.0.231:** prontidão offline e energia, teste manual conjunto do ciclo de quatro versões.

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.227', build: 227);
+      AppBuildVersion(version: '1.0.229', build: 229);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.227', build: 227),
+      version: AppBuildVersion(version: '1.0.229', build: 229),
       changes: <String>[
-        'Ficha de pontos úteis ajustada para telas compactas.',
-        'Textos e botões da ficha se adaptam ao tamanho da fonte.',
+        'Prévia de rotas compara tempos e distâncias com dados disponíveis.',
+        'Plano de pedal usa ritmo salvo e informa acesso não verificado às paradas.',
       ],
     ),
   ]);

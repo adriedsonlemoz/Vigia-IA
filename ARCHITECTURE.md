@@ -1,4 +1,21 @@
-# Arquitetura — Vigia IA 1.0.227+227
+# Arquitetura — Vigia IA 1.0.229+229
+
+## Rotas e planejamento de pedal — 1.0.229
+
+- `lib/services/map_route_preview_metrics.dart` centraliza apresentação determinística de distância e duração. Para bicicleta usa `BikeTravelPreferences` atual; para carro/moto/caminhada usa duração devolvida por Valhalla somente se válida. Nenhum campo no modelo atual suporta declividade, superfície, risco ou segurança da via, e essa ausência fica explícita.
+- `lib/screens/map_monitoring_screen.dart` conserva a distinção entre `_previewTarget` e `_routeState.navigationTarget`. Apenas `_startPreviewNavigation` inicia navegação/voz e `_startRecording` continua ação separada. `_editPreviewBikePace` reusa diálogo existente voluntariamente, salva preferências e recalcula o plano sem refazer HTTP de rotas.
+- `BikeTripPlanner._mapCandidatesToRoute` projeta candidatos sobre segmentos da polilinha usando aproximação local de coordenadas e confere afastamento com `Distance` geodésica; amostra geometria até ~450 trechos para limitar CPU. `BikeTripDayPlan.routeProximityMeters` é opcional e representa somente distância reta até o desenho da rota, não acessibilidade por estradas. Paradas sem locais permanecem geométricas e não garantem água/comida/hospedagem.
+- `test/map_route_preview_metrics_test.dart` e `test/bike_trip_route_proximity_test.dart` validam ETA, indisponibilidade, controle de ritmo, projeção do meio do segmento e rejeição de candidato distante; `tool/check_route_preview_229.py` apenas auxilia o gate.
+- Persistência `SavedBikeRouteService` permanece schema 1, intacta; geometrias salvas são consultáveis sem internet, mas não permitem recalcular rotas offline. Não foram adicionadas dependências, permissões ou novas chamadas externas.
+- Limites: projeção simplificada pode ser imprecisa em cruzamento de linha internacional de data/segmentos enormes. Mesmo uma parada próxima da polilinha pode requerer grande desvio em caminhos reais. CI Flutter/Android e teste em aparelho continuam pendentes.
+
+## HUD contextual e apresentação adaptativa — 1.0.228
+
+- `lib/services/map_hud_presentation.dart`: política determinística com dados já existentes, sem inicializar câmera/GPS/radio; `MapHudContext` identifica modo principal e `recording` segue como estado ortogonal. A navegação tem prioridade visual; durante navegação+gravação o indicador mostra REC e o gravador segue funcional.
+- `lib/widgets/map_hud_context_pill.dart`: componente acessível de 36 dp, alterna expansão dos instrumentos sem alterar recursos ativos; preserva rótulo e indicador de gravação. Modo Pedalar vem da seleção de workspace ou velocidade válida de pelo menos 5 km/h, sem classificar GPS antigo ou velocidade simulada como deslocamento real.
+- `lib/screens/map_monitoring_screen.dart`: só integra política e posicionamentos, evitando nova concentração de lógica. Painel de telemetria e banner de POI tornam-se contextuais; zoom permanece via gestos. Atalhos de rádio/câmeras/Bike inativos migram para Configurações do mapa, onde já existiam rádio/câmera e foram incluídos Bike/áudio.
+- Nada foi alterado nos fluxos de iniciar/finalizar gravação, navegação, offline, rotas, alertas ou backend. Testes: `test/map_hud_presentation_test.dart`, `test/map_hud_context_pill_test.dart` e contrato estático `tool/check_hud_228.py`.
+- Risco pendente: testar áreas seguras, escalas de texto e interação com overlay da câmera e banner de navegação em um APK real antes da reforma abrangente. Evitar transformar o contexto visual em controlador de hardware.
 
 ## Buildfix Android APK #188 — 1.0.227
 

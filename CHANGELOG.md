@@ -1,3 +1,22 @@
+## 1.0.229+229 — 2026-10-12
+
+- Prévia passa a usar `MapRoutePreviewMetrics`, política isolada para estimar tempo do pedal a partir do ritmo persistido e receber tempo dos provedores nos demais meios de transporte; tempo ausente é indicado, nunca inventado.
+- As alternativas de rota mostram distância e duração com origem da estimativa; relevância de relevo/qualidade/segurança da via não é afirmada sem dados no modelo de rota. Comparação de distância com a rota principal é explícita.
+- Edição de velocidade média e ritmo de pedal passa a ser voluntária na prévia, sem diálogo obrigatório a cada nova consulta; ao salvar a preferência, o plano diário é reavaliado sem chamar roteador novamente.
+- `BikeTripPlanner` projeta candidatos sobre segmentos da geometria amostrada (até ~450 trechos), evitando grandes erros quando a localidade fica no meio do trecho; distância em linha reta ao traçado é mostrada com indicação de que o acesso por estrada e a disponibilidade de serviços **não foram verificados**.
+- Parada aproximada é interpolada ao longo do traçado em vez de saltar sempre ao vértice seguinte.
+- Três arquivos Dart de teste/serviço e um contrato Python incluídos para regressões de tempo, ritmo e paradas; mapas offline, áudio, gravação, câmeras e ESP32 preservados.
+- `flutter analyze`, `flutter test` e build APK não foram executados localmente por ausência do SDK; devem passar no CI antes de uso em Android.
+
+## 1.0.228+228 — 2026-10-12
+
+- Primeira etapa visual do HUD adaptativo: indicador compacto **Explorar / Pedalar / Navegar / Gravar** com expansão de instrumentos ao toque; o estado de gravação é independente e permanece visível (REC) durante navegação.
+- Regras do HUD extraídas para `lib/services/map_hud_presentation.dart`, sem iniciar sensores, câmeras ou rede. Novo widget reutilizável `lib/widgets/map_hud_context_pill.dart` evita incrementar toda a lógica na tela principal.
+- A exploração começa com telemetria e banner de POIs recolhidos; instrumentos aparecem automaticamente em Pedalar e Gravar. Na navegação, a faixa de manobra permanece dominante; o usuário pode expandir o restante. Botões de POI e gesto de zoom continuam acessíveis.
+- Atalhos de câmera, rádio e Bike surgem quando seus módulos estão ativos/alertando; os painéis continuam no menu Configurações. O botão de áudio fica visível quando um canal está habilitado, com ajustes sempre disponíveis no menu.
+- Testes Dart de estados ortogonais e widget em 320/360/412 dp com texto ampliado; contratos Python estruturais. `flutter analyze`, `flutter test` e APK **não executados localmente**; dependem de CI.
+- Não houve mudança em persistência, permissões, coordenadas, serviços de GPS, gravação, rádio, câmeras, ESP32 ou roteamento.
+
 ## 1.0.227+227 — 2026-10-12
 
 - Buildfix do workflow **Android APK #188**: o `flutter analyze` passou em 1.0.226, mas `flutter test` falhou em uma ficha compacta de POI por dois `RenderFlex overflowed` (60 px e 35 px) no `_InfoPill` (`map_poi_details_sheet.dart`).

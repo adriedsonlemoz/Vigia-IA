@@ -1,4 +1,21 @@
-# Validação Vigia IA 1.0.227+227
+# Validação Vigia IA 1.0.229+229
+
+## Planejamento de rotas — 1.0.229 (2/4 do ciclo)
+
+- [x] Comparação de alternativas, ETA de bicicleta conforme ritmo salvo, edição voluntária e projeção geométrica de paradas implementadas e isoladas.
+- [x] Novos testes Dart de ETA e segmento geométrico foram adicionados ao ZIP; execução exige SDK Flutter.
+- [x] O mecanismo de gravar/navegar permanece separado; geometrias salvas usam schema 1 sem alterações.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e APK da versão 1.0.229 no CI.
+- [ ] Teste acumulado no Android apenas após 1.0.231: ETA com ritmo 10/15/20 km/h, troca de alternativa, plano, interrupção de rede, prévia sem voz/REC e conferência dos locais de apoio.
+
+## HUD contextual — 1.0.228 (primeira entrega do ciclo de quatro)
+
+- [x] Alterações de UI/política e testes Dart adicionados, sem modificar serviços de GPS, roteamento ou gravação.
+- [x] `tool/check_hud_228.py` e `tool/verify_project.sh` executados localmente; contratos estruturais não garantem layout/runtime.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings` e `flutter test` da versão 1.0.228 no CI (SDK Flutter ausente localmente).
+- [ ] APK de produção gerado e validado pelo workflow GitHub Actions, sem presumir aprovação.
+- [ ] Teste manual acumulado reservado para 1.0.231, com modos Explorar/Pedalar/Navegar/Gravar, navegação+REC, tela 320/360/412 dp, texto 1,5x, paisagem e zoom por gestos.
+- [ ] Confirmar em aparelho que câmera, rádio e Bike continuam alcançáveis pelas configurações quando seus atalhos flutuantes estão ocultos.
 
 ## Android APK #188 — regressão de layout tratada na 1.0.227
 

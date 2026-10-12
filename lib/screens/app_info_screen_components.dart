@@ -77,8 +77,24 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.227',
+          version: '1.0.229',
           current: true,
+          changes: [
+            'Prévia compara rotas sem iniciar navegação.',
+            'Plano de pedal respeita ritmo salvo e avisa sobre paradas não verificadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.228',
+          changes: [
+            'Mapa com instrumentos recolhíveis por contexto.',
+            'Atalhos da câmera, Bike e rádio aparecem quando necessários.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.227',
           changes: [
             'Ficha de pontos úteis ajustada para telas compactas.',
             'Textos e botões da ficha se adaptam ao tamanho da fonte.',
@@ -2052,8 +2068,24 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.227',
+          version: '1.0.229',
           current: true,
+          changes: [
+            'Prévia compara rotas sem iniciar navegação.',
+            'Plano de pedal respeita ritmo salvo e avisa sobre paradas não verificadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.228',
+          changes: [
+            'Mapa com instrumentos recolhíveis por contexto.',
+            'Atalhos da câmera, Bike e rádio aparecem quando necessários.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.227',
           changes: [
             'Ficha de pontos úteis ajustada para telas compactas.',
             'Textos e botões da ficha se adaptam ao tamanho da fonte.',

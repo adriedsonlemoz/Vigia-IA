@@ -51,6 +51,7 @@ class BikeTripDayPlan {
     required this.stopLongitude,
     required this.stopKind,
     required this.usesKnownPlace,
+    this.routeProximityMeters,
   });
 
   final int day;
@@ -62,6 +63,9 @@ class BikeTripDayPlan {
   final double stopLongitude;
   final String stopKind;
   final bool usesKnownPlace;
+  /// Distância geométrica em linha reta do local sugerido ao traçado da rota.
+  /// Não indica acesso por via ou serviços disponíveis.
+  final double? routeProximityMeters;
 
   double get distanceMeters => endDistanceMeters - startDistanceMeters;
 }
