@@ -1,4 +1,4 @@
-# Backlog Vigia IA após 1.0.229
+# Backlog Vigia IA após 1.0.231
 
 | Prioridade | Versão prevista | Ação | Aceitação | Pendência |
 |---|---|---|---|---|
@@ -44,3 +44,15 @@ Não afirmar sucesso do APK 1.0.221/#185 nem da 1.0.222 sem artefato/log. Priori
 - **Pendente até 1.0.231:** testes Dart no CI, layout real 320/360/412 dp, análise de rotas alternativas longas, percursos no modo avião e validação da geometria salva após reinício do processo.
 - **1.0.230:** revisão delimitada de Bike, rádio e sensores, sem exigir hardware ESP32 para mapas.
 - **1.0.231:** prontidão offline e energia, teste manual conjunto do ciclo de quatro versões.
+
+## Situação após 1.0.230
+
+- **Feito em código (CI pendente):** limites de alerta de pneus por módulo, origem preservada na consolidação de sensores, ausência de leitura distinguida de zero e consistência do polling de rádio.
+- **Risco restante:** validação com hardware real, unidades de pressão e calibração, testes Dart/widget e comportamento de streaming sob troca rápida de estações. O limite inicial 30 PSI é somente configurável.
+- **1.0.231:** capacidade offline e economia de bateria; teste Android acumulado de 228 a 231 antes de refatoração gradual 232+.
+
+## Situação após 1.0.231
+
+- **Quarto marco implementado em código:** avisos MBTiles por limite/zoom/origem incerta, cadência de rede adaptada a offline e ausência de sondagem duplicada da recuperação de rotas. Não há recálculo offline por estradas nem confirmação de todos os tiles de um corredor.
+- **Próxima ação obrigatória:** compilar e testar 1.0.231 no GitHub Actions e testar no aparelho as versões 1.0.228–1.0.231, inclusive modo avião e bateria. Corrigir regressões com incrementos sequenciais se necessário.
+- **1.0.232+:** refatoração gradual da tela do mapa após validação no celular, protegendo módulos opcionais e priorizando cicloviagem.

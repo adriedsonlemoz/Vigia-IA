@@ -1,3 +1,21 @@
+## 1.0.231+231 — 2026-10-12
+
+- Cobertura MBTiles representada por política explícita: sem pacote, bounds desconhecidos, fora dos limites, fora da faixa de zoom, dentro de região possível e corredor não verificável apenas pelo bounding box. Não afirma que todos os tiles existem.
+- HUD avisa quando o pacote não possui limites conhecidos, quando o GPS está fora da área ou quando o zoom excede o detalhe disponível. A gestão de mapas descreve as limitações de corredores e MBTiles antigos.
+- `MapConnectivityService` aumenta o intervalo de DNS de 15 para 60 segundos após detectar rede offline, recuperando a cadência anterior quando reconecta. Intervalos parametrizáveis preservados.
+- Navegação mantém geometria conhecida; elimina uma segunda consulta de rede a cada 30 segundos no fallback offline. Tenta recuperação mediante evento online do monitor e ao sair do modo offline manual.
+- Preservados downloads/importação MBTiles, cache, limites Stadia, gravação, câmeras, IA, rádio, Bike, ESP32 e navegação online. Nenhum serviço de recálculo viário offline ou medição de bateria real foi introduzido.
+- Sete testes Dart acrescentados (seis de cobertura, um do intervalo adaptativo). Verificação estrutural Python e CI pendentes de execução Flutter e testes em modo avião no celular.
+
+## 1.0.230+230 — 2026-10-12
+
+- Correção de telemetria de múltiplos ESP32: o limite mínimo de pressão acompanha o pneu/ESP32 escolhido na consolidação, evitando aplicar o limite geral mais alto de outro módulo ao sensor dianteiro ou traseiro.
+- `BikeSensorSnapshot` agora aceita limites opcionais independentes para pneus dianteiro e traseiro, derivados do limite configurado no módulo, com getters compatíveis e diagnósticos JSON que preservam origem dos limiares.
+- Alertas críticos, avisos e detector de perda rápida usam o limite correspondente a cada pneu. Módulo único e simulador preservam o comportamento anterior.
+- HUD e ficha Bike passam a mostrar `--` para medições não disponibilizadas pelo sensor, em vez de zero; alertas de pressão não são disparados por campos ausentes. O assistente esclarece que o valor inicial de 30 PSI deve ser ajustado segundo pneu/fabricante, não é recomendação universal.
+- Rádio minimizado preservado; painel bloqueia polls concorrentes e evita marcar outra estação como estável quando o player confirmou URL diferente. Favoritos, recentes, stream direto, filtros e timer preservados.
+- 5 testes Dart e 16 contratos de verificação Python novos, com execução Flutter/Android ainda pendente no CI. Não houve atualização de permissões, dependências, bases ou firmware ESP32.
+
 ## 1.0.229+229 — 2026-10-12
 
 - Prévia passa a usar `MapRoutePreviewMetrics`, política isolada para estimar tempo do pedal a partir do ritmo persistido e receber tempo dos provedores nos demais meios de transporte; tempo ausente é indicado, nunca inventado.

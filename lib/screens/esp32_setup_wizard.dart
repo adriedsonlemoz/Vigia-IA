@@ -743,7 +743,7 @@ class _Esp32SetupWizardState extends State<Esp32SetupWizard> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
               labelText: 'Alerta mínimo (PSI)',
-              helperText: 'Abaixo deste valor o Vigia IA sinaliza pressão baixa.',
+              helperText: 'Valor inicial editável, não universal. Ajuste conforme pneu e fabricante.',
             ),
           ),
           const SizedBox(height: 18),

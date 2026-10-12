@@ -24,14 +24,14 @@ class BikeRideHud extends StatelessWidget {
       _BikeMetricData(
         icon: Icons.speed_rounded,
         label: 'Velocidade',
-        value: snapshot.connected ? snapshot.speedKmh.toStringAsFixed(0) : '--',
+        value: snapshot.connected && snapshot.speedAvailable ? snapshot.speedKmh.toStringAsFixed(0) : '--',
         unit: 'km/h',
         featured: true,
       ),
       _BikeMetricData(
         icon: Icons.device_thermostat_rounded,
         label: 'Temperatura',
-        value: snapshot.connected && snapshot.ambientTemperatureC != null
+        value: snapshot.connected && snapshot.temperatureAvailable && snapshot.ambientTemperatureC != null
             ? snapshot.ambientTemperatureC!.toStringAsFixed(0)
             : '--',
         unit: '°C',
@@ -39,23 +39,23 @@ class BikeRideHud extends StatelessWidget {
       _BikeMetricData(
         icon: Icons.tire_repair_rounded,
         label: 'Pneu dianteiro',
-        value: snapshot.connected ? snapshot.frontTirePsi.toStringAsFixed(0) : '--',
+        value: snapshot.connected && snapshot.frontTirePressureAvailable ? snapshot.frontTirePsi.toStringAsFixed(0) : '--',
         unit: 'PSI',
-        alert: snapshot.connected && snapshot.frontTirePsi < snapshot.minimumTirePressurePsi,
+        alert: snapshot.connected && snapshot.frontTirePressureAvailable && snapshot.frontTirePsi < snapshot.effectiveFrontMinimumPsi,
       ),
       _BikeMetricData(
         icon: Icons.tire_repair_rounded,
         label: 'Pneu traseiro',
-        value: snapshot.connected ? snapshot.rearTirePsi.toStringAsFixed(0) : '--',
+        value: snapshot.connected && snapshot.rearTirePressureAvailable ? snapshot.rearTirePsi.toStringAsFixed(0) : '--',
         unit: 'PSI',
-        alert: snapshot.connected && snapshot.rearTirePsi < snapshot.minimumTirePressurePsi,
+        alert: snapshot.connected && snapshot.rearTirePressureAvailable && snapshot.rearTirePsi < snapshot.effectiveRearMinimumPsi,
       ),
       _BikeMetricData(
         icon: Icons.sensors_rounded,
         label: snapshot.simulated ? 'SIMULAÇÃO' : 'Sensores',
-        value: snapshot.connected ? '${snapshot.sensorBatteryPercent}' : '--',
+        value: snapshot.connected && snapshot.batteryAvailable ? '${snapshot.sensorBatteryPercent}' : '--',
         unit: '%',
-        alert: snapshot.connected && snapshot.sensorBatteryPercent <= 15,
+        alert: snapshot.connected && snapshot.batteryAvailable && snapshot.sensorBatteryPercent <= 15,
       ),
       _BikeMetricData(
         icon: Icons.route_outlined,

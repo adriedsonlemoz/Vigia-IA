@@ -1395,6 +1395,16 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                         active == null ? 'Nenhum pacote local ativo' : 'Ativo: ${active.name}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (active != null && active.downloadKind == 'route')
+                        Text(
+                          'Trajeto: somente o corredor baixado, sem garantia de tiles fora dele.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      if (active != null && !active.hasBounds)
+                        Text(
+                          'Área desconhecida: confira o mapa sem internet antes de viajar.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),

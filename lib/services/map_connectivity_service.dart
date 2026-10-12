@@ -11,6 +11,7 @@ class MapConnectivityService extends ChangeNotifier {
   MapConnectivityService({
     MapConnectivityProbe? probe,
     this.probeInterval = const Duration(seconds: 15),
+    this.offlineProbeInterval = const Duration(seconds: 60),
     this.failuresBeforeOffline = 2,
   }) : _probe = probe ?? _defaultProbe;
 
@@ -18,6 +19,7 @@ class MapConnectivityService extends ChangeNotifier {
 
   final MapConnectivityProbe _probe;
   final Duration probeInterval;
+  final Duration offlineProbeInterval;
   final int failuresBeforeOffline;
   final Set<Object> _consumers = <Object>{};
 
@@ -32,17 +34,24 @@ class MapConnectivityService extends ChangeNotifier {
   bool get isOnline => _state.isOnline;
   bool get isOffline => _state.isOffline;
   bool get checking => _checking;
+  Duration get currentPollingInterval => _state.isOffline
+      ? offlineProbeInterval
+      : probeInterval;
+
+  void _restartPolling() {
+    _timer?.cancel();
+    _timer = null;
+    if (_consumers.isEmpty) return;
+    _timer = Timer.periodic(
+      currentPollingInterval,
+      (_) => unawaited(checkNow()),
+    );
+  }
 
   Future<void> acquire(Object consumer) async {
     final first = _consumers.isEmpty;
     _consumers.add(consumer);
-    if (first) {
-      _timer?.cancel();
-      _timer = Timer.periodic(
-        probeInterval,
-        (_) => unawaited(checkNow()),
-      );
-    }
+    if (first) _restartPolling();
     await checkNow(force: true);
   }
 
@@ -73,7 +82,10 @@ class MapConnectivityService extends ChangeNotifier {
     } finally {
       _checking = false;
     }
-    if (_state != previous) notifyListeners();
+    if (_state != previous) {
+      _restartPolling();
+      notifyListeners();
+    }
     return _state;
   }
 

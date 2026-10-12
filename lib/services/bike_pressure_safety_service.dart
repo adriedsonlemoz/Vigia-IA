@@ -252,7 +252,7 @@ class BikePressureSafetyService extends ChangeNotifier {
         BikeTirePosition.front,
         at: snapshot.capturedAt,
         psi: snapshot.frontTirePsi,
-        minimumSafePsi: snapshot.minimumTirePressurePsi,
+        minimumSafePsi: snapshot.effectiveFrontMinimumPsi,
       );
       if (event != null) events.add(event);
     }
@@ -261,7 +261,7 @@ class BikePressureSafetyService extends ChangeNotifier {
         BikeTirePosition.rear,
         at: snapshot.capturedAt,
         psi: snapshot.rearTirePsi,
-        minimumSafePsi: snapshot.minimumTirePressurePsi,
+        minimumSafePsi: snapshot.effectiveRearMinimumPsi,
       );
       if (event != null) events.add(event);
     }

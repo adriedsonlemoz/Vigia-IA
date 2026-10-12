@@ -25,6 +25,7 @@ import '../models/map_cycling_route.dart';
 import '../models/map_route_point.dart';
 import '../models/map_weather.dart';
 import '../models/offline_map_package.dart';
+import '../services/offline_map_coverage_policy.dart';
 import '../models/offline_poi_package.dart';
 import '../models/route_explorer_models.dart';
 import '../models/video_source_config.dart';
@@ -196,6 +197,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   bool _googleProgrammaticCameraMove = false;
   final LocationTrackingService _location = LocationTrackingService.instance;
   final OfflineMapService _offlineMaps = OfflineMapService.instance;
+  OfflineMapMode _lastObservedOfflineMode = OfflineMapMode.automatic;
   final MapRouteService _routeState = MapRouteService.instance;
   final MapCyclingRouteService _cyclingRoutes = MapCyclingRouteService();
   final MapNavigationGuidance _navigationGuidance = const MapNavigationGuidance();
@@ -1168,6 +1170,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   Future<void> _initializeOfflineMaps() async {
     await _offlineMaps.initialize();
     if (!mounted) return;
+    _lastObservedOfflineMode = _offlineMaps.mode;
     _syncOfflineTileProvider();
   }
 
@@ -1175,7 +1178,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!mounted) return;
     _navigation3dRendererReady = false;
     _navigation3dRendererFailed = false;
+    final resumedOnline =
+        _lastObservedOfflineMode == OfflineMapMode.offline &&
+        _offlineMaps.mode != OfflineMapMode.offline;
+    _lastObservedOfflineMode = _offlineMaps.mode;
     _syncOfflineTileProvider();
+    if (resumedOnline &&
+        _routeFallback != null && _routeState.navigationTarget != null &&
+        _connectivity.isOnline) {
+      unawaited(_recoverNavigationAfterConnection());
+    }
   }
 
   void _syncOfflineTileProvider() {
@@ -6502,12 +6514,16 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     );
     final onlineLayer = _onlineMapLayerSpec;
     final activeOffline = _offlineMaps.activePackage;
-    final outsideOfflineArea = activeOffline != null &&
-        current != null &&
-        !activeOffline.contains(
-          latitude: current.latitude,
-          longitude: current.longitude,
-        );
+    final offlineCoverage = activeOffline == null || current == null
+        ? OfflineMapCoverageState.noPackage
+        : OfflineMapCoveragePolicy.assess(
+            package: activeOffline,
+            latitude: current.latitude,
+            longitude: current.longitude,
+            zoom: _visibleMapZoom,
+          );
+    final outsideOfflineArea =
+        OfflineMapCoveragePolicy.needsWarning(offlineCoverage);
     final navigationMatchesSelectedPoi =
         _navigationMatchesSelectedPoi(selectedPoi, navigationTarget);
     final showSelectedPoiCard = selectedPoi != null && !navigationMatchesSelectedPoi;
@@ -7292,6 +7308,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   top: cameraButtonTop + MapUxPolicy.controlSize + 6,
                   left: MapUxPolicy.controlEdge,
                   child: _OfflineAreaWarning(
+                    status: offlineCoverage,
                     onTap: () => unawaited(_openOfflineMaps()),
                   ),
                 ),
@@ -9273,8 +9290,8 @@ class _BikeMapPanel extends StatelessWidget {
                     psi: snapshot?.frontTirePsi,
                     available: snapshot?.frontTirePressureAvailable == true,
                     connected: snapshot?.connected == true,
-                    minimumPsi: snapshot?.minimumTirePressurePsi ?? 30,
-                    criticalPsi: snapshot?.criticalTirePressurePsi ?? 24,
+                    minimumPsi: snapshot?.effectiveFrontMinimumPsi ?? 30,
+                    criticalPsi: snapshot?.frontCriticalTirePressurePsi ?? 24,
                     rapidLoss: frontRapid,
                   ),
                   const SizedBox(height: 10),
@@ -9283,8 +9300,8 @@ class _BikeMapPanel extends StatelessWidget {
                     psi: snapshot?.rearTirePsi,
                     available: snapshot?.rearTirePressureAvailable == true,
                     connected: snapshot?.connected == true,
-                    minimumPsi: snapshot?.minimumTirePressurePsi ?? 30,
-                    criticalPsi: snapshot?.criticalTirePressurePsi ?? 24,
+                    minimumPsi: snapshot?.effectiveRearMinimumPsi ?? 30,
+                    criticalPsi: snapshot?.rearCriticalTirePressurePsi ?? 24,
                     rapidLoss: rearRapid,
                   ),
                   const SizedBox(height: 12),
@@ -10124,9 +10141,10 @@ class _SelectedMapLocationCard extends StatelessWidget {
 }
 
 class _OfflineAreaWarning extends StatelessWidget {
-  const _OfflineAreaWarning({required this.onTap});
+  const _OfflineAreaWarning({required this.onTap, required this.status});
 
   final VoidCallback onTap;
+  final OfflineMapCoverageState status;
 
   @override
   Widget build(BuildContext context) {
@@ -10145,7 +10163,7 @@ class _OfflineAreaWarning extends StatelessWidget {
               Icon(Icons.wrong_location_rounded, size: 16, color: scheme.onErrorContainer),
               const SizedBox(width: 5),
               Text(
-                'Fora da área offline',
+                OfflineMapCoveragePolicy.warningLabel(status),
                 style: TextStyle(
                   color: scheme.onErrorContainer,
                   fontSize: 11,

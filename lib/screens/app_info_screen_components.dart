@@ -77,8 +77,24 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.229',
+          version: '1.0.231',
           current: true,
+          changes: [
+            'Mapas offline deixam claras as regiões e os níveis de detalhe disponíveis.',
+            'Menos consultas de rede sem internet; rotas conhecidas são preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.230',
+          changes: [
+            'Bike e ESP32 respeitam o limite de pressão individual de cada pneu.',
+            'Rádio reduz atualizações concorrentes; telemetria ausente não aparece como zero.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.229',
           changes: [
             'Prévia compara rotas sem iniciar navegação.',
             'Plano de pedal respeita ritmo salvo e avisa sobre paradas não verificadas.',
@@ -2068,8 +2084,24 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.229',
+          version: '1.0.231',
           current: true,
+          changes: [
+            'Mapas offline deixam claras as regiões e os níveis de detalhe disponíveis.',
+            'Menos consultas de rede sem internet; rotas conhecidas são preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.230',
+          changes: [
+            'Bike e ESP32 respeitam o limite de pressão individual de cada pneu.',
+            'Rádio reduz atualizações concorrentes; telemetria ausente não aparece como zero.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.229',
           changes: [
             'Prévia compara rotas sem iniciar navegação.',
             'Plano de pedal respeita ritmo salvo e avisa sobre paradas não verificadas.',

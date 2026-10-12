@@ -17,6 +17,8 @@ class BikeSensorSnapshot {
     this.ambientTemperatureC,
     this.moduleId,
     this.minimumTirePressurePsi = 30,
+    this.frontMinimumTirePressurePsi,
+    this.rearMinimumTirePressurePsi,
     this.maximumTemperatureC = 65,
     this.speedAvailable = true,
     this.tirePressureAvailable = true,
@@ -36,8 +38,22 @@ class BikeSensorSnapshot {
   final double tripDistanceKm;
   final double? ambientTemperatureC;
   final String? moduleId;
+  /// Legado/limite geral do módulo, configurável no assistente ESP32.
+  /// Não deve ser interpretado como recomendação universal para bicicletas.
   final double minimumTirePressurePsi;
+  /// A consolidação de vários módulos mantém o limite junto ao pneu medido.
+  final double? frontMinimumTirePressurePsi;
+  final double? rearMinimumTirePressurePsi;
   final double maximumTemperatureC;
+
+  double get effectiveFrontMinimumPsi =>
+      frontMinimumTirePressurePsi ?? minimumTirePressurePsi;
+  double get effectiveRearMinimumPsi =>
+      rearMinimumTirePressurePsi ?? minimumTirePressurePsi;
+  double get frontCriticalTirePressurePsi =>
+      math.max(1, effectiveFrontMinimumPsi - 6).toDouble();
+  double get rearCriticalTirePressurePsi =>
+      math.max(1, effectiveRearMinimumPsi - 6).toDouble();
   final bool speedAvailable;
   final bool tirePressureAvailable;
   final bool frontTirePressureAvailable;
@@ -62,6 +78,8 @@ class BikeSensorSnapshot {
         'temperatureC': ambientTemperatureC,
         'moduleId': moduleId,
         'minimumTirePressurePsi': minimumTirePressurePsi,
+        'frontMinimumTirePressurePsi': effectiveFrontMinimumPsi,
+        'rearMinimumTirePressurePsi': effectiveRearMinimumPsi,
         'maximumTemperatureC': maximumTemperatureC,
         'speedAvailable': speedAvailable,
         'tirePressureAvailable': tirePressureAvailable,
@@ -103,6 +121,8 @@ class BikeSensorSnapshot {
           : null,
       moduleId: moduleId ?? json['moduleId'] as String?,
       minimumTirePressurePsi: minimumTirePressurePsi.clamp(1, 150).toDouble(),
+      frontMinimumTirePressurePsi: minimumTirePressurePsi.clamp(1, 150).toDouble(),
+      rearMinimumTirePressurePsi: minimumTirePressurePsi.clamp(1, 150).toDouble(),
       maximumTemperatureC: maximumTemperatureC.clamp(-40, 125).toDouble(),
       speedAvailable: json['speedKmh'] is num,
       tirePressureAvailable:
@@ -120,9 +140,9 @@ class BikeSensorSnapshot {
     if (!connected) return BikeSensorHealth.disconnected;
     final temperature = ambientTemperatureC;
     if ((frontTirePressureAvailable &&
-            frontTirePsi <= criticalTirePressurePsi) ||
+            frontTirePsi <= frontCriticalTirePressurePsi) ||
         (rearTirePressureAvailable &&
-            rearTirePsi <= criticalTirePressurePsi) ||
+            rearTirePsi <= rearCriticalTirePressurePsi) ||
         (batteryAvailable && sensorBatteryPercent <= 5) ||
         (temperatureAvailable &&
             temperature != null &&
@@ -130,9 +150,9 @@ class BikeSensorSnapshot {
       return BikeSensorHealth.critical;
     }
     if ((frontTirePressureAvailable &&
-            frontTirePsi < minimumTirePressurePsi) ||
+            frontTirePsi < effectiveFrontMinimumPsi) ||
         (rearTirePressureAvailable &&
-            rearTirePsi < minimumTirePressurePsi) ||
+            rearTirePsi < effectiveRearMinimumPsi) ||
         (batteryAvailable && sensorBatteryPercent <= 15) ||
         (temperatureAvailable &&
             temperature != null &&
@@ -145,19 +165,19 @@ class BikeSensorSnapshot {
   String? get primaryWarning {
     if (!connected) return 'Sensores da bike sem conexão';
     if (frontTirePressureAvailable &&
-        frontTirePsi <= criticalTirePressurePsi) {
+        frontTirePsi <= frontCriticalTirePressurePsi) {
       return 'PRESSÃO DIANTEIRA BAIXA • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
     if (rearTirePressureAvailable &&
-        rearTirePsi <= criticalTirePressurePsi) {
+        rearTirePsi <= rearCriticalTirePressurePsi) {
       return 'PRESSÃO TRASEIRA BAIXA • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
     if (frontTirePressureAvailable &&
-        frontTirePsi < minimumTirePressurePsi) {
+        frontTirePsi < effectiveFrontMinimumPsi) {
       return 'Atenção no pneu dianteiro • ${frontTirePsi.toStringAsFixed(0)} PSI';
     }
     if (rearTirePressureAvailable &&
-        rearTirePsi < minimumTirePressurePsi) {
+        rearTirePsi < effectiveRearMinimumPsi) {
       return 'Atenção no pneu traseiro • ${rearTirePsi.toStringAsFixed(0)} PSI';
     }
     if (batteryAvailable && sensorBatteryPercent <= 5) {

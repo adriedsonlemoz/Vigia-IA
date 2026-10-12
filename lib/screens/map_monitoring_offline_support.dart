@@ -67,6 +67,10 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
   }) {
     _routeRecoveryTimer?.cancel();
     if (_routeFallback == null || _routeState.navigationTarget == null) return;
+    // O monitor de conectividade ja verifica a rede e dispara o listener.
+    // Nao duplique consultas DNS enquanto o aparelho estiver offline.
+    if (_connectivity.isOffline ||
+        _offlineMaps.mode == OfflineMapMode.offline) return;
     _routeRecoveryTimer = Timer(delay, () {
       unawaited(_attemptScheduledRouteRecovery());
     });
@@ -74,9 +78,9 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
 
   Future<void> _attemptScheduledRouteRecovery() async {
     if (!mounted || _routeFallback == null) return;
-    final connectivity = await _connectivity.checkNow(force: true);
-    if (!mounted || _routeFallback == null) return;
-    if (connectivity.isOnline) {
+    // Evita uma verificacao de rede concorrente: usa o estado do monitor.
+    if (_connectivity.isOnline &&
+        _offlineMaps.mode != OfflineMapMode.offline) {
       await _recoverNavigationAfterConnection();
     } else {
       _scheduleRouteRecovery();
@@ -88,7 +92,8 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
     final target = _routeState.navigationTarget;
     final current = _routeState.current;
     if (target == null || current == null) return;
-    if (!_connectivity.isOnline) {
+    if (!_connectivity.isOnline ||
+        _offlineMaps.mode == OfflineMapMode.offline) {
       _scheduleRouteRecovery();
       return;
     }

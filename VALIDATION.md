@@ -1,4 +1,24 @@
-# Validação Vigia IA 1.0.229+229
+# Validação Vigia IA 1.0.231+231
+
+## Offline e autonomia — 1.0.231 (4/4 do ciclo)
+
+- [x] Política de cobertura offline adicionada com seis situações regressivas: pacote ausente, limites ausentes, fora de área, zoom excedido, corredor não confirmado e região de cobertura possível.
+- [x] Avisos do mapa e descrição no gestor de pacotes explicam cobertura sem prometer tiles inexistentes.
+- [x] Monitor de rede reduz cadência de DNS enquanto desconectado; fallback de navegação não duplica verificações da conectividade, mas conserva a última rota conhecida.
+- [x] Sete testes Dart novos adicionados; testes de contrato Python verificam os pontos de integração.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e APK do commit 1.0.231 no GitHub Actions.
+- [ ] Teste acumulado real em Android das versões 228 a 231, incluindo modo avião, origem e destino, zoom, navegação, ciclo rádio, sensores desativados, pausa/retomada.
+- [ ] Medição instrumentada de consumo de bateria com mesmo brilho, GPS, rede e distância percorrida. Não afirmar porcentagem de economia sem evidência experimental.
+
+## Bike e rádio — 1.0.230 (3/4 do ciclo)
+
+- [x] Limiares individuais de pressão por sensor aplicados ao estado de saúde, perda rápida e HUD.
+- [x] Leituras indisponíveis escondidas no HUD, sem substituir por 0 medido.
+- [x] Polls simultâneos de estado do rádio bloqueados, com URL ativa conferida para registrar saúde.
+- [x] Cinco testes Dart e contratos Python 1.0.230 incluídos; análise/testes Flutter dependem do CI.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e APK do commit 1.0.230 no CI.
+- [ ] Testes com dois módulos ESP32 reais em diferentes limites e leitura de um único pneu (equipamentos ainda indisponíveis).
+- [ ] Teste manual acumulado após 1.0.231, com rádio minimizado/recentes/timer, clima antigo, sensores desabilitados/ausentes e fontes simuladas.
 
 ## Planejamento de rotas — 1.0.229 (2/4 do ciclo)
 

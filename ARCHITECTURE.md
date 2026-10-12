@@ -1,4 +1,22 @@
-# Arquitetura — Vigia IA 1.0.229+229
+# Arquitetura — Vigia IA 1.0.231+231
+
+## Offline e autonomia — 1.0.231
+
+- `OfflineMapCoveragePolicy` calcula estados `noPackage`, `unknown`, `outsideBounds`, `outsideZoom`, `possible` e `corridorUnverified` a partir de metadados conhecidos de `OfflineMapPackage`. Um bounding box não comprova presença de todos os tiles, especialmente quando o download utilizou `downloadKind == 'route'`. Não altera o contrato legado de `contains()`.
+- `MapMonitoringScreen` exibe avisos explícitos para metadados de cobertura desconhecida, GPS fora do pacote e zoom além da faixa de detalhe. `OfflineMapManagerSheet` esclarece que pacotes de percurso só cobrem um corredor, não todo o retângulo.
+- `MapConnectivityService` conserva `probeInterval` normal de 15 segundos e usa `offlineProbeInterval` padrão de 60 segundos quando o estado é offline, renovando o `Timer` apenas na troca do estado; cada consumidor permanece identificado.
+- `map_monitoring_offline_support.dart` não executa consulta DNS paralela de recuperação enquanto offline, pois já observa `MapConnectivityService`; quando a rede retorna, o evento retenta a rota conhecida. Ao desativar o modo offline manual, tenta recuperar somente se houver fallback e conexão online.
+- Download MBTiles, Mapbox/Stadia existentes, armazenamento de geometria, rota online, gravação de percurso e módulos opcionais não foram reescritos. **Sem roteamento viário offline completo:** pacotes MBTiles fornecem mapa base, não motor de cálculo de estrada/altimetria.
+- `test/offline_map_coverage_policy_test.dart` e `test/map_connectivity_adaptive_polling_test.dart` verificam as decisões; medição de bateria/energia precisa de aparelho real e Flutter/Android CI.
+
+## Bike, ESP32 e rádio — 1.0.230
+
+- `BikeSensorService` consolida leituras de múltiplos módulos ESP32 com procedência por métrica: a pressão de cada pneu carrega seu limite próprio via `BikeSensorSnapshot.frontMinimumTirePressurePsi` / `rearMinimumTirePressurePsi`, que recorrem a `minimumTirePressurePsi` por compatibilidade quando ausentes.
+- Avaliação `BikeSensorSnapshot.health`/`primaryWarning`, `BikePressureSafetyService` e HUD/ficha Bike usam limiares por pneu. O limite geral anterior permanece para consumidores legados/diagnóstico, mas não deve substituir a correspondência do sensor efetivamente selecionado.
+- `BikeRideHud` só renderiza valores de velocidade, pressão, temperatura e bateria quando seus indicadores `...Available` confirmam medição. Se o módulo não fornece dado, mostra `--`.
+- O assistente ESP32 conserva padrão 30 PSI como placeholder inicial editável por módulo, **não faixa recomendada de pneus**. Não há sensor instalado nem validação de precisão do transdutor; a configuração precisa seguir hardware real.
+- `MapRadioPanel._refreshPlayback` não sobrepõe pesquisas de estado e só atualiza saúde da URL de reprodução que coincide com a estação configurada. Preservados métodos nativos, URLs diretas, timer, catálogo, favoritos e recentes.
+- Clima continua aplicando `MapWeatherPolicy.currentValue` e não foi alterado funcionalmente. Módulos opcionais continuam inativos quando não usados. `test/bike_sensor_multi_module_limits_test.dart` e `tool/check_bike_radio_230.py` adicionam regressões; testes Dart/Android requerem CI.
 
 ## Rotas e planejamento de pedal — 1.0.229
 

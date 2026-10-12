@@ -146,6 +146,8 @@ class BikeSensorService extends ChangeNotifier {
         ambientTemperatureC: current.ambientTemperatureC,
         moduleId: current.moduleId,
         minimumTirePressurePsi: current.minimumTirePressurePsi,
+        frontMinimumTirePressurePsi: current.frontMinimumTirePressurePsi,
+        rearMinimumTirePressurePsi: current.rearMinimumTirePressurePsi,
         maximumTemperatureC: current.maximumTemperatureC,
         speedAvailable: current.speedAvailable,
         tirePressureAvailable: current.tirePressureAvailable,
@@ -177,6 +179,8 @@ class BikeSensorService extends ChangeNotifier {
       ambientTemperatureC: current.ambientTemperatureC,
       moduleId: current.moduleId,
       minimumTirePressurePsi: current.minimumTirePressurePsi,
+        frontMinimumTirePressurePsi: current.frontMinimumTirePressurePsi,
+        rearMinimumTirePressurePsi: current.rearMinimumTirePressurePsi,
       maximumTemperatureC: current.maximumTemperatureC,
       speedAvailable: current.speedAvailable,
       tirePressureAvailable: current.tirePressureAvailable,
@@ -270,9 +274,13 @@ class BikeSensorService extends ChangeNotifier {
           ),
       ambientTemperatureC: temperature?.ambientTemperatureC,
       moduleId: connected.length == 1 ? connected.first.moduleId : 'multiple',
+      // Legado para consumidores de um único limite; o alerta usa o limite
+      // específico do módulo que forneceu a leitura de cada pneu.
       minimumTirePressurePsi: pressureLimits.isEmpty
           ? 30
           : pressureLimits.reduce((a, b) => math.max(a, b).toDouble()),
+      frontMinimumTirePressurePsi: frontPressure?.effectiveFrontMinimumPsi,
+      rearMinimumTirePressurePsi: rearPressure?.effectiveRearMinimumPsi,
       maximumTemperatureC: temperatureLimits.isEmpty
           ? 65
           : temperatureLimits.reduce((a, b) => math.min(a, b).toDouble()),

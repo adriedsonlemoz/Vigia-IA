@@ -47,6 +47,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   String _nowPlaying = '';
   bool _fromCache = false;
   Timer? _statusTimer;
+  bool _statusRequestInFlight = false;
 
   @override
   void initState() {
@@ -128,6 +129,8 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   }
 
   Future<void> _refreshPlayback() async {
+    if (_statusRequestInFlight) return;
+    _statusRequestInFlight = true;
     try {
       final status = await MapRadioService.statusDetails();
       if (!mounted) return;
@@ -154,10 +157,14 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
       if (previous == status.state) return;
       widget.onPlaybackStateChanged(status.state);
       final url = widget.settings.radioUrl;
-      if (status.state == 'tocando') {
+      // A estação escolhida pode ter mudado enquanto a chamada nativa
+      // estava pendente. Não reclassificar uma URL por sucesso de outra.
+      final playingSelected = status.url == url && url.isNotEmpty;
+      if (status.state == 'tocando' && playingSelected) {
         unawaited(RadioHealthService.instance.markWorking(url));
       } else if (status.state == 'indisponível' &&
-          (previous == 'conectando' || previous == 'tocando')) {
+          (previous == 'conectando' || previous == 'tocando') &&
+          (status.url.isEmpty || status.url == url)) {
         // Só avisa quando uma estação que estava ativa deixa de responder.
         unawaited(RadioHealthService.instance.markFailed(url));
         final name = _selected?.name ?? 'A estação';
@@ -169,7 +176,11 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
           ),
         );
       }
-    } catch (_) {}
+    } catch (_) {
+      // A falha de status não interrompe o player nativo.
+    } finally {
+      _statusRequestInFlight = false;
+    }
   }
 
   Future<void> _search() async {
