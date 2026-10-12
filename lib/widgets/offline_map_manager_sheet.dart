@@ -34,10 +34,16 @@ Future<void> showOfflineMapManager(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (sheetContext) => FractionallySizedBox(
-      heightFactor: 0.92,
-      child: _OfflineMapManagerSheet(planning: planning),
-    ),
+    builder: (sheetContext) {
+      final height = MediaQuery.sizeOf(sheetContext).height;
+      final hasPackages = service.packages.isNotEmpty;
+      return FractionallySizedBox(
+        heightFactor: hasPackages || service.busy || height < 740
+            ? 0.92
+            : 0.73,
+        child: _OfflineMapManagerSheet(planning: planning),
+      );
+    },
   );
 }
 
@@ -177,11 +183,10 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
   }
 
   Future<void> _configureStadiaKey() async {
-    var savedKey = await _service.revealStadiaApiKey();
-    if (!mounted) return;
+    // A chave completa só é recuperada mediante ação explícita da pessoa.
+    String? visibleSavedKey;
     final controller = TextEditingController();
     var obscureInput = true;
-    var revealSaved = false;
     var testing = false;
     StadiaApiKeyTestResult? testResult;
 
@@ -189,334 +194,237 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
-          final configured = savedKey?.trim().isNotEmpty == true;
+          final configured = _service.hasStadiaApiKey;
           final candidate = controller.text.trim();
+          final scheme = Theme.of(dialogContext).colorScheme;
           return AlertDialog(
-            title: const Text('Stadia Maps · fonte offline'),
-            content: SizedBox(
-              width: 520,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+            titlePadding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
+            contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            title: Row(children: [
+              const Icon(Icons.key_rounded, size: 22),
+              const SizedBox(width: 8),
+              const Expanded(child: Text('Chave Stadia Maps',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800))),
+              IconButton(
+                tooltip: 'Fechar',
+                onPressed: () => Navigator.pop(dialogContext),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ]),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 440,
+                maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.68,
+              ),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DecoratedBox(
+                    Container(
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: configured
-                            ? Theme.of(dialogContext)
-                                .colorScheme
-                                .primaryContainer
-                                .withValues(alpha: 0.55)
-                            : Theme.of(dialogContext)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(14),
+                        color: scheme.primaryContainer.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
+                      child: Row(children: [
+                        Icon(configured ? Icons.verified_rounded : Icons.key_off_outlined,
+                            color: scheme.primary),
+                        const SizedBox(width: 9),
+                        Expanded(child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              configured
-                                  ? Icons.verified_rounded
-                                  : Icons.key_off_outlined,
-                              color: configured
-                                  ? Theme.of(dialogContext).colorScheme.primary
-                                  : Theme.of(dialogContext)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    configured
-                                        ? 'Chave configurada neste aparelho'
-                                        : 'Nenhuma chave configurada',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  if (configured) ...[
-                                    const SizedBox(height: 4),
-                                    SelectableText(
-                                      revealSaved
-                                          ? savedKey!
-                                          : _service.maskedStadiaApiKey,
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
-                                      children: [
-                                        OutlinedButton.icon(
-                                          onPressed: () => setDialogState(
-                                            () => revealSaved = !revealSaved,
-                                          ),
-                                          icon: Icon(
-                                            revealSaved
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                            size: 17,
-                                          ),
-                                          label: Text(
-                                            revealSaved ? 'Ocultar' : 'Ver chave',
-                                          ),
-                                        ),
-                                        OutlinedButton.icon(
-                                          onPressed: () async {
-                                            await Clipboard.setData(
-                                              ClipboardData(text: savedKey!),
-                                            );
-                                            if (!dialogContext.mounted) return;
-                                            ScaffoldMessenger.of(dialogContext)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'API key copiada para a área de transferência.',
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          icon: const Icon(
-                                            Icons.copy_rounded,
-                                            size: 17,
-                                          ),
-                                          label: const Text('Copiar'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
+                            Text(configured ? 'Chave configurada' : 'Sem chave configurada',
+                                style: const TextStyle(fontWeight: FontWeight.w800)),
+                            if (configured)
+                              Text(visibleSavedKey ?? _service.maskedStadiaApiKey,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                           ],
-                        ),
-                      ),
+                        )),
+                        if (configured) ...[
+                          IconButton(
+                            tooltip: visibleSavedKey == null ? 'Revelar chave' : 'Ocultar chave',
+                            onPressed: () async {
+                              if (visibleSavedKey != null) {
+                                setDialogState(() => visibleSavedKey = null);
+                                return;
+                              }
+                              final key = await _service.revealStadiaApiKey();
+                              if (!dialogContext.mounted) return;
+                              setDialogState(() => visibleSavedKey = key);
+                            },
+                            icon: Icon(visibleSavedKey == null
+                                ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                          ),
+                          IconButton(
+                            tooltip: 'Copiar chave (dado sensível)',
+                            onPressed: () async {
+                              final key = await _service.revealStadiaApiKey();
+                              if (key == null || key.isEmpty || !dialogContext.mounted) return;
+                              await Clipboard.setData(ClipboardData(text: key));
+                              if (!dialogContext.mounted) return;
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                const SnackBar(content: Text(
+                                  'Chave copiada. Evite colar em aplicativos não confiáveis.')),
+                              );
+                            },
+                            icon: const Icon(Icons.copy_rounded),
+                          ),
+                        ],
+                      ]),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Adicionar ou trocar chave',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
+                    const Text('Adicionar ou substituir chave',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
                     const SizedBox(height: 7),
                     TextField(
                       controller: controller,
                       obscureText: obscureInput,
                       autocorrect: false,
                       enableSuggestions: false,
-                      onChanged: (_) => setDialogState(() {
-                        testResult = null;
-                      }),
+                      onChanged: (_) => setDialogState(() => testResult = null),
                       decoration: InputDecoration(
-                        labelText: 'Stadia Maps API key',
-                        hintText: configured
-                            ? 'Cole uma nova chave para substituir a atual'
-                            : 'Cole sua API key aqui',
+                        isDense: true,
+                        labelText: 'API key',
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.key_rounded),
-                        suffixIcon: IconButton(
-                          tooltip: obscureInput ? 'Mostrar texto' : 'Ocultar texto',
-                          onPressed: () => setDialogState(
-                            () => obscureInput = !obscureInput,
-                          ),
-                          icon: Icon(
-                            obscureInput
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
+                        suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
+                          IconButton(
+                            tooltip: 'Colar chave',
                             onPressed: () async {
                               final data = await Clipboard.getData('text/plain');
                               final text = data?.text?.trim();
-                              if (text == null || text.isEmpty) return;
+                              if (text == null || text.isEmpty || !dialogContext.mounted) return;
                               controller.text = text;
-                              controller.selection = TextSelection.collapsed(
-                                offset: controller.text.length,
-                              );
-                              setDialogState(() {
-                                testResult = null;
-                              });
+                              controller.selection = TextSelection.collapsed(offset: text.length);
+                              setDialogState(() => testResult = null);
                             },
                             icon: const Icon(Icons.content_paste_rounded),
-                            label: const Text('Colar'),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: candidate.isEmpty
-                                ? null
-                                : () async {
-                                    try {
-                                      await _service.configureStadiaApiKey(
-                                        controller.text.trim(),
-                                      );
-                                      if (!dialogContext.mounted) return;
-                                      savedKey = controller.text.trim();
-                                      controller.clear();
-                                      setDialogState(() {
-                                        revealSaved = false;
-                                        testResult = null;
-                                      });
-                                    } catch (error) {
-                                      if (!dialogContext.mounted) return;
-                                      ScaffoldMessenger.of(dialogContext)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Não foi possível salvar a chave: $error',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                            icon: const Icon(Icons.save_outlined),
-                            label: Text(configured ? 'Trocar chave' : 'Salvar'),
+                          IconButton(
+                            tooltip: obscureInput ? 'Exibir texto digitado' : 'Ocultar texto digitado',
+                            onPressed: () => setDialogState(() => obscureInput = !obscureInput),
+                            icon: Icon(obscureInput
+                                ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: testing || (!configured && candidate.isEmpty)
-                          ? null
-                          : () async {
-                              setDialogState(() {
-                                testing = true;
-                                testResult = null;
-                              });
-                              final result = await _service.testStadiaApiKey(
-                                candidate: candidate.isEmpty ? null : candidate,
-                              );
-                              if (!dialogContext.mounted) return;
-                              setDialogState(() {
-                                testing = false;
-                                testResult = result;
-                              });
-                            },
-                      icon: testing
-                          ? const SizedBox.square(
-                              dimension: 17,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.network_check_rounded),
-                      label: Text(
-                        candidate.isNotEmpty
-                            ? 'Testar chave digitada'
-                            : 'Testar chave salva',
+                        ]),
                       ),
-                    ),
-                    if (testResult != null) ...[
-                      const SizedBox(height: 8),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: testResult!.success
-                              ? Theme.of(dialogContext)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withValues(alpha: 0.50)
-                              : Theme.of(dialogContext).colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                testResult!.success
-                                    ? Icons.check_circle_outline_rounded
-                                    : Icons.error_outline_rounded,
-                                size: 19,
-                              ),
-                              const SizedBox(width: 7),
-                              Expanded(
-                                child: Text(
-                                  '${testResult!.message}'
-                                  '${testResult!.creditCounted ? '\nO teste válido consumiu aproximadamente 1 crédito.' : ''}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _KeyMetric(
-                            label: 'Usados no mês',
-                            value: _compactNumber(
-                              _service.stadiaCreditsUsedThisMonth,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _KeyMetric(
-                            label: 'Restantes',
-                            value: _compactNumber(
-                              _service.stadiaCreditsRemainingThisMonth,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () => unawaited(_showStadiaKeyHelp()),
-                      icon: const Icon(Icons.help_outline_rounded),
-                      label: const Text('Como conseguir a chave?'),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'A chave fica protegida pelo Android Keystore. Use Ver/Copiar apenas em local seguro. O teste faz uma requisição mínima à Stadia Maps.',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    if (configured) ...[
-                      const SizedBox(height: 10),
-                      TextButton.icon(
-                        onPressed: () async {
-                          await _service.configureStadiaApiKey('');
-                          if (!dialogContext.mounted) return;
-                          savedKey = null;
-                          controller.clear();
-                          setDialogState(() {
-                            revealSaved = false;
-                            testResult = null;
-                          });
+                    Row(children: [
+                      Expanded(child: OutlinedButton.icon(
+                        onPressed: testing || (!configured && candidate.isEmpty)
+                            ? null
+                            : () async {
+                                setDialogState(() { testing = true; testResult = null; });
+                                final result = await _service.testStadiaApiKey(
+                                    candidate: candidate.isEmpty ? null : candidate);
+                                if (!dialogContext.mounted) return;
+                                setDialogState(() { testing = false; testResult = result; });
+                              },
+                        icon: testing
+                            ? const SizedBox.square(dimension: 17,
+                                child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.network_check_rounded, size: 18),
+                        label: const Text('Testar'),
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: FilledButton.icon(
+                        onPressed: candidate.isEmpty ? null : () async {
+                          try {
+                            await _service.configureStadiaApiKey(candidate);
+                            if (!dialogContext.mounted) return;
+                            controller.clear();
+                            setDialogState(() { visibleSavedKey = null; testResult = null; });
+                          } catch (error) {
+                            if (!dialogContext.mounted) return;
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(content: Text('Não foi possível salvar: $error')),
+                            );
+                          }
                         },
-                        icon: const Icon(Icons.delete_outline_rounded),
-                        label: const Text('Remover chave deste aparelho'),
+                        icon: const Icon(Icons.save_outlined, size: 18),
+                        label: const Text('Salvar'),
+                      )),
+                    ]),
+                    if (testResult != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${testResult!.message}'
+                        '${testResult!.creditCounted ? ' · Teste contabilizado no limite local.' : ''}',
+                        style: TextStyle(fontSize: 12,
+                            color: testResult!.success ? scheme.primary : scheme.error),
                       ),
                     ],
+                    const SizedBox(height: 10),
+                    Row(children: [
+                      const Icon(Icons.toll_outlined, size: 18),
+                      const SizedBox(width: 7),
+                      Expanded(child: Text(
+                        'Créditos locais: ${_compactNumber(_service.stadiaCreditsUsedThisMonth)} / '
+                        '${_compactNumber(_service.stadiaMonthlyCreditLimit)}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      )),
+                    ]),
+                    const Text('O contador é local e não representa o saldo da conta Stadia.',
+                        style: TextStyle(fontSize: 11)),
+                    ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: EdgeInsets.zero,
+                      title: const Text('Ajuda e opções avançadas',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      children: [
+                        ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.help_outline_rounded),
+                          title: const Text('Como conseguir a chave?'),
+                          onTap: () => unawaited(_showStadiaKeyHelp()),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          child: Text('A credencial é armazenada com proteção do Android Keystore. '
+                            'Ver ou copiar apenas em local seguro.',
+                            style: TextStyle(fontSize: 11)),
+                        ),
+                        if (configured)
+                          ListTile(
+                            dense: true,
+                            leading: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                            title: Text('Remover chave', style: TextStyle(color: scheme.error)),
+                            onTap: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: dialogContext,
+                                builder: (confirmContext) => AlertDialog(
+                                  title: const Text('Remover chave Stadia Maps?'),
+                                  content: const Text('Downloads diretos deixarão de funcionar '
+                                      'até que uma nova chave seja configurada. '
+                                      'Os mapas offline existentes serão preservados.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(confirmContext, false),
+                                        child: const Text('Cancelar')),
+                                    FilledButton(onPressed: () => Navigator.pop(confirmContext, true),
+                                        child: const Text('Remover')),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true || !dialogContext.mounted) return;
+                              await _service.configureStadiaApiKey('');
+                              if (!dialogContext.mounted) return;
+                              controller.clear();
+                              setDialogState(() { visibleSavedKey = null; testResult = null; });
+                            },
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Fechar'),
-              ),
-            ],
           );
         },
       ),
@@ -1589,7 +1497,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                   Expanded(
                     child: Text(
                       _service.hasStadiaApiKey
-                          ? 'Download direto configurado · ${_size(_service.stadiaCachedBytes)} / 100 MB usados'
+                          ? 'Cache direto: ${_size(_service.stadiaCachedBytes)} / 100 MB · limite de espaço'
                           : 'Download direto ainda não configurado',
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                     ),
@@ -1620,7 +1528,7 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
                       const SizedBox(width: 7),
                       Expanded(
                         child: Text(
-                          'Créditos: ${_compactNumber(_service.stadiaCreditsUsedThisMonth)} / ${_compactNumber(_service.stadiaMonthlyCreditLimit)} neste mês',
+                          'Créditos (limite local): ${_compactNumber(_service.stadiaCreditsUsedThisMonth)} / ${_compactNumber(_service.stadiaMonthlyCreditLimit)}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1738,30 +1646,35 @@ class _OfflineMapManagerSheetState extends State<_OfflineMapManagerSheet> {
             ),
           ],
           const SizedBox(height: 10),
-          Expanded(
-            child: _service.packages.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.map_outlined, size: 50, color: scheme.onSurfaceVariant),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Ainda não há mapas offline',
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Baixe uma região diretamente, importe um MBTiles ou use um link autorizado.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : ListView.separated(
+          if (_service.packages.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(children: [
+                    Icon(Icons.map_outlined, size: 30, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Nenhum mapa offline baixado',
+                            style: TextStyle(fontWeight: FontWeight.w800)),
+                        Text('Baixe uma região ou importe MBTiles.',
+                            style: TextStyle(fontSize: 12)),
+                      ],
+                    )),
+                  ]),
+                ),
+              ),
+            )
+          else
+            Expanded(child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
                     itemCount: _service.packages.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 6),

@@ -1,3 +1,11 @@
+## 1.0.220+220 — 2026-10-12
+- Janela Stadia Maps responsiva e compacta: ações de revelar/copiar em ícones, chave recuperada apenas sob demanda, controles agrupados e remoção com confirmação.
+- Mapas offline: altura reduzida quando não há pacotes, estado vazio compacto e diferenciação do limite local de créditos e de armazenamento.
+- Planejamento: controles de pausas/almoço em seção expansível, sem menu sobre os dias; escolha manual de almoço respeitada em qualquer duração; modo automático considera períodos longos e janela típica de almoço.
+- Prévia de rota recolhível; comparação de distância e duração, botão Ver trajeto e botão Salvar offline explícitos. Ainda não há dados confiáveis de desnível e segurança da via para comparar.
+- Aparência, provedor e base organizados em três seções expansíveis com amostras esquemáticas sem tráfego de tiles e aviso de disponibilidade offline.
+- Testes de cronograma ampliados. Compilação, Flutter analyze/test e testes em dispositivo continuam pendentes do CI.
+
 ## 1.0.219+219 — 2026-10-11
 - Busca de pontos úteis progressiva em raios menores, espelho Overpass e manutenção dos dados disponíveis quando um servidor demora.
 - Pesquisa de cidades otimizada para regiões menores, sugestão instantânea com cache e histórico persistente de destinos selecionados; sem autocompletar pela API pública Nominatim.

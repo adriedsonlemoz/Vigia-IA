@@ -207,6 +207,8 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
   int _selectedCyclingRouteIndex = 0;
   // Prévia independente: não inicia GPS contínuo, instruções ou gravação.
   MapNavigationTarget? _previewTarget;
+  bool _previewCollapsed = false;
+  bool _tripLunchExplicit = false;
   List<MapCyclingRoute> _previewRoutes = const <MapCyclingRoute>[];
   int _previewIndex = 0;
   bool _previewLoading = false;
@@ -2010,6 +2012,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final serial = ++_previewSerial;
     setState(() {
       _previewTarget = saved.target;
+      _previewCollapsed = false;
       _previewRoutes = saved.routes;
       _previewIndex = saved.selectedIndex;
       _previewPlan = null;
@@ -2061,6 +2064,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     final serial = ++_previewSerial;
     setState(() {
       _previewTarget = target;
+      _previewCollapsed = false;
       _previewLoading = true;
       _previewRoutes = const <MapCyclingRoute>[];
       _previewPlan = null;
@@ -2817,46 +2821,69 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 12),
-                Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center,
+                Row(children: [
+                  const Icon(Icons.schedule_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Saída diária: ${_tripDeparture.format(sheetContext)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700))),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final selected = await showTimePicker(
+                        context: sheetContext, initialTime: _tripDeparture);
+                      if (selected != null && sheetContext.mounted) {
+                        setDialogState(() => _tripDeparture = selected);
+                      }
+                    },
+                    icon: const Icon(Icons.edit_calendar_rounded, size: 17),
+                    label: const Text('Alterar'),
+                  ),
+                ]),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  initiallyExpanded: false,
+                  title: const Text('Ajustar pausas e refeições',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                  subtitle: Text('A cada $_tripBreakEveryKm km · '
+                      '$_tripBreakMinutes min · '
+                      '${_tripLunchExplicit ? 'Almoço $_tripLunchMinutes min' : 'Almoço automático'}',
+                      style: Theme.of(sheetContext).textTheme.bodySmall),
                   children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.schedule_rounded, size: 18),
-                      label: Text('Sair às ${_tripDeparture.format(sheetContext)}'),
-                      onPressed: () async {
-                        final selected = await showTimePicker(
-                          context: sheetContext, initialTime: _tripDeparture);
-                        if (selected != null && sheetContext.mounted) {
-                          setDialogState(() => _tripDeparture = selected);
-                        }
-                      },
-                    ),
-                    PopupMenuButton<int>(
-                      tooltip: 'Intervalo das pausas',
-                      initialValue: _tripBreakEveryKm,
-                      onSelected: (km) => setDialogState(() => _tripBreakEveryKm = km),
-                      itemBuilder: (_) => [15, 20, 30].map((km) =>
-                        PopupMenuItem(value: km, child: Text('Pausar a cada $km km'))).toList(),
-                      child: Chip(label: Text('Pausa a cada $_tripBreakEveryKm km'),
-                        avatar: const Icon(Icons.free_breakfast_rounded, size: 18)),
-                    ),
-                    PopupMenuButton<int>(
-                      tooltip: 'Duração das pausas curtas',
-                      initialValue: _tripBreakMinutes,
-                      onSelected: (minutes) => setDialogState(() => _tripBreakMinutes = minutes),
-                      itemBuilder: (_) => [5, 10, 15, 20].map((minutes) =>
-                        PopupMenuItem(value: minutes,
-                          child: Text('Pausa de $minutes min'))).toList(),
-                      child: Chip(label: Text('$_tripBreakMinutes min por pausa')),
-                    ),
-                    PopupMenuButton<int>(
-                      tooltip: 'Tempo de almoço',
-                      initialValue: _tripLunchMinutes,
-                      onSelected: (minutes) => setDialogState(() => _tripLunchMinutes = minutes),
-                      itemBuilder: (_) => [0, 30, 40, 60].map((minutes) =>
-                        PopupMenuItem(value: minutes,
-                          child: Text('Almoço de $minutes min'))).toList(),
-                      child: Chip(label: Text('Almoço $_tripLunchMinutes min')),
-                    ),
+                    const Align(alignment: Alignment.centerLeft,
+                        child: Text('Intervalo das pausas',
+                            style: TextStyle(fontWeight: FontWeight.w700))),
+                    Wrap(spacing: 7, runSpacing: 3, children: [
+                      for (final km in [15, 20, 30])
+                        ChoiceChip(label: Text('$km km'),
+                            selected: _tripBreakEveryKm == km,
+                            onSelected: (_) => setDialogState(() => _tripBreakEveryKm = km)),
+                    ]),
+                    const SizedBox(height: 6),
+                    const Align(alignment: Alignment.centerLeft,
+                        child: Text('Duração de cada pausa',
+                            style: TextStyle(fontWeight: FontWeight.w700))),
+                    Wrap(spacing: 7, runSpacing: 3, children: [
+                      for (final minutes in [5, 10, 15, 20])
+                        ChoiceChip(label: Text('$minutes min'),
+                            selected: _tripBreakMinutes == minutes,
+                            onSelected: (_) => setDialogState(() => _tripBreakMinutes = minutes)),
+                    ]),
+                    const SizedBox(height: 6),
+                    const Align(alignment: Alignment.centerLeft,
+                        child: Text('Almoço',
+                            style: TextStyle(fontWeight: FontWeight.w700))),
+                    Wrap(spacing: 7, runSpacing: 3, children: [
+                      ChoiceChip(label: const Text('Automático'),
+                        selected: !_tripLunchExplicit,
+                        onSelected: (_) => setDialogState(() => _tripLunchExplicit = false)),
+                      for (final minutes in [0, 30, 40, 60])
+                        ChoiceChip(label: Text(minutes == 0 ? 'Sem almoço' : '$minutes min'),
+                            selected: _tripLunchExplicit && _tripLunchMinutes == minutes,
+                            onSelected: (_) => setDialogState(() {
+                              _tripLunchMinutes = minutes;
+                              _tripLunchExplicit = true;
+                            })),
+                    ]),
+                    const SizedBox(height: 5),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -2868,6 +2895,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       breakEveryKm: _tripBreakEveryKm,
                       breakDurationMinutes: _tripBreakMinutes,
                       lunchDurationMinutes: _tripLunchMinutes,
+                      forceLunch: _tripLunchExplicit,
                     );
                     final km = day.distanceMeters / 1000;
                     return Card(
@@ -4411,13 +4439,14 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       style: Theme.of(sheetContext).textTheme.bodySmall,
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Tema visual',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
+                  ExpansionTile(
+                    key: const ValueKey('map-appearance-section'),
+                    initiallyExpanded: true,
+                    leading: const Icon(Icons.palette_outlined),
+                    title: const Text('Aparência',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text('Tema: ${resolvedAppearance.label}'),
+                    children: [
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
@@ -4495,14 +4524,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       style: Theme.of(sheetContext).textTheme.bodySmall,
                     ),
                   ),
-                  const Divider(height: 22),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Provedor do mapa',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
+                    ],
                   ),
+                  ExpansionTile(
+                    key: const ValueKey('map-provider-section'),
+                    leading: const Icon(Icons.cloud_outlined),
+                    title: const Text('Provedor do mapa',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(_mapViewSettings.provider.label),
+                    children: [
                   const SizedBox(height: 2),
                   RadioGroup<MapProvider>(
                     groupValue: _mapViewSettings.provider,
@@ -4546,20 +4576,30 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       unawaited(_promptGoogleMapsKeyScreen());
                     },
                   ),
-                  const Divider(height: 22),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Base do mapa',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
+                    ],
                   ),
+                  ExpansionTile(
+                    key: const ValueKey('map-base-section'),
+                    leading: const Icon(Icons.layers_outlined),
+                    title: const Text('Base do mapa',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(selectedLayer.label),
+                    children: [
                   const SizedBox(height: 2),
                   for (final style in MapStylePreset.values)
                     ListTile(
                       dense: true,
                       visualDensity: VisualDensity.compact,
-                      leading: Icon(_mapStyleIcon(style)),
+                      leading: Semantics(
+                        label: 'Amostra ilustrativa do estilo ${style.label}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(7),
+                          child: CustomPaint(
+                            size: const Size(58, 42),
+                            painter: _MapStyleThumbnailPainter(style),
+                          ),
+                        ),
+                      ),
                       title: Text(style.label),
                       subtitle: Text(
                         style == MapStylePreset.bikeTravel &&
@@ -4599,6 +4639,15 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         label: const Text('Configurar Stadia para Terreno/Satélite'),
                       ),
                     ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(12, 3, 12, 12),
+                      child: Text('Amostras ilustrativas, não imagens reais do provedor. '
+                          'Alguns estilos dependem de internet e de API key. '
+                          'Para uso offline, baixe ou importe o pacote de mapa compatível.',
+                          style: TextStyle(fontSize: 11)),
+                    ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -7319,6 +7368,10 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                     selectedIndex: _previewIndex,
                     loading: _previewLoading,
                     plan: _previewPlan,
+                    collapsed: _previewCollapsed,
+                    onToggleCollapsed: () => setState(
+                        () => _previewCollapsed = !_previewCollapsed),
+                    onShowRoute: () => _fitCyclingRoutes(_previewRoutes),
                     onClose: _dismissRoutePreview,
                     onChoose: _choosePreviewAlternative,
                     onPlan: _previewPlan == null
@@ -10251,6 +10304,85 @@ class _LiveRouteElapsedPillState extends State<_LiveRouteElapsedPill> {
 }
 
 /// Visão de rota, sem alterar o estado de navegação nem ligar gravação.
+/// Amostra esquemática para distinguir estilos sem baixar tiles nem usar API key.
+/// Não é uma miniatura georreferenciada ou uma promessa de cobertura offline.
+class _MapStyleThumbnailPainter extends CustomPainter {
+  const _MapStyleThumbnailPainter(this.style);
+
+  final MapStylePreset style;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final background = switch (style) {
+      MapStylePreset.standard => const Color(0xFFE9EEE7),
+      MapStylePreset.bikeTravel => const Color(0xFFDCEBB9),
+      MapStylePreset.terrain => const Color(0xFFC7D9A5),
+      MapStylePreset.topographic => const Color(0xFFE0D6B6),
+      MapStylePreset.satellite => const Color(0xFF697854),
+    };
+    canvas.drawRect(Offset.zero & size, Paint()..color = background);
+    final land = Paint()
+      ..color = style == MapStylePreset.satellite
+          ? const Color(0xFF8E7958)
+          : const Color(0xFF8BBA85).withValues(alpha: 0.48);
+    final hill = Path()
+      ..moveTo(0, size.height * 0.72)
+      ..lineTo(size.width * 0.26, size.height * 0.35)
+      ..lineTo(size.width * 0.65, size.height * 0.61)
+      ..lineTo(size.width, size.height * 0.22)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(hill, land);
+    if (style != MapStylePreset.satellite) {
+      final stream = Paint()
+        ..color = const Color(0xFF6DA8CF)
+        ..strokeWidth = 3
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(Path()
+        ..moveTo(0, 11)
+        ..quadraticBezierTo(size.width * 0.4, 2, size.width * 0.6, 24)
+        ..quadraticBezierTo(size.width * 0.8, 33, size.width, 21), stream);
+    }
+    if (style == MapStylePreset.topographic ||
+        style == MapStylePreset.terrain) {
+      final contour = Paint()
+        ..color = const Color(0xFF826E45).withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8;
+      for (var i = 0; i < 3; i++) {
+        final y = 6.0 + i * 9;
+        canvas.drawPath(Path()
+          ..moveTo(0, y)
+          ..quadraticBezierTo(size.width * 0.32, y + 13, size.width, y + 2),
+          contour);
+      }
+    }
+    final road = Paint()
+      ..color = style == MapStylePreset.satellite
+          ? const Color(0xFFDFCFB0)
+          : const Color(0xFFFFFEFA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    final route = Path()
+      ..moveTo(7, size.height)
+      ..lineTo(size.width * 0.34, size.height * 0.45)
+      ..lineTo(size.width * 0.72, size.height * 0.6)
+      ..lineTo(size.width - 4, 0);
+    canvas.drawPath(route, road);
+    canvas.drawPath(route, Paint()
+      ..color = style == MapStylePreset.bikeTravel
+          ? const Color(0xFF008D86)
+          : const Color(0xFFA39E84)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MapStyleThumbnailPainter oldDelegate) =>
+      oldDelegate.style != style;
+}
+
 class _RoutePreviewCard extends StatelessWidget {
   const _RoutePreviewCard({
     required this.target,
@@ -10258,6 +10390,9 @@ class _RoutePreviewCard extends StatelessWidget {
     required this.selectedIndex,
     required this.loading,
     required this.plan,
+    required this.collapsed,
+    required this.onToggleCollapsed,
+    required this.onShowRoute,
     required this.onClose,
     required this.onChoose,
     required this.onPlan,
@@ -10270,6 +10405,9 @@ class _RoutePreviewCard extends StatelessWidget {
   final int selectedIndex;
   final bool loading;
   final BikeTripPlan? plan;
+  final bool collapsed;
+  final VoidCallback onToggleCollapsed;
+  final VoidCallback onShowRoute;
   final VoidCallback onClose;
   final ValueChanged<int> onChoose;
   final VoidCallback? onPlan;
@@ -10300,15 +10438,26 @@ class _RoutePreviewCard extends StatelessWidget {
             Expanded(child: Text('Prévia · ${target.label}',
               maxLines: 1, overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w900))),
+            IconButton(
+              tooltip: collapsed ? 'Expandir prévia' : 'Recolher prévia',
+              onPressed: onToggleCollapsed,
+              visualDensity: VisualDensity.compact,
+              icon: Icon(collapsed ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded),
+            ),
             IconButton(tooltip: 'Fechar prévia', onPressed: onClose,
               icon: const Icon(Icons.close_rounded),
               visualDensity: VisualDensity.compact),
           ]),
-          if (loading) ...[
+          if (collapsed && chosen != null)
+            Text('${(chosen.distanceMeters / 1000).toStringAsFixed(1)} km · '
+                'Toque na seta para ver opções',
+                style: Theme.of(context).textTheme.bodySmall),
+          if (!collapsed && loading) ...[
             const LinearProgressIndicator(),
             const SizedBox(height: 8),
             const Text('Calculando alternativas sem iniciar a navegação…'),
-          ] else if (chosen != null) ...[
+          ] else if (!collapsed && chosen != null) ...[
             Text(
               '${(chosen.distanceMeters / 1000).toStringAsFixed(1)} km · '
               '${rideMinutes ~/ 60}h ${(rideMinutes % 60).toString().padLeft(2, '0')}min · '
@@ -10322,23 +10471,39 @@ class _RoutePreviewCard extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   itemCount: routes.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 6),
-                  itemBuilder: (context, index) => ChoiceChip(
+                  itemBuilder: (context, index) {
+                    final option = routes[index];
+                    final duration = target.travelMode == MapTravelMode.bicycle
+                        ? (option.distanceMeters / 1000 / speed * 60).round()
+                        : (option.durationSeconds / 60).round();
+                    return ChoiceChip(
                     visualDensity: VisualDensity.compact,
                     label: Text('Rota ${index + 1} · '
-                      '${(routes[index].distanceMeters / 1000).toStringAsFixed(1)} km'),
+                      '${(option.distanceMeters / 1000).toStringAsFixed(1)} km · '
+                      '${duration ~/ 60}h${(duration % 60).toString().padLeft(2, '0')}'),
                     selected: selectedIndex == index,
                     onSelected: (_) => onChoose(index),
-                  ),
+                  );
+                  },
                 ),
               ),
             ],
             const SizedBox(height: 8),
             Row(children: [
-              IconButton(
-                tooltip: 'Salvar prévia para consultar sem internet',
+              Expanded(child: OutlinedButton.icon(
+                onPressed: onShowRoute,
+                icon: const Icon(Icons.fit_screen_rounded, size: 18),
+                label: const Text('Ver trajeto'),
+              )),
+              const SizedBox(width: 8),
+              Expanded(child: OutlinedButton.icon(
                 onPressed: onSave,
-                icon: const Icon(Icons.save_alt_rounded),
-              ),
+                icon: const Icon(Icons.save_alt_rounded, size: 18),
+                label: const Text('Salvar offline'),
+              )),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
               if (target.travelMode == MapTravelMode.bicycle)
                 Expanded(child: OutlinedButton.icon(
                   onPressed: onPlan,

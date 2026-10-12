@@ -40,6 +40,7 @@ class BikeTripSchedule {
     int breakEveryKm = 20,
     int breakDurationMinutes = 10,
     int lunchDurationMinutes = 40,
+    bool forceLunch = false,
   }) {
     final rideMinutes = (day.ridingDuration.inSeconds / 60).ceil();
     // Pausas a cada trecho completo, exceto no próprio destino.
@@ -47,7 +48,15 @@ class BikeTripSchedule {
         ? 0
         : math.max(0, (day.distanceMeters / (breakEveryKm * 1000)).ceil() - 1);
     final shortBreaks = count * breakDurationMinutes;
-    final lunch = rideMinutes >= 240 ? lunchDurationMinutes : 0;
+    // No modo automático, considere uma refeição se o dia for longo ou
+    // atravessar a janela típica de almoço. A escolha manual é respeitada,
+    // mesmo em percursos curtos (0 min significa dispensar almoço).
+    final possibleLunchTime = departureMinute + rideMinutes + shortBreaks;
+    final crossesLunchWindow = rideMinutes >= 60 &&
+        departureMinute < 14 * 60 && possibleLunchTime >= 11 * 60 + 30;
+    final lunch = forceLunch || rideMinutes >= 240 || crossesLunchWindow
+        ? lunchDurationMinutes
+        : 0;
     return BikeTripDaySchedule(
       departureMinute: departureMinute,
       arrivalMinute: departureMinute + rideMinutes + shortBreaks + lunch,

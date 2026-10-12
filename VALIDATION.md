@@ -1,4 +1,8 @@
-# Validação Vigia IA 1.0.219+219
+# Validação Vigia IA 1.0.220+220
+
+## Verificação 1.0.220
+
+Verificar nova interação da chave Stadia (revelar, copiar, salvar, testar e confirmar remoção), planilha de pausas, recolher prévia e blocos de camadas. Revisar painel offline vazio em celulares compactos. Flutter analyze, flutter test, build e testes reais ainda pendentes no CI.
 
 ## Validação da 1.0.219
 

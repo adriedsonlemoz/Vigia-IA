@@ -18,6 +18,21 @@ void main() {
     expect(BikeTripDaySchedule.formatMinute(schedule.arrivalMinute), '12:14');
   });
 
+  test('almoço manual é aplicado mesmo em trajetos curtos', () {
+    final schedule = BikeTripSchedule.forDay(
+      day: day(32.1, 175), lunchDurationMinutes: 60, forceLunch: true,
+    );
+    expect(schedule.lunchMinutes, 60);
+    expect(schedule.arrivalMinute, 420 + 175 + 10 + 60);
+  });
+
+  test('almoço automático considera travessia do horário de almoço', () {
+    final schedule = BikeTripSchedule.forDay(
+      day: day(20, 90), departureMinute: 11 * 60,
+    );
+    expect(schedule.lunchMinutes, 40);
+  });
+
   test('pedal curto nao inclui almoço ou pausa no destino', () {
     final schedule = BikeTripSchedule.forDay(day: day(20, 80));
     expect(schedule.breakCount, 0);

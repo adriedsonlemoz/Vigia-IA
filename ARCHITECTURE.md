@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.219+219
+# Arquitetura — Vigia IA 1.0.220+220
+
+## UX responsiva de mapas e planejamento — 1.0.220
+
+`showOfflineMapManager` abre um painel de altura reduzida quando a lista está vazia; conteúdo permanece rolável/expandido em operações ou pacotes existentes. `_configureStadiaKey` só recupera a chave quando o usuário escolhe revelar ou copiar, mantendo-a fora do estado do diálogo por padrão e pedindo confirmação para remover. `BikeTripSchedule.forDay` aceita `forceLunch`, com modo automático por duração e janela do almoço; a seleção de almoço manual muda a previsão mesmo em dias curtos. Os ajustes de pausa no diálogo do plano são chips em expansão, sem menu suspenso sobre o roteiro. A prévia de rota pode recolher, oferece reajuste visual dos limites, compara durações e salva geometria no cache privado. A janela de camadas usa seções expansíveis por aparência/provedor/base, mantendo seleção existente. Não foram adicionadas consultas online nem SDKs; dados de relevo e segurança ainda não fazem parte das estimativas.
 
 ## Consultas geográficas progressivas e histórico de rádio — 1.0.219
 

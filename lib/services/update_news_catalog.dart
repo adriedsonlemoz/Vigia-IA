@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.219', build: 219);
+      AppBuildVersion(version: '1.0.220', build: 220);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.219', build: 219),
+      version: AppBuildVersion(version: '1.0.220', build: 220),
       changes: <String>[
-        'Pesquisa de cidades e pontos próximos mais leve e com dados salvos.',
-        'Rádio online com Recentes, filtros e visual renovado.',
-        'Janelas de pesquisa adaptadas ao conteúdo.',
+        'Mapas offline e chave Stadia com janelas compactas.',
+        'Plano da cicloviagem com pausas e almoço configuráveis.',
+        'Prévia de rota recolhível e camadas organizadas.',
       ],
     ),
   ]);

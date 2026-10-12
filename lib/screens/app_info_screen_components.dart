@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.219',
+          version: '1.0.220',
           current: true,
+          changes: [
+            'Mapas offline e chave Stadia com painéis mais compactos.',
+            'Plano de cicloviagem com pausa e almoço ajustáveis.',
+            'Prévia recolhível e camadas organizadas por seção.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.219',
           changes: [
             'Cidades e pontos próximos com buscas mais eficientes e histórico local.',
             'Rádio com Recentes, filtros e visual mais compacto.',
@@ -1982,8 +1991,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.219',
+          version: '1.0.220',
           current: true,
+          changes: [
+            'Mapas offline e chave Stadia com painéis mais compactos.',
+            'Plano de cicloviagem com pausa e almoço ajustáveis.',
+            'Prévia recolhível e camadas organizadas por seção.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.219',
           changes: [
             'Cidades e pontos próximos com buscas mais eficientes e histórico local.',
             'Rádio com Recentes, filtros e visual mais compacto.',
