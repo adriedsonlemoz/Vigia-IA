@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -4314,14 +4315,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       _navigation3dRendererFailed = false;
     });
   }
-
-  IconData _mapStyleIcon(MapStylePreset style) => switch (style) {
-        MapStylePreset.standard => Icons.map_outlined,
-        MapStylePreset.bikeTravel => Icons.directions_bike_rounded,
-        MapStylePreset.terrain => Icons.terrain_rounded,
-        MapStylePreset.topographic => Icons.landscape_rounded,
-        MapStylePreset.satellite => Icons.satellite_alt_rounded,
-      };
 
   _OnlineMapLayerSpec get _onlineMapLayerSpec {
     final selected = _mapViewSettings.stylePreset;
@@ -10325,7 +10318,7 @@ class _MapStyleThumbnailPainter extends CustomPainter {
       ..color = style == MapStylePreset.satellite
           ? const Color(0xFF8E7958)
           : const Color(0xFF8BBA85).withValues(alpha: 0.48);
-    final hill = Path()
+    final hill = ui.Path()
       ..moveTo(0, size.height * 0.72)
       ..lineTo(size.width * 0.26, size.height * 0.35)
       ..lineTo(size.width * 0.65, size.height * 0.61)
@@ -10339,7 +10332,7 @@ class _MapStyleThumbnailPainter extends CustomPainter {
         ..color = const Color(0xFF6DA8CF)
         ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
-      canvas.drawPath(Path()
+      canvas.drawPath(ui.Path()
         ..moveTo(0, 11)
         ..quadraticBezierTo(size.width * 0.4, 2, size.width * 0.6, 24)
         ..quadraticBezierTo(size.width * 0.8, 33, size.width, 21), stream);
@@ -10352,7 +10345,7 @@ class _MapStyleThumbnailPainter extends CustomPainter {
         ..strokeWidth = 0.8;
       for (var i = 0; i < 3; i++) {
         final y = 6.0 + i * 9;
-        canvas.drawPath(Path()
+        canvas.drawPath(ui.Path()
           ..moveTo(0, y)
           ..quadraticBezierTo(size.width * 0.32, y + 13, size.width, y + 2),
           contour);
@@ -10364,7 +10357,7 @@ class _MapStyleThumbnailPainter extends CustomPainter {
           : const Color(0xFFFFFEFA)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
-    final route = Path()
+    final route = ui.Path()
       ..moveTo(7, size.height)
       ..lineTo(size.width * 0.34, size.height * 0.45)
       ..lineTo(size.width * 0.72, size.height * 0.6)

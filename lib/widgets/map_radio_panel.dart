@@ -85,10 +85,16 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
 
   List<RadioBrowserStation> get _visibleResults => _results.where((station) {
     if (_genre != 'Todos' &&
-        !station.tags.toLowerCase().contains(_genre.toLowerCase())) return false;
+        !station.tags.toLowerCase().contains(_genre.toLowerCase())) {
+      return false;
+    }
     if (_language != 'Todos' &&
-        !station.language.toLowerCase().contains(_language.toLowerCase())) return false;
-    if (_maxBitrate > 0 && station.bitrate > _maxBitrate) return false;
+        !station.language.toLowerCase().contains(_language.toLowerCase())) {
+      return false;
+    }
+    if (_maxBitrate > 0 && station.bitrate > _maxBitrate) {
+      return false;
+    }
     return true;
   }).toList(growable: false);
 
@@ -638,7 +644,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
     _ => value.toString(),
   };
 
-  Widget _radioFilterMenu<T>(String label, T selected, List<T> values,
+  Widget _radioFilterMenu<T extends Object>(String label, T selected, List<T> values,
       ValueChanged<T> onSelect) => PopupMenuButton<T>(
     tooltip: 'Filtrar rádios',
     initialValue: selected,
@@ -700,7 +706,9 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
     final local = when.toLocal();
     final now = DateTime.now();
     if (local.year == now.year && local.month == now.month &&
-        local.day == now.day) return 'hoje';
+        local.day == now.day) {
+      return 'hoje';
+    }
     return '${local.day.toString().padLeft(2, '0')}/'
         '${local.month.toString().padLeft(2, '0')}';
   }

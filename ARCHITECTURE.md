@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.220+220
+# Arquitetura — Vigia IA 1.0.221+221
+
+## Buildfix 1.0.221 · Flutter Map e Canvas
+
+- Miniaturas esquemáticas usam `ui.Path` (Canvas) para evitar a classe de geometria `Path<LatLng>` disponibilizada pelo Flutter Map.
+- Rádio mantém filtros e histórico, com tipo genérico não nulo e construtor privado inicializador sem quebrar o construtor nomeado público.
+- Checagem estática regressiva não substitui o analisador Dart e testes Flutter do CI.
 
 ## UX responsiva de mapas e planejamento — 1.0.220
 

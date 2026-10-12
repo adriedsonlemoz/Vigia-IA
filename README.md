@@ -1,6 +1,6 @@
 # Vigia IA
 
-A **1.0.220+220** reorganiza a janela de chave Stadia Maps com revelação sob demanda e exclusão confirmada; reduz o gerenciador offline vazio e esclarece os limites de cache/créditos. O plano oferece pausas e almoço em painel expansível, aplicando a escolha manual à chegada inclusive em dias curtos. A prévia pode ser recolhida, mostra a duração das alternativas e oferece Ver trajeto e Salvar offline; a configuração de camadas está organizada em três seções expansíveis. Flutter/Android ainda requerem validação em CI.
+A **1.0.221+221** resolve os diagnósticos do APK #185, restaurando `dart:ui.Path` nas miniaturas dos estilos de mapa, corrigindo os filtros do rádio, o histórico e os avisos de componentes não utilizados. O gerenciador offline, o plano de cicloviagem e as prévias de rota da versão 1.0.220 foram preservados. Flutter/Android ainda requerem validação em CI.
 
 A **1.0.219+219** torna a descoberta de pontos úteis progressiva (até 5/10 km e raio configurado com alternativa Overpass), evita apagar resultados após falhas temporárias, mantém autocomplete local e histórico de destinos pesquisados. A rádio ganha aba Recentes persistente, filtros de estilo/idioma/bitrate, layout renovado, temporizador e ações distintas de minimizar e parar. Os diálogos vazios são menores. A compilação Android ainda precisa ser validada no CI.
 
@@ -13,7 +13,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.220+220`
+> **Versão atual:** `1.0.221+221`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

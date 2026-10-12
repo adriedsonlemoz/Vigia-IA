@@ -1,6 +1,12 @@
-# Validação Vigia IA 1.0.220+220
+# Validação Vigia IA 1.0.221+221
 
-## Verificação 1.0.220
+## Buildfix 1.0.221 (workflow #185)
+
+- `tool/check_map_buildfix_221.py`: protege o desenho de miniaturas com `ui.Path`, o tipo genérico do filtro de rádio, e os elementos privados eliminados.
+- `tool/verify_project.sh`, versionamento e contratos das versões anteriores devem passar.
+- Pendentes, sem Flutter SDK neste ambiente: `flutter analyze`, `flutter test` e `flutter build apk` no GitHub Actions.
+
+## Verificação 1.0.220 (histórico)
 
 Verificar nova interação da chave Stadia (revelar, copiar, salvar, testar e confirmar remoção), planilha de pausas, recolher prévia e blocos de camadas. Revisar painel offline vazio em celulares compactos. Flutter analyze, flutter test, build e testes reais ainda pendentes no CI.
 

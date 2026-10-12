@@ -1,3 +1,10 @@
+## 1.0.221+221 — 2026-10-12
+- Buildfix do APK #185: conflito de `Path` resolvido por `ui.Path` nas miniaturas de estilo (Flutter Map continua disponível para rotas geográficas).
+- Corrigido tipo genérico dos filtros do rádio e blocos de controle indicados pelo analisador; o histórico preserva a API pública.
+- Removidos elementos privados não utilizados no mapa e nos mapas offline, eliminando avisos.
+- Regressão preventiva ampliada para cobrir problemas detectados no #185; melhorias da 1.0.220 mantidas.
+- Compilação Flutter, testes e APK ainda dependem da execução real do GitHub Actions.
+
 ## 1.0.220+220 — 2026-10-12
 - Janela Stadia Maps responsiva e compacta: ações de revelar/copiar em ícones, chave recuperada apenas sob demanda, controles agrupados e remoção com confirmação.
 - Mapas offline: altura reduzida quando não há pacotes, estado vazio compacto e diferenciação do limite local de créditos e de armazenamento.

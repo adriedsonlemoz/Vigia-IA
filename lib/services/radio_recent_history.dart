@@ -13,7 +13,9 @@ class RadioRecentEntry {
 }
 
 class RadioRecentHistory {
-  RadioRecentHistory({File? file}) : _file = file;
+  factory RadioRecentHistory({File? file}) => RadioRecentHistory._(file);
+
+  RadioRecentHistory._(this._file);
   static const int maximumEntries = 20;
   File? _file;
 
