@@ -70,6 +70,7 @@ import 'google_maps_key_screen.dart';
 import '../services/native_platform_service.dart';
 import '../services/offline_map_service.dart';
 import '../services/route_explorer_service.dart';
+import '../services/route_explorer_poi_provenance.dart';
 import '../services/system_ui_service.dart';
 import 'audio_settings_screen.dart';
 import 'bike_mode_screen.dart';
@@ -1412,7 +1413,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     if (!MapTelemetryPolicy.isRecentTimestamp(
       reading.recordedAt,
       maximumAge: const Duration(seconds: 3),
-    )) return null;
+    )) {
+      return null;
+    }
     return _smoothedSensorHeading;
   }
 
@@ -5133,7 +5136,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       context: context,
       maxWidth: 580,
       maxHeightFactor: 0.86,
-      expand: true,
+      expand: false,
       barrierLabel: 'Fechar detalhes do ponto',
       builder: (sheetContext) => MapPoiDetailsSheet(
         item: item,
@@ -5400,9 +5403,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                   ),
                                 ),
                                 Text(
-                                  service.lastSource == 'online' && service.effectiveOnlineRadiusKm != null
-                                      ? '${service.effectiveOnlineRadiusKm} km consultados · online'
-                                      : '${service.settings.radiusKm} km configurados · ${service.lastSource == 'offline' ? 'offline' : 'online'}',
+                                  '${service.effectiveOnlineRadiusKm ?? service.settings.radiusKm} km · '
+                                  '${service.lastSource == 'offline' ? 'Pacote offline' : service.lastSource == 'cache' ? 'Cache anterior' : service.lastSource == 'online' ? 'OSM mapeado' : 'Sem consulta'} · '
+                                  '${service.resultsUpdatedAt == null ? 'data desconhecida' : 'consulta ${_formatOfflinePackageDate(service.resultsUpdatedAt!)}'}',
                                   style: Theme.of(sheetContext).textTheme.bodySmall,
                                 ),
                               ],
@@ -5514,15 +5517,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                         ),
                                         subtitle: Text(
                                           item.subtitle.trim().isEmpty
-                                              ? '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}'
-                                              : '${item.category.label} · ${item.source == 'offline' ? 'Offline' : 'Online'}\n${item.subtitle}',
+                                              ? '${item.category.label} · ${RouteExplorerPoiProvenance.sourceLabel(item)}'
+                                              : '${item.category.label} · ${RouteExplorerPoiProvenance.sourceLabel(item)}\n${item.subtitle}',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         trailing: Text(
-                                          service.formatDistance(
-                                            item.distanceMeters,
-                                          ),
+                                          '${service.formatDistance(item.distanceMeters)}\nem linha reta',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w900,
                                           ),
@@ -9836,7 +9837,7 @@ class _SelectedPoiCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           'Aprox. $distanceLabel · '
-                          '${item.source == 'offline' ? 'Offline' : 'Online'}',
+                          '${RouteExplorerPoiProvenance.sourceLabel(item)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: Color(0xFFB7CBD9), fontSize: 11),

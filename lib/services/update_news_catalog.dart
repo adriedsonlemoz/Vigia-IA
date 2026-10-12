@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.224', build: 224);
+      AppBuildVersion(version: '1.0.226', build: 226);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.224', build: 224),
+      version: AppBuildVersion(version: '1.0.226', build: 226),
       changes: <String>[
-        'Busca de cidades prioriza nomes correspondentes e mostra a região.',
-        'Resultados salvos, próximos e distantes são agrupados.',
-        'Localidades com acento e repetidas aparecem de forma mais clara.',
+        'Maior estabilidade nas leituras e na pesquisa do mapa.',
+        'Preparação para a próxima organização da interface.',
       ],
     ),
   ]);

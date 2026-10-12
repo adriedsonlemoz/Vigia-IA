@@ -77,8 +77,25 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.224',
+          version: '1.0.226',
           current: true,
+          changes: [
+            'Maior estabilidade nas leituras e na pesquisa do mapa.',
+            'Preparação para a próxima organização da interface.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.225',
+          changes: [
+            'Pontos próximos mostram origem e idade dos dados.',
+            'Busca de pontos tolera melhor limites dos servidores.',
+            'Fichas dos locais não presumem funcionamento ou atendimento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.224',
           changes: [
             'Busca de localidades prioriza o nome do destino.',
             'Cidades salvas, próximas e distantes são organizadas por grupo.',
@@ -2027,8 +2044,25 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.224',
+          version: '1.0.226',
           current: true,
+          changes: [
+            'Maior estabilidade nas leituras e na pesquisa do mapa.',
+            'Preparação para a próxima organização da interface.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.225',
+          changes: [
+            'Pontos próximos mostram origem e idade dos dados.',
+            'Busca de pontos tolera melhor limites dos servidores.',
+            'Fichas dos locais não presumem funcionamento ou atendimento.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.224',
           changes: [
             'Busca de localidades prioriza o nome do destino.',
             'Cidades salvas, próximas e distantes são organizadas por grupo.',

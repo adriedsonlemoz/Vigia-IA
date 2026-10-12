@@ -19,6 +19,7 @@ import 'map_bike_consolidation_policy.dart';
 import 'map_route_service.dart';
 import 'route_explorer_alert_policy.dart';
 import 'route_explorer_poi_catalog.dart';
+import 'route_explorer_overpass_policy.dart';
 import 'data_usage_service.dart';
 
 class RouteExplorerService extends ChangeNotifier {
@@ -38,6 +39,8 @@ class RouteExplorerService extends ChangeNotifier {
   final MapConnectivityService _connectivity = MapConnectivityService.instance;
   final RouteExplorerAlertPolicy _alertPolicy = const RouteExplorerAlertPolicy();
   final Distance _distance = const Distance();
+  final RouteExplorerOverpassPolicy _endpointPolicy = RouteExplorerOverpassPolicy();
+  DateTime? _lastOverpassRequestAt;
 
   File? _file;
   Future<void>? _initializing;
@@ -326,6 +329,7 @@ class RouteExplorerService extends ChangeNotifier {
               ? 'Sem internet e sem pacote de pontos offline para esta região.'
               : 'Sem internet. Mantendo os últimos pontos carregados.';
         }
+        if (offline.isEmpty && _results.isNotEmpty) _markResultsAsCache();
         await _persistNow();
         return _results;
       }
@@ -370,15 +374,23 @@ class RouteExplorerService extends ChangeNotifier {
       _error = error.toString()
           .replaceFirst('Exception: ', '')
           .replaceFirst('Bad state: ', '');
+      if (_results.isNotEmpty) _markResultsAsCache();
       _statusMessage = _results.isEmpty
           ? 'Não foi possível consultar os servidores de pontos agora.'
-          : 'Não foi possível atualizar. Mantendo os últimos pontos disponíveis.';
+          : 'Não foi possível atualizar. Exibindo consulta anterior (cache).';
       return _results;
     } finally {
       _loading = false;
       notifyListeners();
       _routeState.releaseLocationIfIdle();
     }
+  }
+
+  void _markResultsAsCache() {
+    _lastSource = 'cache';
+    _results = _results
+        .map((item) => item.copyWith(source: 'cache'))
+        .toList(growable: false);
   }
 
   Future<List<RouteExplorerResult>> useOfflineForCurrentLocation({
@@ -420,7 +432,7 @@ class RouteExplorerService extends ChangeNotifier {
       current,
       source: 'offline',
     );
-    _resultsUpdatedAt = DateTime.now();
+    _resultsUpdatedAt = activeOfflinePackage?.updatedAt ?? _offlineUpdatedAt;
     _lastSearchOrigin = current;
     _lastAutomaticSearchAt = _resultsUpdatedAt;
     _lastSearchHeadingDegrees = current.headingDegrees;
@@ -597,7 +609,9 @@ class RouteExplorerService extends ChangeNotifier {
       _results = _recalculateDistances(
         _results,
         point,
-        source: _lastSource == 'offline' ? 'offline' : 'online',
+        source: _lastSource == 'offline'
+            ? 'offline'
+            : _lastSource == 'cache' ? 'cache' : 'online',
       );
       changed = true;
     } else {
@@ -728,9 +742,11 @@ class RouteExplorerService extends ChangeNotifier {
           'Confira a internet ou tente Atualizar novamente. ($lastFailure)');
     }
     _effectiveOnlineRadiusKm = effectiveRadius == 0 ? null : effectiveRadius;
-    _statusMessage = effectiveRadius < requestedKm
-        ? 'Exibindo pontos até $effectiveRadius km. Ampliação pode ser tentada novamente.'
-        : 'Pontos consultados até $effectiveRadius km.';
+    _statusMessage = lastFailure != null && collected.isNotEmpty
+        ? 'Consulta parcial até $effectiveRadius km: servidor indisponível. Pontos recebidos preservados.'
+        : effectiveRadius < requestedKm
+            ? 'Exibindo pontos até $effectiveRadius km. Ampliação pode ser tentada novamente.'
+            : 'Pontos consultados até $effectiveRadius km.';
     collected.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
     return _prioritizeCategoryDiversity(collected);
   }
@@ -755,20 +771,43 @@ class RouteExplorerService extends ChangeNotifier {
     ];
     Object? lastFailure;
     for (final endpoint in endpoints) {
+      if (!_endpointPolicy.canAttempt(endpoint, now: DateTime.now())) {
+        lastFailure = StateError('Servidor em espera após erro HTTP/transporte');
+        continue;
+      }
       final client = HttpClient()
         ..connectionTimeout = const Duration(seconds: 7)
         ..idleTimeout = const Duration(seconds: 10);
+      var failureRecorded = false;
       try {
+        // Evita consultas sucessivas sem pausa contra serviços públicos.
+        final previous = _lastOverpassRequestAt;
+        if (previous != null) {
+          final remaining = const Duration(seconds: 2) -
+              DateTime.now().difference(previous);
+          if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+        }
+        _lastOverpassRequestAt = DateTime.now();
         final request = await client.postUrl(Uri.parse(endpoint))
             .timeout(const Duration(seconds: 8));
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-        request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.224 route-explorer');
+        request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.226 route-explorer');
         request.headers.contentType = ContentType(
           'application', 'x-www-form-urlencoded', charset: 'utf-8',
         );
         request.write('data=${Uri.encodeQueryComponent(query)}');
         final response = await request.close()
             .timeout(const Duration(seconds: 17));
+        if (response.statusCode != HttpStatus.ok) {
+          _endpointPolicy.failed(
+            endpoint,
+            now: DateTime.now(),
+            httpStatus: response.statusCode,
+            retryAfter: response.headers.value(HttpHeaders.retryAfterHeader),
+          );
+          failureRecorded = true;
+          throw HttpException('Overpass HTTP ${response.statusCode}');
+        }
         final body = await response.transform(utf8.decoder).join()
             .timeout(const Duration(seconds: 17));
         DataUsageService.instance.record(
@@ -776,16 +815,17 @@ class RouteExplorerService extends ChangeNotifier {
           received: utf8.encode(body).length,
           sent: utf8.encode(query).length,
         );
-        if (response.statusCode != HttpStatus.ok) {
-          throw HttpException('Overpass ${response.statusCode}');
-        }
         final payload = jsonDecode(body);
         if (payload is! Map || payload['elements'] is! List) {
           throw const FormatException('Resposta de pontos inválida');
         }
+        _endpointPolicy.succeeded(endpoint);
         return body;
       } catch (error) {
         lastFailure = error;
+        if (!failureRecorded) {
+          _endpointPolicy.failed(endpoint, now: DateTime.now());
+        }
       } finally {
         client.close(force: true);
       }
@@ -835,6 +875,7 @@ class RouteExplorerService extends ChangeNotifier {
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
         distanceMeters: distanceMeters,
+        fetchedAt: DateTime.now(),
         address: metadata.address,
         openingHours: metadata.openingHours,
         phone: metadata.phone,
@@ -1111,6 +1152,9 @@ class RouteExplorerService extends ChangeNotifier {
       _offlineUpdatedAt = activeOfflinePackage?.updatedAt ??
           (offlineUpdatedAt == null ? null : DateTime.tryParse(offlineUpdatedAt));
       _lastSource = decoded['lastSource'] as String? ?? 'none';
+      if (_results.isNotEmpty && _lastSource != 'offline') {
+        _markResultsAsCache();
+      }
       _statusMessage = decoded['statusMessage'] as String?;
     } catch (_) {
       // Ignora restauracao corrompida.

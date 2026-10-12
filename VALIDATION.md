@@ -1,11 +1,32 @@
-# Validação Vigia IA 1.0.224+224
+# Validação Vigia IA 1.0.226+226
+
+## Android APK #187 — regressão tratada na 1.0.226
+
+O log `Vigia-IA-Android-APK-187-logs.zip` mostra que a versão efetivamente analisada foi 1.0.224+224. O `flutter analyze --fatal-infos --fatal-warnings` parou com **3 infos** `curly_braces_in_flow_control_structures`: `map_monitoring_screen.dart:1415`, `map_destination_ranking.dart:52` e `map_destination_ranking.dart:174`. Todas as três foram corrigidas com blocos `{ ... }` sem mudar a lógica. A compilação Android **não ocorreu** nesse workflow: seus passos posteriores não foram executados. O aviso do upload de cobertura inexistente é consequência de os testes não terem iniciado.
+
+- [x] Alteração das três guardas com blocos Dart e preservação do fluxo.
+- [x] Regressão Python `tool/test_build187_lints.py` inclui a reprodução das três infrações e mutações negativas.
+- [ ] `flutter analyze`, `flutter test`, APK e testes físicos: requerem execução no CI/SDK externo.
+- [ ] Confirmar no log do próximo workflow `version=1.0.226+226` antes de avaliar sua aprovação.
+
+
+## POIs e primeiro ciclo de teste Android (1.0.223 a 1.0.226)
+
+- [x] Código de origem, cache/proveniência, taxa de requisição e backoff HTTP estruturados; contratos Python e versionamento verificados localmente.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, suíte `flutter test` completa e APK: **CI pendente**, Flutter e Android SDK ausentes localmente.
+- [ ] Validar no Android após o build do GitHub Actions: uma posição GPS com mais de 2 min não deve parecer atual; bússola/altitude/clima mostram validade.
+- [ ] Testar pesquisa `Santo Antônio`, `Iguatama`, `Divinópolis`, região distante; salvos/recentes offline, teclado e resultados duplicados.
+- [ ] Abrir posto/hospital/camping sem nome ou sem horário. Verificar fonte, data, distância **em linha reta** e aviso de serviço não verificado.
+- [ ] Fazer consulta Overpass sem rede, esperar HTTP 429/504 com ambiente controlado e verificar cache preservado; simulações Dart não substituem teste de rede real.
+- [ ] Tela 320/360 dp, fator de texto 1,5, teclado, modais sem grandes vazios; reformulação ampla do HUD permanece na 1.0.226.
+
 
 ## Pesquisa de localidades 1.0.224
 
 - [x] Verificações estruturais e sintáticas locais dos arquivos editados; testes Python de contratos do projeto.
 - [ ] `flutter analyze --fatal-infos --fatal-warnings` pendente no CI, SDK Flutter ausente localmente.
 - [ ] `flutter test test/map_destination_ranking_test.dart` e suíte completa pendentes no CI.
-- [ ] `flutter build apk` e inspeção em aparelho pendentes no CI e lote manual da 1.0.225.
+- [ ] `flutter build apk` e inspeção em aparelho pendentes no CI e lote manual da 1.0.226.
 - [ ] Validar na rede respostas concretas para `Santo Antônio`, `Iguatama`, `Divinópolis` e uma localidade remota, usando as fontes de dados que estiverem disponíveis naquele momento.
 - [ ] Abrir teclado em 320/360 dp e fator de texto 1,5, observar rolagem e eventuais cortes; ajuste amplo previsto na 1.0.226.
 - [ ] Avaliar conformidade e escala do uso do Nominatim público, incluindo possibilidade de substituição remota do provedor antes de distribuição ampla.
@@ -13,7 +34,7 @@
 
 ## Confiabilidade das leituras 1.0.223
 
-Verificar por `flutter test test/map_telemetry_policy_test.dart test/map_weather_policy_test.dart`, além de `flutter analyze` e `flutter test` integrais. Em Android real, manter 2 minutos sem fix GPS: topo e detalhes não podem indicar posição/precisão atuais; testar sensor de bússola ausente, meteorologia cacheada, modo avião e progresso do percurso. O teste manual completo será feito na 1.0.225 a pedido do usuário. **Sem SDK Flutter local, estes itens ainda estão pendentes.**
+Verificar por `flutter test test/map_telemetry_policy_test.dart test/map_weather_policy_test.dart`, além de `flutter analyze` e `flutter test` integrais. Em Android real, manter 2 minutos sem fix GPS: topo e detalhes não podem indicar posição/precisão atuais; testar sensor de bússola ausente, meteorologia cacheada, modo avião e progresso do percurso. O teste manual completo será feito na 1.0.226 a pedido do usuário. **Sem SDK Flutter local, estes itens ainda estão pendentes.**
 
 ## Estabilização 1.0.222
 

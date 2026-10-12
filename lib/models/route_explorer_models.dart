@@ -60,6 +60,7 @@ class RouteExplorerResult {
     required this.longitude,
     required this.distanceMeters,
     this.source = 'online',
+    this.fetchedAt,
     this.address,
     this.openingHours,
     this.phone,
@@ -76,6 +77,8 @@ class RouteExplorerResult {
   final double longitude;
   final double distanceMeters;
   final String source;
+  /// Momento da consulta/download, não da última atualização do dado no OSM.
+  final DateTime? fetchedAt;
   final String? address;
   final String? openingHours;
   final String? phone;
@@ -104,6 +107,7 @@ class RouteExplorerResult {
       longitude: longitude,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       source: source ?? this.source,
+      fetchedAt: fetchedAt,
       address: address,
       openingHours: openingHours,
       phone: phone,
@@ -122,6 +126,7 @@ class RouteExplorerResult {
         'longitude': longitude,
         'distanceMeters': distanceMeters,
         'source': source,
+        if (fetchedAt != null) 'fetchedAt': fetchedAt!.toIso8601String(),
         if (_hasText(address)) 'address': address,
         if (_hasText(openingHours)) 'openingHours': openingHours,
         if (_hasText(phone)) 'phone': phone,
@@ -144,6 +149,7 @@ class RouteExplorerResult {
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       distanceMeters: (json['distanceMeters'] as num?)?.toDouble() ?? 0,
       source: json['source'] as String? ?? 'online',
+      fetchedAt: DateTime.tryParse(json['fetchedAt']?.toString() ?? ''),
       address: _nullableText(json['address']),
       openingHours: _nullableText(json['openingHours']),
       phone: _nullableText(json['phone']),

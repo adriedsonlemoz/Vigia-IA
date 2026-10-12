@@ -1,3 +1,19 @@
+## 1.0.226+226 — 2026-10-12
+
+- Buildfix do workflow **Android APK #187**: chaves explícitas em três condições Dart (uma em `map_monitoring_screen.dart`, duas em `map_destination_ranking.dart`) para eliminar `curly_braces_in_flow_control_structures` sob `flutter analyze --fatal-infos --fatal-warnings`.
+- Teste preventivo reproduz as três estruturas do log e verifica os blocos corrigidos sem substituir o analisador Dart.
+- Nenhum comportamento de navegação, pesquisa, POIs, câmeras, IA, áudio ou sensores foi intencionalmente alterado. Mantidas as mudanças da versão 1.0.225.
+- O log de referência #187 indica **1.0.224+224** no checkout; a correção foi incorporada à base mais nova 1.0.225+225 e incrementada para 1.0.226+226.
+- O plano amplo de reorganização visual previsto para a versão 1.0.226 foi transferido para **1.0.227+227**, após confirmação do build.
+
+## 1.0.225+225 — 2026-10-12
+
+- POIs recebem instante de consulta `fetchedAt`, persistido e preservado em cache/pacotes offline. Valores antigos sem instante exibem idade desconhecida, nunca são marcados como dados frescos.
+- Restauração e falha de rede identificam explicitamente `cache`, não “Online”; origem `OSM mapeado`, `Cache local (OSM)` ou `Pacote offline` nas fichas.
+- Backoff isolado por endpoint Overpass após HTTP 429, 503, 504 ou falha de rede, incluindo suporte a Retry-After; limite de duas tentativas por consulta e espera mínima de 2 s entre solicitações. Resultados parciais ou anteriores continuam acessíveis.
+- Fichas compactas de POI identificam distância **em linha reta**, data da consulta e ausência de confirmação de atendimento, água potável, abertura e acesso; títulos sem `name` deixam explícito “sem nome”.
+- Novos testes Dart unitários para backoff, Retry-After, provenance, JSON legado e títulos genéricos; contratos preventivos Python complementares. Flutter analyze/test/build ainda não executados localmente.
+
 ## 1.0.224+224 — 2026-10-12
 
 - Pesquisa Nominatim usa nome próprio/namedetails em vez de município do endereço no título; migração dos títulos armazenados anteriormente.
@@ -13,7 +29,7 @@
 - Direção GPS e rota dependem de localização recente; bússola física com timestamp futuro/antigo é ignorada no fallback.
 - Altitude atual separada do perfil histórico; velocidade e precisão dependem da amostra vigente e da fonte.
 - Clima online e ESP32 distinguem leituras atuais e antigas; resumo falado não reaproveita dados online vencidos.
-- Testes unitários de fronteira temporal e fontes, atualização de metadados; testes manuais agrupados para a versão 1.0.225.
+- Testes unitários de fronteira temporal e fontes, atualização de metadados; testes manuais agrupados para a versão 1.0.226.
 - Flutter analyze, testes Dart e geração de APK **ainda não executados localmente**.
 
 ## 1.0.222+222 — 2026-10-12

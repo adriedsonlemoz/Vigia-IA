@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/route_explorer_models.dart';
+import '../services/route_explorer_poi_provenance.dart';
 
 class MapPoiDetailsSheet extends StatelessWidget {
   const MapPoiDetailsSheet({
@@ -33,7 +36,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
     );
   }
 
-  String get _sourceLabel => item.source == 'offline' ? 'Offline' : 'Online';
+  String get _sourceLabel => RouteExplorerPoiProvenance.sourceLabel(item);
 
   String get _coordinates =>
       '${item.latitude.toStringAsFixed(5)}, ${item.longitude.toStringAsFixed(5)}';
@@ -126,7 +129,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
                                 ),
                                 _InfoPill(
                                   icon: Icons.route_outlined,
-                                  text: distanceLabel,
+                                  text: '$distanceLabel em linha reta',
                                 ),
                                 _InfoPill(
                                   icon: item.source == 'offline'
@@ -146,6 +149,11 @@ class MapPoiDetailsSheet extends StatelessWidget {
                           icon: const Icon(Icons.close_rounded),
                         ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    RouteExplorerPoiProvenance.ageLabel(item),
+                    style: theme.textTheme.bodySmall,
                   ),
                   if (item.subtitle.trim().isNotEmpty) ...[
                     const SizedBox(height: 16),
@@ -226,9 +234,7 @@ class MapPoiDetailsSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    item.hasExtraDetails
-                        ? 'As informações são fornecidas pela origem do ponto e podem estar incompletas ou desatualizadas.'
-                        : 'Este ponto não possui informações adicionais na fonte atual.',
+                    RouteExplorerPoiProvenance.serviceDisclaimer,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -267,7 +273,19 @@ class MapPoiDetailsSheet extends StatelessWidget {
           ],
         );
 
-    if (centered) return SafeArea(child: content(null));
+    if (centered) {
+      final view = MediaQuery.of(context);
+      final maxAvailable = math.max(240.0, view.size.height -
+          view.padding.vertical - view.viewInsets.bottom - 58);
+      final desired = 330.0 + details.length * 56.0 +
+          (item.amenities.isEmpty ? 0 : 88.0);
+      return SafeArea(
+        child: SizedBox(
+          height: math.min(desired, maxAvailable * 0.83),
+          child: content(null),
+        ),
+      );
+    }
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,

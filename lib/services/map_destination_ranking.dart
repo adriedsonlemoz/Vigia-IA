@@ -49,7 +49,9 @@ class MapDestinationRanking {
     MapDestinationSearchResult item,
   ) {
     if (!item.id.startsWith('nominatim:') &&
-        !item.id.startsWith('reverse:')) return item;
+        !item.id.startsWith('reverse:')) {
+      return item;
+    }
     final first = item.subtitle.split(',').first.trim();
     if (first.isEmpty || first.length < 2 ||
         first.contains(' · ') || fold(first) == fold(item.title)) {
@@ -171,7 +173,9 @@ class MapDestinationRanking {
     final type = pieces[pieces.length - 2].toLowerCase();
     final number = pieces.last;
     if (!const <String>{'node', 'way', 'relation', 'n', 'w', 'r'}.contains(type) ||
-        int.tryParse(number) == null) return null;
+        int.tryParse(number) == null) {
+      return null;
+    }
     final normalized = switch (type) {
       'n' => 'node',
       'w' => 'way',

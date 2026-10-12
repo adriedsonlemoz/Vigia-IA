@@ -1,4 +1,16 @@
-# Arquitetura — Vigia IA 1.0.224+224
+# Arquitetura — Vigia IA 1.0.226+226
+
+## Buildfix Android APK #187 — 1.0.226
+
+Nenhuma interface pública foi alterada. A guarda de validade de rumo da bússola (`_sensorHeadingDegrees`) e as duas guardas da classificação de destinos (`repairCachedTitle`, `_osmKey`) agora possuem `{}` antes do retorno. Trata-se somente de conformidade com o lint `curly_braces_in_flow_control_structures`; não foram introduzidas dependências, consultas de rede ou operações de GPS. O arquivo de 11 mil linhas continua candidato à extração incremental, mas a correção não modifica a arquitetura da tela. O cronograma de HUD contextual foi adiado um build para que não seja misturado com o reparo da análise estática.
+
+
+## POIs, proveniência e política Overpass 1.0.225
+
+`RouteExplorerService` preserva os resultados até uma tentativa bem-sucedida e classifica os restaurados/fallback sem internet como `cache`. `RouteExplorerResult.fetchedAt` registra **quando o aplicativo consultou** o objeto, não sua edição no OSM nem horário de funcionamento; nulo para legado sem data. A cópia para `OfflinePoiPackage` mantém a data original de consulta, evitando que salvar o pacote reinicie a idade dos dados. O timestamp do pacote continua independente. `RouteExplorerPoiProvenance` fornece rótulos visíveis, e a ficha explicita a distância em linha reta e a impossibilidade de confirmar serviços sem contato externo. Alertas de locais são baseados em dados mapeados, não atendimento verificado.
+
+`RouteExplorerOverpassPolicy` protege endpoints independentemente: espera conservadora de 3 min (429), 2 min (504), 1 min (503) ou 30 s (transporte/outros), ampliada por `Retry-After` até 1 h quando informado. O serviço chama a política após falhas/êxitos reais e espaça requisições ao Overpass por pelo menos 2 s dentro da instância local. Esses limites não garantem cotas globais ou disponibilidade dos servidores públicos. Consultas permanecem progressivas por raio, sem aumentar automaticamente uma consulta falha. O resultado parcial é identificado como tal; a origem não é confundida com um serviço efetivamente aberto. Não foram adicionadas dependências ou motores de roteamento offline.
+
 
 ## Pesquisa de destinos 1.0.224 · normalização e classificação isoladas
 

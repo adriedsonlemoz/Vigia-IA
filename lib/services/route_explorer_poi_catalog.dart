@@ -185,16 +185,16 @@ class RouteExplorerPoiCatalog {
     final name = _text(tags['name']);
     if (name != null) return name;
     return switch (category) {
-      RouteExplorerCategory.fuel => 'Posto próximo',
-      RouteExplorerCategory.restaurant => 'Restaurante próximo',
-      RouteExplorerCategory.stop => 'Parada próxima',
-      RouteExplorerCategory.workshop => 'Oficina próxima',
-      RouteExplorerCategory.health => 'Ponto de saúde',
-      RouteExplorerCategory.water => 'Água/banheiro',
-      RouteExplorerCategory.camping => 'Camping próximo',
-      RouteExplorerCategory.viewpoint => 'Mirante próximo',
-      RouteExplorerCategory.waterfall => 'Cachoeira próxima',
-      RouteExplorerCategory.market => 'Mercado próximo',
+      RouteExplorerCategory.fuel => 'Posto sem nome',
+      RouteExplorerCategory.restaurant => 'Restaurante sem nome',
+      RouteExplorerCategory.stop => 'Parada sem nome',
+      RouteExplorerCategory.workshop => 'Oficina sem nome',
+      RouteExplorerCategory.health => 'Serviço de saúde sem nome',
+      RouteExplorerCategory.water => 'Água/banheiro sem nome',
+      RouteExplorerCategory.camping => 'Camping sem nome',
+      RouteExplorerCategory.viewpoint => 'Mirante sem nome',
+      RouteExplorerCategory.waterfall => 'Cachoeira sem nome',
+      RouteExplorerCategory.market => 'Mercado sem nome',
       RouteExplorerCategory.riverBridge => 'Rio ou ponte',
     };
   }
@@ -212,7 +212,7 @@ class RouteExplorerPoiCatalog {
         RouteExplorerCategory.restaurant => 'Alimentação',
         RouteExplorerCategory.stop => 'Parada',
         RouteExplorerCategory.workshop => 'Suporte mecânico',
-        RouteExplorerCategory.health => 'Atendimento',
+        RouteExplorerCategory.health => 'Saúde mapeada',
         RouteExplorerCategory.water => 'Água ou banheiro',
         RouteExplorerCategory.camping => 'Pernoite/camping',
         RouteExplorerCategory.viewpoint => 'Ponto panorâmico',

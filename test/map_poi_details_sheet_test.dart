@@ -4,6 +4,39 @@ import 'package:vigiaia/models/route_explorer_models.dart';
 import 'package:vigiaia/widgets/map_poi_details_sheet.dart';
 
 void main() {
+  testWidgets('ficha sem metadados exibe origem e aviso de serviço não verificado',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const item = RouteExplorerResult(
+      id: 'node-99-fuel',
+      category: RouteExplorerCategory.fuel,
+      title: 'Posto sem nome',
+      subtitle: 'Combustível',
+      latitude: -20,
+      longitude: -45,
+      distanceMeters: 800,
+      source: 'cache',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: MapPoiDetailsSheet(
+          item: item,
+          icon: Icons.local_gas_station,
+          distanceLabel: '800 m',
+          centered: true,
+          onNavigate: () {},
+          onShowOnMap: () {},
+        ),
+      ),
+    ));
+    expect(find.text('Posto sem nome'), findsOneWidget);
+    expect(find.text('800 m em linha reta'), findsOneWidget);
+    expect(find.text('Cache local (OSM)'), findsOneWidget);
+    expect(find.text('Data da consulta desconhecida'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('painel completo mostra detalhes do POI e ação de navegação',
       (tester) async {
     var navigateCount = 0;
