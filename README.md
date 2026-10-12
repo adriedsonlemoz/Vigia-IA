@@ -1,5 +1,7 @@
 # Vigia IA
 
+**1.0.232+232 (compatibilidade do Android APK #191):** o `flutter analyze` da versão anterior detectou uma condicional sem bloco na recuperação de rotas offline. Esta entrega coloca o retorno entre chaves, sem alterar o comportamento, e adiciona teste preventivo. A versão 1.0.231 havia passado na validação Python do projeto, mas não no Flutter Analyze, portanto testes Flutter e APK ainda precisam passar no CI. O teste manual das quatro versões 228 a 231 continua pendente antes da refatoração.
+
 **1.0.231+231 (offline e autonomia):** o mapa diferencia local fora dos limites, nível de zoom além dos detalhes baixados e MBTiles sem limites conhecidos; corredores de trajeto deixam claro que o retângulo do arquivo não significa cobertura completa. O monitor de conectividade usa sondagens de 15 segundos conectado e 60 segundos desconectado; o fallback da navegação deixa de sondar a rede uma segunda vez enquanto offline, mas preserva a rota conhecida e a recuperação quando a conectividade voltar. Uso em modo avião, autonomia real, Flutter analyze/test e APK desta versão ainda precisam de validação no CI/aparelho. Os pacotes offline não fazem recálculo viário offline.
 
 **1.0.230+230 (Bike, sensores ESP32 e rádio):** o monitor de pneus mantém o limite configurado do módulo que realmente mediu cada pneu, inclusive quando sensores de ESP32 diferentes são consolidados. O HUD diferencia métrica ausente de zero e não gera alerta para sensor de pressão inexistente. O rádio limita polls simultâneos e só marca uma URL como saudável se ela corresponder à reprodução confirmada. O padrão 30 PSI permanece como valor inicial editável, não recomendação universal. Meteorologia, catálogo de rádios, favoritos, recents, navegação e câmeras foram preservados. Flutter analyze/test/build e equipamento ESP32 real pendentes.
@@ -34,7 +36,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.231+231`
+> **Versão atual:** `1.0.232+232`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

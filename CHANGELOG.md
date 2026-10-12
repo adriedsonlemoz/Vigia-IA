@@ -1,3 +1,10 @@
+## 1.0.232+232 — 2026-10-12
+
+- Android APK #191: `flutter analyze --fatal-infos --fatal-warnings` detectou 1 `curly_braces_in_flow_control_structures` na linha 73 de `lib/screens/map_monitoring_offline_support.dart`, na guarda que impede retentativas offline. O fluxo foi preservado e o `return` recebeu chaves.
+- Nova regressão preventiva `tool/check_build191_lints.py` com teste de mutação para impedir o retorno dessa falha, integrada a `tool/verify_project.sh`.
+- Versionamento, catálogo Novidades, tela Sobre/Mudanças e User-Agents sincronizados. Nenhum módulo funcional removido, sem alteração de lógica de GPS/rede/MBTiles/rádio/IA.
+- Flutter Analyze, Flutter Test e build Android da 1.0.232 continuam pendentes do CI, e o teste físico acumulado vem antes da refatoração gradual.
+
 ## 1.0.231+231 — 2026-10-12
 
 - Cobertura MBTiles representada por política explícita: sem pacote, bounds desconhecidos, fora dos limites, fora da faixa de zoom, dentro de região possível e corredor não verificável apenas pelo bounding box. Não afirma que todos os tiles existem.

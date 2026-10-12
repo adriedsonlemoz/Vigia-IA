@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.231',
+          version: '1.0.232',
           current: true,
+          changes: [
+            'Recuperação de rotas offline mais estável no Android.',
+            'Preparação para testar o ciclo de navegação e mapas no celular.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.231',
           changes: [
             'Mapas offline deixam claras as regiões e os níveis de detalhe disponíveis.',
             'Menos consultas de rede sem internet; rotas conhecidas são preservadas.',
@@ -2084,8 +2092,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.231',
+          version: '1.0.232',
           current: true,
+          changes: [
+            'Recuperação de rotas offline mais estável no Android.',
+            'Preparação para testar o ciclo de navegação e mapas no celular.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.231',
           changes: [
             'Mapas offline deixam claras as regiões e os níveis de detalhe disponíveis.',
             'Menos consultas de rede sem internet; rotas conhecidas são preservadas.',

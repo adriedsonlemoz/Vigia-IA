@@ -1,4 +1,9 @@
-# Arquitetura — Vigia IA 1.0.231+231
+# Arquitetura — Vigia IA 1.0.232+232
+
+## CI Android APK #191 — 1.0.232
+
+- A guarda de `MapMonitoringScreen._scheduleRouteRecovery` (parte `map_monitoring_offline_support.dart`) usa bloco explícito `{ return; }` para obedecer `curly_braces_in_flow_control_structures`. A expressão lógica e o temporizador de recuperação não foram alterados.
+- `tool/check_build191_lints.py` valida a guarda específica que escapou das verificações locais na 1.0.231; `tool/test_build191_lints.py` verifica por mutação que a falta das chaves será detectada. Não substitui `flutter analyze`/`flutter test`.
 
 ## Offline e autonomia — 1.0.231
 

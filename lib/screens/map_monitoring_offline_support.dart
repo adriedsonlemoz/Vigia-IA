@@ -70,7 +70,9 @@ extension _MapMonitoringOfflineSupport on _MapMonitoringScreenState {
     // O monitor de conectividade ja verifica a rede e dispara o listener.
     // Nao duplique consultas DNS enquanto o aparelho estiver offline.
     if (_connectivity.isOffline ||
-        _offlineMaps.mode == OfflineMapMode.offline) return;
+        _offlineMaps.mode == OfflineMapMode.offline) {
+      return;
+    }
     _routeRecoveryTimer = Timer(delay, () {
       unawaited(_attemptScheduledRouteRecovery());
     });

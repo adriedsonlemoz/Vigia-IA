@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.231+231
+# Validação Vigia IA 1.0.232+232
+
+## Android APK #191 — estabilização da 1.0.232
+
+- [x] Log #191 lido: checkout e verificação preventiva da 1.0.231 aprovados; analyzer falhou por 1 info `curly_braces_in_flow_control_structures` em `map_monitoring_offline_support.dart:73:54`.
+- [x] Bloco de retorno adicionado sem alteração do predicado nem do agendamento do timer.
+- [x] Regressão automatizada específica e mutação negativa adicionadas ao verificador local.
+- [ ] `flutter analyze`, testes Dart/Flutter, Gradle/APK e assinatura da 1.0.232 ainda devem passar no novo workflow.
+- [ ] Teste acumulado das versões 228 a 231 em celular real, antes da refatoração gradual.
 
 ## Offline e autonomia — 1.0.231 (4/4 do ciclo)
 

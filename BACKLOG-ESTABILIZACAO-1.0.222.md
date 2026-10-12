@@ -1,4 +1,4 @@
-# Backlog Vigia IA após 1.0.231
+# Backlog Vigia IA após 1.0.232
 
 | Prioridade | Versão prevista | Ação | Aceitação | Pendência |
 |---|---|---|---|---|
@@ -56,3 +56,9 @@ Não afirmar sucesso do APK 1.0.221/#185 nem da 1.0.222 sem artefato/log. Priori
 - **Quarto marco implementado em código:** avisos MBTiles por limite/zoom/origem incerta, cadência de rede adaptada a offline e ausência de sondagem duplicada da recuperação de rotas. Não há recálculo offline por estradas nem confirmação de todos os tiles de um corredor.
 - **Próxima ação obrigatória:** compilar e testar 1.0.231 no GitHub Actions e testar no aparelho as versões 1.0.228–1.0.231, inclusive modo avião e bateria. Corrigir regressões com incrementos sequenciais se necessário.
 - **1.0.232+:** refatoração gradual da tela do mapa após validação no celular, protegendo módulos opcionais e priorizando cicloviagem.
+
+## Build Android APK #191 e teste físico
+
+- **1.0.231:** CI aprovou as verificações preventivas e falhou no analyzer por um `if` sem chaves em `map_monitoring_offline_support.dart:73`. Flutter Test e APK não rodaram nesse workflow.
+- **1.0.232:** aplicação isolada do lint e novo teste negativo preventivo, sem alterar a lógica de recuperação da rota.
+- **Próximo marco:** confirmar CI de 1.0.232, instalar APK e validar o ciclo 228–231 antes de iniciar qualquer refatoração gradual (a partir de 1.0.233, se necessário).

@@ -5,6 +5,6 @@
   "namespace": "com.vigiaia.app",
   "identityStatus": "full-vigiaia-technical-identity",
   "notes": "Busca de cidades próximas: Overpass com bbox, espelho, atualização manual e cache recuperável.",
-  "version": "1.0.231",
-  "build": 231
+  "version": "1.0.232",
+  "build": 232
 }
