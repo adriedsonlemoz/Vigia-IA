@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.217+217
+# Validação Vigia IA 1.0.218+218
+
+## Buildfix Android APK #182 — 1.0.218
+
+- [x] Logs analisados: verificação preventiva da 1.0.217 passou, mas `flutter analyze` reportou `curly_braces_in_flow_control_structures` e `use_null_aware_elements` no mapa.
+- [x] Chaves `{}` adicionadas ao retorno antecipado no callback de prévia.
+- [x] Coleção da faixa de navegação adaptada para o elemento null-aware `?recordControl`.
+- [x] Verificador local de regressão ampliado e metadados sincronizados para 1.0.218+218.
+- [ ] Confirmar `flutter analyze`, `flutter test` e geração de APK no novo workflow.
 
 ## Verificações locais da prévia e do planejamento (1.0.217)
 

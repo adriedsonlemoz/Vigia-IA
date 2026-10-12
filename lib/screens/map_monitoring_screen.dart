@@ -2112,7 +2112,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       if (!mounted || serial != _previewSerial ||
           _previewTarget != target ||
           _previewRoutes.isEmpty ||
-          !identical(_previewRoutes[_previewIndex], route)) return;
+          !identical(_previewRoutes[_previewIndex], route)) {
+        return;
+      }
       final plan = _bikeTripPlanner.buildPlan(
         routePoints: route.points,
         routeDistanceMeters: route.distanceMeters,
@@ -10725,7 +10727,7 @@ class _NavigationBanner extends StatelessWidget {
               maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(color: foreground, fontSize: 12,
                 fontWeight: FontWeight.w800))),
-            if (recordControl != null) recordControl!,
+            ?recordControl,
             _navigationSmallButton(
               tooltip: following ? 'Seguindo posição' : 'Seguir minha localização',
               icon: Icons.my_location_rounded,

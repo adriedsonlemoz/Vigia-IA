@@ -2,8 +2,8 @@ class AppMetadata {
   const AppMetadata._();
 
   static const String name = 'Vigia IA';
-  static const String version = '1.0.217';
-  static const int build = 217;
+  static const String version = '1.0.218';
+  static const int build = 218;
   static const String developer = 'Adriedson Lemos';
   static const String pixKey = 'adriedson@outlook.com';
 }

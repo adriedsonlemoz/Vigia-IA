@@ -1,3 +1,9 @@
+## 1.0.218+218 — 2026-10-11
+- Buildfix Android APK #182: adicionadas chaves ao `if` com retorno antecipado em `_refreshPreviewPlan`, eliminando `curly_braces_in_flow_control_structures` na linha 2115 da versão anterior.
+- Aplicada a sintaxe null-aware `?recordControl` no `children` do painel de navegação, eliminando `use_null_aware_elements` na linha 10728 da versão anterior.
+- Mantidas as melhorias de prévia de rota sem ativar navegação, plano da cicloviagem e interface compacta introduzidas na 1.0.217.
+- Versão, build, catálogos, tela Sobre/Mudanças, User-Agents e verificações sincronizados. Novo `flutter analyze`, `flutter test` e APK dependem do GitHub Actions.
+
 ## 1.0.217+217 — 2026-10-11
 - Painel expandido de navegação reduzido: manobra, gravação e controles na mesma faixa; métricas e serviços próximos em linha rolável; padrão minimizado preservado.
 - Prévia de rota e alternativas sem iniciar navegação, voz ou gravação; seleção da alternativa pelo mapa e botão explícito de início.

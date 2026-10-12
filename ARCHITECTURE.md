@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.217+217
+# Arquitetura — Vigia IA 1.0.218+218
+
+## Ajustes de análise estática no mapa — 1.0.218
+
+O retorno antecipado de `_refreshPreviewPlan` mantém o bloqueio de resultados obsoletos com chaves de fluxo explícitas. O elemento opcional `recordControl` agora usa `?recordControl` em uma coleção Flutter, removendo a checagem redundante de nulidade sem mudar a visibilidade do controle ou seus callbacks. Esses dois ajustes tratam exatamente as observações da etapa `flutter analyze` do Android APK #182; a validação real do Android depende de nova execução do CI.
 
 ## Planejamento e prévia separados da navegação — 1.0.217
 

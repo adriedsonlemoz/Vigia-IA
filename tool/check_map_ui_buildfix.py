@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guarda os dois ajustes que desbloqueiam o flutter analyze do APK #179."""
+"""Evita regressões das análises do mapa nos workflows #179 e #182."""
 from pathlib import Path
 import re
 
@@ -15,4 +15,11 @@ for m in re.finditer(r'const\s+TextStyle\s*\(', source):
     closing = following.find(')')
     if closing >= 0 and re.search(r'fontSize\s*:\s*compact\s*\?', following[:closing]):
         raise SystemExit('TextStyle const não pode depender da variável compact.')
-print('Buildfix do mapa #179 validado (const e curingas).')
+# #182: retorno de atualização da prévia deve usar bloco de controle.
+if re.search(r'!identical\(_previewRoutes\[_previewIndex\], route\)\)\s*return\s*;', source):
+    raise SystemExit('Retorno antecipado da prévia deve ter bloco com chaves.')
+if 'if (recordControl != null) recordControl!,' in source:
+    raise SystemExit('Elemento opcional de gravação deve ser null-aware.')
+if '?recordControl,' not in source:
+    raise SystemExit('Elemento null-aware de gravação não encontrado.')
+print('Buildfixes do mapa #179 e #182 validados.')

@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.217',
+          version: '1.0.218',
           current: true,
+          changes: [
+            'Interface do mapa aprimorada para manter a navegação estável.',
+            'Prévia, plano de cicloviagem e controles compactos preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.217',
           changes: [
             'Prévia de rotas e alternativas antes de iniciar a navegação.',
             'Plano de cicloviagem com horários de saída, pausas e chegada prevista.',
@@ -1965,8 +1973,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.217',
+          version: '1.0.218',
           current: true,
+          changes: [
+            'Interface do mapa aprimorada para manter a navegação estável.',
+            'Prévia, plano de cicloviagem e controles compactos preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.217',
           changes: [
             'Prévia de rotas e alternativas antes de iniciar a navegação.',
             'Plano de cicloviagem com horários de saída, pausas e chegada prevista.',
