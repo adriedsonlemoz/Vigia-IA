@@ -5282,7 +5282,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
       context: context,
       maxWidth: 560,
       maxHeightFactor: 0.86,
-      expand: true,
       barrierLabel: 'Fechar pontos próximos',
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) => ListenableBuilder(
@@ -5292,7 +5291,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 final filtered = service.activeResults
                     .where((item) => _matchesPoiFilter(item, filter))
                     .toList(growable: false);
-                return Column(
+                return SizedBox(
+                  height: filtered.isEmpty && !service.loading ? 420 : 650,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
@@ -5311,7 +5312,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                   ),
                                 ),
                                 Text(
-                                  '${service.settings.radiusKm} km · ${service.lastSource == 'offline' ? 'dados offline' : 'busca online'}',
+                                  service.lastSource == 'online' && service.effectiveOnlineRadiusKm != null
+                                      ? '${service.effectiveOnlineRadiusKm} km consultados · online'
+                                      : '${service.settings.radiusKm} km configurados · ${service.lastSource == 'offline' ? 'offline' : 'online'}',
                                   style: Theme.of(sheetContext).textTheme.bodySmall,
                                 ),
                               ],
@@ -5446,7 +5449,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                 ),
                     ),
                   ],
-                );
+                ));
               },
             ),
       ),
@@ -5571,7 +5574,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
     await showMapCenteredDialog<void>(
       context: context,
       maxWidth: 560,
-      maxHeightFactor: 0.90,
+      maxHeightFactor: 0.84,
       expand: true,
       barrierLabel: 'Fechar rádio online',
       builder: (dialogContext) => MapRadioPanel(
@@ -5649,7 +5652,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
         context: context,
         maxWidth: 620,
         maxHeightFactor: 0.90,
-        expand: true,
         barrierLabel: 'Fechar pesquisa no mapa',
         builder: (sheetContext) => StatefulBuilder(
           builder: (sheetContext, setSheetState) => ListenableBuilder(
@@ -5660,7 +5662,9 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 final items = showingSuggestions
                     ? service.suggestions
                     : service.results;
-                return Column(
+                return SizedBox(
+                  height: items.isEmpty && !service.loading ? 470 : 690,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
@@ -5860,6 +5864,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     onTap: () {
+                                      unawaited(service.rememberRecentPlace(item));
                                       Navigator.of(sheetContext).pop();
                                       _focusSearchResult(item);
                                     },
@@ -5867,6 +5872,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                                       icon: const Icon(Icons.navigation_rounded, size: 17),
                                       label: const Text('Navegar'),
                                       onPressed: () {
+                                        unawaited(service.rememberRecentPlace(item));
                                         Navigator.of(sheetContext).pop();
                                         unawaited(_previewRouteToSearchResult(item));
                                       },
@@ -5886,7 +5892,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         ),
                       ),
                   ],
-                );
+                ));
               },
             ),
         ),

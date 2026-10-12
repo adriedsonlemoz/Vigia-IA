@@ -47,6 +47,7 @@ class RouteExplorerService extends ChangeNotifier {
   String? _error;
   String? _statusMessage;
   String _lastSource = 'none';
+  int? _effectiveOnlineRadiusKm;
   RouteExplorerSettings _settings = const RouteExplorerSettings();
   List<RouteExplorerResult> _results = const <RouteExplorerResult>[];
   List<RouteExplorerResult> _offlineResults = const <RouteExplorerResult>[];
@@ -72,6 +73,7 @@ class RouteExplorerService extends ChangeNotifier {
   String? get error => _error;
   String? get statusMessage => _statusMessage;
   String get lastSource => _lastSource;
+  int? get effectiveOnlineRadiusKm => _effectiveOnlineRadiusKm;
   RouteExplorerSettings get settings => _settings;
   List<RouteExplorerResult> get results => List<RouteExplorerResult>.unmodifiable(_results);
   List<RouteExplorerResult> get activeResults =>
@@ -339,7 +341,7 @@ class RouteExplorerService extends ChangeNotifier {
       _lastSource = 'online';
       _statusMessage = onlineResults.isEmpty
           ? 'Nenhum local compatível encontrado neste raio.'
-          : 'Busca online concluída.';
+          : _statusMessage ?? 'Busca online concluída.';
       _pruneDeliveredAlerts(onlineResults);
       if (saveAsOffline) {
         await _saveOfflinePackageFromResults(
@@ -365,8 +367,12 @@ class RouteExplorerService extends ChangeNotifier {
           return offline;
         }
       }
-      _error = error.toString().replaceFirst('Exception: ', '');
-      _statusMessage = null;
+      _error = error.toString()
+          .replaceFirst('Exception: ', '')
+          .replaceFirst('Bad state: ', '');
+      _statusMessage = _results.isEmpty
+          ? 'Não foi possível consultar os servidores de pontos agora.'
+          : 'Não foi possível atualizar. Mantendo os últimos pontos disponíveis.';
       return _results;
     } finally {
       _loading = false;
@@ -680,93 +686,166 @@ class RouteExplorerService extends ChangeNotifier {
     }
   }
 
+  /// Pesquisa em fases para evitar uma consulta nwr enorme e minimizar 504.
+  /// Se alguma fase retornar resultados, falhas posteriores não os apagam.
   Future<List<RouteExplorerResult>> _fetchOnline(MapRoutePoint current) async {
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
-    try {
-      final query = _buildOverpassQuery(
-        latitude: current.latitude,
-        longitude: current.longitude,
-        radiusMeters: _settings.radiusKm * 1000,
-        categories: _settings.categories,
-      );
-      final request = await client.postUrl(
-        Uri.parse('https://overpass-api.de/api/interpreter'),
-      );
-      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.218');
-      request.headers.contentType = ContentType.parse(
-        'application/x-www-form-urlencoded; charset=utf-8',
-      );
-      request.write('data=${Uri.encodeQueryComponent(query)}');
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      DataUsageService.instance.record(
-        DataUsageModule.nearby,
-        received: utf8.encode(body).length,
-        sent: utf8.encode(query).length,
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException(
-          'Falha ao consultar locais úteis (${response.statusCode}).',
+    final requestedKm = _settings.radiusKm;
+    final radii = <int>{
+      if (requestedKm > 5) 5,
+      if (requestedKm > 10) 10,
+      requestedKm,
+    }.toList()..sort();
+    final collected = <RouteExplorerResult>[];
+    final seen = <String>{};
+    Object? lastFailure;
+    var effectiveRadius = 0;
+    for (final radiusKm in radii) {
+      try {
+        final body = await _fetchPoiResponse(
+          latitude: current.latitude,
+          longitude: current.longitude,
+          radiusMeters: radiusKm * 1000,
+          categories: _settings.categories,
+          nodesOnly: radiusKm <= 5,
         );
-      }
-      final decoded = jsonDecode(body) as Map<String, dynamic>;
-      final rawElements = decoded['elements'] as List? ?? const <Object>[];
-      final origin = LatLng(current.latitude, current.longitude);
-      final results = <RouteExplorerResult>[];
-      final seen = <String>{};
-      for (final raw in rawElements) {
-        if (raw is! Map<String, dynamic>) continue;
-        final coordinates = _readCoordinates(raw);
-        if (coordinates == null) continue;
-        final tags = (raw['tags'] as Map?)?.map(
-              (key, value) => MapEntry(key.toString(), value.toString()),
-            ) ??
-            const <String, String>{};
-        final metadata = RouteExplorerPoiCatalog.metadataFor(tags);
-        if (metadata == null ||
-            !_settings.categories.contains(metadata.category)) {
-          continue;
+        effectiveRadius = radiusKm;
+        final results = _parseOnlinePoi(body, current);
+        for (final item in results) {
+          if (seen.add(item.id)) collected.add(item);
         }
-        final category = metadata.category;
-        if (_settings.searchAheadWhenMoving && !_isAheadOrNearby(current, coordinates)) {
-          continue;
-        }
-        final distanceMeters = _distance.as(
-          LengthUnit.Meter,
-          origin,
-          coordinates,
-        );
-        final title = metadata.title;
-        final uniqueKey =
-            '${category.name}:${title.toLowerCase()}:${coordinates.latitude.toStringAsFixed(4)}:${coordinates.longitude.toStringAsFixed(4)}';
-        if (!seen.add(uniqueKey)) continue;
-        results.add(
-          RouteExplorerResult(
-            id:
-                '${raw['type'] ?? 'item'}-${raw['id'] ?? title.hashCode}-${category.name}',
-            category: category,
-            title: title,
-            subtitle: metadata.subtitle,
-            latitude: coordinates.latitude,
-            longitude: coordinates.longitude,
-            distanceMeters: distanceMeters,
-            address: metadata.address,
-            openingHours: metadata.openingHours,
-            phone: metadata.phone,
-            website: metadata.website,
-            operatorName: metadata.operatorName,
-            amenities: metadata.amenities,
-          ),
-        );
+        // Primeiro disponibiliza os pontos próximos. Amplia apenas quando
+        // o resultado é escasso; a ação Atualizar permite nova tentativa.
+        if (collected.length >= 12) { break; }
+      } catch (error) {
+        lastFailure = error;
+        // Se a instância falhou até para um raio pequeno, não insistir com
+        // requisições cada vez maiores na mesma atualização.
+        break;
       }
-      results.sort(
-        (a, b) => a.distanceMeters.compareTo(b.distanceMeters),
-      );
-      return _prioritizeCategoryDiversity(results);
-    } finally {
-      client.close(force: true);
     }
+    if (effectiveRadius == 0 && collected.isEmpty && lastFailure != null) {
+      throw StateError('Serviço de pontos temporariamente indisponível. '
+          'Confira a internet ou tente Atualizar novamente. ($lastFailure)');
+    }
+    _effectiveOnlineRadiusKm = effectiveRadius == 0 ? null : effectiveRadius;
+    _statusMessage = effectiveRadius < requestedKm
+        ? 'Exibindo pontos até $effectiveRadius km. Ampliação pode ser tentada novamente.'
+        : 'Pontos consultados até $effectiveRadius km.';
+    collected.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    return _prioritizeCategoryDiversity(collected);
+  }
+
+  Future<String> _fetchPoiResponse({
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+    required Set<RouteExplorerCategory> categories,
+    required bool nodesOnly,
+  }) async {
+    final query = _buildOverpassQuery(
+      latitude: latitude,
+      longitude: longitude,
+      radiusMeters: radiusMeters,
+      categories: categories,
+      nodesOnly: nodesOnly,
+    );
+    const endpoints = <String>[
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.private.coffee/api/interpreter',
+    ];
+    Object? lastFailure;
+    for (final endpoint in endpoints) {
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 7)
+        ..idleTimeout = const Duration(seconds: 10);
+      try {
+        final request = await client.postUrl(Uri.parse(endpoint))
+            .timeout(const Duration(seconds: 8));
+        request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+        request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.219 route-explorer');
+        request.headers.contentType = ContentType(
+          'application', 'x-www-form-urlencoded', charset: 'utf-8',
+        );
+        request.write('data=${Uri.encodeQueryComponent(query)}');
+        final response = await request.close()
+            .timeout(const Duration(seconds: 17));
+        final body = await response.transform(utf8.decoder).join()
+            .timeout(const Duration(seconds: 17));
+        DataUsageService.instance.record(
+          DataUsageModule.nearby,
+          received: utf8.encode(body).length,
+          sent: utf8.encode(query).length,
+        );
+        if (response.statusCode != HttpStatus.ok) {
+          throw HttpException('Overpass ${response.statusCode}');
+        }
+        final payload = jsonDecode(body);
+        if (payload is! Map || payload['elements'] is! List) {
+          throw const FormatException('Resposta de pontos inválida');
+        }
+        return body;
+      } catch (error) {
+        lastFailure = error;
+      } finally {
+        client.close(force: true);
+      }
+    }
+    throw StateError('Servidores de pontos indisponíveis: $lastFailure');
+  }
+
+  List<RouteExplorerResult> _parseOnlinePoi(String body, MapRoutePoint current) {
+    final decoded = jsonDecode(body) as Map<String, dynamic>;
+    final rawElements = decoded['elements'] as List? ?? const <Object>[];
+    final origin = LatLng(current.latitude, current.longitude);
+    final results = <RouteExplorerResult>[];
+    final seen = <String>{};
+    for (final raw in rawElements) {
+      if (raw is! Map<String, dynamic>) continue;
+      final coordinates = _readCoordinates(raw);
+      if (coordinates == null) continue;
+      final tags = (raw['tags'] as Map?)?.map(
+          (key, value) => MapEntry(key.toString(), value.toString()),
+        ) ??
+        const <String, String>{};
+      final metadata = RouteExplorerPoiCatalog.metadataFor(tags);
+      if (metadata == null ||
+        !_settings.categories.contains(metadata.category)) {
+        continue;
+      }
+      final category = metadata.category;
+      if (_settings.searchAheadWhenMoving && !_isAheadOrNearby(current, coordinates)) {
+        continue;
+      }
+      final distanceMeters = _distance.as(
+        LengthUnit.Meter,
+        origin,
+        coordinates,
+      );
+      final title = metadata.title;
+      final uniqueKey =
+        '${category.name}:${title.toLowerCase()}:${coordinates.latitude.toStringAsFixed(4)}:${coordinates.longitude.toStringAsFixed(4)}';
+      if (!seen.add(uniqueKey)) continue;
+      results.add(
+        RouteExplorerResult(
+        id:
+            '${raw['type'] ?? 'item'}-${raw['id'] ?? title.hashCode}-${category.name}',
+        category: category,
+        title: title,
+        subtitle: metadata.subtitle,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        distanceMeters: distanceMeters,
+        address: metadata.address,
+        openingHours: metadata.openingHours,
+        phone: metadata.phone,
+        website: metadata.website,
+        operatorName: metadata.operatorName,
+        amenities: metadata.amenities,
+        ),
+      );
+    }
+    results.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    return results;
   }
 
   List<RouteExplorerResult> _recalculateDistances(
@@ -847,13 +926,16 @@ class RouteExplorerService extends ChangeNotifier {
     required double longitude,
     required int radiusMeters,
     required Set<RouteExplorerCategory> categories,
+    bool nodesOnly = false,
   }) {
-    final buffer = StringBuffer('[out:json][timeout:18];(');
+    final buffer = StringBuffer('[out:json][timeout:14];(');
     for (final category in categories) {
       for (final clause in RouteExplorerPoiCatalog.clausesFor(category)) {
-        buffer.writeln(
-          'nwr(around:$radiusMeters,$latitude,$longitude)$clause;',
-        );
+        if (nodesOnly) {
+          buffer.writeln('node(around:$radiusMeters,$latitude,$longitude)$clause;');
+        } else {
+          buffer.writeln('nwr(around:$radiusMeters,$latitude,$longitude)$clause;');
+        }
       }
     }
     buffer.write(');out center 160;');

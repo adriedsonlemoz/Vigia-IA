@@ -21,8 +21,8 @@ class MapDestinationSearchService extends ChangeNotifier {
   static final MapDestinationSearchService instance =
       MapDestinationSearchService._();
 
-  static const double nearbyRadiusKm = 180;
-  static const double quickNearbyRadiusKm = 65;
+  static const double nearbyRadiusKm = 90;
+  static const double quickNearbyRadiusKm = 35;
   static const Duration nearbyRefreshAge = Duration(days: 3);
   static const Duration cacheRetention = Duration(days: 60);
   static const int maximumSuggestions = 18;
@@ -43,6 +43,8 @@ class MapDestinationSearchService extends ChangeNotifier {
   List<MapDestinationSearchResult> _knownPlaces =
       const <MapDestinationSearchResult>[];
   List<MapDestinationSearchResult> _savedPlaces =
+      const <MapDestinationSearchResult>[];
+  List<MapDestinationSearchResult> _recentPlaces =
       const <MapDestinationSearchResult>[];
   List<MapDestinationSearchResult> _suggestions =
       const <MapDestinationSearchResult>[];
@@ -67,6 +69,18 @@ class MapDestinationSearchService extends ChangeNotifier {
       List<MapDestinationSearchResult>.unmodifiable(_results);
   List<MapDestinationSearchResult> get savedPlaces =>
       List<MapDestinationSearchResult>.unmodifiable(_savedPlaces);
+
+  /// Guarda até 20 destinos escolhidos, sem consultar o servidor a cada tecla.
+  Future<void> rememberRecentPlace(MapDestinationSearchResult item) async {
+    await initialize();
+    _recentPlaces = <MapDestinationSearchResult>[
+      item.copyWith(source: 'cache'),
+      ..._recentPlaces.where((place) => place.id != item.id),
+    ].take(20).toList(growable: false);
+    _mergeKnownPlaces(<MapDestinationSearchResult>[item]);
+    notifyListeners();
+    await _persist();
+  }
 
   Future<void> savePlace(MapDestinationSearchResult item) async {
     await initialize();
@@ -135,13 +149,20 @@ class MapDestinationSearchService extends ChangeNotifier {
     try {
       // A janela anterior de 5 s encerrava a consulta antes de muitos
       // servidores Overpass responderem. A busca rápida inclui um espelho.
-      final quick = await _fetchNearbyPlaces(
-        current,
-        radiusKm: quickNearbyRadiusKm,
-        timeout: const Duration(seconds: 18),
-        maximumItems: 250,
-        allowMirror: true,
-      );
+      var quick = const <MapDestinationSearchResult>[];
+      var quickFailed = false;
+      try {
+        quick = await _fetchNearbyPlaces(
+          current,
+          radiusKm: quickNearbyRadiusKm,
+          timeout: const Duration(seconds: 16),
+          maximumItems: 180,
+          allowMirror: true,
+        );
+      } catch (_) {
+        quickFailed = true;
+        // Uma falha na fase curta não deve impedir a busca regional.
+      }
       var fetchedAny = quick.isNotEmpty;
       var expandedFailed = false;
       if (quick.isNotEmpty) {
@@ -165,9 +186,9 @@ class MapDestinationSearchService extends ChangeNotifier {
           final expanded = await _fetchNearbyPlaces(
             current,
             radiusKm: nearbyRadiusKm,
-            timeout: const Duration(seconds: 24),
-            maximumItems: 350,
-            allowMirror: false,
+            timeout: const Duration(seconds: 22),
+            maximumItems: 220,
+            allowMirror: true,
           );
           if (expanded.isNotEmpty) {
             fetchedAny = true;
@@ -185,12 +206,12 @@ class MapDestinationSearchService extends ChangeNotifier {
       }
       if (!fetchedAny) {
         // Dados antigos em memória NÃO validam uma consulta online vazia.
-        _nearbyLastFetchFailed = expandedFailed;
+        _nearbyLastFetchFailed = quickFailed || expandedFailed;
         _nearbyRetryAfter = DateTime.now().add(const Duration(minutes: 2));
         _suggestionsStatusMessage = _suggestions.isNotEmpty
             ? 'Mostrando locais salvos. Toque em Atualizar para tentar novamente.'
             : expandedFailed
-                ? 'Servidor de localidades indisponível. Toque em Atualizar.'
+                ? 'Servidores de localidades indisponíveis. Toque em Atualizar.'
                 : 'Nenhuma localidade recebida. Toque em Atualizar.';
       } else {
         _nearbyUpdatedAt = DateTime.now();
@@ -396,7 +417,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     required List<OfflineMapPackage> offlineMaps,
     required bool onlyDownloaded,
   }) {
-    final places = <MapDestinationSearchResult>[..._savedPlaces, ..._knownPlaces]
+    final places = <MapDestinationSearchResult>[..._recentPlaces, ..._savedPlaces, ..._knownPlaces]
         .map(
           (item) => _withDistanceAndOfflineSource(
             item,
@@ -422,7 +443,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final needle = _fold(query);
     final found = <MapDestinationSearchResult>[];
 
-    for (final place in <MapDestinationSearchResult>[..._savedPlaces, ..._knownPlaces]) {
+    for (final place in <MapDestinationSearchResult>[..._recentPlaces, ..._savedPlaces, ..._knownPlaces]) {
       if (!_matches(needle, place.title, place.subtitle)) continue;
       final resolved = _withDistanceAndOfflineSource(
         place,
@@ -491,7 +512,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.218');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.219');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -571,7 +592,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     final request = await _client
         .postUrl(Uri.parse('https://overpass-api.de/api/interpreter'))
         .timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.218');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.219');
     request.headers.contentType = ContentType(
       'application',
       'x-www-form-urlencoded',
@@ -704,7 +725,7 @@ class MapDestinationSearchService extends ChangeNotifier {
 
   Future<String> _readNearbyResponse(Uri endpoint, String query) async {
     final request = await _client.postUrl(endpoint);
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.218');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.219');
     request.headers.contentType = ContentType(
       'application', 'x-www-form-urlencoded', charset: 'utf-8',
     );
@@ -790,7 +811,7 @@ class MapDestinationSearchService extends ChangeNotifier {
         final request = await _client.getUrl(uri).timeout(const Duration(seconds: 6));
         request.headers.set(
           HttpHeaders.userAgentHeader,
-          'VigiaIA/1.0.218 map-reverse-search',
+          'VigiaIA/1.0.219 map-reverse-search',
         );
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
         final response = await request.close().timeout(const Duration(seconds: 8));
@@ -870,7 +891,7 @@ class MapDestinationSearchService extends ChangeNotifier {
       },
     );
     final request = await _client.getUrl(uri).timeout(const Duration(seconds: 8));
-    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.218 map-search');
+    request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.219 map-search');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close().timeout(const Duration(seconds: 15));
     final body = await utf8.decoder.bind(response).join();
@@ -1078,6 +1099,13 @@ class MapDestinationSearchService extends ChangeNotifier {
               item.cast<String, dynamic>()).copyWith(source: 'offline'))
           .where((item) => item.id.isNotEmpty)
           .toList(growable: false);
+      _recentPlaces = ((map['recentPlaces'] as List?) ?? const <Object>[])
+          .whereType<Map>()
+          .map((item) => MapDestinationSearchResult.fromJson(
+              item.cast<String, dynamic>()))
+          .where((item) => item.id.isNotEmpty)
+          .take(20)
+          .toList(growable: false);
       _knownPlaces = rawPlaces
           .whereType<Map>()
           .map((item) => item.cast<String, dynamic>())
@@ -1091,6 +1119,7 @@ class MapDestinationSearchService extends ChangeNotifier {
     } catch (_) {
       _knownPlaces = const <MapDestinationSearchResult>[];
       _savedPlaces = const <MapDestinationSearchResult>[];
+      _recentPlaces = const <MapDestinationSearchResult>[];
     }
   }
 
@@ -1118,6 +1147,7 @@ class MapDestinationSearchService extends ChangeNotifier {
             )
             .toList(growable: false),
         'savedPlaces': _savedPlaces.map((item) => item.toJson()).toList(),
+        'recentPlaces': _recentPlaces.map((item) => item.toJson()).toList(),
       }),
       flush: true,
     );

@@ -1,3 +1,10 @@
+## 1.0.219+219 — 2026-10-11
+- Busca de pontos úteis progressiva em raios menores, espelho Overpass e manutenção dos dados disponíveis quando um servidor demora.
+- Pesquisa de cidades otimizada para regiões menores, sugestão instantânea com cache e histórico persistente de destinos selecionados; sem autocompletar pela API pública Nominatim.
+- Rádio online: Recentes com até 20 estações confirmadas, remoção individual e limpeza do histórico, filtros locais por tags/idioma/bitrate e visual renovado.
+- Minimize para manter áudio; fechar interrompe o stream. Diálogos vazios de cidades/pontos ocupam menos espaço.
+- Nova verificação preventiva e versionamento sincronizado; testes Flutter e Android pendentes de GitHub Actions.
+
 ## 1.0.218+218 — 2026-10-11
 - Buildfix Android APK #182: adicionadas chaves ao `if` com retorno antecipado em `_refreshPreviewPlan`, eliminando `curly_braces_in_flow_control_structures` na linha 2115 da versão anterior.
 - Aplicada a sintaxe null-aware `?recordControl` no `children` do painel de navegação, eliminando `use_null_aware_elements` na linha 10728 da versão anterior.

@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.218+218
+# Arquitetura — Vigia IA 1.0.219+219
+
+## Consultas geográficas progressivas e histórico de rádio — 1.0.219
+
+`RouteExplorerService` agora começa por consulta leve de nós em 5 km, amplia 10 km e depois o raio escolhido somente se não encontrar pontos suficientes. Tem alternância para instância Overpass espelho e preserva resultados parciais quando consultas seguintes falham. `MapDestinationSearchService` reaproveita dados recentes/offline para sugestões instantâneas; Nominatim público só é consultado no envio explícito. `RadioRecentHistory` persiste até 20 streams cuja reprodução foi confirmada, em JSON privado. Filtros locais usam os metadados do catálogo, sem consultas adicionais. Minimizar rádio mantém stream; fechar para o áudio. Temporizador usa Timer local enquanto o processo estiver vivo, sem despertar o Android. UI de listas vazias ocupa menos altura. Serviços públicos podem permanecer temporariamente indisponíveis e não há garantia de cobertura de POIs.
 
 ## Ajustes de análise estática no mapa — 1.0.218
 

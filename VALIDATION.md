@@ -1,4 +1,8 @@
-# Validação Vigia IA 1.0.218+218
+# Validação Vigia IA 1.0.219+219
+
+## Validação da 1.0.219
+
+Executar `tool/verify_project.sh`, checagem de regressões da busca e do histórico e integridade do ZIP. Flutter SDK indisponível no ambiente: `flutter analyze`, `flutter test` e APK no CI pendentes. Testar reprodução real e persistência de Recentes no Android.
 
 ## Buildfix Android APK #182 — 1.0.218
 

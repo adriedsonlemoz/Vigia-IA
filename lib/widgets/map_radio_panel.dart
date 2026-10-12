@@ -7,8 +7,10 @@ import '../services/map_ride_settings_service.dart';
 import '../services/radio_browser_service.dart';
 import '../services/radio_health_service.dart';
 import '../services/data_usage_service.dart';
+import '../services/radio_recent_history.dart';
+import '../services/radio_sleep_timer.dart';
 
-enum _RadioSection { discover, favorites, manual }
+enum _RadioSection { discover, recent, favorites, manual }
 
 class MapRadioPanel extends StatefulWidget {
   const MapRadioPanel({
@@ -26,6 +28,13 @@ class MapRadioPanel extends StatefulWidget {
 
 class _MapRadioPanelState extends State<MapRadioPanel> {
   final _catalog = RadioBrowserService();
+  final _history = RadioRecentHistory();
+  List<RadioRecentEntry> _recent = const <RadioRecentEntry>[];
+  RadioBrowserStation? _pendingStation;
+  bool _initialPlayingSyncPending = true;
+  String _genre = 'Todos';
+  String _language = 'Todos';
+  int _maxBitrate = 0;
   final _queryController = TextEditingController();
   final _manualNameController = TextEditingController();
   final _manualUrlController = TextEditingController();
@@ -42,6 +51,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   @override
   void initState() {
     super.initState();
+    unawaited(_loadRecent());
     unawaited(_refreshPlayback());
     unawaited(RadioHealthService.instance.load().then((_) {
       if (mounted) setState(() {});
@@ -63,6 +73,25 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
     super.dispose();
   }
 
+  Future<void> _loadRecent() async {
+    final entries = await _history.load();
+    if (mounted) setState(() => _recent = entries);
+  }
+
+  Future<void> _recordRecent(RadioBrowserStation station) async {
+    final entries = await _history.record(station);
+    if (mounted) setState(() => _recent = entries);
+  }
+
+  List<RadioBrowserStation> get _visibleResults => _results.where((station) {
+    if (_genre != 'Todos' &&
+        !station.tags.toLowerCase().contains(_genre.toLowerCase())) return false;
+    if (_language != 'Todos' &&
+        !station.language.toLowerCase().contains(_language.toLowerCase())) return false;
+    if (_maxBitrate > 0 && station.bitrate > _maxBitrate) return false;
+    return true;
+  }).toList(growable: false);
+
   List<RadioBrowserStation> get _favorites => widget.settings.stations
       .map(RadioBrowserStation.fromSavedMap)
       .where((station) => station.streamUrl.isNotEmpty)
@@ -71,7 +100,8 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   RadioBrowserStation? get _selected {
     final url = widget.settings.radioUrl;
     if (url.isEmpty) return null;
-    for (final station in <RadioBrowserStation>[..._favorites, ..._results]) {
+    for (final station in <RadioBrowserStation>[
+      ..._favorites, ..._recent.map((e) => e.station), ..._results]) {
       if (station.streamUrl == url) return station;
     }
     return RadioBrowserStation(
@@ -101,6 +131,19 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
           _playbackState = status.state;
           _nowPlaying = status.nowPlaying;
         });
+      }
+      if (status.state == 'tocando' && _pendingStation != null &&
+          (status.url == _pendingStation!.streamUrl ||
+              status.station == _pendingStation!.name)) {
+        final station = _pendingStation!;
+        _pendingStation = null;
+        _initialPlayingSyncPending = false;
+        unawaited(_recordRecent(station));
+      } else if (status.state == 'tocando' && _initialPlayingSyncPending &&
+          _pendingStation == null && _selected != null) {
+        // Recupera reprodução iniciada antes de minimizar o painel.
+        _initialPlayingSyncPending = false;
+        unawaited(_recordRecent(_selected!));
       }
       if (previous == status.state) return;
       widget.onPlaybackStateChanged(status.state);
@@ -167,6 +210,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
 
   Future<void> _play(RadioBrowserStation station) async {
     try {
+      _pendingStation = station;
       await widget.settings.update(
         stationName: station.name,
         stationUrl: station.streamUrl,
@@ -185,6 +229,7 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       await _refreshPlayback();
     } catch (error) {
+      _pendingStation = null;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Rádio indisponível: $error')),
@@ -205,12 +250,15 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
   }
 
   Future<void> _stop() async {
+    RadioSleepTimer.cancel();
     await MapRadioService.stop();
     await _refreshPlayback();
   }
 
   void _skip(int offset) {
-    final stations = _favorites.isNotEmpty ? _favorites : _results;
+    final stations = _section == _RadioSection.recent && _recent.isNotEmpty
+        ? _recent.map((e) => e.station).toList()
+        : _favorites.isNotEmpty ? _favorites : _visibleResults;
     if (stations.isEmpty) return;
     final current = stations.indexWhere(
       (station) => station.streamUrl == widget.settings.radioUrl,
@@ -290,8 +338,11 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
                 icon: const Icon(Icons.minimize_rounded),
               ),
               IconButton(
-                tooltip: 'Fechar',
-                onPressed: () => Navigator.of(context).pop(),
+                tooltip: 'Parar e fechar rádio',
+                onPressed: () async {
+                  await _stop();
+                  if (context.mounted) Navigator.of(context).pop();
+                },
                 icon: const Icon(Icons.close_rounded),
               ),
             ],
@@ -300,22 +351,43 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
         _buildPlayer(scheme),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-          child: SegmentedButton<_RadioSection>(
-            segments: const [
-              ButtonSegment(value: _RadioSection.discover,
-                  icon: Icon(Icons.travel_explore_rounded), label: Text('Buscar')),
-              ButtonSegment(value: _RadioSection.favorites,
-                  icon: Icon(Icons.star_rounded), label: Text('Favoritas')),
-              ButtonSegment(value: _RadioSection.manual,
-                  icon: Icon(Icons.link_rounded), label: Text('URL')),
-            ],
-            selected: <_RadioSection>{_section},
-            showSelectedIcon: false,
-            onSelectionChanged: (value) => setState(() => _section = value.first),
-          ),
+          child: LayoutBuilder(builder: (context, constraints) {
+            // Em telas estreitas, ícones e rótulos ficam em duas linhas.
+            const tabs = <(_RadioSection, IconData, String)>[
+              (_RadioSection.discover, Icons.search_rounded, 'Buscar'),
+              (_RadioSection.recent, Icons.history_rounded, 'Recentes'),
+              (_RadioSection.favorites, Icons.star_rounded, 'Favoritas'),
+              (_RadioSection.manual, Icons.link_rounded, 'URL'),
+            ];
+            return Row(children: [
+              for (final tab in tabs)
+                Expanded(child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Material(
+                    borderRadius: BorderRadius.circular(12),
+                    color: _section == tab.$1
+                        ? scheme.primaryContainer : scheme.surfaceContainerLow,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => setState(() => _section = tab.$1),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(tab.$2, size: 19),
+                          const SizedBox(height: 3),
+                          Text(tab.$3, maxLines: 1, style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 11)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                )),
+            ]);
+          }),
         ),
         Expanded(child: switch (_section) {
           _RadioSection.discover => _buildDiscovery(),
+          _RadioSection.recent => _buildRecents(),
           _RadioSection.favorites => _buildFavorites(),
           _RadioSection.manual => _buildManual(),
         }),
@@ -329,16 +401,20 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
         _playbackState == 'conectando' || _playbackState == 'pausado';
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(colors: [
+          scheme.primaryContainer.withValues(alpha: 0.55),
+          scheme.surfaceContainerHighest.withValues(alpha: 0.65),
+        ]),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              _StationLogo(station: station, size: 50),
+              _StationLogo(station: station, size: 44),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -405,9 +481,48 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
               const Icon(Icons.volume_up_rounded, size: 19),
             ],
           ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _showSleepOptions,
+              icon: const Icon(Icons.bedtime_outlined, size: 17),
+              label: Text(RadioSleepTimer.endAt == null
+                  ? 'Desligar depois…' : 'Temporizador ativo'),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _showSleepOptions() async {
+    final minutes = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (dialogContext) => SafeArea(
+        child: Wrap(children: [
+          const ListTile(title: Text('Desligar rádio automaticamente')),
+          for (final duration in const [15, 30, 60, 90])
+            ListTile(
+              leading: const Icon(Icons.bedtime_outlined),
+              title: Text('Em $duration minutos'),
+              onTap: () => Navigator.of(dialogContext).pop(duration),
+            ),
+          ListTile(
+            leading: const Icon(Icons.timer_off_outlined),
+            title: const Text('Cancelar temporizador'),
+            onTap: () => Navigator.of(dialogContext).pop(0),
+          ),
+        ]),
+      ),
+    );
+    if (minutes == null || !mounted) { return; }
+    if (minutes == 0) {
+      RadioSleepTimer.cancel();
+    } else {
+      RadioSleepTimer.schedule(Duration(minutes: minutes));
+    }
+    setState(() {});
   }
 
   String get _playbackLabel => switch (_playbackState) {
@@ -464,6 +579,29 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
             ),
           ),
           if (_loading) const LinearProgressIndicator(minHeight: 2),
+          SizedBox(height: 40, child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              _radioFilterMenu<String>(
+                'Estilo: $_genre', _genre,
+                const ['Todos', 'rock', 'pop', 'jazz', 'news', 'sertanejo', 'gospel'],
+                (value) => setState(() => _genre = value),
+              ),
+              const SizedBox(width: 7),
+              _radioFilterMenu<String>(
+                'Idioma: ${_radioFilterLabel(_language)}', _language,
+                const ['Todos', 'portuguese', 'english', 'spanish'],
+                (value) => setState(() => _language = value),
+              ),
+              const SizedBox(width: 7),
+              _radioFilterMenu<int>(
+                _maxBitrate == 0 ? 'Qualidade: todas' : 'Até $_maxBitrate kb/s',
+                _maxBitrate, const [0, 64, 96, 128],
+                (value) => setState(() => _maxBitrate = value),
+              ),
+            ],
+          )),
           if (_fromCache)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
@@ -473,19 +611,99 @@ class _MapRadioPanelState extends State<MapRadioPanel> {
               ),
             ),
           Expanded(
-            child: _error != null
+            child: _error != null && _results.isEmpty
                 ? _RadioMessage(message: _error!, action: _search)
-                : _results.isEmpty && !_loading
-                    ? const _RadioMessage(message: 'Nenhuma estação encontrada.')
+                : _visibleResults.isEmpty && !_loading
+                    ? const _RadioMessage(message: 'Sem rádios para estes filtros. Ajuste estilo ou qualidade.')
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
-                        itemCount: _results.length,
+                        itemCount: _visibleResults.length,
                         itemBuilder: (context, index) =>
-                            _stationTile(_results[index]),
+                            _stationTile(_visibleResults[index]),
                       ),
           ),
         ],
       );
+
+  String _radioFilterLabel(Object value) => switch (value) {
+    'portuguese' => 'Português',
+    'english' => 'Inglês',
+    'spanish' => 'Espanhol',
+    'news' => 'Notícias',
+    'rock' => 'Rock',
+    'pop' => 'Pop',
+    'jazz' => 'Jazz',
+    'sertanejo' => 'Sertanejo',
+    'gospel' => 'Gospel',
+    _ => value.toString(),
+  };
+
+  Widget _radioFilterMenu<T>(String label, T selected, List<T> values,
+      ValueChanged<T> onSelect) => PopupMenuButton<T>(
+    tooltip: 'Filtrar rádios',
+    initialValue: selected,
+    onSelected: onSelect,
+    itemBuilder: (context) => [
+      for (final value in values)
+        PopupMenuItem(value: value, child: Text(
+          value == 0 ? 'Todas as qualidades' : _radioFilterLabel(value),
+        )),
+    ],
+    child: Chip(
+      visualDensity: VisualDensity.compact,
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      avatar: const Icon(Icons.tune_rounded, size: 16),
+    ),
+  );
+
+  Widget _buildRecents() {
+    if (_recent.isEmpty) {
+      return const _RadioMessage(message:
+        'As estações que começarem a tocar aparecerão aqui, até 20 rádios.');
+    }
+    return Column(children: [
+      Align(alignment: Alignment.centerRight, child: TextButton.icon(
+        onPressed: () async {
+          await _history.clear();
+          if (mounted) setState(() => _recent = const []);
+        },
+        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+        label: const Text('Limpar histórico'),
+      )),
+      Expanded(child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+        itemCount: _recent.length,
+        itemBuilder: (context, index) {
+          final entry = _recent[index];
+          return ListTile(
+            leading: _StationLogo(station: entry.station, size: 40),
+            title: Text(entry.station.name, maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+            subtitle: Text('${entry.station.technicalSummary} · ${_recentDate(entry.playedAt)}',
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+            onTap: () => unawaited(_play(entry.station)),
+            trailing: IconButton(
+              tooltip: 'Remover do histórico',
+              icon: const Icon(Icons.close_rounded),
+              onPressed: () async {
+                final entries = await _history.remove(entry.station.streamUrl);
+                if (mounted) setState(() => _recent = entries);
+              },
+            ),
+          );
+        },
+      )),
+    ]);
+  }
+
+  String _recentDate(DateTime when) {
+    final local = when.toLocal();
+    final now = DateTime.now();
+    if (local.year == now.year && local.month == now.month &&
+        local.day == now.day) return 'hoje';
+    return '${local.day.toString().padLeft(2, '0')}/'
+        '${local.month.toString().padLeft(2, '0')}';
+  }
 
   Widget _buildFavorites() {
     final favorites = _favorites;

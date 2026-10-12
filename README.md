@@ -1,5 +1,7 @@
 # Vigia IA
 
+A **1.0.219+219** torna a descoberta de pontos úteis progressiva (até 5/10 km e raio configurado com alternativa Overpass), evita apagar resultados após falhas temporárias, mantém autocomplete local e histórico de destinos pesquisados. A rádio ganha aba Recentes persistente, filtros de estilo/idioma/bitrate, layout renovado, temporizador e ações distintas de minimizar e parar. Os diálogos vazios são menores. A compilação Android ainda precisa ser validada no CI.
+
 A **1.0.218+218** corrige duas observações do `flutter analyze` do workflow Android APK #182, preservando prévia de rota, plano da cicloviagem e painel compacto. A geração do APK ainda precisa ser confirmada em CI.
 
 A **1.0.217+217** torna a rota pré-visualizável antes de navegar, compacta o painel de instruções, permite salvar/reabrir a última geometria offline e planejar saída/pausas/chegada por dia. Roteamento de trajetos novos ainda depende da internet; não há estimativa automática confiável de vento, relevo ou serviços confirmados.
@@ -9,7 +11,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.218+218`
+> **Versão atual:** `1.0.219+219`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

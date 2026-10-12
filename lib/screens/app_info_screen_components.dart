@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.218',
+          version: '1.0.219',
           current: true,
+          changes: [
+            'Cidades e pontos próximos com buscas mais eficientes e histórico local.',
+            'Rádio com Recentes, filtros e visual mais compacto.',
+            'Painéis de busca vazios ocupam menos espaço.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.218',
           changes: [
             'Interface do mapa aprimorada para manter a navegação estável.',
             'Prévia, plano de cicloviagem e controles compactos preservados.',
@@ -1973,8 +1982,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.218',
+          version: '1.0.219',
           current: true,
+          changes: [
+            'Cidades e pontos próximos com buscas mais eficientes e histórico local.',
+            'Rádio com Recentes, filtros e visual mais compacto.',
+            'Painéis de busca vazios ocupam menos espaço.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.218',
           changes: [
             'Interface do mapa aprimorada para manter a navegação estável.',
             'Prévia, plano de cicloviagem e controles compactos preservados.',
