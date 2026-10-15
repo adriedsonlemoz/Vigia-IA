@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.243',
+          version: '1.0.244',
           current: true,
+          changes: [
+            'MCRP v1: comandos remotos, H.264 experimental e diagnóstico.',
+            'Central de fotos e vídeos do Minha Câmera, com download autenticado.',
+            'Visualização MJPEG com IA do Vigia IA preservada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.243',
           changes: [
             'Melhorias de compatibilidade no módulo Minha Câmera.',
             'Transmissão MJPEG, conexão QR e IA local preservadas.',
@@ -2181,8 +2190,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.243',
+          version: '1.0.244',
           current: true,
+          changes: [
+            'MCRP v1: comandos remotos, H.264 experimental e diagnóstico.',
+            'Central de fotos e vídeos do Minha Câmera, com download autenticado.',
+            'Visualização MJPEG com IA do Vigia IA preservada.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.243',
           changes: [
             'Melhorias de compatibilidade no módulo Minha Câmera.',
             'Transmissão MJPEG, conexão QR e IA local preservadas.',

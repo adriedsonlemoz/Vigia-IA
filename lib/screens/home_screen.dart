@@ -30,6 +30,7 @@ import 'map_monitoring_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'monitor_connect_screen.dart';
+import 'mcrp_camera_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 

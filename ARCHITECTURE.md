@@ -1,4 +1,8 @@
-# Arquitetura — Vigia IA 1.0.243+243
+# Arquitetura — Vigia IA 1.0.244+244
+
+## Cliente de controle MCRP v1 — 1.0.244
+
+Módulo opt-in `lib/services/mcrp_client.dart` e `lib/screens/mcrp_camera_screen.dart`: conexão QR IPv4, comandos autenticados, MJPEG independente, H.264 experimental LibVLC, telemetria e multimedia. **Complementa** a recepção MJPEG já integrada ao monitor/IA na 1.0.242, sem alterar `RemotePhoneSourceFactory` nem `vigiaia://pair`. Contrato em `docs/MCRP_V1.md`.
 
 ## Correção do analisador da integração Minha Câmera (1.0.243)
 

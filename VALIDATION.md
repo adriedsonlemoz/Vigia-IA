@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.243+243
+# Validação Vigia IA 1.0.244+244
+
+## MCRP v1 completo — 1.0.244 (2026-10-15)
+
+- [x] Cliente MCRP com QR local e biblioteca privada autenticada integrado em módulo separado.
+- [x] Integração MJPEG/IA preexistente na 1.0.243 preservada, sem substituir o monitor original.
+- [x] Verificador de contratos preventivos MCRP v1 e de versão.
+- [ ] `flutter analyze`, `flutter test`, APK e testes reais com Redmi A3/recebedor.
 
 ## Buildfix Android-APK-198 — 1.0.243 (2026-10-15)
 

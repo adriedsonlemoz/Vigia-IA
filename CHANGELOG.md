@@ -1,3 +1,11 @@
+## 1.0.244+244 — 2026-10-15
+
+- MCRP v1 completo integrado sobre 1.0.243, sem perder conexão MJPEG com pipeline opcional de IA da 1.0.242.
+- Novo painel Minha Câmera: vídeo MJPEG e H.264 experimental, QR local, status, controles REC/Eco/Fotos/câmera/FPS/qualidade/codec e diagnóstico.
+- Biblioteca remota: listagem, prévia e download autorizado de arquivos do Minha Câmera 1.4.36, sem acesso a outras pastas nem exclusão.
+- Mantidos monitor original Vigia IA e protocolo vigiaia://pair, mapas offline, ESP32 e ferramentas existentes.
+- Testes de contratos MCRP e versão executados; flutter analyze, flutter test e APK ainda dependem de CI.
+
 ## 1.0.243+243 (15/10/2026)
 
 - Buildfix Android-APK-198: três avisos fatais do `flutter analyze` corrigidos (interpolação da rota de status, chaves do `if` de URL e import redundante no receptor MJPEG).
