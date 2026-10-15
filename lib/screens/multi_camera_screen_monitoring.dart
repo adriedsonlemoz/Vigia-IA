@@ -1,41 +1,8 @@
 part of 'multi_camera_screen.dart';
 
 extension _MultiCameraMonitoring on _MultiCameraScreenState {
-  VideoSourceConfig _sourceFor(
-    CameraEndpoint camera,
-    Duration analysisInterval,
-  ) => switch (camera.type) {
-        CameraEndpointType.local => VideoSourceConfig(
-            type: VideoSourceType.localCamera,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: analysisInterval,
-          ),
-        CameraEndpointType.rtsp => VideoSourceConfig(
-            type: VideoSourceType.rtsp,
-            rtspUrl: camera.address,
-            rtspSoftwareDecoding: camera.rtspSoftwareDecoding,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: analysisInterval,
-          ),
-        CameraEndpointType.remotePhone => VideoSourceConfig(
-            type: VideoSourceType.remotePhone,
-            remoteBaseUrl: camera.address,
-            remoteAccessKey: camera.accessKey,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: analysisInterval,
-          ),
-        CameraEndpointType.esp32 => VideoSourceConfig(
-            type: VideoSourceType.esp32,
-            remoteBaseUrl: camera.address,
-            remoteAccessKey: camera.accessKey,
-            displayName: camera.name,
-            cameraId: camera.id,
-            analysisInterval: analysisInterval,
-          ),
-      };
+  VideoSourceConfig _sourceFor(CameraEndpoint camera, Duration interval) =>
+      sourceForRegisteredCamera(camera, interval);
 
   Future<void> _openWithSecond(CameraEndpoint primary) async {
     final candidates = _cameras
@@ -173,7 +140,12 @@ extension _MultiCameraMonitoring on _MultiCameraScreenState {
       await _native.requestNotificationPermission();
       if (!mounted) return;
     }
-    final source = _sourceFor(camera, profile.source.analysisInterval);
+    final source = sourceForRegisteredCamera(camera, profile.source.analysisInterval);
+    if (secondary == null) {
+      await _settings.saveProfile(PersistedMonitorProfile(
+        source: source, settings: profile.settings,
+      ));
+    }
     final secondarySource = secondary == null
         ? null
         : _sourceFor(secondary, profile.source.analysisInterval);

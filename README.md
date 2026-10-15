@@ -1,3 +1,11 @@
+## 1.0.248+248: seleção central em Câmeras e Ao vivo (2026-10-15)
+
+- Cadastre e renomeie o Minha Câmera diretamente em **Câmeras** pelo QR ou URL /live/token. A opção de controles fica no menu do cadastro; o botão próprio da Home foi removido.
+- **Ao vivo** abre a seleção de fontes cadastradas, inclusive o Redmi A3. A fonte RTSP anteriormente inválida não impede escolher MJPEG.
+- Câmeras salvas pelo painel MCRP na 1.0.247 são importadas para o registro central uma vez, com proteção nativa do token e exclusão sem recadastro automático.
+- O monitor ganhou o atalho **Voltar ao início**. O protocolo das câmeras e o modelo local de IA continuam inalterados.
+- `flutter analyze`, `flutter test` e o APK ainda dependem do GitHub Actions.
+
 ## 1.0.247+247: câmeras Minha Câmera salvas localmente (2026-10-15)
 
 - Depois de conectar por QR/URL no painel MCRP, use **Salvar esta câmera** para escolher um nome. O ato de conectar sozinho não registra a câmera; o cadastro é opcional.
@@ -5,7 +13,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.247+247`
+**Versão atual:** `1.0.248+248`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

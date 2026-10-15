@@ -138,6 +138,7 @@ class _CameraCard extends StatelessWidget {
     required this.lastEvent,
     required this.onOpen,
     required this.onOpenWithSecond,
+    required this.onMcrpControls,
     required this.onEdit,
     required this.onToggle,
     required this.onDelete,
@@ -149,6 +150,7 @@ class _CameraCard extends StatelessWidget {
   final MonitorEvent? lastEvent;
   final VoidCallback onOpen;
   final VoidCallback? onOpenWithSecond;
+  final VoidCallback? onMcrpControls;
   final VoidCallback? onEdit;
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
@@ -176,7 +178,8 @@ class _CameraCard extends StatelessWidget {
     final sourceKind = switch (camera.type) {
       CameraEndpointType.local => 'Local',
       CameraEndpointType.rtsp => 'RTSP',
-      CameraEndpointType.remotePhone => 'Celular remoto',
+      CameraEndpointType.remotePhone =>
+          MinhaCameraLiveUrl.isValid(camera.address) ? 'Minha Câmera' : 'Celular remoto',
       CameraEndpointType.esp32 => 'ESP32',
     };
 
@@ -250,19 +253,26 @@ class _CameraCard extends StatelessWidget {
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                 ),
-                if (onOpenWithSecond != null ||
+                if (onMcrpControls != null ||
+                    onOpenWithSecond != null ||
                     onEdit != null ||
                     onToggle != null ||
                     onDelete != null)
                   PopupMenuButton<String>(
                     tooltip: 'Opções da câmera',
                     onSelected: (value) {
+                      if (value == 'controls') onMcrpControls?.call();
                       if (value == 'second') onOpenWithSecond?.call();
                       if (value == 'edit') onEdit?.call();
                       if (value == 'toggle') onToggle?.call();
                       if (value == 'delete') onDelete?.call();
                     },
                     itemBuilder: (_) => [
+                      if (onMcrpControls != null)
+                        const PopupMenuItem(
+                          value: 'controls',
+                          child: Text('Controles e arquivos'),
+                        ),
                       if (onOpenWithSecond != null)
                         const PopupMenuItem(
                           value: 'second',

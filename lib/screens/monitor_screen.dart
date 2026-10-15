@@ -38,6 +38,7 @@ import '../widgets/offline_map_manager_sheet.dart';
 import '../widgets/session_status_panel.dart';
 import '../widgets/smart_alert_rules_dialog.dart';
 import 'events_screen.dart';
+import 'home_screen.dart';
 import 'launch_mode_screen.dart';
 import 'map_monitoring_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
@@ -1044,6 +1045,14 @@ class _MonitorScreenState extends State<MonitorScreen>
                   ],
                 ),
                 actions: [
+                  IconButton(
+                    tooltip: 'Voltar ao início',
+                    onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+                      (_) => false,
+                    ),
+                    icon: const Icon(Icons.home_outlined),
+                  ),
                   IconButton(
                     tooltip: 'Tela inteira',
                     onPressed: _fullscreenChanging

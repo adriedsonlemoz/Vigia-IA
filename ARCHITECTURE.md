@@ -1,3 +1,5 @@
+Vigia IA 1.0.248+248 — câmera cadastrada no hub central; monitor seleciona a fonte correta.
+
 Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de câmeras MCRP.
 
 ## 1.0.247+247: câmeras Minha Câmera salvas localmente (2026-10-15)
@@ -7,7 +9,7 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.247+247
+# Arquitetura — Vigia IA 1.0.248+248
 
 **1.0.246+246 (buildfix Android-APK-201):** guarda de inferência em `McrpCameraScreen` agora possui chaves, sem modificar condição ou transporte; arquitetura de único fluxo MJPEG e IA local opcional mantida.
 
@@ -2163,3 +2165,6 @@ Marcador selecionavel de localizacao.
 - Modo sem IA (`analysisEnabled: false`) nunca envia novos `RgbFrame` do Minha Câmera, mas continua mostrando imagem. Desligar toda a conexão exige sair/suspender monitor. Serviço de IA ainda pode inicializar porque pertence ao pipeline geral do Monitor, mesmo sem frames.
 - A Central multicâmera consulta `/control/<token>/status` quando encontra URL reconhecida, sem tentar `/status?key=` do protocolo Vigia. Não são enviados comandos de gravação, codec ou configurações ao transmissor.
 - H.264 não faz parte deste receptor (o servidor retorna HTTP 409). O usuário deve configurar MJPEG no Minha Câmera para a versão inicial. Não prometer inferência em 30fps, autonomia/latência medida nem alertas além das capacidades reais do modelo instalado no Vigia.
+
+## Hub unificado de câmeras (1.0.248)
+`CameraRegistryService` mantém câmeras com endereço e chave protegidos. `migrateMinhaCameraSavedEntries` importa uma única vez as URLs antigas do `McrpSavedCamerasStore`, gravando primeiro a câmera no registro central e só então removendo o registro anterior. `sourceForRegisteredCamera` escolhe VideoSourceType.remotePhone para Minha Câmera (MJPEG) e evita validação RTSP indevida. A Home solicita a câmera ao entrar em Ao vivo; a seção Câmeras gerencia QR/URL e abre controles MCRP, sem um módulo inicial duplicado. O monitor expõe atalho para retornar à Home.

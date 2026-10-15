@@ -4,7 +4,7 @@ extension _HomeRedesign on _HomeScreenState {
   void _navigateMain(int index) {
     if (index == 0) return;
     if (index == 2) {
-      unawaited(_start());
+      unawaited(_chooseCameraForLive());
       return;
     }
     if (index == 4) {
@@ -262,7 +262,7 @@ extension _HomeRedesign on _HomeScreenState {
             title: 'Ao vivo',
             subtitle: 'Câmera + IA',
             accent: VigiaColors.cyan,
-            onTap: () => unawaited(_start()),
+            onTap: () => unawaited(_chooseCameraForLive()),
           ),
           VigiaModeCard(
             compact: true,
@@ -281,15 +281,6 @@ extension _HomeRedesign on _HomeScreenState {
             subtitle: 'Receber imagem',
             accent: VigiaColors.green,
             onTap: () => _openScreen(const MonitorConnectScreen()),
-          ),
-          VigiaModeCard(
-            compact: true,
-            icon: Icons.phone_in_talk_outlined,
-            imageAsset: 'assets/images/modes/remote.png',
-            title: 'Minha Câmera',
-            subtitle: 'MCRP · Controles e arquivos',
-            accent: VigiaColors.cyan,
-            onTap: () => _openScreen(const McrpCameraScreen()),
           ),
           VigiaModeCard(
             compact: true,

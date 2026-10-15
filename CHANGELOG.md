@@ -1,3 +1,11 @@
+## 1.0.248+248 (2026-10-15)
+
+- Centraliza o Minha Câmera na tela Câmeras (QR, cadastro, edição, remoção).
+- Remove o cartão MCRP separado da Home; controles remotos acessíveis no menu da câmera.
+- Ao vivo agora oferece seleção de fonte; não fica bloqueado por URL RTSP antiga.
+- Importa os cadastros antigos e mantém a câmera usada no monitor como seleção preferida.
+- Adiciona botão de retorno à Home a partir de Ao vivo e validações de regressão.
+
 ## 1.0.247+247 — 2026-10-15
 
 - Painel Minha Câmera agora permite salvar o transmissor com nome após conexão válida, exibir lista de câmeras salvas, reconectar por um toque e remover um cadastro com confirmação.

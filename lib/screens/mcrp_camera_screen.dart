@@ -18,7 +18,8 @@ import '../widgets/detection_overlay.dart';
 
 /// Cliente independente para Minha Câmera. Não muda o fluxo de IA ou QR vigiaia://pair.
 class McrpCameraScreen extends StatefulWidget {
-  const McrpCameraScreen({super.key, this.savedStore});
+  const McrpCameraScreen({super.key, this.savedStore, this.initialLiveUrl});
+  final String? initialLiveUrl;
   final McrpSavedCamerasStore? savedStore;
   @override
   State<McrpCameraScreen> createState() => _McrpCameraScreenState();
@@ -36,6 +37,13 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
     super.initState();
     _savedStore = widget.savedStore ?? McrpSavedCamerasStore();
     unawaited(_loadSavedCameras());
+    final initial = widget.initialLiveUrl;
+    if (initial != null && initial.isNotEmpty) {
+      _input.text = initial;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_connect());
+      });
+    }
   }
 
   Future<void> _loadSavedCameras() async {

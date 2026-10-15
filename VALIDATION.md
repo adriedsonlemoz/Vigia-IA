@@ -5,7 +5,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.247+247
+# Validação Vigia IA 1.0.248+248
 
 ## Buildfix Android-APK-201 — 1.0.246 (2026-10-15)
 
@@ -1708,3 +1708,8 @@ O teste final em aparelho deve confirmar áudio integrado, override importado/gr
 - [x] Testes Flutter de unidade escritos para URL e segurança, parser incremental e modo sem IA. Verificador estrutural incluído na suíte preventiva.
 - [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e `flutter build apk` no GitHub Actions. SDK Flutter ausente no ambiente de preparação.
 - [ ] Testar em Redmi A3 e Note 11 Pro+: MJPEG, QR, Wi-Fi/hotspot, quadro ao vivo, IA com limites de FPS, modo sem IA, tela apagada, reconexão, bateria/temperatura e alertas.
+
+## Verificação 1.0.248 (Câmeras/Ao vivo)
+- [x] Contratos do seletor, fonte MJPEG, migração, segurança do QR e acesso a MCRP em Câmeras.
+- [x] Testes Python da nova interface em `tool/test_camera_hub_248.py`.
+- [ ] `flutter analyze`, `flutter test` e APK no CI; testes em dois aparelhos reais pendentes.

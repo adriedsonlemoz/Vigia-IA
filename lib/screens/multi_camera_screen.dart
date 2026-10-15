@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/camera_endpoint.dart';
+import '../models/camera_source_selector.dart';
+import '../services/minha_camera_live_url.dart';
+import '../services/minha_camera_registry_migration.dart';
+import 'mcrp_camera_screen.dart';
 import '../models/monitor_event.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/remote_phone_status.dart';
@@ -25,6 +29,7 @@ import 'phone_pairing_scanner_screen.dart';
 part 'multi_camera_screen_components.dart';
 part 'multi_camera_screen_details.dart';
 part 'multi_camera_screen_monitoring.dart';
+part 'multi_camera_screen_saved_support.dart';
 
 class MultiCameraScreen extends StatefulWidget {
   const MultiCameraScreen({super.key});
@@ -66,6 +71,12 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
       _registry.initialize(),
       _history.initialize(),
     ]);
+    // As câmeras salvas na versão 247 passam a aparecer na lista central.
+    try {
+      await migrateMinhaCameraSavedEntries(registry: _registry);
+    } catch (_) {
+      // A lista central permanece utilizável se a migração local falhar.
+    }
     if (!mounted) return;
     setState(() => _loading = false);
     await _refreshStatuses();
@@ -111,15 +122,6 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     await _refreshStatuses();
   }
 
-  CameraEndpoint? _findRemotePhoneByAddress(String address) {
-    for (final item in _registry.items) {
-      if (item.type == CameraEndpointType.remotePhone && item.address == address) {
-        return item;
-      }
-    }
-    return null;
-  }
-
   Future<void> _scanPhoneQr() async {
     final raw = await Navigator.push<String>(
       context,
@@ -149,7 +151,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
       return;
     }
 
-    final existing = _findRemotePhoneByAddress(pairing.address);
+    final existing = _findRemotePhoneByAddress(_registry.items, pairing.address);
 
     final candidate = CameraEndpoint(
       id: existing?.id ?? 'cam_${DateTime.now().microsecondsSinceEpoch}',
@@ -245,7 +247,8 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              endpoint.address ?? '',
+              MinhaCameraLiveUrl.parse(endpoint.address ?? '')?.host ??
+                  endpoint.address ?? '',
               style: Theme.of(dialogContext).textTheme.bodySmall,
             ),
             if (updatingExisting) ...[
@@ -294,12 +297,13 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
     CameraEndpoint? existing,
   }) async {
     final isRtsp = type == CameraEndpointType.rtsp;
+    final isMinha = MinhaCameraLiveUrl.isValid(existing?.address);
     final sourceTitle = isRtsp ? 'Câmera RTSP' : 'Celular transmissor';
     final sourceDescription = isRtsp
         ? 'Conecta uma câmera IP ou DVR pela URL RTSP.'
         : 'Recebe a imagem enviada por outro celular na mesma rede.';
     final name = TextEditingController(
-      text: existing?.name ?? (isRtsp ? 'Câmera RTSP' : 'Celular remoto'),
+      text: existing?.name ?? (isRtsp ? 'Câmera RTSP' : 'Minha Câmera / celular'),
     );
     final address = TextEditingController(text: existing?.address ?? '');
     final key = TextEditingController(text: existing?.accessKey ?? '');
@@ -369,7 +373,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                     labelText: isRtsp ? 'URL RTSP' : 'Endereço local',
                     hintText: isRtsp
                         ? 'rtsp://192.168.1.20/stream'
-                        : 'http://192.168.1.10:8765',
+                        : 'http://192.168.1.10:8765/live/TOKEN',
                   ),
                 ),
                 if (isRtsp) ...[
@@ -390,7 +394,10 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                     controller: key,
                     autocorrect: false,
                     enableSuggestions: false,
-                    decoration: const InputDecoration(labelText: 'Chave de sessão'),
+                    decoration: InputDecoration(
+                      labelText: 'Chave (não precisa para URL /live/)',
+                      helperText: isMinha ? 'A chave já está incluída na URL.' : null,
+                    ),
                   ),
                 ],
                 if (error != null) ...[
@@ -419,16 +426,17 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                     uri != null &&
                     uri.scheme.toLowerCase() == 'rtsp' &&
                     uri.host.isNotEmpty;
+                final minha = MinhaCameraLiveUrl.parse(value);
                 final validRemote = !isRtsp &&
-                    uri != null &&
+                    (minha != null || (uri != null &&
                     (uri.scheme == 'http' || uri.scheme == 'https') &&
                     uri.host.isNotEmpty &&
-                    key.text.trim().isNotEmpty;
+                    key.text.trim().isNotEmpty));
                 if (!(validRtsp || validRemote)) {
                   setDialogState(() {
                     error = isRtsp
                         ? 'Informe uma URL RTSP válida.'
-                        : 'Informe o endereço HTTP local e a chave de sessão.';
+                        : 'Informe uma URL /live/ privada ou endereço HTTP com chave.';
                   });
                   return;
                 }
@@ -443,7 +451,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                     type: type,
                     address: value,
                     accessKey: type == CameraEndpointType.remotePhone
-                        ? key.text.trim()
+                        ? (minha?.pathSegments.last ?? key.text.trim())
                         : null,
                     enabled: existing?.enabled ?? true,
                     rtspSoftwareDecoding: isRtsp && softwareDecoding,
@@ -490,6 +498,7 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
       ),
     );
     if (confirmed != true) return;
+    await _clearLegacyOnDelete(camera);
     await _registry.delete(camera.id);
     if (!mounted) return;
     setState(() => _status.remove(camera.id));
@@ -627,6 +636,15 @@ class _MultiCameraScreenState extends State<MultiCameraScreen> {
                               status: _status[camera.id],
                               lastEvent: _lastEvent(camera),
                               onOpen: () => _open(camera),
+                              onMcrpControls: MinhaCameraLiveUrl.isValid(camera.address)
+                                  ? () => Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => McrpCameraScreen(
+                                          initialLiveUrl: camera.address,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
                               onOpenWithSecond: cameras.any(
                                 (item) =>
                                     item.enabled &&

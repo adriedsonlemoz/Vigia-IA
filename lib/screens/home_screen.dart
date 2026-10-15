@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../models/monitor_schedule.dart';
 import '../models/camera_endpoint.dart';
+import '../models/camera_source_selector.dart';
+import '../services/minha_camera_live_url.dart';
+import '../services/minha_camera_registry_migration.dart';
 import '../models/monitoring_zone.dart';
 import '../models/object_filter_catalog.dart';
 import '../models/smart_alert_rules.dart';
@@ -30,7 +33,6 @@ import 'map_monitoring_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'monitor_connect_screen.dart';
-import 'mcrp_camera_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
 
@@ -154,7 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if ((widget.startMonitorOnLoad || resumeRequested) && !_autoStartTriggered) {
       _autoStartTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(_start());
+        if (!mounted) return;
+        if (widget.startMonitorOnLoad) {
+          unawaited(_chooseCameraForLive());
+        } else {
+          // Retomar serviço em segundo plano mantém a fonte da sessão anterior.
+          unawaited(_start());
+        }
       });
     }
   }
@@ -408,9 +416,94 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _start() async {
-    final profile = _currentProfile();
-    if (_sourceType == VideoSourceType.localCamera) {
+  /// Ao vivo nunca presume que um endereço RTSP antigo seja a câmera desejada.
+  /// O cadastro e a exclusão são gerenciados exclusivamente na área Câmeras.
+  Future<void> _chooseCameraForLive() async {
+    await _cameraRegistry.initialize();
+    try {
+      await migrateMinhaCameraSavedEntries(registry: _cameraRegistry);
+    } catch (_) {
+      // Um cadastro antigo inválido não impede a escolha da câmera local.
+    }
+    if (!mounted) return;
+    final cameras = <CameraEndpoint>[
+      const CameraEndpoint(
+        id: '__local__',
+        name: 'Câmera deste aparelho',
+        type: CameraEndpointType.local,
+      ),
+      ..._cameraRegistry.items.where((camera) => camera.enabled &&
+          (camera.type != CameraEndpointType.esp32 ||
+              camera.esp32CameraEnabled)),
+    ];
+    final selected = await showModalBottomSheet<CameraEndpoint>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Escolher câmera para Ao vivo',
+                  style: Theme.of(sheetContext).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 350),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: cameras.length,
+                  itemBuilder: (_, index) {
+                    final camera = cameras[index];
+                    return ListTile(
+                      leading: Icon(camera.type == CameraEndpointType.local
+                          ? Icons.camera_alt_outlined
+                          : MinhaCameraLiveUrl.isValid(camera.address)
+                              ? Icons.phone_android_rounded
+                              : Icons.videocam_outlined),
+                      title: Text(camera.name),
+                      subtitle: Text(switch (camera.type) {
+                        CameraEndpointType.local => 'Câmera local',
+                        CameraEndpointType.rtsp => 'RTSP',
+                        CameraEndpointType.remotePhone =>
+                          MinhaCameraLiveUrl.isValid(camera.address)
+                              ? 'Minha Câmera · MJPEG'
+                              : 'Celular remoto',
+                        CameraEndpointType.esp32 => 'ESP32',
+                      }),
+                      trailing: const Icon(Icons.play_arrow_rounded),
+                      onTap: () => Navigator.pop(sheetContext, camera),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                icon: const Icon(Icons.video_library_outlined),
+                label: const Text('Gerenciar / adicionar câmeras'),
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _openScreen(const MultiCameraScreen());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    await _start(camera: selected);
+  }
+
+  Future<void> _start({CameraEndpoint? camera}) async {
+    final current = _currentProfile();
+    final profile = camera == null ? current : PersistedMonitorProfile(
+      source: sourceForRegisteredCamera(camera, current.source.analysisInterval),
+      settings: current.settings,
+    );
+    final selectedType = profile.source.type;
+    if (selectedType == VideoSourceType.localCamera) {
       final cameraGranted = await _native.requestCameraPermission();
       if (!mounted) return;
       if (!cameraGranted) {
@@ -446,16 +539,20 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     final rtsp = profile.source.rtspUrl ?? '';
-    if (_sourceType == VideoSourceType.rtsp) {
+    if (selectedType == VideoSourceType.rtsp) {
       final uri = Uri.tryParse(rtsp);
       if (uri == null || uri.scheme != 'rtsp' || uri.host.isEmpty) {
+        if (camera == null) {
+          await _chooseCameraForLive();
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Informe uma URL RTSP válida.')),
+          const SnackBar(content: Text('Confira a URL RTSP da câmera selecionada.')),
         );
         return;
       }
     }
-    if (_sourceType == VideoSourceType.remotePhone) {
+    if (selectedType == VideoSourceType.remotePhone) {
       final uri = Uri.tryParse(profile.source.remoteBaseUrl ?? '');
       if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty || (profile.source.remoteAccessKey ?? '').isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -464,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
     }
-    if (_sourceType == VideoSourceType.esp32) {
+    if (selectedType == VideoSourceType.esp32) {
       final uri = Uri.tryParse(profile.source.remoteBaseUrl ?? '');
       if (uri == null ||
           !(uri.scheme == 'http' || uri.scheme == 'https') ||
