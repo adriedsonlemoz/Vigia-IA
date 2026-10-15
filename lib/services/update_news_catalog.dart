@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.237', build: 237);
+      AppBuildVersion(version: '1.0.238', build: 238);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.237', build: 237),
+      version: AppBuildVersion(version: '1.0.238', build: 238),
       changes: <String>[
-        'Indicadores de navegação e pontos próximos organizados.',
-        'Velocidade, progresso e distâncias continuam visíveis durante a rota.',
+        'Ações de gravação do percurso organizadas no painel de navegação.',
+        'Gravar, pausar, retomar e exportar GPX continuam disponíveis.',
       ],
     ),
   ]);

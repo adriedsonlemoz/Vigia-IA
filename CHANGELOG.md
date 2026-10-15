@@ -1,3 +1,10 @@
+## 1.0.238+238 — 2026-10-15
+
+- Refatoração gradual, etapa 6: `_NavigationRecordControl` movido como `MapNavigationRecordControl` para `lib/widgets/map_navigation_record_control.dart`, preservando integralmente os parâmetros, layout, ícones, tooltips, habilitação por GPS, pausa/retomada e ações `stop` / `gpx`.
+- `lib/screens/map_monitoring_screen.dart`: **10.843 → 10.772 linhas**, com **71 linhas originais extraídas**. Os dois pontos de uso passam os mesmos dados e callbacks; sem migração de serviços ou estado.
+- Verificador histórico da navegação (1.0.214) redirecionado para o novo arquivo sem remover o requisito de integração; sete testes Flutter e novos contratos estruturais da 1.0.238. `tool/verify_project.sh` mantém gates anteriores.
+- Nenhum bug funcional reproduzido ou corrigido no aplicativo. SDK Flutter/Android, build APK, interface no celular e testes instrumentados ainda pendentes no CI.
+
 ## 1.0.237+237 — 2026-10-15
 
 - Refatoração etapa 5: `_NavigationMetricCell` e `_NavigationPoiChip` foram movidos para `lib/widgets/map_navigation_metrics.dart` como `MapNavigationMetricCell` e `MapNavigationPoiChip`. Dois componentes visuais coesos, sem alteração dos cálculos de progresso, distância, sensores, ações ou estilos.

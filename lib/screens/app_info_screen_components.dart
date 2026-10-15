@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.237',
+          version: '1.0.238',
           current: true,
+          changes: [
+            'Ações de gravação organizadas no painel de navegação.',
+            'Gravar, pausar, retomar e exportar GPX continuam acessíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.237',
           changes: [
             'Cartões de métricas e pontos próximos da navegação organizados.',
             'Valores e indicadores mantidos no painel de navegação.',
@@ -2132,8 +2140,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.237',
+          version: '1.0.238',
           current: true,
+          changes: [
+            'Ações de gravação organizadas no painel de navegação.',
+            'Gravar, pausar, retomar e exportar GPX continuam acessíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.237',
           changes: [
             'Cartões de métricas e pontos próximos da navegação organizados.',
             'Valores e indicadores mantidos no painel de navegação.',

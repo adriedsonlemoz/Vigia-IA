@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.237+237
+# Arquitetura — Vigia IA 1.0.238+238
+
+## Controle de gravação no banner de navegação — 1.0.238
+
+- `lib/widgets/map_navigation_record_control.dart` concentra `MapNavigationRecordControl`, controle visual de iniciar/parar gravação, pausar/retomar e exportar GPX. O widget permanece sem estado, `Timer`, `StreamSubscription`, serviço, rede ou gravação própria.
+- `lib/screens/map_monitoring_screen.dart` fornece exatamente os mesmos sete argumentos (estado, GPS disponível, rota existente e três callbacks) nos dois locais do banner. `_NavigationBanner`, `_RouteButtonBar`, `_LiveRouteElapsedPill` e a lógica de `MapRouteService` não foram alterados.
+- Testes de widget `test/map_navigation_record_control_test.dart` verificam estado GPS sem fix, encaminhamento de gravação, pausa/retomada, fechamento e exportação condicionada à rota. `tool/check_map_refactor_238.py` valida estrutura, integração e integridade do código transposto. Flutter/Android não estão disponíveis localmente.
 
 ## Refatoração gradual de métricas e pontos próximos na navegação — 1.0.237
 

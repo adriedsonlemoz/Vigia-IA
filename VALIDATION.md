@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.237+237
+# Validação Vigia IA 1.0.238+238
+
+## Refatoração gradual — 1.0.238 (2026-10-15)
+
+- [x] Base 1.0.237+237 validada previamente por `tool/verify_project.sh`, incluindo 36 testes Python.
+- [x] Controle visual de gravação extraído com corpo e callbacks preservados; tela mantém GPS, serviço, timers e persistência.
+- [x] Verificador legado do controle inline preservado e redirecionado; novos contratos estruturais da integração.
+- [x] Sete testes Flutter escritos para estados e interações; execução pendente por ausência do SDK.
+- [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test`, build Android no CI.
+- [ ] Testar em aparelho sem GPS, gravar, pausar, retomar, parar, exportar GPX e alternar entre navegação minimizada/expandida; observar consumo e tela pequena.
 
 ## Refatoração gradual — 1.0.237 (2026-10-15)
 
