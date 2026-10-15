@@ -55,7 +55,7 @@ void main() {
       (tester) async {
     await render(tester);
     expect(find.byType(MapTelemetryStrip), findsOneWidget);
-    expect(find.text('19.8'), findsOneWidget);
+    expect(find.text('19.8 km/h'), findsOneWidget);
     expect(find.text('553'), findsOneWidget);
     expect(find.text('NE'), findsOneWidget);
     expect(find.text('±8'), findsOneWidget);
@@ -116,7 +116,7 @@ void main() {
     await render(tester, speedSource: 'Simulação', compact: true);
     expect(find.text('Vel. simulada'), findsOneWidget);
     expect(find.text('Simulação'), findsNothing);
-    expect(find.text('19.8'), findsOneWidget);
+    expect(find.text('19.8 km/h'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

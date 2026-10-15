@@ -1,3 +1,11 @@
+## 1.0.240+240 — 2026-10-15
+
+- **Buildfix do workflow Android-APK-195:** `flutter analyze` passou; `flutter test` apresentou 3 falhas de expectativas de texto entre 500 testes executados (497 aprovados, 3 falhas).
+- Corrigidas duas verificações `find.text('19.8')` em `test/map_telemetry_strip_test.dart` para `find.text('19.8 km/h')`: o componente já renderizava corretamente uma única árvore `Text.rich` contendo valor e unidade, e o finder compara o texto integral.
+- Corrigida a expectativa `GPS · rumo 92°` de `test/map_status_indicators_test.dart` para `GPS · 92°`, correspondente à saída atual de `MapFocusSpeedPill`.
+- Nenhum widget de produção ou lógica foi alterado, e as verificações Flutter/CI permanecem ativas. Contrato preventivo adicional evita regressões nas expectativas desses dois componentes.
+- VersionCode e metadados sincronizados, histórico e notas atualizados. Reexecutar `flutter test` e APK no GitHub Actions; o CI #195 encerrou antes de gerar o APK.
+
 ## 1.0.239+239 — 2026-10-15
 
 - **Buildfix do workflow Android-APK-194:** `flutter analyze --fatal-infos --fatal-warnings` reportou dez informações `use_key_in_widget_constructors` em sete arquivos de widgets extraídos nas versões 1.0.233–1.0.238; todas corrigidas com `super.key` nos construtores públicos.

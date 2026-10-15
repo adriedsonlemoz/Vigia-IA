@@ -41,7 +41,7 @@ void main() {
       ))),
     ));
     expect(find.text('24.6 km/h'), findsOneWidget);
-    expect(find.text('GPS · rumo 92°'), findsOneWidget);
+    expect(find.text('GPS · 92°'), findsOneWidget);
     await tester.tap(find.byType(MapFocusSpeedPill));
     expect(taps, 1);
     expect(tester.takeException(), isNull);

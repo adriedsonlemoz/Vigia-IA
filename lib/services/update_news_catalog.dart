@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.239', build: 239);
+      AppBuildVersion(version: '1.0.240', build: 240);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.239', build: 239),
+      version: AppBuildVersion(version: '1.0.240', build: 240),
       changes: <String>[
-        'Controles de navegação ajustados para compatibilidade com o Flutter.',
-        'Indicadores, rotas e gravação mantidos no painel do mapa.',
+        'Apresentação dos indicadores do mapa mantida e testes aprimorados.',
+        'Compatibilidade de navegação e gravação preservada.',
       ],
     ),
   ]);

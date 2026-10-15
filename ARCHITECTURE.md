@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.239+239
+# Arquitetura — Vigia IA 1.0.240+240
+
+## Alinhamento dos testes à apresentação de telemetria (1.0.240)
+
+- O workflow Android-APK-195 passou no `flutter analyze`, mas 3 verificações de widget falharam porque procuravam textos diferentes dos produzidos pelos widgets existentes.
+- `MapTelemetryStrip` usa um único `Text.rich` com `TextSpan` para valor e unidade: o texto completo do widget é `19.8 km/h`, não um widget `Text` isolado com `19.8`. Dois testes foram alinhados a essa composição, sem alterar renderização ou layout.
+- `MapFocusSpeedPill` mantém a informação `GPS · 92°`; o teste esperava erroneamente `GPS · rumo 92°`. Apenas a expectativa foi corrigida.
+- Gate Python específico compara a estrutura visual original aos textos esperados pelos testes. Nenhum serviço, listener, atualização de GPS ou cálculo de velocidade foi alterado, e o gate `flutter test` permanece obrigatório no CI.
 
 ## Compatibilidade dos construtores dos widgets modulares (1.0.239)
 
