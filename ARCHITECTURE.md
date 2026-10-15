@@ -1,4 +1,4 @@
-# Arquitetura — Vigia IA 1.0.241+241
+# Arquitetura — Vigia IA 1.0.242+242
 
 ## Exibição de unidades e testes de telemetria (1.0.241)
 
@@ -2127,3 +2127,12 @@ Marcador selecionavel de localizacao.
 ## Vigia IA 1.0.216+216 — pesquisa automática de localidades
 
 `MapDestinationSearchService.prepareSuggestions` consulta Overpass por bbox via `NearbyPlaceQuery` e usa espelho quando necessário, exibe dados locais imediatamente e expande regionalmente depois. Falhas de rede não invalidam caches nem gravam um sucesso negativo prolongado. A UI oferece atualização explícita; Nominatim continua somente para pesquisas enviadas e localização por toque longo.
+
+## Minha Câmera 1.4.35 • integração 1.0.242
+
+- O app Minha Câmera publica um QR **URL HTTP local temporário** `http://<IPv4>:8765/live/<32hex>` e transmite bytes `multipart/x-mixed-replace; boundary=frame` com JPEGs. A URL é um segredo e não deve aparecer em logs nem capturas públicas.
+- `RemoteCameraPairingService` mantém o QR `vigiaia://pair` legado e reconhece QR HTTP somente após validação estrita em `MinhaCameraLiveUrl`. Um endereço remoto reconhecido despacha a fonte para `MinhaCameraMjpegSource` tanto em `MonitorController` quanto na segunda visualização.
+- `MinhaCameraMjpegParser` extrai JPEGs do corpo da transmissão mesmo em limites de pacotes arbitrários; cada frame é limitado a 2 MiB. `MinhaCameraMjpegSource` usa `HttpClient` sem redirect, valida Content-Type, reconecta de maneira limitada e mantém cache de somente um JPEG visual. O preview é limitado a 10 FPS; o detector existente recebe quadros em outra cadência via `compute` se `VideoSourceConfig.analysisEnabled` estiver ativo.
+- Modo sem IA (`analysisEnabled: false`) nunca envia novos `RgbFrame` do Minha Câmera, mas continua mostrando imagem. Desligar toda a conexão exige sair/suspender monitor. Serviço de IA ainda pode inicializar porque pertence ao pipeline geral do Monitor, mesmo sem frames.
+- A Central multicâmera consulta `/control/<token>/status` quando encontra URL reconhecida, sem tentar `/status?key=` do protocolo Vigia. Não são enviados comandos de gravação, codec ou configurações ao transmissor.
+- H.264 não faz parte deste receptor (o servidor retorna HTTP 409). O usuário deve configurar MJPEG no Minha Câmera para a versão inicial. Não prometer inferência em 30fps, autonomia/latência medida nem alertas além das capacidades reais do modelo instalado no Vigia.

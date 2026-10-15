@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.241',
+          version: '1.0.242',
           current: true,
+          changes: [
+            'Recepção MJPEG do Minha Câmera 1.4.35 por QR local.',
+            'Análise por IA no Vigia IA com modo somente visualização.',
+            'Reconexão controlada e preservação do transmissor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.241',
           changes: [
             'Indicadores de altitude e precisão GPS protegidos por testes completos.',
             'Comportamento dos mapas, rotas e gravação preservado.',
@@ -2164,8 +2173,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.241',
+          version: '1.0.242',
           current: true,
+          changes: [
+            'Recepção MJPEG do Minha Câmera 1.4.35 por QR local.',
+            'Análise por IA no Vigia IA com modo somente visualização.',
+            'Reconexão controlada e preservação do transmissor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.241',
           changes: [
             'Indicadores de altitude e precisão GPS protegidos por testes completos.',
             'Comportamento dos mapas, rotas e gravação preservado.',

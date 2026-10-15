@@ -6,6 +6,7 @@ import '../models/video_source_config.dart';
 import '../services/app_settings_service.dart';
 import '../services/native_platform_service.dart';
 import '../services/remote_camera_pairing_service.dart';
+import '../services/minha_camera_live_url.dart';
 import 'monitor_screen.dart';
 import 'multi_camera_screen.dart';
 import 'phone_pairing_scanner_screen.dart';
@@ -26,6 +27,7 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
 
   bool _loading = true;
   bool _opening = false;
+  bool _analyze = true;
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
     setState(() {
       _addressController.text = profile.source.remoteBaseUrl ?? '';
       _keyController.text = profile.source.remoteAccessKey ?? '';
+      _analyze = profile.source.analysisEnabled;
       _loading = false;
     });
   }
@@ -92,7 +95,10 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
   Future<void> _openMonitor() async {
     if (_opening) return;
     final address = _addressController.text.trim();
-    final key = _keyController.text.trim();
+    final isMinhaCamera = MinhaCameraLiveUrl.isValid(address);
+    final key = isMinhaCamera
+        ? MinhaCameraLiveUrl.accessToken(address)!
+        : _keyController.text.trim();
     final uri = Uri.tryParse(address);
     if (uri == null ||
         !(uri.scheme == 'http' || uri.scheme == 'https') ||
@@ -112,7 +118,8 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
       type: VideoSourceType.remotePhone,
       remoteBaseUrl: address,
       remoteAccessKey: key,
-      displayName: 'Celular remoto',
+      displayName: isMinhaCamera ? 'Minha Câmera' : 'Celular remoto',
+      analysisEnabled: _analyze,
       analysisInterval: profile.source.analysisInterval,
     );
     await _settings.updateRuntime(source: source);
@@ -204,7 +211,7 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
                     enableSuggestions: false,
                     decoration: const InputDecoration(
                       labelText: 'Endereço do celular transmissor',
-                      hintText: 'http://192.168.0.20:8766',
+                      hintText: 'http://192.168.0.20:8765/live/…',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -214,8 +221,14 @@ class _MonitorConnectScreenState extends State<MonitorConnectScreen> {
                     enableSuggestions: false,
                     decoration: const InputDecoration(
                       labelText: 'Chave de sessão',
-                      helperText: 'A chave aparece no Modo Transmissão do outro celular.',
+                      helperText: 'Para Minha Câmera, o QR contém a chave automaticamente.',
                     ),
+                  ),
+                  SwitchListTile.adaptive(
+                    value: _analyze,
+                    onChanged: (value) => setState(() => _analyze = value),
+                    title: const Text('Analisar vídeo com IA neste aparelho'),
+                    subtitle: const Text('Desligado: somente imagem ao vivo, sem inferência por quadro do Minha Câmera.'),
                   ),
                   const SizedBox(height: 18),
                   FilledButton.icon(

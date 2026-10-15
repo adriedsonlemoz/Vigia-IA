@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/camera_endpoint.dart';
 import '../models/remote_phone_status.dart';
 import 'native_platform_service.dart';
+import 'minha_camera_live_url.dart';
 
 class CameraProbeResult {
   const CameraProbeResult(
@@ -131,6 +132,25 @@ class CameraRegistryService {
     }
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
     try {
+      final minhaCamera = MinhaCameraLiveUrl.parse(address);
+      if (minhaCamera != null && endpoint.type == CameraEndpointType.remotePhone) {
+        final statusUrl = minhaCamera.replace(
+          path: minhaCamera.path.replaceFirst('/live/', '/control/') + '/status',
+        );
+        final request = await client.getUrl(statusUrl);
+        request.followRedirects = false;
+        final response = await request.close().timeout(const Duration(seconds: 3));
+        await response.drain<void>();
+        stopwatch.stop();
+        return CameraProbeResult(
+          response.statusCode == HttpStatus.ok,
+          message: response.statusCode == HttpStatus.ok
+              ? 'Minha Câmera online (stream não verificado)'
+              : 'Minha Câmera indisponível (HTTP ${response.statusCode})',
+          checkedAt: checkedAt,
+          latency: stopwatch.elapsed,
+        );
+      }
       final root = address.endsWith('/')
           ? address.substring(0, address.length - 1)
           : address;

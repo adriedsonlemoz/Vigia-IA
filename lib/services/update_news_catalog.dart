@@ -8,14 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.241', build: 241);
+      AppBuildVersion(version: '1.0.242', build: 242);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.241', build: 241),
+      version: AppBuildVersion(version: '1.0.242', build: 242),
       changes: <String>[
-        'Testes dos instrumentos do mapa conferem número e unidade juntos.',
-        'Altitude, precisão GPS e navegação visual preservadas.'
+        'Conecte o Minha Câmera 1.4.35 escaneando o QR do transmissor.',
+        'Vídeo MJPEG na rede local com análise por IA neste aparelho.',
+        'Escolha entre vídeo com IA e somente imagem ao vivo.'
       ],
     ),
   ]);

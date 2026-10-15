@@ -55,6 +55,7 @@ import '../services/speech_service.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/rtsp_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
+import '../sources/remote_phone_source_factory.dart';
 part 'monitor_controller_session_support.dart';
 part 'monitor_controller_event_support.dart';
 part 'monitor_controller_state_support.dart';
@@ -606,10 +607,8 @@ class MonitorController extends ChangeNotifier {
           url: config.rtspUrl ?? '', analysisInterval: analysisInterval,
           softwareDecoding: config.rtspSoftwareDecoding,
         ),
-      VideoSourceType.remotePhone => RemotePhoneCameraSource(
-          baseUrl: config.remoteBaseUrl ?? '',
-          accessKey: config.remoteAccessKey ?? '',
-          analysisInterval: analysisInterval,
+      VideoSourceType.remotePhone => createRemotePhoneVideoSource(
+          config, analysisInterval: analysisInterval,
         ),
       VideoSourceType.esp32 => RemotePhoneCameraSource(
           baseUrl: config.remoteBaseUrl ?? '', accessKey: config.remoteAccessKey ?? '',

@@ -1,4 +1,4 @@
-# Validação Vigia IA 1.0.241+241
+# Validação Vigia IA 1.0.242+242
 
 ## Buildfix Android-APK-196 — 1.0.241 (2026-10-15)
 
@@ -1663,3 +1663,12 @@ O teste final em aparelho deve confirmar áudio integrado, override importado/gr
 - acesso ao mapa integrado ao Modo Bike sem alterar os quatro destinos da navegação principal;
 - tratamento de GPS desligado e permissões negada/bloqueada implementado;
 - `flutter analyze`, `flutter test` e build Android ainda precisam ser confirmados no workflow porque o ambiente local desta entrega não possui Flutter/Android SDK completo.
+
+## Integração Minha Câmera 1.4.35 em Vigia IA 1.0.242
+
+- [x] Código do transmissor 1.4.35 inspecionado: QR URL `/live/<32hex>`, servidor 8765, MJPEG multipart com JPEG por quadro, status HTTP separado em `/control/<token>/status`, 409 quando codec H.264.
+- [x] Receptor próprio integrado ao pipeline de monitoramento no aparelho potente: preview independente e `RgbFrame` amostrados com análise opcional.
+- [x] Compatibilidade com QR Vigia IA existente preservada; validação de IP privado, token, URL sem query/redirect, JPEG limitado e sem vazamento no JSON não sensível.
+- [x] Testes Flutter de unidade escritos para URL e segurança, parser incremental e modo sem IA. Verificador estrutural incluído na suíte preventiva.
+- [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e `flutter build apk` no GitHub Actions. SDK Flutter ausente no ambiente de preparação.
+- [ ] Testar em Redmi A3 e Note 11 Pro+: MJPEG, QR, Wi-Fi/hotspot, quadro ao vivo, IA com limites de FPS, modo sem IA, tela apagada, reconexão, bateria/temperatura e alertas.

@@ -1,3 +1,5 @@
+import 'minha_camera_live_url.dart';
+
 class RemoteCameraPairingData {
   const RemoteCameraPairingData({
     required this.address,
@@ -38,6 +40,14 @@ class RemoteCameraPairingService {
 
   static RemoteCameraPairingData decode(String rawValue) {
     final raw = rawValue.trim();
+    final minha = MinhaCameraLiveUrl.parse(raw);
+    if (minha != null) {
+      return RemoteCameraPairingData(
+        address: raw,
+        accessKey: minha.pathSegments.last,
+        name: 'Minha Câmera',
+      );
+    }
     final uri = Uri.tryParse(raw);
     if (uri == null ||
         uri.scheme.toLowerCase() != scheme ||

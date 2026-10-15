@@ -557,8 +557,8 @@ class _MonitorScreenState extends State<MonitorScreen>
                   const SizedBox(height: 8),
                   _SourceOptionTile(
                     icon: Icons.phone_android_rounded,
-                    title: 'Outro celular',
-                    subtitle: 'Recebe vídeo de outro aparelho da mesma rede.',
+                    title: 'Outro celular / Minha Câmera',
+                    subtitle: 'Aceita QR do Vigia IA e do Minha Câmera (MJPEG).',
                     selected: type == VideoSourceType.remotePhone,
                     onTap: () => setDialogState(
                       () => type = VideoSourceType.remotePhone,
@@ -616,7 +616,7 @@ class _MonitorScreenState extends State<MonitorScreen>
                       enableSuggestions: false,
                       decoration: const InputDecoration(
                         labelText: 'Endereço do outro celular',
-                        hintText: 'http://192.168.0.20:8765',
+                        hintText: 'http://192.168.0.20:8765/live/…',
                         border: OutlineInputBorder(),
                       ),
                     ),

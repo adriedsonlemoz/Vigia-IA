@@ -11,6 +11,7 @@ import '../services/monitor_ai_status_resolver.dart';
 import '../sources/front_camera_preview_source.dart';
 import '../sources/local_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
+import '../sources/remote_phone_source_factory.dart';
 import '../sources/rtsp_camera_source.dart';
 import '../services/error_log_service.dart';
 import '../services/rtsp_diagnostics_service.dart';
@@ -84,9 +85,8 @@ class SecondaryCameraController extends ChangeNotifier {
           analysisInterval: sourceConfig.analysisInterval,
           emitFrames: false,
         ),
-      VideoSourceType.remotePhone => RemotePhoneCameraSource(
-          baseUrl: sourceConfig.remoteBaseUrl ?? '',
-          accessKey: sourceConfig.remoteAccessKey ?? '',
+      VideoSourceType.remotePhone => createRemotePhoneVideoSource(
+          sourceConfig,
           analysisInterval: sourceConfig.analysisInterval,
           emitFrames: false,
         ),

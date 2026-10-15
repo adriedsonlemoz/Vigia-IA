@@ -1,3 +1,4 @@
+import '../services/minha_camera_live_url.dart';
 import 'alert_preferences.dart';
 import 'monitor_schedule.dart';
 import 'monitoring_preset.dart';
@@ -22,6 +23,7 @@ class VideoSourceConfig {
     this.displayName,
     this.cameraId,
     this.analysisInterval = const Duration(milliseconds: 400),
+    this.analysisEnabled = true,
   });
 
   final VideoSourceType type;
@@ -32,6 +34,7 @@ class VideoSourceConfig {
   final String? displayName;
   final String? cameraId;
   final Duration analysisInterval;
+  final bool analysisEnabled;
 
   bool get isFrontCameraTest =>
       type == VideoSourceType.localCamera && cameraId == frontCameraTestId;
@@ -46,6 +49,7 @@ class VideoSourceConfig {
     String? displayName,
     String? cameraId,
     Duration? analysisInterval,
+    bool? analysisEnabled,
   }) =>
       VideoSourceConfig(
         type: type ?? this.type,
@@ -56,17 +60,20 @@ class VideoSourceConfig {
         displayName: displayName ?? this.displayName,
         cameraId: cameraId ?? this.cameraId,
         analysisInterval: analysisInterval ?? this.analysisInterval,
+        analysisEnabled: analysisEnabled ?? this.analysisEnabled,
       );
 
   Map<String, Object?> toJson({bool includeSensitive = true}) => <String, Object?>{
         'type': type.name,
         'rtspUrl': includeSensitive ? rtspUrl : null,
         'rtspSoftwareDecoding': rtspSoftwareDecoding,
-        'remoteBaseUrl': remoteBaseUrl,
+        'remoteBaseUrl': includeSensitive || !MinhaCameraLiveUrl.isValid(remoteBaseUrl)
+            ? remoteBaseUrl : null,
         'remoteAccessKey': includeSensitive ? remoteAccessKey : null,
         'displayName': displayName,
         'cameraId': cameraId,
         'analysisIntervalMs': analysisInterval.inMilliseconds,
+        'analysisEnabled': analysisEnabled,
       };
 
   factory VideoSourceConfig.fromJson(Map<String, dynamic> json) {
@@ -88,6 +95,7 @@ class VideoSourceConfig {
             .clamp(250, 5000)
             .toInt(),
       ),
+      analysisEnabled: json['analysisEnabled'] as bool? ?? true,
     );
   }
 }

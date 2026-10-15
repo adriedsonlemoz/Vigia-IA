@@ -1,5 +1,8 @@
 # Vigia IA
 
+**1.0.242+242 (integração Minha Câmera 1.4.35):** Vigia IA aceita o QR HTTP privado `/live/<token>` do Minha Câmera (IPv4 local, porta de transmissão informada pelo QR), recebe MJPEG contínuo por Wi-Fi/hotspot sem internet e envia JPEGs amostrados ao detector de IA do próprio Vigia IA. A visualização é desacoplada da análise para poupar bateria; em **Modo Monitor > Receber e analisar** há um seletor que desativa a inferência e mantém somente o vídeo. O Redmi A3 continua apenas transmitindo, sem alteração em seu aplicativo. Central multicâmera também verifica o endpoint de status do Minha Câmera, e o receptor pode ser selecionado nas telas de outros celulares já existentes. Em H.264, alterar codec para MJPEG no Minha Câmera antes de conectar. Testes Flutter/Android e condições reais de latência ainda precisam ser confirmados no CI/aparelho.
+
+
 **1.0.241+241 (buildfix Android-APK-196):** o CI passou no `flutter analyze` e concluiu 499 testes Flutter, com uma falha de expectativa na telemetria (`553` isolado em vez de `553 m`). O mesmo caso também comparava a precisão `±8` sem sua unidade (`±8 m`); ambas as expectativas foram alinhadas ao `Text.rich` original para eliminar o erro atual e a próxima falha previsível. Acrescentados teste de widget em modo compacto, checagem preventiva e testes de regressão por mutação. Nenhum código de produção do mapa ou serviços foi alterado; novo CI ainda obrigatório.
 
 
@@ -56,7 +59,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.241+241`
+> **Versão atual:** `1.0.242+242`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

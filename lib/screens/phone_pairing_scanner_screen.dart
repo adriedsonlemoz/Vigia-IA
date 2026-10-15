@@ -111,7 +111,7 @@ class _PhonePairingScannerScreenState extends State<PhonePairingScannerScreen> {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Text(
-                  'Aponte para o QR exibido em Modo Câmera no outro celular.',
+                  'Aponte para o QR do Vigia IA ou do Minha Câmera no outro celular.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                 ),

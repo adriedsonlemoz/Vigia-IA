@@ -1,3 +1,12 @@
+## 1.0.242+242 — 2026-10-15
+
+- Integração do Minha Câmera 1.4.35 ao Vigia IA sem modificar o transmissor: QR HTTP com token de 32 caracteres na rota `/live/`, estritamente validado em faixas IPv4 privadas/locais, sem redirecionamentos ou solicitações arbitrárias.
+- `MinhaCameraMjpegSource` para receber fluxo `multipart/x-mixed-replace`, atualizar visualização a até 10 quadros/s e enviar quadros amostrados ao detector local LiteRT/TFLite do Vigia IA, com `compute` para descompressão JPEG fora da UI. Reconexão em falhas de rede e limite de 2 MiB por JPEG para evitar acúmulo.
+- Mantido o protocolo anterior `vigiaia://pair` e as outras fontes; o parser escolhe o novo receptor somente para URLs válidas de Minha Câmera. O código de acesso completo permanece sensível e é omitido de exportações `includeSensitive: false`.
+- Controle **Analisar vídeo com IA neste aparelho** em Modo Monitor: desligado mantém o vídeo MJPEG mas não envia frames novos ao detector. Entrada manual também aceita URL completa. Central multicâmera consulta `/control/<token>/status` do Minha Câmera sem alterar o transmissor.
+- Testes Flutter novos de QR, endereços inválidos, fragmentação de JPEG, limite de memória, alternância IA e exportação sem token. Checagem estrutural `tool/check_minha_camera_integration_242.py` adicionada à validação preventiva.
+- Limites: requer MJPEG no Minha Câmera, rede Wi-Fi/hotspot comum, stream ativo e autorização pelo QR; H.264 continua fora desta integração e as redes reais precisam de teste em aparelho. Flutter analyze, flutter test e APK não executados localmente.
+
 ## 1.0.241+241 — 2026-10-15
 
 - **Buildfix do workflow Android-APK-196:** `flutter analyze` passou; 499 testes Flutter foram aprovados e um falhou em `map_telemetry_strip_test.dart:59`, pois esperava `553` isolado onde `Text.rich` exibe `553 m`.
