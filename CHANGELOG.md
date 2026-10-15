@@ -1,3 +1,9 @@
+## 1.0.246+246 — 2026-10-15
+
+- Corrige bloqueio `flutter analyze --fatal-infos` no workflow Android-APK-201: `if` da inferência em `mcrp_camera_screen.dart` agora tem bloco `{ return; }`, mantendo a mesma condição e comportamento.
+- Adicionados verificador estrutural e cinco testes Python de regressão para o mesmo guard, sem desabilitar lints ou perder a suíte histórica.
+- Nenhuma alteração nos mecanismos de QR, transmissão MJPEG, IA local, controles remotos, protocolo MCRP ou mídia. Flutter/Android CI permanece pendente.
+
 ## 1.0.245+245 — 2026-10-15
 
 - Corrige aviso `curly_braces_in_flow_control_structures` do Android-APK-200.

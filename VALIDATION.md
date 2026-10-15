@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.245+245
+# Validação Vigia IA 1.0.246+246
+
+## Buildfix Android-APK-201 — 1.0.246 (2026-10-15)
+
+- [x] Lint fatal `curly_braces_in_flow_control_structures` em `lib/screens/mcrp_camera_screen.dart:437:56` diagnosticado; retorno protegido por bloco com chaves.
+- [x] Parser de QR, MCRP, MJPEG, detector de IA e MediaStore sem alterações de funcionamento.
+- [x] `tool/check_build201_lint_246.py` e testes de mutação adicionados.
+- [ ] `flutter analyze`, `flutter test`, montagem APK e testes em dois celulares aguardam CI/aparelhos.
 
 - [x] Corrigido lint fatal do workflow Android-APK-200 (if com chaves).
 - [x] Testes preventivos MCRP, fallback exclusivamente 404, reconexão, IA local e MediaStore.

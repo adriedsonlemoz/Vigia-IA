@@ -1,4 +1,6 @@
-**Versão atual:** `1.0.245+245`
+**Versão atual:** `1.0.246+246`
+
+**Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 
 **Novidade 1.0.245:** painel Minha Câmera reúne comandos remotos, QR, prévia MJPEG e detecção por IA local opcional na mesma tela. Reconexão automática usa o receptor MJPEG já existente; se `/mcrp/info` estiver ausente (HTTP 404), a câmera 1.4.35 conecta pelo status legado sem acesso à biblioteca avançada. Fotos e vídeos podem ser publicados nas pastas públicas do Android. Corrigido o lint fatal do build 200. H.264 experimental não é inferido neste painel. Veja [BUILD-200-REPORT-1.0.245.md](BUILD-200-REPORT-1.0.245.md).
 

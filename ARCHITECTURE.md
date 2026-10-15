@@ -1,4 +1,6 @@
-# Arquitetura — Vigia IA 1.0.245+245
+# Arquitetura — Vigia IA 1.0.246+246
+
+**1.0.246+246 (buildfix Android-APK-201):** guarda de inferência em `McrpCameraScreen` agora possui chaves, sem modificar condição ou transporte; arquitetura de único fluxo MJPEG e IA local opcional mantida.
 
 ## MCRP e IA opcional na mesma tela — 1.0.245
 

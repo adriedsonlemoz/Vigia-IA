@@ -434,7 +434,9 @@ class _McrpMjpegViewState extends State<_McrpMjpegView> {
   Future<void> _onFrame(RgbFrame frame, int generation) async {
     final detector = _detector;
     if (!widget.analysisEnabled || !_aiReady || _processing ||
-        detector == null || generation != _generation) return;
+        detector == null || generation != _generation) {
+      return;
+    }
     _processing = true;
     try {
       final detections = await detector.detect(

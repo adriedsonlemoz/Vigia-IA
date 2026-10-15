@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.245',
+          version: '1.0.246',
           current: true,
+          changes: [
+            'Maior estabilidade na integração Minha Câmera com IA local.',
+            'Conexão por QR, vídeo MJPEG e comandos remotos preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.245',
           changes: [
             'Painel Minha Câmera com vídeo, comandos remotos e detecção IA local.',
             'QR compatível com o transmissor antigo; reconexão MJPEG automática.',
@@ -2199,8 +2207,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.245',
+          version: '1.0.246',
           current: true,
+          changes: [
+            'Maior estabilidade na integração Minha Câmera com IA local.',
+            'Conexão por QR, vídeo MJPEG e comandos remotos preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.245',
           changes: [
             'Painel Minha Câmera com vídeo, comandos remotos e detecção IA local.',
             'QR compatível com o transmissor antigo; reconexão MJPEG automática.',
