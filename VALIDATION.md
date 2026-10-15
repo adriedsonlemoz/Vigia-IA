@@ -1,4 +1,55 @@
-# Validação Vigia IA 1.0.232+232
+# Validação Vigia IA 1.0.237+237
+
+## Refatoração gradual — 1.0.237 (2026-10-15)
+
+- [x] Base 1.0.236+236 conferida com `tool/verify_project.sh` antes da alteração.
+- [x] Dois widgets de apresentação visual transpostos sem alterar corpos de `build`, propriedades, valores nem estilos; nenhum serviço/estado movido.
+- [x] Checagem estrutural dedicada e contratos históricos preservados; validação preventiva e integridade do ZIP conferidas.
+- [x] Sete testes Flutter de widget escritos, execução pendente por SDK ausente.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e geração de APK no GitHub Actions.
+- [ ] Testar 320/360/412 dp, fonte 1x/1,5x, navegação com/sem POIs, offline, GPS sem fix e energia no Android.
+- [ ] Revisar relatórios dos workflows anteriores ainda não fornecidos para confirmar se versões recentes compilam.
+
+## Refatoração gradual — 1.0.236 (2026-10-15)
+
+- [x] Base 1.0.235+235 conferida pelo gate preventivo antes da extração.
+- [x] Seletor visual de rotas transposto sem alterar ordem, valores, ações ou comportamento e integrado por um único import/callsite.
+- [x] Verificadores históricos 137/199 adaptados para o módulo novo sem reduzir exigências de comportamento.
+- [x] Verificador isolado mapa/rádio 1.0.219 corrigido para comparar versão e build corretamente; reativado no gate.
+- [x] Testes Flutter de visualização, seleção, rota única, comparação ausente e modo não compacto escritos.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e build APK no CI (SDK Flutter/Android ausente localmente).
+- [ ] Conferir no Android menu compacto durante navegação, selecionar rota 2/3, estado com rota única, escalas de texto 1x/1,5x, modo offline, mapa em retrato/paisagem e preservação da rota em andamento.
+- [ ] Teste físico de autonomia/cpu comparativo; nenhuma melhoria energética alegada nesta extração.
+
+## Refatoração gradual — 1.0.235 (2026-10-15)
+
+- [x] Base 1.0.234+234 validada pelo `tool/verify_project.sh` antes das modificações.
+- [x] Componente passivo de prévia de rotas transposto com corpo idêntico ao da base 234, exceto nome público, mantendo callbacks no estado principal.
+- [x] Regresso estrutural 221/229 ajustado para seguir o módulo sem remover restrições originais.
+- [x] Testes Flutter de renderização/interação adicionados, **não executados** (SDK não disponível).
+- [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e build APK Android no CI; não inferir compilação a partir de checagens Python.
+- [ ] Comparar em dispositivo prévia recolhida/expandida, rota única/alternativas, carro/bicicleta, conexão ausente, salvar offline, fechar/iniciar, escalas de texto e modos do mapa.
+- [ ] Confirmar versões anteriores no CI/Android antes de declarar estabilidade completa.
+
+## Refatoração gradual — 1.0.234 (2026-10-15)
+
+- [x] Base 1.0.233+233 conferida; `tool/verify_project.sh` passou antes das alterações.
+- [x] Faixa visual de telemetria e seus cartões extraídos por transposição, sem alterações de estado, sensores, rede ou persistência.
+- [x] Contratos preventivos mantidos e adaptados para conferir o novo local da classe e a chamada na tela.
+- [x] Cinco testes Flutter acrescentados para valores/fonte, callbacks, amostra GPS antiga, clima vencido e modo compacto; **não executados** neste ambiente.
+- [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` integral e build APK no GitHub Actions; SDK Flutter/Android ausente no ambiente local.
+- [ ] Verificar os cinco cartões em aparelho pequeno, GPS recente/antigo, clima online/ESP32, orientação de tela, navegação/gravação e retorno da tela, comparando com 1.0.233 funcional.
+- [ ] Medir autonomia em condições controladas antes de qualquer afirmação de ganho.
+
+## Refatoração gradual — 1.0.233 (2026-10-15)
+
+- [x] Fonte original 1.0.232+232 conferida: arquivo principal com 11.652 linhas; validação preventiva da base aprovada.
+- [x] Dois conjuntos isolados de widgets visuais extraídos; nenhum estado, timer, listener, API ou configuração persistida foi movido.
+- [x] Gate estrutural do zoom atualizado para buscar o widget real no arquivo novo e a chamada na tela principal.
+- [x] Adicionados testes de widgets de indicadores/controles e teste preventivo de integração para confirmar layout contratual e callbacks. Testes Dart dependem de Flutter.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e compilação APK Android da 1.0.233 no GitHub Actions.
+- [ ] Validar em dispositivo controle de zoom, HUD sem sinal/leituras atuais, alternância horizontal/vertical, câmera, rádio, navegação, gravação e consumo em modo offline. A ausência de diferença de consumo não foi medida.
+
 
 ## Android APK #191 — estabilização da 1.0.232
 

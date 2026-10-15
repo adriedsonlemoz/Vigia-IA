@@ -37,7 +37,6 @@ import '../services/bike_sensor_service.dart';
 import '../services/bike_ride_history_service.dart';
 import '../services/bike_trip_planner.dart';
 import '../services/bike_trip_schedule.dart';
-import '../services/map_route_preview_metrics.dart';
 import '../services/saved_bike_route_service.dart';
 import '../services/camera_registry_service.dart';
 import '../services/location_tracking_service.dart';
@@ -87,6 +86,12 @@ import '../widgets/map_centered_dialog.dart';
 import '../widgets/map_radio_panel.dart';
 import '../widgets/map_telemetry_panel.dart';
 import '../widgets/map_hud_context_pill.dart';
+import '../widgets/map_status_indicators.dart';
+import '../widgets/map_zoom_controls.dart';
+import '../widgets/map_telemetry_strip.dart';
+import '../widgets/map_route_preview_card.dart';
+import '../widgets/map_route_alternatives_button.dart';
+import '../widgets/map_navigation_metrics.dart';
 
 part 'map_monitoring_offline_support.dart';
 
@@ -7141,7 +7146,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                   top: safePadding.top + 2,
                   left: 12,
                   right: 12,
-                  child: _MapSystemHud(
+                  child: MapSystemHud(
                     batteryPercent: _phoneBattery,
                     gpsReady: _routeState.availability == LocationTrackingAvailability.ready,
                     speedSource: speedReading?.source,
@@ -7221,7 +7226,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 left: MapUxPolicy.controlEdge,
                 right: MapUxPolicy.controlEdge,
                 height: telemetryHeight,
-                child: _MapTelemetryStrip(
+                child: MapTelemetryStrip(
                   speedKmh: speedReading?.kmh,
                   speedSource: speedReading?.source,
                   altitudeMeters: liveGps?.altitudeMeters,
@@ -7297,7 +7302,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   top: topInset + MapUxPolicy.controlSize + 8,
                   left: MapUxPolicy.controlEdge,
-                  child: _MapFocusSpeedPill(
+                  child: MapFocusSpeedPill(
                     reading: speedReading,
                     heading: _displayHeadingFor(current).headingDegrees,
                     onTap: () => unawaited(_showSpeedDetails()),
@@ -7382,7 +7387,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         onPressed: _toggleNavigation3d,
                       ),
                     if (canRenderNavigation3d && focusLevel == 0)
-                      _MapControlGap(horizontal: horizontalControls),
+                      MapControlGap(horizontal: horizontalControls),
                     if (focusLevel == 0 && enabledAudioChannels > 0) _MapControlButton(
                       tooltip: enabledAudioChannels == 0
                           ? 'Áudio do mapa silenciado'
@@ -7391,7 +7396,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       active: enabledAudioChannels > 0,
                       onPressed: () => unawaited(_showAudioQuickControls()),
                     ),
-                    if (focusLevel == 0 && enabledAudioChannels > 0) _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0 && enabledAudioChannels > 0) MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
                       tooltip: 'Pesquisar no mapa',
                       icon: Icons.search_rounded,
@@ -7399,7 +7404,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                           ? null
                           : () => unawaited(_showDestinationSearch()),
                     ),
-                    _MapControlGap(horizontal: horizontalControls),
+                    MapControlGap(horizontal: horizontalControls),
                     _MapControlButton(
                       tooltip: switch (focusLevel) {
                         0 => 'Modo foco reduzido',
@@ -7413,7 +7418,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       onPressed: () => unawaited(_rideSettings.update(
                         focus: (focusLevel + 1) % 3)),
                     ),
-                    if (focusLevel == 0 && hud.showBikeShortcut) _MapControlGap(horizontal: horizontalControls),
+                    if (focusLevel == 0 && hud.showBikeShortcut) MapControlGap(horizontal: horizontalControls),
                     if (focusLevel == 0 && hud.showBikeShortcut) _MapControlButton(
                       tooltip: rapidPressureLoss != null
                           ? 'Bike · perda rápida de pressão'
@@ -7428,7 +7433,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       onPressed: () => unawaited(_showBikePanel()),
                     ),
                     if (focusLevel == 0 && navigation3dActive && !_navigation3dFollowing) ...[
-                      _MapControlGap(horizontal: horizontalControls),
+                      MapControlGap(horizontal: horizontalControls),
                       _MapControlButton(
                         tooltip: 'Centralizar e retomar acompanhamento 3D',
                         icon: Icons.my_location_rounded,
@@ -7438,13 +7443,13 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                       ),
                     ],
                     if (!navigation3dActive && focusLevel == 0) ...[
-                      _MapControlGap(horizontal: horizontalControls),
-                      if (hud.showZoomControls) _MapZoomCluster(
+                      MapControlGap(horizontal: horizontalControls),
+                      if (hud.showZoomControls) MapZoomCluster(
                         horizontal: horizontalControls,
                         onZoomIn: () => _zoomBy(1),
                         onZoomOut: () => _zoomBy(-1),
                       ),
-                      if (hud.showZoomControls) _MapControlGap(horizontal: horizontalControls),
+                      if (hud.showZoomControls) MapControlGap(horizontal: horizontalControls),
                       _MapControlButton(
                         tooltip: _followPosition
                             ? 'Posição sendo seguida'
@@ -7455,7 +7460,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                         active: _followPosition,
                         onPressed: current == null ? null : _toggleFollow,
                       ),
-                      if (!hud.showNearbyBanner) _MapControlGap(horizontal: horizontalControls),
+                      if (!hud.showNearbyBanner) MapControlGap(horizontal: horizontalControls),
                       if (!hud.showNearbyBanner) _MapControlButton(
                         tooltip: 'Próximos pontos',
                         icon: Icons.location_on_rounded,
@@ -7531,7 +7536,7 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
                 Positioned(
                   left: 8, right: 8,
                   bottom: bottomInset + 38,
-                  child: _RoutePreviewCard(
+                  child: MapRoutePreviewCard(
                     target: _previewTarget!,
                     routes: _previewRoutes,
                     selectedIndex: _previewIndex,
@@ -8307,68 +8312,6 @@ class _MapMonitoringScreenState extends State<MapMonitoringScreen>
 
 }
 
-class _MapSystemHud extends StatelessWidget {
-  const _MapSystemHud({required this.batteryPercent,
-    required this.gpsReady, required this.speedSource});
-  final int? batteryPercent;
-  final bool gpsReady;
-  final String? speedSource;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final clock = '${now.hour.toString().padLeft(2, '0')}:'
-        '${now.minute.toString().padLeft(2, '0')}';
-    return Container(
-      height: 25, padding: const EdgeInsets.symmetric(horizontal: 9),
-      decoration: BoxDecoration(color: const Color(0xD6081D31),
-        borderRadius: BorderRadius.circular(15)),
-      child: Row(children: [
-        Text(clock, style: const TextStyle(color: Colors.white,
-          fontWeight: FontWeight.w900, fontSize: 12)),
-        const Spacer(),
-        Icon(gpsReady ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
-          size: 14, color: gpsReady ? Colors.lightGreenAccent : Colors.orangeAccent),
-        const SizedBox(width: 6),
-        Text(speedSource ?? '--', style: const TextStyle(color: Colors.white70,
-          fontSize: 10)),
-        const SizedBox(width: 9),
-        const Icon(Icons.battery_5_bar_rounded, size: 15, color: Colors.white),
-        Text(batteryPercent == null ? '--%' : '$batteryPercent%',
-          style: const TextStyle(color: Colors.white, fontSize: 11)),
-      ]),
-    );
-  }
-}
-
-class _MapFocusSpeedPill extends StatelessWidget {
-  const _MapFocusSpeedPill({required this.reading,
-    required this.heading, required this.onTap});
-  final MapSpeedReading? reading;
-  final double? heading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: const Color(0xEB09273A),
-    borderRadius: BorderRadius.circular(16),
-    child: InkWell(
-      onTap: onTap, borderRadius: BorderRadius.circular(16),
-      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, children: [
-            Text('${reading?.kmh.toStringAsFixed(1) ?? '--'} km/h',
-              style: const TextStyle(color: Colors.white,
-                fontSize: 20, fontWeight: FontWeight.w900)),
-            Text('${reading?.source ?? 'Sem leitura'} · '
-                '${heading == null ? 'rumo --' : '${heading!.round()}°'}',
-              style: const TextStyle(color: Color(0xFFAAD1DE), fontSize: 10)),
-          ]),
-      ),
-    ),
-  );
-}
-
 class _MapBrandButton extends StatelessWidget {
   const _MapBrandButton({required this.onTap});
 
@@ -8997,90 +8940,6 @@ class _NearbyPointsBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MapControlGap extends StatelessWidget {
-  const _MapControlGap({required this.horizontal});
-
-  final bool horizontal;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: horizontal ? MapUxPolicy.controlGap : 0,
-        height: horizontal ? 0 : MapUxPolicy.controlGap,
-      );
-}
-
-class _MapZoomCluster extends StatelessWidget {
-  const _MapZoomCluster({
-    required this.horizontal,
-    required this.onZoomIn,
-    required this.onZoomOut,
-  });
-
-  final bool horizontal;
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final children = <Widget>[
-      _MapZoomAction(
-        tooltip: 'Aumentar zoom',
-        icon: Icons.add_rounded,
-        onPressed: onZoomIn,
-      ),
-      SizedBox(
-        width: horizontal ? 1 : 24,
-        height: horizontal ? 24 : 1,
-        child: ColoredBox(
-          color: scheme.outlineVariant.withValues(alpha: 0.65),
-        ),
-      ),
-      _MapZoomAction(
-        tooltip: 'Diminuir zoom',
-        icon: Icons.remove_rounded,
-        onPressed: onZoomOut,
-      ),
-    ];
-    return Material(
-      elevation: 2,
-      color: scheme.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: Flex(
-        direction: horizontal ? Axis.horizontal : Axis.vertical,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
-    );
-  }
-}
-
-class _MapZoomAction extends StatelessWidget {
-  const _MapZoomAction({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Tooltip(
-        message: tooltip,
-        child: InkWell(
-          onTap: onPressed,
-          child: SizedBox(
-            width: MapUxPolicy.controlSize,
-            height: MapUxPolicy.controlSize,
-            child: Icon(icon, size: 21),
-          ),
-        ),
-      );
 }
 
 class _CameraPipMenuButton extends StatelessWidget {
@@ -10178,288 +10037,6 @@ class _OfflineAreaWarning extends StatelessWidget {
   }
 }
 
-class _MapTelemetryStrip extends StatelessWidget {
-  const _MapTelemetryStrip({
-    required this.speedKmh,
-    required this.speedSource,
-    required this.altitudeMeters,
-    required this.headingDegrees,
-    required this.headingSource,
-    required this.gpsAccuracyMeters,
-    required this.gpsReadingAge,
-    required this.gpsIsFresh,
-    required this.gpsHasFix,
-    required this.orientationMode,
-    required this.weather,
-    required this.onSpeedTap,
-    required this.onAltitudeTap,
-    required this.onCompassTap,
-    required this.onGpsTap,
-    required this.onWeatherTap,
-    this.compact = false,
-  });
-
-  final double? speedKmh;
-  final String? speedSource;
-  final double? altitudeMeters;
-  final double? headingDegrees;
-  final MapHeadingSource headingSource;
-  final double? gpsAccuracyMeters;
-  final Duration? gpsReadingAge;
-  final bool gpsIsFresh;
-  final bool gpsHasFix;
-  final MapOrientationMode orientationMode;
-  final MapWeatherSnapshot weather;
-  final VoidCallback onSpeedTap;
-  final VoidCallback onAltitudeTap;
-  final VoidCallback onCompassTap;
-  final VoidCallback onGpsTap;
-  final VoidCallback onWeatherTap;
-  final bool compact;
-
-  String _direction(double? degrees) {
-    if (degrees == null || degrees.isNaN) return '--';
-    const labels = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
-    final normalized = ((degrees % 360) + 360) % 360;
-    final index = ((normalized + 22.5) ~/ 45) % 8;
-    return labels[index];
-  }
-
-  IconData _weatherIcon(int? code) => switch (code) {
-        0 || 1 => Icons.wb_sunny_rounded,
-        2 => Icons.wb_cloudy_rounded,
-        3 || 45 || 48 => Icons.cloud_rounded,
-        51 || 53 || 55 || 56 || 57 => Icons.grain_rounded,
-        61 || 63 || 65 || 66 || 67 || 80 || 81 || 82 =>
-          Icons.water_drop_rounded,
-        71 || 73 || 75 || 77 || 85 || 86 => Icons.ac_unit_rounded,
-        95 || 96 || 99 => Icons.thunderstorm_rounded,
-        _ => Icons.device_thermostat_rounded,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final altitudeValue = altitudeMeters == null
-        ? '--'
-        : altitudeMeters!.toStringAsFixed(0);
-    final gpsValue = gpsAccuracyMeters == null
-        ? '--'
-        : '±${gpsAccuracyMeters!.toStringAsFixed(0)}';
-    final gpsStale = gpsHasFix && !gpsIsFresh;
-    final gpsAgeText = gpsReadingAge == null
-        ? null
-        : gpsReadingAge!.inMinutes > 0
-            ? '${gpsReadingAge!.inMinutes} min'
-            : '${gpsReadingAge!.inSeconds} s';
-    final temperature = MapWeatherPolicy.currentValue(
-      weather, weather.temperatureC,
-    );
-    final weatherCode = MapWeatherPolicy.currentValue(
-      weather, weather.weatherCode,
-    );
-    final weatherOutdated = weather.hasValues &&
-        temperature == null && weatherCode == null;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _MapTelemetryCard(
-            icon: Icons.speed_rounded,
-            value: speedKmh == null ? '--' : speedKmh!.toStringAsFixed(1),
-            unit: speedKmh == null ? null : 'km/h',
-            label: speedSource == 'Simulação' ? 'Vel. simulada' : 'Velocidade',
-            source: speedSource,
-            emphasized: true,
-            onTap: onSpeedTap,
-            tooltip: 'Velocidade: toque para ver detalhes da sessão.',
-            compact: compact,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _MapTelemetryCard(
-            icon: Icons.height_rounded,
-            value: altitudeValue,
-            unit: altitudeMeters == null ? null : 'm',
-            label: 'Altitude',
-            onTap: onAltitudeTap,
-            tooltip: 'Altitude: toque para ver fonte e precisão.',
-            compact: compact,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _MapTelemetryCard(
-            icon: Icons.explore_rounded,
-            value: _direction(headingDegrees),
-            label: switch (headingSource) {
-              MapHeadingSource.sensor => 'Sensor',
-              MapHeadingSource.gps => 'Rumo GPS',
-              MapHeadingSource.route => 'Rumo rota',
-              MapHeadingSource.unavailable => 'Direção',
-            },
-            emphasized: orientationMode != MapOrientationMode.northUp,
-            onTap: onCompassTap,
-            tooltip:
-                'Bússola: toque para ver direção, fonte e escolher Norte, Direção ou Rota.',
-            compact: compact,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _MapTelemetryCard(
-            icon: Icons.gps_fixed_rounded,
-            value: gpsValue,
-            unit: gpsAccuracyMeters == null ? null : 'm',
-            label: gpsStale ? 'GPS antigo' : 'GPS',
-            source: gpsStale
-                ? gpsAgeText == null ? 'horário inválido' : 'há $gpsAgeText'
-                : null,
-            onTap: onGpsTap,
-            tooltip: gpsStale
-                ? 'Amostra GPS inválida ou antiga. A precisão anterior não descreve a posição atual.'
-                : 'GPS: toque para ver posição e qualidade da leitura.', 
-            compact: compact,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _MapTelemetryCard(
-            icon: _weatherIcon(weatherCode?.value),
-            value: temperature == null
-                ? '--'
-                : temperature.value.toStringAsFixed(0),
-            unit: temperature == null ? null : '°C',
-            label: weatherOutdated ? 'Clima antigo'
-                : weather.origin == MapWeatherOrigin.unavailable
-                    ? 'Clima'
-                    : 'Clima · ${weather.origin.label}',
-            emphasized: weatherOutdated,
-            onTap: onWeatherTap,
-            tooltip:
-                'Clima: toque para ver sensores ESP32, dados online e fontes.',
-            compact: compact,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MapTelemetryCard extends StatelessWidget {
-  const _MapTelemetryCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.compact,
-    this.unit,
-    this.source,
-    this.emphasized = false,
-    required this.onTap,
-    this.tooltip,
-  });
-
-  final IconData icon;
-  final String value;
-  final String? unit;
-  final String? source;
-  final String label;
-  final bool compact;
-  final bool emphasized;
-  final VoidCallback onTap;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final background = emphasized
-        ? const Color(0xF500625F)
-        : const Color(0xF2081D31);
-    const foreground = Colors.white;
-    const iconColor = Color(0xFF16BDF8);
-
-    Widget card = Material(
-      elevation: 2,
-      color: background,
-      borderRadius: BorderRadius.circular(13),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 4 : 5,
-            vertical: compact ? 3 : 4,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: compact ? 13 : 17, color: iconColor),
-                  const SizedBox(width: 2),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.fade,
-                      softWrap: false,
-                      style: TextStyle(
-                        color: foreground.withValues(alpha: 0.72),
-                        fontSize: compact ? 7.5 : 9,
-                        height: 1,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: value,
-                        style: TextStyle(
-                          color: foreground,
-                          fontSize: compact ? 15 : 20,
-                          height: 1,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      if (unit != null) ...[
-                        const TextSpan(text: ' '),
-                        TextSpan(
-                          text: unit,
-                          style: TextStyle(
-                            color: foreground.withValues(alpha: 0.74),
-                            fontSize: compact ? 7 : 9,
-                            height: 1,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              if (source != null && !compact)
-                Text(source!, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Color(0xFFB4DAE4), fontSize: 8)),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (tooltip != null) card = Tooltip(message: tooltip!, child: card);
-    return card;
-  }
-}
-
 class _LiveRouteElapsedPill extends StatefulWidget {
   const _LiveRouteElapsedPill({required this.routeState});
 
@@ -10586,167 +10163,6 @@ class _MapStyleThumbnailPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _MapStyleThumbnailPainter oldDelegate) =>
       oldDelegate.style != style;
-}
-
-class _RoutePreviewCard extends StatelessWidget {
-  const _RoutePreviewCard({
-    required this.target,
-    required this.routes,
-    required this.selectedIndex,
-    required this.loading,
-    required this.plan,
-    required this.bikePreferences,
-    required this.onEditPace,
-    required this.collapsed,
-    required this.onToggleCollapsed,
-    required this.onShowRoute,
-    required this.onClose,
-    required this.onChoose,
-    required this.onPlan,
-    required this.onStart,
-    required this.onSave,
-  });
-
-  final MapNavigationTarget target;
-  final List<MapCyclingRoute> routes;
-  final int selectedIndex;
-  final bool loading;
-  final BikeTripPlan? plan;
-  final BikeTravelPreferences bikePreferences;
-  final VoidCallback onEditPace;
-  final bool collapsed;
-  final VoidCallback onToggleCollapsed;
-  final VoidCallback onShowRoute;
-  final VoidCallback onClose;
-  final ValueChanged<int> onChoose;
-  final VoidCallback? onPlan;
-  final VoidCallback onStart;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final chosen = routes.isEmpty ? null : routes[selectedIndex];
-    final metrics = chosen == null ? null : MapRoutePreviewMetrics.forRoute(
-      route: chosen, mode: target.travelMode, bikePreferences: bikePreferences);
-    final firstMetrics = routes.isEmpty ? null : MapRoutePreviewMetrics.forRoute(
-      route: routes.first, mode: target.travelMode, bikePreferences: bikePreferences);
-    return Material(
-      elevation: 10,
-      color: scheme.surface.withValues(alpha: 0.98),
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Column(mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            const Icon(Icons.alt_route_rounded, size: 19),
-            const SizedBox(width: 8),
-            Expanded(child: Text('Prévia · ${target.label}',
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w900))),
-            IconButton(
-              tooltip: collapsed ? 'Expandir prévia' : 'Recolher prévia',
-              onPressed: onToggleCollapsed,
-              visualDensity: VisualDensity.compact,
-              icon: Icon(collapsed ? Icons.keyboard_arrow_up_rounded
-                  : Icons.keyboard_arrow_down_rounded),
-            ),
-            IconButton(tooltip: 'Fechar prévia', onPressed: onClose,
-              icon: const Icon(Icons.close_rounded),
-              visualDensity: VisualDensity.compact),
-          ]),
-          if (collapsed && metrics != null)
-            Text('${metrics.distanceLabel} · ${metrics.durationLabel} · '
-                'Toque na seta para ver opções',
-                style: Theme.of(context).textTheme.bodySmall),
-          if (!collapsed && loading) ...[
-            const LinearProgressIndicator(),
-            const SizedBox(height: 8),
-            const Text('Calculando alternativas sem iniciar a navegação…'),
-          ] else if (!collapsed && metrics != null) ...[
-            Text(
-              '${metrics.distanceLabel} · ${metrics.durationLabel} · '
-              '${target.travelMode.routeLabel}',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 3),
-            Text(metrics.durationSource,
-              style: Theme.of(context).textTheme.bodySmall),
-            if (target.travelMode == MapTravelMode.bicycle)
-              Align(alignment: Alignment.centerLeft, child: TextButton.icon(
-                onPressed: onEditPace,
-                icon: const Icon(Icons.tune_rounded, size: 17),
-                label: const Text('Editar ritmo do pedal'),
-              )),
-            if (routes.length > 1) ...[
-              const SizedBox(height: 7),
-              SizedBox(height: 37,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: routes.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 6),
-                  itemBuilder: (context, index) {
-                    final option = routes[index];
-                    final optionMetrics = MapRoutePreviewMetrics.forRoute(
-                      route: option, mode: target.travelMode,
-                      bikePreferences: bikePreferences);
-                    return ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: Text('Rota ${index + 1} · '
-                      '${optionMetrics.distanceLabel} · '
-                      '${optionMetrics.durationLabel}'),
-                    selected: selectedIndex == index,
-                    onSelected: (_) => onChoose(index),
-                  );
-                  },
-                ),
-              ),
-            ],
-            if (routes.length > 1 && firstMetrics != null && selectedIndex > 0)
-              Text(metrics.distanceDifference(firstMetrics),
-                style: Theme.of(context).textTheme.bodySmall),
-            Text('Relevo, qualidade e tipo de via: sem dados comparáveis nesta prévia.',
-              style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: OutlinedButton.icon(
-                onPressed: onShowRoute,
-                icon: const Icon(Icons.fit_screen_rounded, size: 18),
-                label: const Text('Ver trajeto'),
-              )),
-              const SizedBox(width: 8),
-              Expanded(child: OutlinedButton.icon(
-                onPressed: onSave,
-                icon: const Icon(Icons.save_alt_rounded, size: 18),
-                label: const Text('Salvar offline'),
-              )),
-            ]),
-            const SizedBox(height: 8),
-            Row(children: [
-              if (target.travelMode == MapTravelMode.bicycle)
-                Expanded(child: OutlinedButton.icon(
-                  onPressed: onPlan,
-                  icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                  label: Text(plan == null ? 'Carregando plano' :
-                    'Plano ${plan!.estimate.dayCount}d'),
-                )),
-              if (target.travelMode == MapTravelMode.bicycle)
-                const SizedBox(width: 8),
-              Expanded(child: FilledButton.icon(
-                onPressed: onStart,
-                icon: const Icon(Icons.navigation_rounded, size: 18),
-                label: const Text('Iniciar'),
-              )),
-            ]),
-            const Text('Trajeto salvo pode ser consultado offline; novos cálculos exigem internet.',
-              style: TextStyle(fontSize: 10.5)),
-          ],
-        ]),
-      ),
-    );
-  }
 }
 
 class _NavigationBanner extends StatelessWidget {
@@ -11172,25 +10588,25 @@ class _NavigationBanner extends StatelessWidget {
               )),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: _NavigationMetricCell(
+            Expanded(child: MapNavigationMetricCell(
               icon: Icons.flag_rounded, value: _distance(remainingDistance),
               label: 'restantes', accent: accent,
               foreground: foreground, compact: true)),
-            Expanded(child: _NavigationMetricCell(
+            Expanded(child: MapNavigationMetricCell(
               icon: Icons.schedule_rounded, value: remainingTime,
               label: 'estimado', accent: accent,
               foreground: foreground, compact: true)),
-            Expanded(child: _NavigationMetricCell(
+            Expanded(child: MapNavigationMetricCell(
               icon: Icons.speed_rounded, value: speedValue,
               label: 'referência', accent: accent,
               foreground: foreground, compact: true)),
-            Expanded(child: _NavigationMetricCell(
+            Expanded(child: MapNavigationMetricCell(
               icon: Icons.route_rounded,
               value: '${(progressFraction * 100).round()}%',
               label: 'concluído', accent: accent,
               foreground: foreground, compact: true)),
             if (routeAlternatives.length > 1)
-              Expanded(child: _RouteAlternativesButton(
+              Expanded(child: MapRouteAlternativesButton(
                 routes: routeAlternatives,
                 selectedIndex: selectedRouteIndex,
                 accent: accent,
@@ -11210,22 +10626,22 @@ class _NavigationBanner extends StatelessWidget {
           const SizedBox(height: 7),
           SizedBox(height: 60,
             child: ListView(scrollDirection: Axis.horizontal, children: [
-              SizedBox(width: 100, child: _NavigationPoiChip(
+              SizedBox(width: 100, child: MapNavigationPoiChip(
                 icon: Icons.water_drop_rounded, label: 'Água',
                 distance: water == null ? '--' : _distance(water.distanceMeters),
                 foreground: foreground, accent: accent, compact: true)),
               const SizedBox(width: 6),
-              SizedBox(width: 100, child: _NavigationPoiChip(
+              SizedBox(width: 100, child: MapNavigationPoiChip(
                 icon: Icons.restaurant_rounded, label: 'Comida',
                 distance: food == null ? '--' : _distance(food.distanceMeters),
                 foreground: foreground, accent: accent, compact: true)),
               const SizedBox(width: 6),
-              SizedBox(width: 100, child: _NavigationPoiChip(
+              SizedBox(width: 100, child: MapNavigationPoiChip(
                 icon: Icons.chair_alt_rounded, label: 'Descanso',
                 distance: rest == null ? '--' : _distance(rest.distanceMeters),
                 foreground: foreground, accent: accent, compact: true)),
               const SizedBox(width: 6),
-              SizedBox(width: 100, child: _NavigationPoiChip(
+              SizedBox(width: 100, child: MapNavigationPoiChip(
                 icon: Icons.local_gas_station_rounded, label: 'Parada',
                 distance: stop == null ? '--' : _distance(stop.distanceMeters),
                 foreground: foreground, accent: accent, compact: true)),
@@ -11249,231 +10665,6 @@ class _NavigationBanner extends StatelessWidget {
               ),
           ]),
         ]),
-      ),
-    );
-  }
-}
-
-class _RouteAlternativesButton extends StatelessWidget {
-  const _RouteAlternativesButton({
-    required this.routes,
-    required this.selectedIndex,
-    required this.accent,
-    required this.foreground,
-    required this.compact,
-    required this.distanceLabel,
-    required this.durationLabel,
-    required this.deltaLabel,
-    required this.onSelected,
-  });
-
-  final List<MapCyclingRoute> routes;
-  final int selectedIndex;
-  final Color accent;
-  final Color foreground;
-  final bool compact;
-  final String Function(double) distanceLabel;
-  final String Function(MapCyclingRoute) durationLabel;
-  final String Function(MapCyclingRoute) deltaLabel;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = routes.length > 1;
-    return PopupMenuButton<int>(
-      enabled: enabled,
-      tooltip: enabled ? 'Comparar rotas alternativas' : 'Sem rotas alternativas',
-      initialValue: selectedIndex,
-      onSelected: onSelected,
-      position: PopupMenuPosition.over,
-      constraints: const BoxConstraints(minWidth: 245, maxWidth: 310),
-      itemBuilder: (context) => <PopupMenuEntry<int>>[
-        for (var index = 0; index < routes.length; index++)
-          PopupMenuItem<int>(
-            value: index,
-            child: Row(
-              children: [
-                Icon(
-                  index == selectedIndex ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                  size: 18,
-                  color: index == selectedIndex ? accent : foreground.withValues(alpha: 0.55),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Rota ${index + 1} · ${distanceLabel(routes[index].distanceMeters)} · ${durationLabel(routes[index])}',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      _deltaText(routes[index], deltaLabel, foreground),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: compact ? 28 : 32,
-              height: compact ? 24 : 28,
-              decoration: BoxDecoration(
-                color: enabled ? accent.withValues(alpha: 0.16) : foreground.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: enabled ? accent.withValues(alpha: 0.36) : foreground.withValues(alpha: 0.08)),
-              ),
-              child: Icon(Icons.alt_route_rounded, size: compact ? 16 : 18, color: enabled ? accent : foreground.withValues(alpha: 0.42)),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              enabled ? '${routes.length} opções' : '1 opção',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: foreground, fontSize: compact ? 10 : 11.5, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              'rotas',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: foreground.withValues(alpha: 0.62), fontSize: compact ? 7.5 : 8.5, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _deltaText(
-    MapCyclingRoute route,
-    String Function(MapCyclingRoute) formatter,
-    Color textColor,
-  ) {
-    final value = formatter(route);
-    return Text(
-      value.isEmpty ? 'Sem comparação disponível' : value,
-      style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.62)),
-    );
-  }
-}
-
-class _NavigationMetricCell extends StatelessWidget {
-  const _NavigationMetricCell({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.accent,
-    required this.foreground,
-    required this.compact,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color accent;
-  final Color foreground;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: compact ? 16 : 18, color: accent),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: foreground,
-              fontSize: compact ? 12 : 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 1),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: foreground.withValues(alpha: 0.62),
-              fontSize: compact ? 8 : 9.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavigationPoiChip extends StatelessWidget {
-  const _NavigationPoiChip({
-    required this.icon,
-    required this.label,
-    required this.distance,
-    required this.foreground,
-    required this.accent,
-    required this.compact,
-  });
-
-  final IconData icon;
-  final String label;
-  final String distance;
-  final Color foreground;
-  final Color accent;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 5 : 7,
-        vertical: compact ? 6 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: foreground.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: foreground.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: compact ? 17 : 20, color: accent),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: foreground,
-              fontSize: compact ? 9 : 10.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Text(
-            distance,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: foreground.withValues(alpha: 0.68),
-              fontSize: compact ? 8 : 9.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }

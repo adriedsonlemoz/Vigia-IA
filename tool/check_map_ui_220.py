@@ -5,6 +5,7 @@ root = Path(__file__).resolve().parents[1]
 read = lambda path: (root / path).read_text(encoding='utf-8')
 key = read('lib/widgets/offline_map_manager_sheet.dart')
 mapui = read('lib/screens/map_monitoring_screen.dart')
+preview = read('lib/widgets/map_route_preview_card.dart')
 schedule = read('lib/services/bike_trip_schedule.dart')
 tests = read('test/bike_trip_schedule_test.dart')
 checks = {
@@ -25,7 +26,7 @@ checks = {
         'ChoiceChip(label: const Text(\'Automático\')' in mapui,
     'prévia de rota pode ser recolhida':
         'bool _previewCollapsed = false;' in mapui and
-        'onToggleCollapsed:' in mapui and 'Ver trajeto' in mapui and 'Salvar offline' in mapui,
+        'onToggleCollapsed:' in mapui and 'onPressed: onToggleCollapsed' in preview and 'Ver trajeto' in preview and 'Salvar offline' in preview,
     'configuração de camadas por grupos':
         "ValueKey('map-appearance-section')" in mapui and
         "ValueKey('map-provider-section')" in mapui and

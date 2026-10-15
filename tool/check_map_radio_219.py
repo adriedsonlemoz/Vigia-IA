@@ -3,6 +3,7 @@
 Não substitui flutter analyze/test ou teste de rede real.
 """
 from pathlib import Path
+import re
 root = Path(__file__).resolve().parents[1]
 
 
@@ -45,5 +46,7 @@ check('height: items.isEmpty && !service.loading ? 470 : 690' in mapui and
       'diálogos vazios não foram compactados')
 check('class RadioSleepTimer' in text('lib/services/radio_sleep_timer.dart') and
       'RadioSleepTimer.schedule(' in radio, 'temporizador local da rádio ausente')
-check('1.0.232+232' in text('pubspec.yaml'), 'versão divergente')
+version_match = re.search(r'^version:\s*([0-9]+\.[0-9]+\.([0-9]+))\+([0-9]+)\s*$', text('pubspec.yaml'), re.M)
+check(version_match is not None and version_match.group(2) == version_match.group(3),
+      'versão e build divergentes no pubspec.yaml')
 print('Regressões locais de mapa/rádio 1.0.219: OK')

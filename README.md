@@ -1,5 +1,15 @@
 # Vigia IA
 
+**1.0.237+237 (refatoração gradual, etapa 5):** células de métricas e pontos próximos da navegação reunidas em `lib/widgets/map_navigation_metrics.dart`. Textos, ícones, distâncias e estilos preservados; cálculos e dados continuam na tela principal. Sete testes Flutter e contratos preventivos novos. Flutter/Android ainda dependem de CI e dispositivo.
+
+**1.0.236+236 (refatoração gradual, etapa 4):** seletor visual de alternativas de navegação extraído para `lib/widgets/map_route_alternatives_button.dart`, preservando comparação, índices e callbacks. Sem mudança de estado, serviços ou persistência. Corrigida a validação isolada mapa/rádio que continha um número de build incorreto; agora executada no gate preventivo. Testes Flutter adicionados e execução Flutter/Android pendente de CI.
+
+**1.0.235+235 (refatoração gradual, etapa 3):** cartão de prévia de rotas extraído para `lib/widgets/map_route_preview_card.dart`, preservando a apresentação, alternativas e callbacks de rota. Nenhum serviço, controlador, schema ou gravação alterados. Testes estruturais e widgets novos; execução Flutter/Android pendente no CI.
+
+**1.0.234+234 (refatoração gradual, etapa 2):** faixa de telemetria visual extraída para `lib/widgets/map_telemetry_strip.dart`. Mantidos os cinco cartões, indicação de GPS/clima desatualizado, callbacks e layouts; sem mudanças de lógica, serviços ou dados. Testes Flutter novos adicionados, ainda dependentes de SDK/CI.
+
+**1.0.233+233 (refatoração gradual, etapa 1):** extração sem mudança intencional de aparência ou comportamento: indicadores passivos do HUD e conjunto visual de zoom agora vivem em `lib/widgets/map_status_indicators.dart` e `lib/widgets/map_zoom_controls.dart`. Eventos continuam sendo tratados pela tela de mapa. Testes de widgets e contratos de integração adicionados. Flutter analyze/test/build Android e aparelho real dependem do CI.
+
 **1.0.232+232 (compatibilidade do Android APK #191):** o `flutter analyze` da versão anterior detectou uma condicional sem bloco na recuperação de rotas offline. Esta entrega coloca o retorno entre chaves, sem alterar o comportamento, e adiciona teste preventivo. A versão 1.0.231 havia passado na validação Python do projeto, mas não no Flutter Analyze, portanto testes Flutter e APK ainda precisam passar no CI. O teste manual das quatro versões 228 a 231 continua pendente antes da refatoração.
 
 **1.0.231+231 (offline e autonomia):** o mapa diferencia local fora dos limites, nível de zoom além dos detalhes baixados e MBTiles sem limites conhecidos; corredores de trajeto deixam claro que o retângulo do arquivo não significa cobertura completa. O monitor de conectividade usa sondagens de 15 segundos conectado e 60 segundos desconectado; o fallback da navegação deixa de sondar a rede uma segunda vez enquanto offline, mas preserva a rota conhecida e a recuperação quando a conectividade voltar. Uso em modo avião, autonomia real, Flutter analyze/test e APK desta versão ainda precisam de validação no CI/aparelho. Os pacotes offline não fazem recálculo viário offline.
@@ -36,7 +46,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.232+232`
+> **Versão atual:** `1.0.237+237`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

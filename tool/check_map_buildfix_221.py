@@ -16,7 +16,7 @@ def must(condition: bool, label: str) -> None:
 
 
 must("import 'dart:ui' as ui;" in mapui, 'alias explícito para o Path do Canvas')
-painter = mapui.split('class _MapStyleThumbnailPainter extends CustomPainter {', 1)[1].split('\nclass _RoutePreviewCard', 1)[0]
+painter = mapui.split('class _MapStyleThumbnailPainter extends CustomPainter {', 1)[1].split('\nclass _NavigationBanner', 1)[0]
 must(len(re.findall(r'\bui\.Path\s*\(', painter)) == 4, 'quatro paths de Canvas com ui.Path')
 must(not re.search(r'(?<![.\w])Path\s*\(', painter), 'não usar Path genérico do Flutter Map no Canvas')
 must('_mapStyleIcon(' not in mapui, 'método _mapStyleIcon removido')

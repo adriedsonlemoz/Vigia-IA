@@ -1,3 +1,44 @@
+## 1.0.237+237 — 2026-10-15
+
+- Refatoração etapa 5: `_NavigationMetricCell` e `_NavigationPoiChip` foram movidos para `lib/widgets/map_navigation_metrics.dart` como `MapNavigationMetricCell` e `MapNavigationPoiChip`. Dois componentes visuais coesos, sem alteração dos cálculos de progresso, distância, sensores, ações ou estilos.
+- `map_monitoring_screen.dart`: **10.957 → 10.843 linhas**, **115 linhas originais extraídas** e redução líquida de 114 linhas após novo import. A tela mantém 4 métricas e 4 chips na mesma faixa.
+- Novos testes Flutter de widgets (7) e checagem estrutural `tool/check_map_refactor_237.py`; verificador histórico de 1.0.199 adaptado à localização nova sem desativar a garantia.
+- Não foram identificados bugs funcionais reproduzíveis no escopo. Não foram criados timers, listeners, trabalho de rede, estado duplicado nem migrações. Flutter analyze/test/APK e teste físico ainda pendentes.
+
+## 1.0.236+236 — 2026-10-15
+
+- Etapa 4 da refatoração: `_RouteAlternativesButton` foi transposto para `MapRouteAlternativesButton` em `lib/widgets/map_route_alternatives_button.dart`, mantendo o mesmo corpo visual, ordem de opções, dimensões, estado habilitado para duas ou mais rotas, marcação da selecionada, formatação e callbacks.
+- `map_monitoring_screen.dart`: **11.066 → 10.957 linhas** (109 linhas originais movidas). O arquivo novo reúne 116 linhas incluindo imports/comentário. O estado do GPS, o cálculo de rotas, as preferências, a escolha de rota e a gravação continuam sob propriedade da tela principal.
+- Adicionados `test/map_route_alternatives_button_test.dart` com cinco testes de UI/toque e `tool/check_map_refactor_236.py` com contratos de integridade do código extraído. O verificador histórico 137/199 agora busca o seletor em seu local real sem perder as condições existentes.
+- Bug real de ferramentas: `tool/check_map_radio_219.py` falhava isoladamente porque verificava por engano a versão `1.0.235+234`. Passou a conferir coerência versão/build de `pubspec.yaml`, e entrou novamente no `tool/verify_project.sh` para evitar regressão silenciosa. **Não afeta o aplicativo Android.**
+- Mantidos schemas, serviços, rádio, sensores, câmera, mapas offline e callbacks sem alteração. `flutter analyze`, `flutter test`, APK e testes físicos continuam pendentes do CI; gate Python não demonstra compilação.
+
+## 1.0.235+235 — 2026-10-15
+
+- Etapa 3 da refatoração gradual: `_RoutePreviewCard` passou a `MapRoutePreviewCard` no arquivo `lib/widgets/map_route_preview_card.dart`, com corpo de renderização preservado. Os dados de destino/alternativas/plano e os callbacks de escolha, edição, visualização, salvamento, início e fechamento continuam fornecidos pelo estado original.
+- `map_monitoring_screen.dart`: 11.227 → 11066 linhas (160 linhas originais deslocadas; redução líquida de 161). Nenhum `State`, listener, timer, operação de rede ou persistência foi movido.
+- Testes Flutter de widget adicionados para prévia vazia/carregamento, modo reduzido, alternativas e ações, e comparação entre meios de transporte. Contrato preventivo específico verifica a transposição, a chamada única e a ausência de efeitos colaterais.
+- Atualizados verificadores legados para buscar os textos de prévia no novo arquivo e continuar validando os caminhos e callbacks. Preservados os controles modulares 1.0.233 e a telemetria 1.0.234.
+- Nenhum bug funcional comprovado foi corrigido. `flutter analyze --fatal-infos --fatal-warnings`, `flutter test`, compilação Android e dispositivo real continuam pendentes do CI.
+
+## 1.0.234+234 — 2026-10-15
+
+- Segunda etapa de refatoração gradual: `MapTelemetryStrip` e seu `_MapTelemetryCard` interno foram transpostos para `lib/widgets/map_telemetry_strip.dart`. Cinco cartões de velocidade, altitude, bússola, GPS e clima conservam layout, cores, tooltips, leituras e callbacks existentes, incluindo aviso de amostras antigas.
+- `map_monitoring_screen.dart`: 11.508 → 11.227 linhas, 282 linhas originais deslocadas (281 linhas de redução líquida, devidas ao import adicionado).
+- Adicionados cinco testes Flutter de apresentação, callbacks, GPS antigo, clima antigo e modo compacto, e contratos Python de integração. Gate preventivo antigo foi redirecionado para verificar o uso na tela e a existência real da classe no arquivo novo.
+- Mantidos sem modificação: lógica do GPS, configuração de sensores, controladores, clima, rede, gravação, roteamento, dados persistidos, permissões, gerenciamento de áudio e ciclos de vida.
+- Nenhum bug funcional reproduzido/corrigido nesta etapa; `flutter analyze`, `flutter test` e compilação APK continuam pendentes de execução em SDK/CI. O pacote não constitui aprovação de build.
+
+## 1.0.233+233 — 2026-10-15
+
+- Primeira etapa de refatoração gradual: `MapSystemHud` e `MapFocusSpeedPill` foram movidos para `lib/widgets/map_status_indicators.dart`, preservando entradas, rótulos, cores e callback.
+- `MapControlGap` e `MapZoomCluster` (com seu botão interno) foram movidos para `lib/widgets/map_zoom_controls.dart`. A tela continua controlando o zoom. Nenhum listener, `Timer`, serviço ou estado foi criado.
+- `map_monitoring_screen.dart`: 11.652 → 11.508 linhas (146 linhas originais deslocadas, redução líquida de 144 contando espaçamento entre classes).
+- Novos testes de widget de ícones, valores, orientação e callbacks, mais verificação estrutural da integração. Contrato antigo do cluster atualizado para conferir também o arquivo novo, sem retirar cobertura.
+- Não foram identificados bugs funcionais reproduzíveis nesta etapa; somente checagens estáticas locais. API de persistência, permissões Android, fontes de mapas, rádio, câmeras, ESP32 e navegação permaneceram intactas.
+- O Android `versionCode` e `versionName` são herdados de `pubspec.yaml` via Flutter Gradle; `app_identity.json`, `github-manager.json`, Novidades, Sobre, user-agents e documentos sincronizados.
+- `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e APK requerem CI (SDK Flutter/Android indisponível localmente); validações estáticas não garantem compilação.
+
 ## 1.0.232+232 — 2026-10-12
 
 - Android APK #191: `flutter analyze --fatal-infos --fatal-warnings` detectou 1 `curly_braces_in_flow_control_structures` na linha 73 de `lib/screens/map_monitoring_offline_support.dart`, na guarda que impede retentativas offline. O fluxo foi preservado e o `return` recebeu chaves.

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.232', build: 232);
+      AppBuildVersion(version: '1.0.237', build: 237);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.232', build: 232),
+      version: AppBuildVersion(version: '1.0.237', build: 237),
       changes: <String>[
-         'A recuperação de rotas offline mantém seu funcionamento e estabilidade.',
-        'Melhorias de compatibilidade para o aplicativo Android.',
+        'Indicadores de navegação e pontos próximos organizados.',
+        'Velocidade, progresso e distâncias continuam visíveis durante a rota.',
       ],
     ),
   ]);

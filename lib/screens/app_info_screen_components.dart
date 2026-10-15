@@ -77,8 +77,48 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.232',
+          version: '1.0.237',
           current: true,
+          changes: [
+            'Cartões de métricas e pontos próximos da navegação organizados.',
+            'Valores e indicadores mantidos no painel de navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.236',
+          changes: [
+            'Seletor de alternativas de navegação organizado.',
+            'Comparações e escolha de rotas mantidas durante o trajeto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.235',
+          changes: [
+            'Prévia de rotas organizada em um componente próprio.',
+            'Alternativas, distância e botões de ação permanecem acessíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.234',
+          changes: [
+            'Instrumentos de velocidade, altitude, bússola, GPS e clima organizados.',
+            'Informações de leitura e ações mantidas no mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.233',
+          changes: [
+            'Controles de zoom organizados sem mudar os gestos ou ações.',
+            'Indicadores de GPS, bateria e velocidade preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.232',
           changes: [
             'Recuperação de rotas offline mais estável no Android.',
             'Preparação para testar o ciclo de navegação e mapas no celular.',
@@ -2092,8 +2132,48 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.232',
+          version: '1.0.237',
           current: true,
+          changes: [
+            'Cartões de métricas e pontos próximos da navegação organizados.',
+            'Valores e indicadores mantidos no painel de navegação.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.236',
+          changes: [
+            'Seletor de alternativas de navegação organizado.',
+            'Comparações e escolha de rotas mantidas durante o trajeto.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.235',
+          changes: [
+            'Prévia de rotas organizada em um componente próprio.',
+            'Alternativas, distância e botões de ação permanecem acessíveis.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.234',
+          changes: [
+            'Instrumentos de velocidade, altitude, bússola, GPS e clima organizados.',
+            'Informações de leitura e ações mantidas no mapa.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.233',
+          changes: [
+            'Controles de zoom organizados sem mudar os gestos ou ações.',
+            'Indicadores de GPS, bateria e velocidade preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.232',
           changes: [
             'Recuperação de rotas offline mais estável no Android.',
             'Preparação para testar o ciclo de navegação e mapas no celular.',

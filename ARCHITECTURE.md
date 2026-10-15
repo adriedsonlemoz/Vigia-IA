@@ -1,4 +1,44 @@
-# Arquitetura — Vigia IA 1.0.232+232
+# Arquitetura — Vigia IA 1.0.237+237
+
+## Refatoração gradual de métricas e pontos próximos na navegação — 1.0.237
+
+- `lib/widgets/map_navigation_metrics.dart` contém `MapNavigationMetricCell` e `MapNavigationPoiChip`. São dois widgets visuais do mesmo painel, sem estado, timer, sensores ou lógica de rota. Recebem exclusivamente valor/rótulo/ícone, cores, modo compacto e, no chip, distância já formatada.
+- `lib/screens/map_monitoring_screen.dart` mantém `_NavigationBanner`, a composição da faixa, as distâncias calculadas, POIs selecionados, cálculo de progresso, GPS, áudio, gravação e serviços. Apenas as definições das duas classes privadas foram transpostas e renomeadas para tipos públicos em biblioteca independente.
+- Testes Flutter `test/map_navigation_metrics_test.dart` verificam textos, placeholder, cor, fontes e modos compacto/expandido. `tool/check_map_refactor_237.py` garante integridade estática da transposição e os oito usos da tela. Validações Dart/Android e aparelhos pendentes de execução no CI. Nenhuma migração de dados ou mudança de permissões.
+
+## Refatoração gradual do seletor de rotas durante navegação — 1.0.236
+
+- `lib/widgets/map_route_alternatives_button.dart` reúne somente o `MapRouteAlternativesButton`, responsável pelo menu pop-up de alternativas durante a navegação. Recebe `List<MapCyclingRoute>`, índice selecionado, cores, rótulos calculados pela tela e `onSelected`. Nenhuma configuração, serviço ou controle de ciclo de vida foi movido.
+- `lib/screens/map_monitoring_screen.dart` mantém `_NavigationBanner`, `onRouteSelected`, a atualização da rota e todos os dados/controles ativos. O menu continua sendo exibido só se houver pelo menos duas alternativas. O corpo do widget foi transposto sem alterações funcionais, apenas com nome público entre bibliotecas e import local.
+- `test/map_route_alternatives_button_test.dart` cobre apresentação, seleção, ausência de alternativas, comparação indisponível e layout; `tool/check_map_refactor_236.py` verifica a cópia e o ponto único de integração. Testes Dart pendentes de Flutter/Android CI.
+- A verificação histórica 1.0.219 de mapa/rádio voltou ao gate preventivo após corrigir a expectativa de versão incorreta. Nenhuma dependência circular, stream/listener duplicado ou novo trabalho em segundo plano foi introduzido. Dados offline, preferências e gravações não precisam de migração.
+
+## Refatoração gradual da prévia de rotas — 1.0.235
+
+- `lib/widgets/map_route_preview_card.dart`: `MapRoutePreviewCard` recebe `MapNavigationTarget`, `MapCyclingRoute`, `BikeTripPlan` e `BikeTravelPreferences` e renderiza a prévia de alternativas usando `MapRoutePreviewMetrics` já existente. É `StatelessWidget`; não possui sensores, `State`, listeners, chamadas de rede, timers ou persistência. O mesmo corpo original foi transposto com alteração somente do nome da classe pública.
+- `lib/screens/map_monitoring_screen.dart` continua proprietária do estado de prévia e dos callbacks para ver trajeto, salvar, planejar, começar navegação, editar ritmo, escolher alternativa e fechar. Nenhuma responsabilidade de roteamento foi movida. O `part` do suporte offline e os quatro widgets das versões 233/234 permanecem no lugar.
+- A prévia mantém exatamente as mensagens, escolha de chips, métricas, estilos e ações. Mudanças de comportamento exigem versão própria; índices de alternativas continuam gerenciados pela tela original.
+- `test/map_route_preview_card_test.dart` registra testes visuais e de toque, pendentes de Flutter SDK. `tool/check_map_refactor_235.py` confere integridade do corpo transposto e contratos estáticos. Verificadores históricos 221 e 229 foram adaptados sem remover invariantes.
+- Arquivo principal passou de 11.227 para 11066 linhas (160 deslocadas), sem evidência de impacto em CPU, memória ou bateria. Ainda faltam `flutter analyze`, `flutter test`, CI e inspeção física.
+
+## Refatoração gradual da telemetria de mapa — 1.0.234
+
+- `lib/widgets/map_telemetry_strip.dart` recebe `MapTelemetryStrip` com cinco cartões e `_MapTelemetryCard` privado. É um único domínio visual coeso, sem `State`, serviços em singleton ou sensores inicializados. Usa somente políticas existentes `MapWeatherPolicy` e os modelos da visualização para apresentar dados atuais.
+- `map_monitoring_screen.dart` continua sendo a proprietária das leituras e dos callbacks. Nenhum estado, timer, `ChangeNotifier`, ou persistência mudou; `map_monitoring_offline_support.dart` continua como `part` por depender de estado privado.
+- `test/map_telemetry_strip_test.dart` fornece cinco testes novos de apresentação e interação. `tool/check_map_refactor_234.py` verifica equivalência textual normalizada do código movido com a base 1.0.233, contrato de inputs/ações e pontos de montagem no mapa. A verificação preventiva de telemetria foi atualizada para localizar a classe no módulo novo, sem suprimir a garantia anterior.
+- Ainda requer `flutter analyze`, `flutter test`, APK CI e testes em dispositivo. Não há evidência de melhoria de autonomia nesta etapa: a prioridade foi não acrescentar trabalho em segundo plano.
+
+## Refatoração gradual da tela de mapa — 1.0.233
+
+A tela principal mantém a propriedade de `MapRouteService`, `MapController`, estado de HUD, callbacks, lifecycle e configuração. Esta primeira etapa somente move widgets passivos para bibliotecas independentes, preservando a árvore do widget, cores, dimensões, strings e sem criar novos serviços, timers, listeners, dependências ou inicializações.
+
+- `lib/widgets/map_status_indicators.dart` recebe `MapSystemHud` (hora, bateria, GPS e procedência) e `MapFocusSpeedPill` (velocidade e rumo). O relógio continua sendo calculado em `build`, com a mesma cadência de rebuild da tela, sem agendamento próprio.
+- `lib/widgets/map_zoom_controls.dart` recebe `MapControlGap` e `MapZoomCluster` com `_MapZoomAction` privado. Os botões de zoom repassam exclusivamente os callbacks da tela, sem conhecer o mecanismo de mapas.
+- `test/map_status_indicators_test.dart` e `test/map_zoom_controls_test.dart` verificam apresentação e acionamento; `tool/check_map_refactor_233.py` valida os contratos de imports, ownership e ausência de classes duplicadas. Os contratos não substituem `flutter analyze`/`flutter test`.
+- `lib/screens/map_monitoring_offline_support.dart` continua `part` do mapa por usar estado privado; sua extração futura exige análise do lifecycle. Não foi reescrito.
+
+**Próxima etapa segura:** auditar widgets de cartões informativos determinísticos em `map_monitoring_screen.dart` e selecionar uma unidade independente de UI para futura extração, só após confirmar CI/analyzer/teste físico desta versão. Evitar remover controllers, copiar `ChangeNotifier` e alterar os contratos de rede sem testes suficientes.
+
 
 ## CI Android APK #191 — 1.0.232
 
