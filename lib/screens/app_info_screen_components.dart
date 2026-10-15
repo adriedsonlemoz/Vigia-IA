@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.240',
+          version: '1.0.241',
           current: true,
+          changes: [
+            'Indicadores de altitude e precisão GPS protegidos por testes completos.',
+            'Comportamento dos mapas, rotas e gravação preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.240',
           changes: [
             'Leituras de telemetria e direção preservadas nos indicadores do mapa.',
             'Validação das telas e navegação aprimorada.',
@@ -2156,8 +2164,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.240',
+          version: '1.0.241',
           current: true,
+          changes: [
+            'Indicadores de altitude e precisão GPS protegidos por testes completos.',
+            'Comportamento dos mapas, rotas e gravação preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.240',
           changes: [
             'Leituras de telemetria e direção preservadas nos indicadores do mapa.',
             'Validação das telas e navegação aprimorada.',

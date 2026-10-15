@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.240', build: 240);
+      AppBuildVersion(version: '1.0.241', build: 241);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.240', build: 240),
+      version: AppBuildVersion(version: '1.0.241', build: 241),
       changes: <String>[
-        'Apresentação dos indicadores do mapa mantida e testes aprimorados.',
-        'Compatibilidade de navegação e gravação preservada.',
+        'Testes dos instrumentos do mapa conferem número e unidade juntos.',
+        'Altitude, precisão GPS e navegação visual preservadas.'
       ],
     ),
   ]);

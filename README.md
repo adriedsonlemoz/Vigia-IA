@@ -1,5 +1,8 @@
 # Vigia IA
 
+**1.0.241+241 (buildfix Android-APK-196):** o CI passou no `flutter analyze` e concluiu 499 testes Flutter, com uma falha de expectativa na telemetria (`553` isolado em vez de `553 m`). O mesmo caso também comparava a precisão `±8` sem sua unidade (`±8 m`); ambas as expectativas foram alinhadas ao `Text.rich` original para eliminar o erro atual e a próxima falha previsível. Acrescentados teste de widget em modo compacto, checagem preventiva e testes de regressão por mutação. Nenhum código de produção do mapa ou serviços foi alterado; novo CI ainda obrigatório.
+
+
 **1.0.240+240 (buildfix Android-APK-195):** o CI aprovou `flutter analyze`, mas três expectativas de `flutter test` não correspondiam à saída visual existente: a telemetria usa `Text.rich` com valor e unidade juntos (`19.8 km/h`) e o HUD mostra `GPS · 92°`. Atualizadas apenas essas expectativas e acrescentado gate preventivo; componentes, GPS, rotas, serviços, callbacks e aparência inalterados. Flutter Test completo e APK aguardam reexecução no GitHub Actions.
 
 
@@ -53,7 +56,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.240+240`
+> **Versão atual:** `1.0.241+241`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

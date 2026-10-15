@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.240+240
+# Arquitetura — Vigia IA 1.0.241+241
+
+## Exibição de unidades e testes de telemetria (1.0.241)
+
+- CI Android-APK-196: `flutter analyze` sem problemas; 499 testes aprovados, uma falha em `test/map_telemetry_strip_test.dart:59`. `find.text('553')` não encontra o valor de altitude porque `_MapTelemetryCard` exibe `Text.rich` contendo `553 m` em uma única árvore de `TextSpan`.
+- A verificação seguinte no mesmo teste buscava `±8` isolado; a precisão é exibida como `±8 m`. Ajustadas as duas expectativas e adicionado teste compacto para ambos os textos completos. Essas alterações são exclusivamente nos testes, sem modificar `_MapTelemetryCard`, o mapa, estado ou serviços.
+- `tool/check_build196_telemetry_units_241.py` protege o contrato de valor mais unidade em modo normal e compacto, com cinco cenários Python de regressão por mutação. `flutter test` permanece obrigatório no CI; o gate estático não substitui execução real.
 
 ## Alinhamento dos testes à apresentação de telemetria (1.0.240)
 

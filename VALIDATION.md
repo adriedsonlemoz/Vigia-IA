@@ -1,4 +1,13 @@
-# Validação Vigia IA 1.0.240+240
+# Validação Vigia IA 1.0.241+241
+
+## Buildfix Android-APK-196 — 1.0.241 (2026-10-15)
+
+- [x] Logs do Android-APK-196: `flutter analyze --fatal-infos --fatal-warnings` concluiu `No issues found!`; os testes `flutter test` encerraram `+499 -1`, uma falha no teste `apresenta velocidade, altitude, rumo, GPS e clima ausente`, linha 59.
+- [x] Evidência: `Actual: Found 0 widgets with text "553"`; componente original usa `Text.rich` com `value` mais `unit`, produzindo `553 m`.
+- [x] Duas asserções ajustadas: altitude `553 m` e precisão `±8 m`, incluindo a próxima falha previsível na mesma sequência; teste adicional cobre modo compacto.
+- [x] Código do widget `lib/widgets/map_telemetry_strip.dart`, serviços e tela do mapa permanecem idênticos aos da 1.0.240.
+- [x] Novo gate `tool/check_build196_telemetry_units_241.py` e cinco testes Python de mutação adicionados, sem suprimir testes Flutter.
+- [ ] Flutter SDK indisponível localmente: executar `flutter analyze`, `flutter test`, build APK e teste no aparelho no GitHub Actions para 1.0.241.
 
 ## Buildfix Android-APK-195 — 1.0.240 (2026-10-15)
 

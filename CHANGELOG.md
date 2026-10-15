@@ -1,3 +1,11 @@
+## 1.0.241+241 — 2026-10-15
+
+- **Buildfix do workflow Android-APK-196:** `flutter analyze` passou; 499 testes Flutter foram aprovados e um falhou em `map_telemetry_strip_test.dart:59`, pois esperava `553` isolado onde `Text.rich` exibe `553 m`.
+- Corrigida a expectativa para `553 m` e, preventivamente, a expectativa seguinte `±8` para `±8 m`, pois a precisão também é um único texto combinado à unidade. Isso evita nova falha sequencial no mesmo teste.
+- Adicionado teste Flutter específico do layout compacto, com valores e unidades de altitude e precisão; criado `tool/check_build196_telemetry_units_241.py` e cinco testes Python de regressão por mutação.
+- **Nenhuma alteração em widgets ou serviços de produção:** GPS, navegação offline, gravação, sensores e indicadores continuam com código idêntico à 1.0.240.
+- Sincronizados versionCode 241, catálogos, tela Sobre/Novidades, metadados, User-Agent, documentação e relatório. A aprovação de `flutter test` completo e APK depende do próximo CI.
+
 ## 1.0.240+240 — 2026-10-15
 
 - **Buildfix do workflow Android-APK-195:** `flutter analyze` passou; `flutter test` apresentou 3 falhas de expectativas de texto entre 500 testes executados (497 aprovados, 3 falhas).

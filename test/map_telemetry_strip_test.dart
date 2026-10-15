@@ -56,12 +56,22 @@ void main() {
     await render(tester);
     expect(find.byType(MapTelemetryStrip), findsOneWidget);
     expect(find.text('19.8 km/h'), findsOneWidget);
-    expect(find.text('553'), findsOneWidget);
+    expect(find.text('553 m'), findsOneWidget);
     expect(find.text('NE'), findsOneWidget);
-    expect(find.text('±8'), findsOneWidget);
+    expect(find.text('±8 m'), findsOneWidget);
     expect(find.text('GPS'), findsNWidgets(2)); // Fonte de velocidade + cartão GPS.
     expect(find.text('Clima'), findsOneWidget);
     expect(find.text('--'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('layout compacto mantém altitude e precisão com unidade',
+      (tester) async {
+    await render(tester, compact: true);
+    expect(find.text('553 m'), findsOneWidget);
+    expect(find.text('±8 m'), findsOneWidget);
+    expect(find.text('553'), findsNothing);
+    expect(find.text('±8'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
