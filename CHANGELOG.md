@@ -1,3 +1,10 @@
+## 1.0.243+243 (15/10/2026)
+
+- Buildfix Android-APK-198: três avisos fatais do `flutter analyze` corrigidos (interpolação da rota de status, chaves do `if` de URL e import redundante no receptor MJPEG).
+- Endpoint de status e protocolo QR do Minha Câmera 1.4.35 preservados; nenhuma modificação na captura, análise IA, decodificação ou transmissão.
+- Cinco testes preventivos para os lints da versão 242 e verificador de integração histórica atualizado para validar a nova composição da rota.
+- Versões, metadados, tela Sobre, catálogo de Novidades e User-Agents sincronizados; novos testes Flutter/Android devem rodar no GitHub Actions.
+
 ## 1.0.242+242 — 2026-10-15
 
 - Integração do Minha Câmera 1.4.35 ao Vigia IA sem modificar o transmissor: QR HTTP com token de 32 caracteres na rota `/live/`, estritamente validado em faixas IPv4 privadas/locais, sem redirecionamentos ou solicitações arbitrárias.

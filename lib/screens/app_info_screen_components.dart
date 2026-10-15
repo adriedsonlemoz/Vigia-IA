@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.242',
+          version: '1.0.243',
           current: true,
+          changes: [
+            'Melhorias de compatibilidade no módulo Minha Câmera.',
+            'Transmissão MJPEG, conexão QR e IA local preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.242',
           changes: [
             'Recepção MJPEG do Minha Câmera 1.4.35 por QR local.',
             'Análise por IA no Vigia IA com modo somente visualização.',
@@ -2173,8 +2181,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.242',
+          version: '1.0.243',
           current: true,
+          changes: [
+            'Melhorias de compatibilidade no módulo Minha Câmera.',
+            'Transmissão MJPEG, conexão QR e IA local preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.242',
           changes: [
             'Recepção MJPEG do Minha Câmera 1.4.35 por QR local.',
             'Análise por IA no Vigia IA com modo somente visualização.',

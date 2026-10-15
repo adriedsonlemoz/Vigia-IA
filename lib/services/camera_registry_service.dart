@@ -134,9 +134,8 @@ class CameraRegistryService {
     try {
       final minhaCamera = MinhaCameraLiveUrl.parse(address);
       if (minhaCamera != null && endpoint.type == CameraEndpointType.remotePhone) {
-        final statusUrl = minhaCamera.replace(
-          path: minhaCamera.path.replaceFirst('/live/', '/control/') + '/status',
-        );
+        final controlPath = minhaCamera.path.replaceFirst('/live/', '/control/');
+        final statusUrl = minhaCamera.replace(path: '$controlPath/status');
         final request = await client.getUrl(statusUrl);
         request.followRedirects = false;
         final response = await request.close().timeout(const Duration(seconds: 3));

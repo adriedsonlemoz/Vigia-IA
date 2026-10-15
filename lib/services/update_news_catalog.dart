@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.242', build: 242);
+      AppBuildVersion(version: '1.0.243', build: 243);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.242', build: 242),
+      version: AppBuildVersion(version: '1.0.243', build: 243),
       changes: <String>[
-        'Conecte o Minha Câmera 1.4.35 escaneando o QR do transmissor.',
-        'Vídeo MJPEG na rede local com análise por IA neste aparelho.',
-        'Escolha entre vídeo com IA e somente imagem ao vivo.'
+        'Conexão ao Minha Câmera por QR com compatibilidade de transmissão preservada.',
+        'Ajustes de estabilidade na análise de código dos módulos de câmera.',
+        'Vídeo ao vivo e IA local continuam disponíveis de forma independente.'
       ],
     ),
   ]);

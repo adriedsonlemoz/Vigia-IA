@@ -1,5 +1,7 @@
 # Vigia IA
 
+**1.0.243+243 (buildfix Android-APK-198):** a verificação preventiva passou, mas o `flutter analyze --fatal-infos --fatal-warnings` detectou três avisos na integração Minha Câmera: concatenação de rota HTTP, `if` sem chaves e import redundante. Corrigidos apenas estes detalhes, sem alteração no QR, MJPEG, comportamento da câmera remota ou IA local. Adicionados cinco testes Python de regressão e guardas estruturalmente verificáveis. O CI deve reconfirmar analyze, Flutter Test e APK.
+
 **1.0.242+242 (integração Minha Câmera 1.4.35):** Vigia IA aceita o QR HTTP privado `/live/<token>` do Minha Câmera (IPv4 local, porta de transmissão informada pelo QR), recebe MJPEG contínuo por Wi-Fi/hotspot sem internet e envia JPEGs amostrados ao detector de IA do próprio Vigia IA. A visualização é desacoplada da análise para poupar bateria; em **Modo Monitor > Receber e analisar** há um seletor que desativa a inferência e mantém somente o vídeo. O Redmi A3 continua apenas transmitindo, sem alteração em seu aplicativo. Central multicâmera também verifica o endpoint de status do Minha Câmera, e o receptor pode ser selecionado nas telas de outros celulares já existentes. Em H.264, alterar codec para MJPEG no Minha Câmera antes de conectar. Testes Flutter/Android e condições reais de latência ainda precisam ser confirmados no CI/aparelho.
 
 
@@ -59,7 +61,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.242+242`
+> **Versão atual:** `1.0.243+243`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

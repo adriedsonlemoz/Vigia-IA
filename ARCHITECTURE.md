@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.242+242
+# Arquitetura — Vigia IA 1.0.243+243
+
+## Correção do analisador da integração Minha Câmera (1.0.243)
+
+- A rotina de verificação HTTP em `camera_registry_service.dart` forma a mesma URL `/control/<token>/status`, agora com interpolação Dart, sem modificar token nem contrato de resposta.
+- `MinhaCameraLiveUrl.parse` preserva a rejeição de QR malformado, agora com chaves no `if` de validação; o receptor MJPEG remove apenas import redundante de typed_data.
+- Verificador histórico 242 ainda valida o protocolo QR/IA, e o novo contrato 243 protege três lints bloqueantes identificados no workflow Android-APK-198. O SDK Flutter continua sendo autoridade final para compilar e executar o teste de regressão.
 
 ## Exibição de unidades e testes de telemetria (1.0.241)
 

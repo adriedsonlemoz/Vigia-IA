@@ -15,7 +15,9 @@ class MinhaCameraLiveUrl {
     final uri = Uri.tryParse(value);
     if (uri == null || uri.scheme != 'http' || uri.userInfo.isNotEmpty ||
         !uri.hasPort || uri.port < 1 || uri.port > 65535 ||
-        uri.hasQuery || uri.hasFragment) return null;
+        uri.hasQuery || uri.hasFragment) {
+      return null;
+    }
     // Use o host textual: Uri pode normalizar zeros à esquerda em IPv4.
     final rawHost = value.substring('http://'.length, value.indexOf(':', 'http://'.length));
     final parts = rawHost.split('.');

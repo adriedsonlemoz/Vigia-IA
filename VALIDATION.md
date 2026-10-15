@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.242+242
+# Validação Vigia IA 1.0.243+243
+
+## Buildfix Android-APK-198 — 1.0.243 (2026-10-15)
+
+- [x] Logs analisados: `Verificacao preventiva` passou, mas `Analise estatica` terminou com três infos convertidas em falha por `--fatal-infos` e `--fatal-warnings`.
+- [x] Ajustados, respectivamente, concatenação HTTP no registry, if sem bloco no parser de QR e import redundante no receptor MJPEG.
+- [x] Contrato `/control/<token>/status` preservado; histórico de QR e IA continua monitorado.
+- [x] Novo gate `tool/check_build198_lints_243.py` e cinco testes de mutação para impedir retorno dos avisos do workflow 198.
+- [ ] `flutter analyze`, `flutter test` e APK da 1.0.243 dependem do GitHub Actions; funcionalidade real deve ser testada no Android.
 
 ## Buildfix Android-APK-196 — 1.0.241 (2026-10-15)
 

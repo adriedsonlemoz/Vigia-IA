@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regressão estrutural (não substitui flutter test e testes físicos)."""
 from pathlib import Path
+import re
 R=Path(__file__).resolve().parents[1]
 
 def file(p): return (R/p).read_text(encoding='utf-8')
@@ -41,9 +42,12 @@ def check():
     assert 'analysisEnabled: _analyze' in connect
     assert 'MinhaCameraLiveUrl.accessToken(address)' in connect
     registry=file('lib/services/camera_registry_service.dart')
-    assert "replaceFirst('/live/', '/control/') + '/status'" in registry
+    assert "replaceFirst('/live/', '/control/')" in registry
+    assert "'$controlPath/status'" in registry
     assert "'Minha Câmera online (stream não verificado)'" in registry
-    assert 'version: 1.0.242+242' in file('pubspec.yaml')
+    assert re.search(r'^version: 1\.0\.(\d+)\+(\d+)$', file('pubspec.yaml'), re.M) is not None
+    vers = re.search(r'^version: 1\.0\.(\d+)\+(\d+)$', file('pubspec.yaml'), re.M)
+    assert vers and int(vers.group(1)) >= 242 and vers.group(1) == vers.group(2)
     print('Integração 242: QR 1.4.35, streaming MJPEG, IA local e modo sem IA validados estruturalmente.')
 
 if __name__=='__main__':check()
