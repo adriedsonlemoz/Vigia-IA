@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.246+246
+## 1.0.247+247: câmeras Minha Câmera salvas localmente (2026-10-15)
+
+- Depois de conectar por QR/URL no painel MCRP, use **Salvar esta câmera** para escolher um nome. O ato de conectar sozinho não registra a câmera; o cadastro é opcional.
+- **Câmeras salvas** permite reconectar com um toque ou remover com confirmação, mesmo após reiniciar o aplicativo. O nome e o IP/porta aparecem na lista, nunca o token completo do QR.
+- Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
+- Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
+
+# Validação Vigia IA 1.0.247+247
 
 ## Buildfix Android-APK-201 — 1.0.246 (2026-10-15)
 

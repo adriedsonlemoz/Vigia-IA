@@ -1,3 +1,10 @@
+## 1.0.247+247 — 2026-10-15
+
+- Painel Minha Câmera agora permite salvar o transmissor com nome após conexão válida, exibir lista de câmeras salvas, reconectar por um toque e remover um cadastro com confirmação.
+- O token completo da URL não aparece na lista: somente nome e IP/porta. Persistência privada por JSON, validação do QR em cada leitura, deduplicação e limite de 20 câmeras.
+- Acrescentados testes Flutter de persistência e interface e verificador estático; o Minha Câmera não precisa ser modificado.
+- Mantidos QR, MJPEG, IA local, controles MCRP e mapas offline. Build Flutter/Android depende do GitHub Actions.
+
 ## 1.0.246+246 — 2026-10-15
 
 - Corrige bloqueio `flutter analyze --fatal-infos` no workflow Android-APK-201: `if` da inferência em `mcrp_camera_screen.dart` agora tem bloco `{ return; }`, mantendo a mesma condição e comportamento.

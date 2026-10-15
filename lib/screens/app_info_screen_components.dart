@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.246',
+          version: '1.0.247',
           current: true,
+          changes: [
+            'Câmeras Minha Câmera podem ser salvas com nome e reconectadas sem QR.',
+            'Lista privada no aparelho com remoção e endereço sem token visível.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.246',
           changes: [
             'Maior estabilidade na integração Minha Câmera com IA local.',
             'Conexão por QR, vídeo MJPEG e comandos remotos preservados.',
@@ -2207,8 +2215,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.246',
+          version: '1.0.247',
           current: true,
+          changes: [
+            'Câmeras Minha Câmera podem ser salvas com nome e reconectadas sem QR.',
+            'Lista privada no aparelho com remoção e endereço sem token visível.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.246',
           changes: [
             'Maior estabilidade na integração Minha Câmera com IA local.',
             'Conexão por QR, vídeo MJPEG e comandos remotos preservados.',

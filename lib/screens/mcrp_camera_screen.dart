@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:vlc_player/vlc_player.dart';
 
 import '../services/mcrp_client.dart';
+import '../services/mcrp_saved_cameras_store.dart';
 import '../services/native_platform_service.dart';
 import '../services/object_detection_service.dart';
 import '../sources/minha_camera_mjpeg_source.dart';
@@ -17,13 +18,148 @@ import '../widgets/detection_overlay.dart';
 
 /// Cliente independente para Minha Câmera. Não muda o fluxo de IA ou QR vigiaia://pair.
 class McrpCameraScreen extends StatefulWidget {
-  const McrpCameraScreen({super.key});
+  const McrpCameraScreen({super.key, this.savedStore});
+  final McrpSavedCamerasStore? savedStore;
   @override
   State<McrpCameraScreen> createState() => _McrpCameraScreenState();
 }
 
 class _McrpCameraScreenState extends State<McrpCameraScreen> {
   final _input = TextEditingController();
+  late final McrpSavedCamerasStore _savedStore;
+  List<SavedMcrpCamera> _savedCameras = const [];
+  bool _savingCamera = false;
+  String? _savedError;
+
+  @override
+  void initState() {
+    super.initState();
+    _savedStore = widget.savedStore ?? McrpSavedCamerasStore();
+    unawaited(_loadSavedCameras());
+  }
+
+  Future<void> _loadSavedCameras() async {
+    try {
+      final cameras = await _savedStore.load();
+      if (mounted) {
+        setState(() { _savedCameras = cameras; _savedError = null; });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _savedError = 'Não foi possível ler as câmeras salvas.');
+      }
+    }
+  }
+
+  Future<void> _saveCurrentCamera() async {
+    final client = _client;
+    if (client == null || _savingCamera) {
+      return;
+    }
+    final address = client.address.liveUrl.toString();
+    final current = _savedCameras.where((item) => item.liveUrl == address);
+    final fallbackName = _status['x-device-model']?.trim();
+    final suggestedName = current.isNotEmpty
+        ? current.first.name
+        : (fallbackName != null && fallbackName.isNotEmpty
+            ? fallbackName
+            : 'Minha Câmera (${client.address.liveUrl.host})');
+    final controller = TextEditingController(text: suggestedName);
+    String? name;
+    try {
+      name = await showDialog<String>(context: context, builder: (dialogContext) => AlertDialog(
+        title: const Text('Salvar câmera'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 48,
+          decoration: const InputDecoration(labelText: 'Nome da câmera'),
+          textCapitalization: TextCapitalization.sentences,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(dialogContext).pop(value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar')),
+          FilledButton(onPressed: () {
+            if (controller.text.trim().isNotEmpty) {
+              Navigator.of(dialogContext).pop(controller.text.trim());
+            }
+          }, child: const Text('Salvar')),
+        ],
+      ));
+    } finally {
+      controller.dispose();
+    }
+    if (!mounted || name == null) {
+      return;
+    }
+    setState(() { _savingCamera = true; _savedError = null; });
+    try {
+      final cameras = await _savedStore.save(name: name, liveUrl: address);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _savedCameras = cameras);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Câmera salva neste aparelho.')));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _savedError = 'Não foi possível salvar esta câmera.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _savingCamera = false);
+      }
+    }
+  }
+
+  Future<void> _removeSavedCamera(SavedMcrpCamera camera) async {
+    if (_savingCamera) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remover câmera salva?'),
+        content: Text('Remover "${camera.name}" da lista? A câmera remota não será alterada.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remover')),
+        ],
+      ));
+    if (!mounted || confirmed != true) {
+      return;
+    }
+    setState(() { _savingCamera = true; _savedError = null; });
+    try {
+      final cameras = await _savedStore.remove(camera.liveUrl);
+      if (mounted) {
+        setState(() => _savedCameras = cameras);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _savedError = 'Não foi possível remover a câmera.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _savingCamera = false);
+      }
+    }
+  }
+
+  Future<void> _connectSavedCamera(SavedMcrpCamera camera) async {
+    if (_working || _savingCamera) {
+      return;
+    }
+    _input.text = camera.liveUrl;
+    await _connect();
+  }
+
   McrpClient? _client;
   Map<String, dynamic>? _info;
   Map<String, String> _status = {};
@@ -249,6 +385,34 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
           OutlinedButton.icon(onPressed: _working ? null : _scan,
             icon: const Icon(Icons.qr_code_scanner), label: const Text('QR')),
         ]),
+        if (_savedCameras.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          ExpansionTile(
+            key: const PageStorageKey('minha-camera-saved-list'),
+            tilePadding: EdgeInsets.zero,
+            leading: const Icon(Icons.bookmarks_outlined),
+            title: Text('Câmeras salvas (${_savedCameras.length})'),
+            subtitle: const Text('Toque em uma câmera para reconectar sem QR'),
+            children: [
+              for (final saved in _savedCameras)
+                ListTile(
+                  leading: const Icon(Icons.videocam_outlined),
+                  title: Text(saved.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(saved.networkAddress),
+                  onTap: _working || _savingCamera ? null : () => _connectSavedCamera(saved),
+                  trailing: IconButton(
+                    tooltip: 'Remover câmera salva',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _savingCamera ? null : () => _removeSavedCamera(saved),
+                  ),
+                ),
+            ],
+          ),
+        ],
+        if (_savedError != null) Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(_savedError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        ),
         if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
         if (_working) const LinearProgressIndicator(),
@@ -256,6 +420,14 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
           const SizedBox(height: 12),
           if (_legacy) const Text('Conexão compatível com Minha Câmera 1.4.35. '
               'Biblioteca MCRP e diagnóstico avançado exigem transmissor 1.4.36 ou posterior.'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _savingCamera ? null : _saveCurrentCamera,
+              icon: const Icon(Icons.bookmark_add_outlined),
+              label: const Text('Salvar esta câmera'),
+            ),
+          ),
           Text('${model ?? 'Celular remoto'}  ·  ${_status['x-resolution'] ?? 'Resolução desconhecida'}  ·  ${_status['x-fps-target'] ?? '?'} FPS',
             style: Theme.of(context).textTheme.titleMedium),
           Text('AO VIVO ${_status['x-transmission-seconds'] ?? '0'}s  ·  REC ${_status['x-recording-seconds'] ?? '0'}s  ·  Bateria ${_status['x-battery-level'] ?? '?'}%'),

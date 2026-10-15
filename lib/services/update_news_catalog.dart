@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.246', build: 246);
+      AppBuildVersion(version: '1.0.247', build: 247);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.246', build: 246),
+      version: AppBuildVersion(version: '1.0.247', build: 247),
       changes: <String>[
-        'Ajustes de estabilidade na análise de vídeo do Minha Câmera.',
-        'Painel integrado de vídeo, comandos remotos e IA local preservado.',
-        'Conexão por QR, reconexão MJPEG e Galeria continuam disponíveis.',
+        'Salve câmeras Minha Câmera com nome e reconecte sem novo QR.',
+        'Lista local de câmeras com exclusão individual e token oculto.',
+        'MJPEG, IA local, comandos MCRP e mapas offline preservados.',
       ],
     ),
   ]);

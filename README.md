@@ -1,4 +1,11 @@
-**Versão atual:** `1.0.246+246`
+## 1.0.247+247: câmeras Minha Câmera salvas localmente (2026-10-15)
+
+- Depois de conectar por QR/URL no painel MCRP, use **Salvar esta câmera** para escolher um nome. O ato de conectar sozinho não registra a câmera; o cadastro é opcional.
+- **Câmeras salvas** permite reconectar com um toque ou remover com confirmação, mesmo após reiniciar o aplicativo. O nome e o IP/porta aparecem na lista, nunca o token completo do QR.
+- Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
+- Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
+
+**Versão atual:** `1.0.247+247`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 
