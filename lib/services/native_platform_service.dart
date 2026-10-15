@@ -211,6 +211,21 @@ class NativePlatformService {
     }
   }
 
+  /// Publica uma cópia local já baixada na Galeria (Imagens/Vídeos) do Android.
+  /// O arquivo é transferido pela camada nativa em streaming, sem ByteArray gigante.
+  Future<String?> publishCameraMedia({
+    required String path,
+    required String fileName,
+    required String mimeType,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    return _channel.invokeMethod<String>('publishCameraMedia', <String, Object?>{
+      'path': path,
+      'fileName': fileName,
+      'mimeType': mimeType,
+    });
+  }
+
   Future<String?> saveBytesToDownloads({
     required String fileName,
     required String mimeType,

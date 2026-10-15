@@ -1,3 +1,7 @@
+**Versão atual:** `1.0.245+245`
+
+**Novidade 1.0.245:** painel Minha Câmera reúne comandos remotos, QR, prévia MJPEG e detecção por IA local opcional na mesma tela. Reconexão automática usa o receptor MJPEG já existente; se `/mcrp/info` estiver ausente (HTTP 404), a câmera 1.4.35 conecta pelo status legado sem acesso à biblioteca avançada. Fotos e vídeos podem ser publicados nas pastas públicas do Android. Corrigido o lint fatal do build 200. H.264 experimental não é inferido neste painel. Veja [BUILD-200-REPORT-1.0.245.md](BUILD-200-REPORT-1.0.245.md).
+
 **1.0.244+244 (MCRP v1 completo):** controles autenticados, vídeo MJPEG/H.264 experimental, diagnóstico e biblioteca remota de fotos/vídeos via QR e Wi-Fi local. Preservada a integração 1.0.242/243 que já recebe MJPEG no monitor e envia quadros à IA. Veja [docs/MCRP_V1.md](docs/MCRP_V1.md).
 
 # Vigia IA
@@ -63,8 +67,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.244+244`
-
+> 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 
 A **1.0.214+214** reorganiza a experiência no mapa sem alterar os serviços de GPS, roteamento ou captura. A tela deve ser validada em um Android real em retrato/paisagem, inclusive com rota minimizada/expandida e gravação ativa.

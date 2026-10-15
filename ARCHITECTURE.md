@@ -1,4 +1,10 @@
-# Arquitetura — Vigia IA 1.0.244+244
+# Arquitetura — Vigia IA 1.0.245+245
+
+## MCRP e IA opcional na mesma tela — 1.0.245
+
+`McrpCameraScreen` negocia MCRP v1; em `HTTP 404` exclusivo da rota `info` usa `/status` legado do Minha Câmera 1.4.35. Não reduz requisitos de autenticação em outros erros. A prévia MJPEG agora reutiliza `MinhaCameraMjpegSource`, com uma única conexão HTTP para prévia/quadros RGB, retry delimitado e detector local `ObjectDetectionService` (800 ms entre amostras, no máximo uma inferência simultânea). Sobreposição via `DetectionOverlay`. IA desligada não inicializa o worker. Este pipeline simples não oferece automaticamente alertas/histórico/regras do Modo Monitor. H.264 experimental sem inferência direta nesta tela.
+
+`NativePlatformService.publishCameraMedia` encaminha caminho de arquivo privado validado para `MainActivity.publishCameraMedia`, que copia via fluxo para MediaStore (Android 10+, minSdk 29), pasta Imagens ou Vídeos/Vigia IA; não transfere bytes de arquivos grandes pelo MethodChannel. O original local permanece em caso de falha.
 
 ## Cliente de controle MCRP v1 — 1.0.244
 

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vigiaia/services/mcrp_client.dart';
 
@@ -34,6 +35,19 @@ void main() {
     final address = McrpAddress.parse('http://172.20.10.1:8765/live/$token');
     expect(() => address.mediaFile('../../secret'), throwsFormatException);
     expect(() => address.mediaFile('%2Fetc'), throwsFormatException);
+  });
+  test('fallback legado somente para GET info 404', () {
+    expect(McrpClient.supportsLegacyFallback(const HttpException('MCRP HTTP 404')), isTrue);
+    expect(McrpClient.supportsLegacyFallback(const HttpException('MCRP HTTP 403')), isFalse);
+    expect(McrpClient.supportsLegacyFallback(const HttpException('MCRP HTTP 401')), isFalse);
+    expect(McrpClient.supportsLegacyFallback(const SocketException('Offline')), isFalse);
+    expect(McrpClient.supportsLegacyFallback(const FormatException('MCRP incompatível')), isFalse);
+  });
+  test('token e URLs de comando não vazam em URLs externas', () {
+    const token = '0123456789abcdef0123456789abcdef';
+    final address = McrpAddress.parse('http://192.168.43.1:8765/live/$token');
+    expect(address.control('record/start').host, '192.168.43.1');
+    expect(address.control('record/start').path, '/control/$token/record/start');
   });
   test('interpreta metadados estruturados', () {
     final item = McrpMediaItem.fromJson({

@@ -22,3 +22,9 @@ Somente POST para `/control/{token}/record/start|stop`, `/eco/enable|disable`, `
 - Protocolos futuros devem anunciar `version`, negociar recursos no `info`, manter as rotas v1 enquanto clientes anteriores estiverem em uso, e adicionar autenticação criptográfica de pareamento se houver uso em redes não confiáveis.
 - O cliente do Vigia IA oferece visualização MJPEG e H.264 e ações de controle, mas não injeta essa nova fonte no pipeline de detecção de IA nesta versão. A IA continua opcional e independente.
 - Validar no Redmi A3 e no celular receptor antes de afirmar FPS, calor, latência, playback MP4 ou suporte H.264 por hardware.
+
+## Vigia IA 1.0.245 (cliente compatível + IA)
+- Se `/mcrp/info` retornar HTTP 404, usar `/status` do Minha Câmera 1.4.35 para receber vídeo e enviar controles legados. Não reinterpretar 401/403 nem falhas de rede como legado.
+- Painel usa `MinhaCameraMjpegSource`: reconexão, visualização MJPEG e quadros RGB limitados para `ObjectDetectionService`, com botão de IA local. Inferência simples e overlay, sem automaticamente replicar histórico/regras/alertas do Modo Monitor.
+- H.264 experimental continua só visualização nesse painel.
+- Mídias publicadas via MediaStore (Fotos/Vídeos, pasta Vigia IA) quando formato for compatível; origem privada preservada em falhas. A biblioteca remota MCRP continua exigindo um transmissor com MCRP v1.

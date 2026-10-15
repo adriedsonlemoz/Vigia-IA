@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.244', build: 244);
+      AppBuildVersion(version: '1.0.245', build: 245);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.244', build: 244),
+      version: AppBuildVersion(version: '1.0.245', build: 245),
       changes: <String>[
-        'Painel MCRP v1: controle do Minha Câmera por Wi-Fi local e QR.',
-        'Central Multimídia remota para vídeos e fotos, com download autenticado.',
-        'Monitor de câmera MJPEG com IA das versões 242/243 permanece disponível.'
+        'Painel Minha Câmera: vídeo, comandos remotos e análise por IA na mesma tela.',
+        'Conexão por QR com versões anteriores e reconexão automática do MJPEG.',
+        'Fotos e vídeos recebidos agora podem aparecer na Galeria do Android.',
       ],
     ),
   ]);

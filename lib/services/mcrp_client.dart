@@ -26,7 +26,9 @@ class McrpAddress {
     final parts = host.split('.');
     if (parts.length != 4 || parts.any((p) => p.isEmpty ||
         (p.length > 1 && p.startsWith('0')) || int.tryParse(p) == null ||
-        int.parse(p) > 255 || int.parse(p) < 0)) return false;
+        int.parse(p) > 255 || int.parse(p) < 0)) {
+      return false;
+    }
     final a = int.parse(parts[0]); final b = int.parse(parts[1]);
     return a == 10 || (a == 172 && b >= 16 && b <= 31) ||
         (a == 192 && b == 168) || (a == 169 && b == 254) ||
@@ -60,6 +62,11 @@ class McrpMediaItem {
 }
 
 class McrpClient {
+  // Somente ausência explícita da rota de negociação habilita o modo legado.
+  // 401/403, indisponibilidade de rede e protocolo desconhecido NÃO o habilitam.
+  static bool supportsLegacyFallback(Object error) =>
+      error is HttpException && error.message == 'MCRP HTTP 404';
+
   McrpClient(this.address);
   final McrpAddress address;
   final HttpClient _http = HttpClient()..connectionTimeout = const Duration(seconds: 4);

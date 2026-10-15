@@ -433,6 +433,16 @@ class MainActivity : FlutterActivity() {
             }
             "onboardingCompleted" -> result.success(onboardingCompleted())
             "markOnboardingCompleted" -> result.success(markOnboardingCompleted())
+            "publishCameraMedia" -> {
+                val path = call.argument<String>("path").orEmpty()
+                val fileName = call.argument<String>("fileName").orEmpty()
+                val mimeType = call.argument<String>("mimeType").orEmpty()
+                try {
+                    result.success(publishCameraMedia(path, fileName, mimeType))
+                } catch (error: Throwable) {
+                    result.error("publish_camera_media", error.message, null)
+                }
+            }
             "saveBytesToDownloads" -> {
                 val fileName = call.argument<String>("fileName") ?: "vigiaia_relatorio.bin"
                 val mimeType = call.argument<String>("mimeType") ?: "application/octet-stream"
@@ -748,6 +758,46 @@ class MainActivity : FlutterActivity() {
         marker.exists()
     } catch (_: Throwable) {
         false
+    }
+
+    // Android 10+ (minSdk 29): MediaStore publica na galeria sem permissões
+    // de armazenamento e sem carregar grandes gravações na memória do Flutter.
+    private fun publishCameraMedia(path: String, fileName: String, mimeType: String): String {
+        val isImage = mimeType == "image/jpeg" || mimeType == "image/png" ||
+            mimeType == "image/webp"
+        val isVideo = mimeType == "video/mp4" || mimeType == "video/webm" ||
+            mimeType == "video/3gpp"
+        require(isImage || isVideo) { "Formato de mídia não suportado na galeria." }
+        val name = fileName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        require(name.isNotBlank() && name != "." && name != "..") { "Nome inválido." }
+        val root = File(applicationInfo.dataDir).canonicalFile
+        val file = File(path).canonicalFile
+        require(file.path.startsWith(root.path + File.separator) && file.isFile) {
+            "Arquivo fora do armazenamento privado do aplicativo."
+        }
+        val folder = if (isImage) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_MOVIES
+        val mediaUri = if (isImage) MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, folder + File.separator + "Vigia IA")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = contentResolver.insert(mediaUri, values)
+            ?: error("Android não conseguiu criar a mídia.")
+        try {
+            contentResolver.openOutputStream(uri, "w")?.use { output ->
+                file.inputStream().use { input -> input.copyTo(output, 64 * 1024) }
+            } ?: error("Falha ao gravar a mídia.")
+            values.clear()
+            values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            contentResolver.update(uri, values, null, null)
+            return "$folder/Vigia IA/$name"
+        } catch (error: Throwable) {
+            contentResolver.delete(uri, null, null)
+            throw error
+        }
     }
 
     private fun saveBytesToDownloads(

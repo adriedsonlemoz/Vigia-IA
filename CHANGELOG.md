@@ -1,3 +1,12 @@
+## 1.0.245+245 — 2026-10-15
+
+- Corrige aviso `curly_braces_in_flow_control_structures` do Android-APK-200.
+- MCRP aceita o servidor 1.4.35 sem negociação MCRP quando `info` retorna exatamente HTTP 404, valida `status` e mantém comandos legados.
+- Painel de câmera une MJPEG com detecção de objetos local opcional e controles remotos; fonte compartilhada, sem fluxo MJPEG duplicado, reconexão e economia de processamento quando IA desligada.
+- H.264 continua somente visualização experimental; para IA local usar MJPEG.
+- Download de fotos e vídeos pode publicar no MediaStore público sem recarregar arquivo todo na memória e mantém cópia privada caso não consiga.
+- Seis novos testes Python e dois Flutter de segurança e compatibilidade; gate MCRP 245 adicionados. Flutter analyze/test/assemble pendentes de CI.
+
 ## 1.0.244+244 — 2026-10-15
 
 - MCRP v1 completo integrado sobre 1.0.243, sem perder conexão MJPEG com pipeline opcional de IA da 1.0.242.

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -8,6 +7,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:vlc_player/vlc_player.dart';
 
 import '../services/mcrp_client.dart';
+import '../services/native_platform_service.dart';
+import '../services/object_detection_service.dart';
+import '../sources/minha_camera_mjpeg_source.dart';
+import '../core/video_source_status.dart';
+import '../models/detection.dart';
+import '../models/rgb_frame.dart';
+import '../widgets/detection_overlay.dart';
 
 /// Cliente independente para Minha Câmera. Não muda o fluxo de IA ou QR vigiaia://pair.
 class McrpCameraScreen extends StatefulWidget {
@@ -25,6 +31,8 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
   Timer? _timer;
   bool _working = false;
   bool _showMedia = false;
+  bool _analyze = false;
+  bool _legacy = false;
   String? _error;
   int _streamRevision = 0;
 
@@ -52,14 +60,30 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
     try {
       final address = McrpAddress.parse(_input.text);
       next = McrpClient(address);
-      final info = await next.info();
+      Map<String, dynamic>? info;
+      var legacy = false;
+      try {
+        info = await next.info();
+      } on HttpException catch (error) {
+        // Minha Câmera 1.4.35 possui /status e MJPEG, mas não /mcrp/info.
+        // Apenas HTTP 404 permite fallback; não ignorar erro de autorização.
+        if (!McrpClient.supportsLegacyFallback(error)) {
+          rethrow;
+        }
+        legacy = true;
+      }
       final status = await next.status();
+      if (legacy && status['x-stream-codec'] == null &&
+          status['x-device-model'] == null) {
+        throw const FormatException('Status do Minha Câmera incompatível.');
+      }
       if (!mounted) { next.close(); return; }
       _timer?.cancel();
       _client?.close();
       setState(() {
         _client = next;
         _info = info;
+        _legacy = legacy;
         _status = status;
         _streamRevision++;
         _showMedia = false;
@@ -119,9 +143,20 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
     try {
       final directory = Directory('${(await getApplicationDocumentsDirectory()).path}/MinhaCameraRecebidos');
       final file = await client.download(item, directory);
+      String location = 'Pasta privada do Vigia IA: ${file.path}';
+      if (item.mime.startsWith('image/') || item.mime.startsWith('video/')) {
+        try {
+          final published = await NativePlatformService.instance.publishCameraMedia(
+            path: file.path, fileName: item.name, mimeType: item.mime,
+          );
+          if (published != null) location = published;
+        } catch (_) {
+          // Mantém o download íntegro na pasta privada para uma nova tentativa.
+        }
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Arquivo salvo no Vigia IA: ${file.path}'),
+        content: Text('Arquivo salvo em: $location'),
         duration: const Duration(seconds: 5),
       ));
     } catch (error) { if (mounted) setState(() => _error = 'Download: $error'); }
@@ -165,9 +200,9 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
           icon: const Icon(Icons.cameraswitch), label: const Text('Trocar câmera')),
         OutlinedButton.icon(onPressed: _working ? null : () => _command('codec/${codec == 'mjpeg' ? 'h264' : 'mjpeg'}'),
           icon: const Icon(Icons.swap_horiz), label: Text('Codec: ${codec.toUpperCase()}')),
-        OutlinedButton.icon(onPressed: _working ? null : _loadMedia,
+        OutlinedButton.icon(onPressed: _working || _legacy ? null : _loadMedia,
           icon: const Icon(Icons.video_library_outlined), label: const Text('Multimídia')),
-        OutlinedButton.icon(onPressed: _working ? null : _showDiagnostic,
+        OutlinedButton.icon(onPressed: _working || _legacy ? null : _showDiagnostic,
           icon: const Icon(Icons.bug_report_outlined), label: const Text('Diagnóstico')),
       ]),
       const SizedBox(height: 8),
@@ -219,15 +254,27 @@ class _McrpCameraScreenState extends State<McrpCameraScreen> {
         if (_working) const LinearProgressIndicator(),
         if (client != null) ...[
           const SizedBox(height: 12),
+          if (_legacy) const Text('Conexão compatível com Minha Câmera 1.4.35. '
+              'Biblioteca MCRP e diagnóstico avançado exigem transmissor 1.4.36 ou posterior.'),
           Text('${model ?? 'Celular remoto'}  ·  ${_status['x-resolution'] ?? 'Resolução desconhecida'}  ·  ${_status['x-fps-target'] ?? '?'} FPS',
             style: Theme.of(context).textTheme.titleMedium),
           Text('AO VIVO ${_status['x-transmission-seconds'] ?? '0'}s  ·  REC ${_status['x-recording-seconds'] ?? '0'}s  ·  Bateria ${_status['x-battery-level'] ?? '?'}%'),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Analisar vídeo com IA no Vigia IA'),
+            subtitle: Text(codec == 'h264'
+                ? 'A IA local exige MJPEG. Alterne o codec para MJPEG.'
+                : 'Desligado: apenas visualização. Ligado: detector local e caixas de objetos.'),
+            value: _analyze,
+            onChanged: codec == 'h264' ? null : (value) => setState(() => _analyze = value),
+          ),
           const SizedBox(height: 10),
           AspectRatio(aspectRatio: 16 / 9, child: Container(
             color: Colors.black,
             child: codec == 'h264'
                 ? _McrpVlcView(key: ValueKey('h264_$_streamRevision'), url: client.address.h264.toString(), h264: true)
-                : _McrpMjpegView(key: ValueKey('mjpeg_$_streamRevision'), url: client.address.liveUrl.toString()),
+                : _McrpMjpegView(key: ValueKey('mjpeg_$_streamRevision'),
+                    url: client.address.liveUrl.toString(), analysisEnabled: _analyze),
           )),
           const SizedBox(height: 12),
           _controls(),
@@ -299,61 +346,170 @@ class _McrpVlcViewState extends State<_McrpVlcView> {
   @override Widget build(BuildContext context) => VlcPlayer(controller: controller, fit: VlcVideoFit.contain);
 }
 
-/// Leitor multipart MJPEG leve; tolera chunk HTTP dividido no meio do JPEG.
+/// Usa o MESMO receptor MJPEG do Modo Monitor (com reconexão e parser
+/// limitado em memória). Quadros RGB amostrados são inferidos somente no Vigia.
+/// Uma única conexão atende prévia e análise, sem carga extra no transmissor.
 class _McrpMjpegView extends StatefulWidget {
-  const _McrpMjpegView({super.key, required this.url});
+  const _McrpMjpegView({super.key, required this.url, required this.analysisEnabled});
   final String url;
-  @override State<_McrpMjpegView> createState() => _McrpMjpegViewState();
+  final bool analysisEnabled;
+
+  @override
+  State<_McrpMjpegView> createState() => _McrpMjpegViewState();
 }
+
 class _McrpMjpegViewState extends State<_McrpMjpegView> {
-  HttpClient? client;
-  Uint8List? jpeg;
-  String? error;
-  bool stopped = false;
-  @override void initState() { super.initState(); unawaited(_listen()); }
-  Future<void> _listen() async {
-    client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
-    try {
-      final request = await client!.getUrl(Uri.parse(widget.url));
-      final response = await request.close().timeout(const Duration(seconds: 7));
-      if (response.statusCode != 200) throw HttpException('HTTP ${response.statusCode}');
-      final pending = <int>[];
-      DateTime lastPaint = DateTime.fromMillisecondsSinceEpoch(0);
-      await for (final chunk in response) {
-        if (stopped) return;
-        pending.addAll(chunk);
-        // Busque os marcadores JPEG completos e descarte somente quadros antigos.
-        while (pending.length > 4) {
-          var start = -1;
-          for (var i = 0; i < pending.length - 1; i++) {
-            if (pending[i] == 0xff && pending[i + 1] == 0xd8) { start = i; break; }
-          }
-          if (start < 0) {
-            if (pending.length > 3_000_000) pending.clear();
-            break;
-          }
-          if (start > 0) pending.removeRange(0, start);
-          var end = -1;
-          for (var i = 2; i < pending.length - 1; i++) {
-            if (pending[i] == 0xff && pending[i + 1] == 0xd9) { end = i + 2; break; }
-          }
-          if (end < 0) {
-            if (pending.length > 3_000_000) pending.clear();
-            break;
-          }
-          final frame = Uint8List.fromList(pending.sublist(0, end));
-          pending.removeRange(0, end);
-          final now = DateTime.now();
-          if (mounted && now.difference(lastPaint).inMilliseconds >= 65) {
-            lastPaint = now;
-            setState(() => jpeg = frame);
-          }
-        }
-      }
-    } catch (e) { if (mounted && !stopped) setState(() => error = '$e'); }
+  late MinhaCameraMjpegSource _source;
+  StreamSubscription<RgbFrame>? _frames;
+  StreamSubscription<VideoSourceStatus>? _statuses;
+  ObjectDetectionService? _detector;
+  List<Detection> _detections = const [];
+  VideoSourceStatus? _status;
+  bool _aiReady = false;
+  bool _processing = false;
+  String? _aiError;
+  double? _aspectRatio;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _start();
   }
-  @override void dispose() { stopped = true; client?.close(force: true); super.dispose(); }
-  @override Widget build(BuildContext context) => jpeg != null
-      ? Image.memory(jpeg!, gaplessPlayback: true, fit: BoxFit.contain)
-      : Center(child: Text(error ?? 'Aguardando quadros MJPEG…', style: const TextStyle(color: Colors.white)));
+
+  @override
+  void didUpdateWidget(covariant _McrpMjpegView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.url != oldWidget.url ||
+        widget.analysisEnabled != oldWidget.analysisEnabled) {
+      _stop();
+      _start();
+    }
+  }
+
+  void _start() {
+    final generation = ++_generation;
+    _source = MinhaCameraMjpegSource(
+      liveUrl: widget.url,
+      emitFrames: widget.analysisEnabled,
+      analysisInterval: const Duration(milliseconds: 800),
+    );
+    final source = _source;
+    _frames = source.frames.listen((frame) => _onFrame(frame, generation));
+    _statuses = source.statuses.listen((status) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _status = status;
+        if (status.state != VideoSourceState.streaming) _detections = const [];
+      });
+    });
+    unawaited(_startSource(source, generation));
+    if (widget.analysisEnabled) unawaited(_startAi(generation));
+  }
+
+  Future<void> _startSource(MinhaCameraMjpegSource source, int generation) async {
+    try {
+      await source.start();
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(() => _aiError = 'Não foi possível iniciar a transmissão MJPEG.');
+      }
+    }
+  }
+
+  Future<void> _startAi(int generation) async {
+    final detector = ObjectDetectionService();
+    _detector = detector;
+    try {
+      await detector.initialize();
+      if (!mounted || generation != _generation) return;
+      setState(() => _aiReady = true);
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(() => _aiError = 'Modelo de IA indisponível. Vídeo continua ativo.');
+      }
+    }
+  }
+
+  Future<void> _onFrame(RgbFrame frame, int generation) async {
+    final detector = _detector;
+    if (!widget.analysisEnabled || !_aiReady || _processing ||
+        detector == null || generation != _generation) return;
+    _processing = true;
+    try {
+      final detections = await detector.detect(
+        frame, threshold: 0.55, maxResults: 10,
+      );
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _detections = detections;
+        _aspectRatio = frame.width / frame.height;
+        _aiError = null;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(() => _aiError = 'Falha na inferência local; vídeo preservado.');
+      }
+    } finally {
+      if (generation == _generation) _processing = false;
+    }
+  }
+
+  void _stop() {
+    _generation++;
+    unawaited(_frames?.cancel());
+    unawaited(_statuses?.cancel());
+    unawaited(_source.dispose());
+    final detector = _detector;
+    _detector = null;
+    if (detector != null) unawaited(detector.dispose());
+    _detections = const [];
+    _aspectRatio = null;
+    _status = null;
+    _aiReady = false;
+    _processing = false;
+    _aiError = null;
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(fit: StackFit.expand, children: [
+      _source.buildPreview(),
+      if (widget.analysisEnabled && _detections.isNotEmpty)
+        DetectionOverlay(
+          detections: _detections,
+          previewAspectRatio: _aspectRatio,
+        ),
+      if (_status?.state == VideoSourceState.reconnecting ||
+          _status?.state == VideoSourceState.connecting)
+        Positioned(left: 8, bottom: 8, child: DecoratedBox(
+          decoration: BoxDecoration(color: Colors.black87,
+            borderRadius: BorderRadius.circular(8)),
+          child: const Padding(padding: EdgeInsets.all(6),
+            child: Text('Conectando / reconectando…',
+              style: TextStyle(color: Colors.white))),
+        )),
+      if (widget.analysisEnabled)
+        Positioned(right: 8, top: 8, child: DecoratedBox(
+          decoration: BoxDecoration(color: Colors.black87,
+            borderRadius: BorderRadius.circular(8)),
+          child: Padding(padding: const EdgeInsets.all(6),
+            child: Text(_aiReady ? 'IA local · ${_detections.length} objetos'
+                : _aiError ?? 'Preparando IA local…',
+              style: const TextStyle(color: Colors.white))),
+        )),
+      if (_status?.state == VideoSourceState.error ||
+          (!widget.analysisEnabled && _aiError != null))
+        Positioned(left: 8, right: 8, bottom: 8, child: Text(
+          _status?.message ?? _aiError ?? 'Transmissão indisponível',
+          style: const TextStyle(color: Colors.orangeAccent),
+        )),
+    ]);
+  }
 }

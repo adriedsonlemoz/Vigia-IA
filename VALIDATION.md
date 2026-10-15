@@ -1,4 +1,11 @@
-# Validação Vigia IA 1.0.244+244
+# Validação Vigia IA 1.0.245+245
+
+- [x] Corrigido lint fatal do workflow Android-APK-200 (if com chaves).
+- [x] Testes preventivos MCRP, fallback exclusivamente 404, reconexão, IA local e MediaStore.
+- [x] Contrato antigo MCRP 244 mantido.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test`, `flutter build apk`: ambiente sem Flutter SDK, validar CI.
+- [ ] Testes físicos em dois telefones, QR, H.264, temperatura e publicação na Galeria.
+
 
 ## MCRP v1 completo — 1.0.244 (2026-10-15)
 

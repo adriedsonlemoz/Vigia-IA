@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.244',
+          version: '1.0.245',
           current: true,
+          changes: [
+            'Painel Minha Câmera com vídeo, comandos remotos e detecção IA local.',
+            'QR compatível com o transmissor antigo; reconexão MJPEG automática.',
+            'Fotos e vídeos podem ser publicados na Galeria do Android.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.244',
           changes: [
             'MCRP v1: comandos remotos, H.264 experimental e diagnóstico.',
             'Central de fotos e vídeos do Minha Câmera, com download autenticado.',
@@ -2190,8 +2199,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.244',
+          version: '1.0.245',
           current: true,
+          changes: [
+            'Painel Minha Câmera com vídeo, comandos remotos e detecção IA local.',
+            'QR compatível com o transmissor antigo; reconexão MJPEG automática.',
+            'Fotos e vídeos podem ser publicados na Galeria do Android.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.244',
           changes: [
             'MCRP v1: comandos remotos, H.264 experimental e diagnóstico.',
             'Central de fotos e vídeos do Minha Câmera, com download autenticado.',
