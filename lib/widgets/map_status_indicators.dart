@@ -4,7 +4,7 @@ import '../services/map_speed_policy.dart';
 
 /// Indicadores passivos; nao iniciam GPS, sensores ou temporizadores.
 class MapSystemHud extends StatelessWidget {
-  const MapSystemHud({required this.batteryPercent,
+  const MapSystemHud({super.key, required this.batteryPercent,
     required this.gpsReady, required this.speedSource});
   final int? batteryPercent;
   final bool gpsReady;
@@ -38,7 +38,7 @@ class MapSystemHud extends StatelessWidget {
 }
 
 class MapFocusSpeedPill extends StatelessWidget {
-  const MapFocusSpeedPill({required this.reading,
+  const MapFocusSpeedPill({super.key, required this.reading,
     required this.heading, required this.onTap});
   final MapSpeedReading? reading;
   final double? heading;

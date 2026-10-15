@@ -4,7 +4,7 @@ import '../services/map_ux_policy.dart';
 
 /// Controles de zoom passivos. A tela hospedeira decide como aplicar o zoom.
 class MapControlGap extends StatelessWidget {
-  const MapControlGap({required this.horizontal});
+  const MapControlGap({super.key, required this.horizontal});
 
   final bool horizontal;
 
@@ -17,6 +17,7 @@ class MapControlGap extends StatelessWidget {
 
 class MapZoomCluster extends StatelessWidget {
   const MapZoomCluster({
+    super.key,
     required this.horizontal,
     required this.onZoomIn,
     required this.onZoomOut,

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.238', build: 238);
+      AppBuildVersion(version: '1.0.239', build: 239);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.238', build: 238),
+      version: AppBuildVersion(version: '1.0.239', build: 239),
       changes: <String>[
-        'Ações de gravação do percurso organizadas no painel de navegação.',
-        'Gravar, pausar, retomar e exportar GPX continuam disponíveis.',
+        'Controles de navegação ajustados para compatibilidade com o Flutter.',
+        'Indicadores, rotas e gravação mantidos no painel do mapa.',
       ],
     ),
   ]);

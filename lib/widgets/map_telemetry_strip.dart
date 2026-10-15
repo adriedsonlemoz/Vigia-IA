@@ -8,6 +8,7 @@ import '../services/map_weather_policy.dart';
 /// Não registra listeners nem inicializa sensores, GPS ou clima.
 class MapTelemetryStrip extends StatelessWidget {
   const MapTelemetryStrip({
+    super.key,
     required this.speedKmh,
     required this.speedSource,
     required this.altitudeMeters,

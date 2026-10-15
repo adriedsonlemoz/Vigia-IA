@@ -7,6 +7,7 @@ import '../models/map_cycling_route.dart';
 
 class MapRouteAlternativesButton extends StatelessWidget {
   const MapRouteAlternativesButton({
+    super.key,
     required this.routes,
     required this.selectedIndex,
     required this.accent,

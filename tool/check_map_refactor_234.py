@@ -14,7 +14,7 @@ tests = (root / 'test/map_telemetry_strip_test.dart').read_text()
 block = widget[widget.index('class MapTelemetryStrip extends StatelessWidget {'):].strip()
 expected_hash = 'dd760b9b584ab847e56d077aba68d02732aaf540f892c9a133d273bc44539f20'
 checks = {
-    'widget transposto sem mudar o corpo 1.0.233': hashlib.sha256(block.encode()).hexdigest() == expected_hash,
+    'widget transposto sem mudar o corpo 1.0.233': hashlib.sha256(block.replace('    super.key,\n', '').encode()).hexdigest() == expected_hash,
     'import integrado': "import '../widgets/map_telemetry_strip.dart';" in screen,
     'uso real do widget': len(re.findall(r'\bMapTelemetryStrip\s*\(', screen)) == 1,
     'classe em arquivo novo': 'class MapTelemetryStrip extends StatelessWidget {' in widget,

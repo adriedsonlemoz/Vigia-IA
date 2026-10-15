@@ -1,3 +1,10 @@
+## 1.0.239+239 — 2026-10-15
+
+- **Buildfix do workflow Android-APK-194:** `flutter analyze --fatal-infos --fatal-warnings` reportou dez informações `use_key_in_widget_constructors` em sete arquivos de widgets extraídos nas versões 1.0.233–1.0.238; todas corrigidas com `super.key` nos construtores públicos.
+- Compatibilidade com o Flutter mantida sem silenciar o linter, mudar a configuração de análise ou remover o gate do workflow. Estruturas de `build`, callbacks, GPS, rotas, gravação, navegação, dados e permissões não alterados.
+- Fingerprints históricos das extrações continuam com os hashes originais; na comparação são normalizados exclusivamente os campos novos `super.key`, preservando detecção de qualquer outra alteração inesperada.
+- Adicionado `tool/check_map_widget_keys_239.py` para prevenir a regressão; permanece obrigatório executar `flutter analyze` e `flutter test` no CI. 36 testes Python históricos preservados; documentação/versionamento sincronizados.
+
 ## 1.0.238+238 — 2026-10-15
 
 - Refatoração gradual, etapa 6: `_NavigationRecordControl` movido como `MapNavigationRecordControl` para `lib/widgets/map_navigation_record_control.dart`, preservando integralmente os parâmetros, layout, ícones, tooltips, habilitação por GPS, pausa/retomada e ações `stop` / `gpx`.

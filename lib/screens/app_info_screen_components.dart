@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.238',
+          version: '1.0.239',
           current: true,
+          changes: [
+            'Componentes visuais do mapa ajustados para compatibilidade com o Flutter.',
+            'Rotas, indicadores e gravação do percurso preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.238',
           changes: [
             'Ações de gravação organizadas no painel de navegação.',
             'Gravar, pausar, retomar e exportar GPX continuam acessíveis.',
@@ -2140,8 +2148,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.238',
+          version: '1.0.239',
           current: true,
+          changes: [
+            'Componentes visuais do mapa ajustados para compatibilidade com o Flutter.',
+            'Rotas, indicadores e gravação do percurso preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.238',
           changes: [
             'Ações de gravação organizadas no painel de navegação.',
             'Gravar, pausar, retomar e exportar GPX continuam acessíveis.',

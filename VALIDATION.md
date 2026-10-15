@@ -1,4 +1,12 @@
-# Validação Vigia IA 1.0.238+238
+# Validação Vigia IA 1.0.239+239
+
+## Buildfix do Android-APK-194 — 1.0.239 (2026-10-15)
+
+- [x] Logs `Vigia-IA-Android-APK-194-logs.zip` inspecionados: etapa `Verificacao preventiva` passou; etapa `Analise estatica` falhou com 10 `info` `use_key_in_widget_constructors` nos arquivos extraídos. Nenhum erro/warning Dart adicional consta no log.
+- [x] Todos os 10 construtores públicos afetados têm `super.key`; nenhuma supressão de linter ou exclusão do `flutter analyze`.
+- [x] Gate de regressão `tool/check_map_widget_keys_239.py` acrescentado; fingerprints antigos preservados pela normalização estrita de `super.key`. `bash tool/verify_project.sh` aprovado com 40 testes Python (36 anteriores e 4 novos), além dos contratos históricos.
+- [ ] Executar `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e build Android no GitHub Actions com a versão 1.0.239; SDK Flutter não disponível neste ambiente.
+- [ ] Confirmar ações de mapa e navegação em aparelho físico após o APK compilar.
 
 ## Refatoração gradual — 1.0.238 (2026-10-15)
 

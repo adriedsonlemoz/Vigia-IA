@@ -1,4 +1,11 @@
-# Arquitetura — Vigia IA 1.0.238+238
+# Arquitetura — Vigia IA 1.0.239+239
+
+## Compatibilidade dos construtores dos widgets modulares (1.0.239)
+
+- Corrigidas as 10 ocorrências de `use_key_in_widget_constructors` de `flutter analyze --fatal-infos --fatal-warnings` no workflow Android-APK-194. Cada widget público afetado recebe o parâmetro nomeado opcional `super.key`; os parâmetros obrigatórios, a constância, o corpo de `build` e as ações permanecem iguais.
+- Arquivos: `map_navigation_metrics.dart` (2), `map_navigation_record_control.dart` (1), `map_route_alternatives_button.dart` (1), `map_route_preview_card.dart` (1), `map_status_indicators.dart` (2), `map_telemetry_strip.dart` (1) e `map_zoom_controls.dart` (2).
+- O gate `tool/check_map_widget_keys_239.py` exige `super.key` nesses 10 construtores. As verificações de SHA-256 dos widgets transpostos continuam comparando as implementações originais, ignorando somente a inclusão do `super.key` sem alterar os hashes antigos. Não há novas dependências, listeners, alocações por quadro ou mudanças nas políticas offline/energia.
+- Falha observada no analyze, ainda não no build Android nem nos testes Flutter; estes não executaram no workflow 194 e permanecem pendentes após novo envio ao CI.
 
 ## Controle de gravação no banner de navegação — 1.0.238
 

@@ -1,5 +1,7 @@
 # Vigia IA
 
+**1.0.239+239 (buildfix Android-APK-194):** `super.key` adicionado aos dez construtores públicos dos widgets modulares do mapa; sem alterar lógica, layout ou callbacks. Corrige as dez mensagens `use_key_in_widget_constructors` que bloqueavam `flutter analyze --fatal-infos --fatal-warnings`. Novos contratos de regressão; compilação/testes Flutter pendentes de CI.
+
 **1.0.238+238 (refatoração gradual, etapa 6):** controle visual de gravação no banner movido para `lib/widgets/map_navigation_record_control.dart`, preservando as ações de iniciar, pausar, retomar, encerrar e exportar GPX sem modificar o serviço ou cronômetro. Sete novos testes Flutter e contratos preventivos; validação Android depende do CI.
 
 **1.0.237+237 (refatoração gradual, etapa 5):** células de métricas e pontos próximos da navegação reunidas em `lib/widgets/map_navigation_metrics.dart`. Textos, ícones, distâncias e estilos preservados; cálculos e dados continuam na tela principal. Sete testes Flutter e contratos preventivos novos. Flutter/Android ainda dependem de CI e dispositivo.
@@ -48,7 +50,7 @@ A 1.0.216+216 melhora a listagem automática de cidades e comunidades próximas 
 
 Aplicativo Flutter, inicialmente para Android, para monitoramento local por câmera do aparelho, câmera IP/RTSP ou outro celular na mesma rede. A detecção de objetos, regras, histórico, alertas e processamento de IA são executados localmente sempre que possível.
 
-> **Versão atual:** `1.0.238+238`
+> **Versão atual:** `1.0.239+239`
 
 A **1.0.216+216** corrige a lista vazia de cidades próximas, com atualização manual sem digitação e tratamento de indisponibilidade de servidores. A **1.0.215+215** corrigiu `invalid_constant` e `unnecessary_underscores` apontados pelo Android APK #179 no `map_monitoring_screen.dart`, preservando os controles e o comportamento das rotas. Análise/compilação completas ainda dependem do CI.
 

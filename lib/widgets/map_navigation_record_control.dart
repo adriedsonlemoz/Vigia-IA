@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 /// Gravacao integrada ao aviso de navegacao, sem segunda barra flutuante.
 class MapNavigationRecordControl extends StatelessWidget {
   const MapNavigationRecordControl({
+    super.key,
     required this.recording,
     required this.paused,
     required this.canRecord,

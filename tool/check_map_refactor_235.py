@@ -8,7 +8,7 @@ widget=(root/'lib/widgets/map_route_preview_card.dart').read_text()
 test=(root/'test/map_route_preview_card_test.dart').read_text()
 block=widget[widget.index('class MapRoutePreviewCard extends StatelessWidget {'):].strip()
 checks={
- 'codigo transposto preservado SHA256': hashlib.sha256(block.encode()).hexdigest() == 'fecf1504102b648af43af5712f4aeb5445907e4fc18da010045f9fd89c9cb9c2',
+ 'codigo transposto preservado SHA256': hashlib.sha256(block.replace('    super.key,\n', '').encode()).hexdigest() == 'fecf1504102b648af43af5712f4aeb5445907e4fc18da010045f9fd89c9cb9c2',
  'chamada unica no mapa': len(re.findall(r'\bMapRoutePreviewCard\s*\(',screen)) == 1,
  'classe publica e import': 'class MapRoutePreviewCard extends StatelessWidget {' in widget and "import '../widgets/map_route_preview_card.dart';" in screen,
  'classe antiga removida': 'class _RoutePreviewCard' not in screen,

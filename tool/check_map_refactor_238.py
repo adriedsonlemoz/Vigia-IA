@@ -12,7 +12,7 @@ gate = (root / 'tool/verify_project.sh').read_text(encoding='utf-8')
 source = widget[widget.index('/// Gravacao integrada'):].strip()
 checks = {
   'codigo de widget identico apos renomeacao':
-      hashlib.sha256(source.encode()).hexdigest() ==
+      hashlib.sha256(source.replace('    super.key,\n', '').encode()).hexdigest() ==
       '077cf1d261036db3bc234c1e75aa1022cb29193eef8ede764d048b24cf323a42',
   'widget publico no arquivo proprio':
       'class MapNavigationRecordControl extends StatelessWidget {' in widget,

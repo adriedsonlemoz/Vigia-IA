@@ -11,7 +11,7 @@ tests = (root / 'test/map_navigation_metrics_test.dart').read_text(encoding='utf
 source = widget[widget.index('class MapNavigationMetricCell extends StatelessWidget {'):].strip()
 checks = {
     'codigo dos dois widgets identico ao original (apos renomeacao)':
-        hashlib.sha256(source.encode()).hexdigest() == '00b7ba379ae9356a4f31bb2b8496b3867dbb4361ffeb6ca3315b04fc0784a70a',
+        hashlib.sha256(source.replace('    super.key,\n', '').encode()).hexdigest() == '00b7ba379ae9356a4f31bb2b8496b3867dbb4361ffeb6ca3315b04fc0784a70a',
     'arquivo unico para metricas e chips':
         'class MapNavigationMetricCell extends StatelessWidget {' in widget and
         'class MapNavigationPoiChip extends StatelessWidget {' in widget,

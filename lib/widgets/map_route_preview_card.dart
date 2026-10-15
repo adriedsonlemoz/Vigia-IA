@@ -11,6 +11,7 @@ import '../services/map_route_preview_metrics.dart';
 
 class MapRoutePreviewCard extends StatelessWidget {
   const MapRoutePreviewCard({
+    super.key,
     required this.target,
     required this.routes,
     required this.selectedIndex,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 class MapNavigationMetricCell extends StatelessWidget {
   const MapNavigationMetricCell({
+    super.key,
     required this.icon,
     required this.value,
     required this.label,
@@ -60,6 +61,7 @@ class MapNavigationMetricCell extends StatelessWidget {
 
 class MapNavigationPoiChip extends StatelessWidget {
   const MapNavigationPoiChip({
+    super.key,
     required this.icon,
     required this.label,
     required this.distance,

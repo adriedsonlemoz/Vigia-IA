@@ -10,7 +10,7 @@ widget = (root / 'lib/widgets/map_route_alternatives_button.dart').read_text()
 tests = (root / 'test/map_route_alternatives_button_test.dart').read_text()
 source = widget[widget.index('class MapRouteAlternativesButton extends StatelessWidget {'):].strip()
 checks = {
-  'SHA-256 do widget transposto': hashlib.sha256(source.encode()).hexdigest() == '6f52155e3ed30aaf39943c4f9e8fefc98930a57449cd4b83fb4646c30b207fb3',
+  'SHA-256 do widget transposto': hashlib.sha256(source.replace('    super.key,\n', '').encode()).hexdigest() == '6f52155e3ed30aaf39943c4f9e8fefc98930a57449cd4b83fb4646c30b207fb3',
   'classe externa definida': 'class MapRouteAlternativesButton extends StatelessWidget {' in widget,
   'constructor e UI com mesmas opcoes': 'const MapRouteAlternativesButton({' in widget and 'PopupMenuButton<int>(' in widget,
   'integracao na tela uma vez': len(re.findall(r'\bMapRouteAlternativesButton\s*\(', screen)) == 1,
