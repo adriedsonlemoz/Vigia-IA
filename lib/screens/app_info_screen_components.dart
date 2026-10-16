@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.264',
+          version: '1.0.265',
           current: true,
+          changes: [
+            'Corrigido o teste Flutter do modelo YOLO26s padrão no APK 219.',
+            'YOLO26s exportado no GitHub Actions; modelo Automático preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.264',
           changes: [
             'Corrigida a compatibilidade do exportador YOLO26s no APK 218.',
             'Dependências PyTorch harmonizadas e verificação LiteRT preservada.',
@@ -2358,8 +2366,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.264',
+          version: '1.0.265',
           current: true,
+          changes: [
+            'Corrigido o teste Flutter do modelo YOLO26s padrão no APK 219.',
+            'YOLO26s exportado no GitHub Actions; modelo Automático preservado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.264',
           changes: [
             'Corrigida a compatibilidade do exportador YOLO26s no APK 218.',
             'Dependências PyTorch harmonizadas e verificação LiteRT preservada.',

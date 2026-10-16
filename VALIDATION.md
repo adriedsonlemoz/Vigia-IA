@@ -5,7 +5,18 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.264+264
+# Validação Vigia IA 1.0.265+265
+
+## Falha no teste Flutter do Android APK 219 (2026-10-16)
+
+- [x] `flutter analyze` passou sem problemas no workflow 219.
+- [x] Exportação real YOLO26s LiteRT concluída e validada no workflow 219: 38.319.452 bytes, entrada `[1,3,640,640]`, saída `[1,84,8400]`.
+- [x] Testes do CI registraram 542 aprovações e uma única falha em `test/detector_model_preference_test.dart` (esperava Automático, recebeu YOLO26s).
+- [x] Ajustada a expectativa do teste Flutter para YOLO26s; Automático continua opcional.
+- [x] Adicionados testes preventivos Python para o contrato do teste Flutter, sem alterar produção.
+- [x] 141 testes Python aprovados com `unittest discover`; `check_version_sync`, `check_ci_contract`, `check_import_targets` e validação sintática dos scripts concluídos.
+- [ ] `tool/verify_project.sh` avançou nos contratos iniciais, porém excedeu o tempo limite local sem concluir.
+- [ ] `flutter test` completo e APK ainda devem ser reexecutados no GitHub Actions para confirmar a correção.
 
 ## Falha exportação YOLO26s no Android APK 218 (2026-10-16)
 

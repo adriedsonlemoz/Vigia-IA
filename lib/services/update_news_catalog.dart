@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.264', build: 264);
+      AppBuildVersion(version: '1.0.265', build: 265);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.264', build: 264),
+      version: AppBuildVersion(version: '1.0.265', build: 265),
       changes: <String>[
-        'YOLO26s: preparação e validação do modelo principal reforçadas para o APK.',
-        'EfficientDet-Lite2 recebeu novo endereço de download; APK continua exigindo YOLO real.'
+        'YOLO26s segue como modelo principal, com exportação LiteRT validada no CI.',
+        'YOLO26s foi exportado e validado no CI; modelo Automático permanece disponível.'
       ],
     ),
   ]);

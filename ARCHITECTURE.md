@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.264+264
+# Arquitetura — Vigia IA 1.0.265+265
+
+**Teste Flutter APK 219 (1.0.265):** modelo YOLO26s exportado com sucesso no runner, com saída NCHW 1×84×8400. Corrigida a expectativa antiga do teste `detector_model_preference_test.dart` que exigia Automático como default apesar de `MonitorSettings` usar YOLO26s. A opção Automático continua válida. Nenhuma alteração na arquitetura de vídeo ou inferência.
 
 **Exportador CI 218 (1.0.264):** antes de exportar YOLO26s, o runner instala um par PyTorch/torchvision compatível com LiteRT Torch. Um adaptador de importação resolve a referência antiga a `aten.cholesky` removida no PyTorch, usando `linalg_cholesky`. A validação usa o interpretador `ai-edge-litert`, verifica tensores e tamanho; o modelo real continua obrigatório para a release. EfficientDet-Lite2 usa URL oficial do MediaPipe. Nenhuma mudança no processo de recepção/transmissão de vídeo.
 

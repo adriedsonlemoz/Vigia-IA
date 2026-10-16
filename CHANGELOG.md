@@ -1,3 +1,10 @@
+## 1.0.265+265: correção do teste Flutter do YOLO26s (APK 219, 2026-10-16)
+
+- Corrigido `test/detector_model_preference_test.dart`: configuração padrão de IA agora espera `YOLO26s`, conforme a preferência real, mantendo o modo Automático opcional.
+- O APK 219 exportou/validou o YOLO26s LiteRT de 38.319.452 bytes e passou em `flutter analyze`; foi bloqueado apenas por um teste com expectativa antiga (542 aprovados, 1 falhou).
+- Adicionados verificador e três testes Python de regressão para a expectativa padrão.
+- Sem alterações na inferência Android, câmeras, consumo ou política de fallback.
+
 ## 1.0.264+264: correção da exportação YOLO26s (APK 218, 2026-10-16)
 
 - Corrigida compatibilidade entre PyTorch 2.13 / torchvision 0.28 e conversor LiteRT Torch 0.9.4, evitando a falha de acesso ao operador removido `aten.cholesky`.
