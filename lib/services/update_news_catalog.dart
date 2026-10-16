@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.248', build: 248);
+      AppBuildVersion(version: '1.0.249', build: 249);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.248', build: 248),
+      version: AppBuildVersion(version: '1.0.249', build: 249),
       changes: <String>[
-        'Câmeras agora reúne os dispositivos Minha Câmera e demais fontes.',
-        'Ao vivo oferece seleção de câmera antes de iniciar o monitoramento.',
-        'Acesso aos controles e arquivos dentro de Câmeras, com botão Início.',
+        'Maior agilidade nos testes antes de gerar novas versões.',
+        'Câmeras cadastradas e monitoramento com IA preservados.',
       ],
     ),
   ]);

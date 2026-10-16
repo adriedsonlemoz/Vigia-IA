@@ -1,3 +1,10 @@
+## 1.0.249+249: builds sem espera de dez minutos (2026-10-15)
+
+- Workflow Android-APK-204: análise estática aprovada e 529 testes Flutter aprovados; um teste de interface com I/O real dentro do relógio simulado aguardou o timeout de 10 minutos. **O APK nem começou a compilar**.
+- O teste `mcrp_saved_cameras_screen_test.dart` agora usa um cadastro em memória; os testes independentes da persistência continuam exercitando disco real, sem `testWidgets`.
+- `flutter test` possui limite de 2 minutos por teste e a etapa de testes limite total de 7 minutos, para revelar travamentos mais cedo. Não houve redução da cobertura nem supressão de testes.
+- Sem mudanças nos componentes de produção (MJPEG, QR, controles MCRP, IA, monitor e mapas). SDK Flutter/Android e aparelho ainda aguardam o CI.
+
 ## 1.0.248+248: seleção central em Câmeras e Ao vivo (2026-10-15)
 
 - Cadastre e renomeie o Minha Câmera diretamente em **Câmeras** pelo QR ou URL /live/token. A opção de controles fica no menu do cadastro; o botão próprio da Home foi removido.
@@ -13,7 +20,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.248+248`
+**Versão atual:** `1.0.249+249`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

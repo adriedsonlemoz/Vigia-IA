@@ -73,7 +73,10 @@ jobs:
         run: bash ./tool/fetch_model.sh
 
       - name: Testes
-        run: flutter test --reporter expanded --coverage
+        # CI 204: um único testWidgets aguardou o timeout padrão de 10 minutos.
+        # Mantém cobertura e libera o erro em até 2 minutos por teste.
+        timeout-minutes: 7
+        run: flutter test --reporter expanded --coverage --timeout 120s
 
       - name: Salvar cobertura de testes
         uses: actions/upload-artifact@v4

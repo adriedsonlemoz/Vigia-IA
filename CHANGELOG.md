@@ -1,3 +1,11 @@
+## 1.0.249+249 — 2026-10-15
+
+- Buildfix Android-APK-204: `flutter analyze` sem issues, porém `test/mcrp_saved_cameras_screen_test.dart` ultrapassou o timeout padrão de dez minutos ao acessar diretório/arquivo real dentro de `testWidgets` (fake async). Dos 530 testes, 529 passaram e 1 expirou.
+- UI test alterado para store em memória isolado, sem I/O real; testes reais de persistência em `mcrp_saved_cameras_store_test.dart` seguem intactos.
+- Etapa Flutter Testes do GitHub Actions com `--timeout 2m` por teste e `timeout-minutes: 7` no step. Mantidas análise estrita, suíte integral e cobertura, sem reduzir testes.
+- Adicionado contrato preventivo de fonte e 6 testes Python de mutação para este tipo de travamento. Nenhuma alteração de funcionamento em câmeras, IA, QR, navegação e mapas.
+- Flutter SDK ausente localmente; necessário repetir o workflow para confirmar o resultado e compilar o APK.
+
 ## 1.0.248+248 (2026-10-15)
 
 - Centraliza o Minha Câmera na tela Câmeras (QR, cadastro, edição, remoção).

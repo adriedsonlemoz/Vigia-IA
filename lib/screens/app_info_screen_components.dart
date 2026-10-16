@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.248',
+          version: '1.0.249',
           current: true,
+          changes: [
+            'Testes de interface mais rápidos e previsíveis.',
+            'Cadastro de câmeras e monitoramento preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.248',
           changes: [
             'Cadastre Minha Câmera diretamente em Câmeras e abra pelo Ao vivo.',
             'Escolha uma câmera salva; abertura rápida e retorno à tela inicial.',
@@ -2222,8 +2230,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.248',
+          version: '1.0.249',
           current: true,
+          changes: [
+            'Testes de interface mais rápidos e previsíveis.',
+            'Cadastro de câmeras e monitoramento preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.248',
           changes: [
             'Cadastre Minha Câmera diretamente em Câmeras e abra pelo Ao vivo.',
             'Escolha uma câmera salva; abertura rápida e retorno à tela inicial.',

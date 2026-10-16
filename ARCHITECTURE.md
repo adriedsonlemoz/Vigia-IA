@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.248+248
+# Arquitetura — Vigia IA 1.0.249+249
+
+**Buildfix 204:** somente testes e configuração de CI. O widget-test de lista MCRP usa store de memória para não aguardar I/O de disco no ambiente de tempo simulado. A suite real do serviço de armazenamento permanece separada. No workflow, cada teste limita-se a 2 minutos; a etapa completa a 7 minutos. Código de produção, MJPEG, QR, IA e mapas sem alterações.
 
 **1.0.246+246 (buildfix Android-APK-201):** guarda de inferência em `McrpCameraScreen` agora possui chaves, sem modificar condição ou transporte; arquitetura de único fluxo MJPEG e IA local opcional mantida.
 

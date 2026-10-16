@@ -5,7 +5,15 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.248+248
+# Validação Vigia IA 1.0.249+249
+
+## Workflow Android-APK-204, 1.0.249 (2026-10-15)
+
+- [x] Logs: `flutter analyze` aprovado após ~15 s; testes Flutter com 529 sucessos, 1 timeout em 10 minutos; nenhum build Android executado.
+- [x] Teste de interface salvo MCRP sem `Directory.createTemp`/I/O real dentro de `testWidgets`; armazenamento em memória injetado. Testes reais de JSON/disco mantidos em `test()` independente.
+- [x] Limite de execução `flutter test --timeout 120s` (por teste), `timeout-minutes: 7` na etapa, sem reduzir cobertura.
+- [x] Guardas preventivas `tool/check_build204_test_timeout_249.py` e `tool/test_build204_test_timeout_249.py` incluídas em `verify_project.sh`.
+- [ ] Flutter SDK, compilação Android e testes físicos indisponíveis localmente; confirmar no novo GitHub Actions.
 
 ## Buildfix Android-APK-201 — 1.0.246 (2026-10-15)
 
