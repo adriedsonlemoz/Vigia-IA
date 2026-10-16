@@ -1,3 +1,9 @@
+## 1.0.255+255: correção do Android APK 209 (2026-10-16)
+
+- Corrigidos os 35 apontamentos do `flutter analyze` da 1.0.254: getter público `aiEnabled`, seis declarações indevidas de `dividerColor` e duas interpolações com chaves desnecessárias.
+- Não modifica os controles da câmera/IA, estilo do monitor, mapa offline, GPS nem fontes MCRP/RTSP/ESP32.
+- Adicionadas verificações e testes preventivos do build 209; análise Dart real e APK precisam ser confirmados no GitHub Actions.
+
 ## 1.0.254+254: controles de IA e ajustes visuais no Ao vivo (2026-10-16)
 
 - Corrigidas as cores do strip embutido no Ao vivo, incluindo Receptor (IA), bateria e o selo do mapa.

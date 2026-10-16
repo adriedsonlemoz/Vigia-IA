@@ -5,7 +5,19 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.254+254
+# Validação Vigia IA 1.0.255+255
+
+## Android APK 209: regressões do analisador (2026-10-16)
+
+- [x] Log original do workflow 209 conferido: 90 testes Python aprovados na verificação preventiva; 35 apontamentos na análise Dart.
+- [x] Restaurado getter público da IA para o Monitor e corrigidas seis inserções fora de `_DeviceStatusStrip`.
+- [x] Duas interpolações sem chaves desnecessárias, preservando os dados de largura/altura.
+- [x] Verificador e testes de regressão para os três erros, sem desativar flags fatais do analyzer.
+- [x] 95 testes Python em `unittest discover`, imports locais, contrato CI e versionamento 1.0.255+255 aprovados.
+- [ ] `tool/verify_project.sh` completo excedeu 200 segundos no ambiente local após aprovar os contratos até navegação modular 238.
+- [ ] `flutter analyze`, `flutter test` e build Android dependem do GitHub Actions.
+
+## Registro anterior: 1.0.254+254
 
 ## Ajustes visuais e controle rápido de IA — 1.0.254 (2026-10-16)
 

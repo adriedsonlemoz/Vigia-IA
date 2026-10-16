@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.254',
+          version: '1.0.255',
           current: true,
+          changes: [
+            'Botão de IA e métricas do Ao vivo compatíveis com o analisador Dart.',
+            'Interface do monitor e cores de status preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.254',
           changes: [
             'Ao vivo ganha botão sobre o vídeo para ligar ou desligar a IA local.',
             'Cores do strip embutido, selo do mapa e resumo Detectados foram ajustadas.',
@@ -2274,8 +2282,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.254',
+          version: '1.0.255',
           current: true,
+          changes: [
+            'Botão de IA e métricas do Ao vivo compatíveis com o analisador Dart.',
+            'Interface do monitor e cores de status preservadas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.254',
           changes: [
             'Ao vivo ganha botão sobre o vídeo para ligar ou desligar a IA local.',
             'Cores do strip embutido, selo do mapa e resumo Detectados foram ajustadas.',

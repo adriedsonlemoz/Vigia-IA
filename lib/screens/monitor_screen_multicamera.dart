@@ -824,7 +824,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
         : null;
     final segments = <String>[];
     if (_controller.aiEnabled && hasResolution) {
-      segments.add('Análise ${analysisWidth}×${analysisHeight}');
+      segments.add('Análise $analysisWidth×$analysisHeight');
     }
     if (_controller.aiEnabled && fpsText != null) {
       segments.add('$fpsText FPS');

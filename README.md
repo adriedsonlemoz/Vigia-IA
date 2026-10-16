@@ -1,3 +1,9 @@
+## 1.0.255+255: correção do Android APK 209 (2026-10-16)
+
+- Corrigidos os 35 apontamentos do `flutter analyze` da 1.0.254: getter público `aiEnabled`, seis declarações indevidas de `dividerColor` e duas interpolações com chaves desnecessárias.
+- Não modifica os controles da câmera/IA, estilo do monitor, mapa offline, GPS nem fontes MCRP/RTSP/ESP32.
+- Adicionadas verificações e testes preventivos do build 209; análise Dart real e APK precisam ser confirmados no GitHub Actions.
+
 ## 1.0.254+254: controles de IA e ajustes visuais no Ao vivo (2026-10-16)
 
 - Corrige as cores do strip embutido no Ao vivo, incluindo Receptor (IA), bateria e selo do mapa.
@@ -57,7 +63,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.254+254`
+**Versão atual:** `1.0.255+255`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

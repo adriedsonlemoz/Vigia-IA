@@ -235,6 +235,7 @@ class MonitorController extends ChangeNotifier {
   MonitorSchedule get schedule => _schedule;
   bool get scheduleActive => _scheduleActive;
   bool get clipRecordingEnabled => _clipRecordingEnabled;
+  bool get aiEnabled => _aiEnabled;
   bool get clipRecording => _clipRecorder.recording;
   bool get trackingEnabled => _trackingEnabled;
   bool get announceEntryExit => _announceEntryExit;

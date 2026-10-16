@@ -526,9 +526,6 @@ class _MonitorActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     final content = Material(
       color: scheme.primary.withValues(alpha: 0.10),
       borderRadius: BorderRadius.circular(dense ? 11 : 14),
@@ -587,9 +584,6 @@ class _SourceOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     return Material(
       color: selected ? scheme.primary.withValues(alpha: 0.10) : scheme.surface,
       borderRadius: BorderRadius.circular(18),
@@ -797,9 +791,6 @@ class _DetectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = (confidence * 100).round();
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.all(11),
@@ -995,9 +986,6 @@ class _DashboardMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 116, maxWidth: 158),
       child: DecoratedBox(
@@ -1091,9 +1079,6 @@ class _DashboardActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     final style = FilledButton.styleFrom(
       backgroundColor: accent
           ? scheme.primary.withValues(alpha: 0.24)
@@ -1171,9 +1156,6 @@ class _DashboardCameraBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dividerColor = embedded
-        ? scheme.outlineVariant.withValues(alpha: 0.56)
-        : Colors.white.withValues(alpha: 0.18);
     final accent = active ? scheme.primary : Colors.white70;
     return DecoratedBox(
       decoration: BoxDecoration(
