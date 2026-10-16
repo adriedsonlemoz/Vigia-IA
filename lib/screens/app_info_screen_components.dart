@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.259',
+          version: '1.0.260',
           current: true,
+          changes: [
+            'Frontal troca a câmera principal em tela cheia, sem segunda lente concorrente.',
+            'Conversão local de quadros mais econômica para preservar a fluidez.',
+            'Relatório confirmou uso de EfficientDet-Lite0 com CPU e não YOLO26s.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.259',
           changes: [
             'Escolha de modelo e diagnóstico do Ao vivo com estabilidade aprimorada.',
             'Seleção automática e relatórios de análise preservados.',
@@ -2314,8 +2323,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.259',
+          version: '1.0.260',
           current: true,
+          changes: [
+            'Frontal troca a câmera principal em tela cheia, sem segunda lente concorrente.',
+            'Conversão local de quadros mais econômica para preservar a fluidez.',
+            'Relatório confirmou uso de EfficientDet-Lite0 com CPU e não YOLO26s.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.259',
           changes: [
             'Escolha de modelo e diagnóstico do Ao vivo com estabilidade aprimorada.',
             'Seleção automática e relatórios de análise preservados.',

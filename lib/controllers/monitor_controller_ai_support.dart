@@ -1,5 +1,20 @@
 part of 'monitor_controller.dart';
 
+Duration _effectiveMonitorAnalysisInterval(
+  MonitorController monitor,
+  VideoSourceConfig config,
+) {
+  final requestedInterval = monitor._bikeConfig.effectiveAnalysisInterval(
+    config.analysisInterval,
+  );
+  // A visualização CameraPreview é nativa e independente da conversão RGB.
+  // Reduz a frequência de conversão local sob carga e mantém FPS do vídeo.
+  return config.type == VideoSourceType.localCamera &&
+          requestedInterval < const Duration(milliseconds: 900)
+      ? const Duration(milliseconds: 900)
+      : requestedInterval;
+}
+
 void _clearMonitorControllerAiState(MonitorController controller) {
   controller._detections = const <Detection>[];
   controller._trackedDetections = const <TrackedDetection>[];

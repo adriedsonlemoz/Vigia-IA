@@ -115,7 +115,8 @@ class _MonitorScreenState extends State<MonitorScreen>
       settings: widget.settings,
     )..addListener(_refresh);
     final secondarySource = widget.secondarySource;
-    if (secondarySource != null) {
+    if (secondarySource != null && !(secondarySource.isFrontCameraTest &&
+        widget.initialSource.type == VideoSourceType.localCamera)) {
       _secondaryController = SecondaryCameraController(
         sourceConfig: secondarySource,
       )..addListener(_refresh);

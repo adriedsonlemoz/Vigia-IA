@@ -5,7 +5,15 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.259+259
+# Validação Vigia IA 1.0.260+260
+
+## Câmera frontal principal e desempenho local (2026-10-16)
+
+- [x] Analisado `vigiaia_desempenho_20261016-111018.zip`: CPU/XNNPACK com EfficientDet-Lite0; P50 214 ms LiteRT e P50 459 ms fim a fim; análise ~1,27 FPS ao fim; bateria até 41,2 °C. Não houve evidência de execução de YOLO26s.
+- [x] Câmera frontal escolhida como fonte principal, sem abrir CameraController frontal concorrente com traseiro; reset preserva lente selecionada.
+- [x] Limite mínimo de 900 ms para conversão/análise de câmera local; a prévia nativa continua independente da conversão RGB.
+- [x] Contrato Python `tool/test_camera_primary_perf_260.py` adicionado; regressão para seleção e isolamento da câmera frontal.
+- [ ] `flutter analyze`, `flutter test` e build/avaliação em hardware Android continuam necessários.
 
 ## APK 213: getter duplicado na IA (2026-10-16)
 

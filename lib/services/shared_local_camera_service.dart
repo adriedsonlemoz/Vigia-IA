@@ -38,11 +38,19 @@ class SharedLocalCameraService extends ChangeNotifier {
   Future<void> acquire({
     required String consumerId,
     required Duration analysisInterval,
+    bool frontCamera = false,
   }) async {
     _consumers[consumerId] = _normalizeInterval(analysisInterval);
     await _enqueue(() async {
-      if (_consumers.isEmpty || running) return;
-      await _startUnlocked();
+      if (_consumers.isEmpty) return;
+      // Uma unica camera fisica: trocar a lente reinicia o pipeline
+      // compartilhado, sem abrir outra CameraController simultanea.
+      final requested = frontCamera
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+      if (running && _description?.lensDirection == requested) return;
+      if (running) await _stopUnlocked(notifyStopped: false);
+      await _startUnlocked(frontCamera: frontCamera);
     });
   }
 
@@ -65,9 +73,12 @@ class SharedLocalCameraService extends ChangeNotifier {
   Future<void> restartPipeline() async {
     await _enqueue(() async {
       if (_consumers.isEmpty) return;
+      final keepFront = _description?.lensDirection == CameraLensDirection.front;
       await _stopUnlocked(notifyStopped: false);
       await Future<void>.delayed(const Duration(milliseconds: 120));
-      if (_consumers.isNotEmpty) await _startUnlocked();
+      if (_consumers.isNotEmpty) {
+        await _startUnlocked(frontCamera: keepFront);
+      }
     });
   }
 
@@ -82,7 +93,7 @@ class SharedLocalCameraService extends ChangeNotifier {
     },
   );
 
-  Future<void> _startUnlocked() async {
+  Future<void> _startUnlocked({bool frontCamera = false}) async {
     _statuses.add(const VideoSourceStatus(VideoSourceState.connecting));
     final cameras = await availableCameras();
     if (cameras.isEmpty) {
@@ -94,10 +105,16 @@ class SharedLocalCameraService extends ChangeNotifier {
       throw StateError('Nenhuma câmera disponível.');
     }
 
-    final back = cameras.where(
-      (camera) => camera.lensDirection == CameraLensDirection.back,
+    final requestedLens = frontCamera
+        ? CameraLensDirection.front
+        : CameraLensDirection.back;
+    final preferred = cameras.where(
+      (camera) => camera.lensDirection == requestedLens,
     );
-    _description = back.isNotEmpty ? back.first : cameras.first;
+    if (preferred.isEmpty && frontCamera) {
+      throw StateError('Este aparelho não possui câmera frontal disponível.');
+    }
+    _description = preferred.isNotEmpty ? preferred.first : cameras.first;
 
     final controller = CameraController(
       _description!,

@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.259+259
+# Arquitetura — Vigia IA 1.0.260+260
+
+**Câmera frontal principal e suavização do monitor (1.0.260):** `MonitorMulticamera` envia a seleção frontal para o controlador principal, encerrando a fonte secundária antes de reinicializar a lente CameraX compartilhada. `LocalCameraSource` propaga `frontCamera` ao `SharedLocalCameraService`, que escolhe câmera frontal ou traseira mantendo apenas um `CameraController`. A conversão RGB local tem limite inferior de 900 ms, desacoplada de `CameraPreview`, e quadros ignorados quando a IA está ocupada não exigem reconstrução da árvore visual. A alteração pode reduzir o FPS da IA; busca manter visualização responsiva. Diagnóstico do 1.0.259: EfficientDet-Lite0/XNNPACK/CPU, não YOLO26s.
 
 **Correção do APK 213 (1.0.259):** `activeDetectorModel` exposto uma única vez no `MonitorControllerAiSupport`, sem modificar o runtime do detector nem o fluxo de recepção/telemetria. Teste estático protege contra getters duplicados.
 

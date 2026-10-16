@@ -258,7 +258,7 @@ class MonitorController extends ChangeNotifier {
   SessionStatusData _buildSessionStatus() => _buildSessionStatusImpl();
   void _sampleSessionHealth() => _sampleSessionHealthImpl();
   Duration get effectiveAnalysisInterval =>
-      _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
+      _effectiveMonitorAnalysisInterval(this, sourceConfig);
   Widget buildPreview() =>
       _source?.buildPreview() ?? const SizedBox.expand();
   void _syncLanHealth() {
@@ -601,12 +601,11 @@ class MonitorController extends ChangeNotifier {
     if (!_scheduleActive) return;
 
     _resetSessionMetrics();
-    final analysisInterval = _bikeConfig.effectiveAnalysisInterval(
-      config.analysisInterval,
-    );
+    final analysisInterval = _effectiveMonitorAnalysisInterval(this, config);
     final source = switch (config.type) {
       VideoSourceType.localCamera => LocalCameraSource(
           analysisInterval: analysisInterval,
+          frontCamera: config.isFrontCameraTest,
         ),
       VideoSourceType.rtsp => RtspCameraSource(
           url: config.rtspUrl ?? '', analysisInterval: analysisInterval,
@@ -766,7 +765,8 @@ class MonitorController extends ChangeNotifier {
     if (_processing || !_baseReady || !_detector.isReady) {
       _framesDropped++;
       _framesDroppedProcessing++;
-      _notify();
+      // Os contadores serao exibidos na proxima notificacao de resultado.
+      // Evita reconstruir toda a tela durante backpressure de inferencia.
       return;
     }
     if (_backgroundMonitoringEnabled) {

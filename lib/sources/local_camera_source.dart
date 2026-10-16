@@ -12,6 +12,7 @@ class LocalCameraSource implements VideoSource {
   LocalCameraSource({
     required this.analysisInterval,
     this.emitFrames = true,
+    this.frontCamera = false,
   })
       : _consumerId = 'local-camera-${++_nextConsumerId}';
 
@@ -19,6 +20,7 @@ class LocalCameraSource implements VideoSource {
 
   final Duration analysisInterval;
   final bool emitFrames;
+  final bool frontCamera;
   Duration? _dynamicFrameInterval;
 
   /// Permite reduzir conversões RGB com o receptor desconectado.
@@ -73,6 +75,7 @@ class LocalCameraSource implements VideoSource {
       await _shared.acquire(
         consumerId: _consumerId,
         analysisInterval: _effectiveFrameInterval,
+        frontCamera: frontCamera,
       );
       if (!_statuses.isClosed && _shared.running) {
         _statuses.add(const VideoSourceStatus(VideoSourceState.streaming));

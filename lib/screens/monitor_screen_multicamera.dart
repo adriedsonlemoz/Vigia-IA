@@ -75,7 +75,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
 
   VideoSourceConfig _frontCameraTestSource() => VideoSourceConfig(
     type: VideoSourceType.localCamera,
-    displayName: 'Frontal (teste)',
+    displayName: 'Frontal',
     cameraId: frontCameraTestId,
     analysisInterval: _controller.sourceConfig.analysisInterval,
   );
@@ -84,7 +84,10 @@ extension _MonitorMulticamera on _MonitorScreenState {
     final previous = _secondaryController;
     previous?.removeListener(_refresh);
     _updateMulticameraState(() => _secondaryController = null);
-    previous?.dispose();
+    if (previous != null) {
+      await previous.suspend();
+      previous.dispose();
+    }
     if (source == null || !mounted) return;
     final next = SecondaryCameraController(sourceConfig: source)
       ..addListener(_refresh);
@@ -136,13 +139,12 @@ extension _MonitorMulticamera on _MonitorScreenState {
             child: ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.face_retouching_natural_outlined),
-              title: const Text('Teste: câmera frontal'),
+              title: const Text('Câmera frontal (principal)'),
               subtitle: const Text(
-                'Abre a frontal em uma janela pequena; a IA continua somente na principal.',
+                'Substitui a imagem principal. A IA analisa a frontal.',
               ),
               trailing:
-                  _secondaryController?.sourceConfig.cameraId ==
-                      frontCameraTestId
+                  _controller.sourceConfig.isFrontCameraTest
                   ? const Icon(Icons.check_circle_rounded)
                   : null,
             ),
@@ -195,12 +197,12 @@ extension _MonitorMulticamera on _MonitorScreenState {
       if (!granted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Permita a câmera para testar a frontal.'),
+            content: Text('Permita a câmera para usar a frontal.'),
           ),
         );
         return;
       }
-      await _replaceSecondarySource(_frontCameraTestSource());
+      await _selectLocalPrimarySource(_frontCameraTestSource());
       return;
     }
     final selectedIndex = candidates.indexWhere(
@@ -242,10 +244,21 @@ extension _MonitorMulticamera on _MonitorScreenState {
     return granted;
   }
 
+  Future<void> _selectLocalPrimarySource(VideoSourceConfig source) async {
+    if (_sameSource(_controller.sourceConfig, source) &&
+        _secondaryController == null) return;
+    if (!await _ensureLocalCameraPermission()) return;
+    // Front + back simultaneos nao sao garantidos pelo CameraX do aparelho.
+    // Desliga a segunda camera ANTES de trocar o pipeline fisico da principal.
+    await _replaceSecondarySource(null);
+    if (!mounted) return;
+    await _controller.switchSource(source);
+  }
+
   Future<void> _selectPrimaryCamera(CameraEndpoint camera) async {
     final next = _sourceForEndpoint(camera);
-    if (next.type == VideoSourceType.localCamera &&
-        !await _ensureLocalCameraPermission()) {
+    if (next.type == VideoSourceType.localCamera) {
+      await _selectLocalPrimarySource(next);
       return;
     }
     final secondary = _secondaryController?.sourceConfig;
@@ -256,6 +269,11 @@ extension _MonitorMulticamera on _MonitorScreenState {
   }
 
   Future<void> _selectSecondaryCamera(VideoSourceConfig source) async {
+    if (source.type == VideoSourceType.localCamera &&
+        _controller.sourceConfig.type == VideoSourceType.localCamera) {
+      await _selectLocalPrimarySource(source);
+      return;
+    }
     if (_sameSource(_controller.sourceConfig, source)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -387,16 +405,15 @@ extension _MonitorMulticamera on _MonitorScreenState {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                     leading: const Icon(Icons.face_retouching_natural_outlined),
                     title: const Text('Câmera frontal'),
-                    subtitle: const Text('Usa a frontal como segunda câmera de teste.'),
+                    subtitle: const Text('Ocupa toda a imagem principal e recebe a análise da IA.'),
                     trailing:
-                        _secondaryController?.sourceConfig.cameraId ==
-                            frontCameraTestId
+                        _controller.sourceConfig.isFrontCameraTest
                         ? const Icon(Icons.check_circle_rounded)
                         : null,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       unawaited(
-                        _selectSecondaryCamera(_frontCameraTestSource()),
+                        _selectLocalPrimarySource(_frontCameraTestSource()),
                       );
                     },
                   ),
