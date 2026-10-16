@@ -16,7 +16,7 @@ def check_source(files=None):
     needs('_buildDualCameraStage(context, portraitEmbedded: portraitEmbedded)' in monitor, 'Dual view is missing')
     needs('Expanded(child: primary)' in monitor and 'Expanded(child: second)' in monitor, 'Both feeds must be large')
     needs('_buildPortraitPictureInPictureStage' not in monitor, 'Floating video miniatura is still used')
-    needs('secondary != null &&' in portrait and 'constraints.maxHeight * 0.83' in portrait, 'Dual height is not expanded')
+    needs('secondary != null &&' in portrait and 'dualNaturalHeight' in portrait and 'showMap' in portrait, 'Dual height is not expanded')
     needs('if (secondaryType != null)' in components and 'if (embedded)' in components, 'Single camera should not show secondary info')
     needs('_CompactCameraTelemetryCard(' in components and 'secondaryTelemetry: secondaryTelemetry' in components, 'Per-camera status is missing')
     needs('batteryTemperatureC' in components and 'batteryPercent' in components, 'Battery and temperature not rendered')
@@ -26,7 +26,7 @@ def check_source(files=None):
     needs('text: detection.displayLabel' in overlay, 'Detection name missing')
     needs("'#\u0024trackId" not in overlay and 'confidence * 100' not in overlay, 'Overlay still exposes ids/percentages')
     needs('labels.take(3).join' in portrait and "'#\u0024primaryTrackId" not in portrait, 'Detection summary still exposes ids')
-    needs('_buildSecondaryFilledPreview' in monitor, 'Second camera should fill its panel')
+    needs('_buildSecondaryFilledPreview' in monitor and 'return preview;' in monitor, 'Second camera must preserve image proportions')
     return errors
 
 if __name__ == '__main__':

@@ -1,11 +1,13 @@
 ## 1.0.247+247: câmeras Minha Câmera salvas localmente (2026-10-15)
 
+**1.0.266:** atualização do Ao vivo, telemetria MCRP e diagnóstico livre. Testes fonte/contrato executados localmente conforme logs; Flutter SDK não disponível no executor local, exigindo `flutter analyze`, `flutter test` e montagem de APK no CI. Validar em aparelho: duas câmeras com mapa, troca de modelos durante teste e bateria/temperatura reais do Minha Câmera.
+
 - Depois de conectar por QR/URL no painel MCRP, use **Salvar esta câmera** para escolher um nome. O ato de conectar sozinho não registra a câmera; o cadastro é opcional.
 - **Câmeras salvas** permite reconectar com um toque ou remover com confirmação, mesmo após reiniciar o aplicativo. O nome e o IP/porta aparecem na lista, nunca o token completo do QR.
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.265+265
+# Validação Vigia IA 1.0.266+266
 
 ## Falha no teste Flutter do Android APK 219 (2026-10-16)
 

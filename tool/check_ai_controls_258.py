@@ -27,7 +27,7 @@ def check():
     assert 'this.onModelTap' in top and 'this.onDiagnosticTap' in top
     assert 'onModelTap: () => unawaited(_showAiModelPicker())' in portrait
     for word in ['15, 30, 60', 'startDeepTrace', 'stopDeepTrace',
-                 'Teste de IA concluído', 'exportWithPicker', 'deepTraceSamples']:
+                 'Diagnóstico concluído', 'Timer.periodic', 'deepTraceSamples']:
         assert word in screen, word
     for transmitter in (ROOT/'lib').rglob('*transmitter*.dart'):
         assert 'ObjectDetectionService(' not in transmitter.read_text(encoding='utf-8'), transmitter

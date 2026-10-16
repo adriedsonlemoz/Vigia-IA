@@ -8,6 +8,9 @@ import 'package:image/image.dart' as img;
 import '../core/video_source.dart';
 import '../core/video_source_status.dart';
 import '../models/rgb_frame.dart';
+import '../models/remote_phone_status.dart';
+import '../services/mcrp_client.dart';
+import '../services/minha_camera_telemetry.dart';
 import '../services/data_usage_service.dart';
 import '../services/minha_camera_live_url.dart';
 import '../services/minha_camera_mjpeg_parser.dart';
@@ -29,6 +32,12 @@ class MinhaCameraMjpegSource implements VideoSource {
   final ValueNotifier<Uint8List?> _preview = ValueNotifier<Uint8List?>(null);
   HttpClient? _client;
   Timer? _retry;
+  Timer? _telemetryTimer;
+  McrpClient? _telemetryClient;
+  bool _telemetryBusy = false;
+  final ValueNotifier<RemotePhoneStatus?> remoteStatusNotifier =
+      ValueNotifier<RemotePhoneStatus?>(null);
+  RemotePhoneStatus? get remoteStatus => remoteStatusNotifier.value;
   bool _disposed = false;
   bool _decoding = false;
   int _generation = 0;
@@ -62,6 +71,15 @@ class MinhaCameraMjpegSource implements VideoSource {
       ..connectionTimeout = const Duration(seconds: 5)
       ..autoUncompress = false;
     _status(VideoSourceState.connecting, 'Conectando ao Minha Câmera…');
+    // A leitura de /status é opcional. Nenhuma falha de telemetria interrompe MJPEG.
+    try {
+      _telemetryClient = McrpClient(McrpAddress.parse(liveUrl));
+      unawaited(_pollTelemetry(generation));
+      _telemetryTimer = Timer.periodic(const Duration(seconds: 5),
+          (_) => unawaited(_pollTelemetry(generation)));
+    } on FormatException {
+      // Endereço MJPEG válido, mas sem suporte ao contrato MCRP v1.
+    }
     unawaited(_receive(generation));
   }
 
@@ -125,6 +143,32 @@ class MinhaCameraMjpegSource implements VideoSource {
     }
   }
 
+  Future<void> _pollTelemetry(int generation) async {
+    final client = _telemetryClient;
+    if (_telemetryBusy || client == null || _disposed || generation != _generation) {
+      return;
+    }
+    _telemetryBusy = true;
+    final watch = Stopwatch()..start();
+    try {
+      final headers = await client.status();
+      if (_disposed || generation != _generation) return;
+      // Uma resposta sem esses campos não justifica atribuir dados fictícios.
+      remoteStatusNotifier.value = MinhaCameraTelemetry.fromHeaders(
+        headers,
+        networkLatencyMs: watch.elapsedMilliseconds,
+      );
+    } catch (_) {
+      // O vídeo funciona independentemente da API de telemetria.
+      if (generation == _generation && remoteStatusNotifier.value != null &&
+          remoteStatusNotifier.value!.isStale()) {
+        remoteStatusNotifier.value = null;
+      }
+    } finally {
+      _telemetryBusy = false;
+    }
+  }
+
   Future<void> _emitRgb(Uint8List jpeg, DateTime capturedAt, int generation) async {
     final stopwatch = Stopwatch()..start();
     try {
@@ -162,6 +206,11 @@ class MinhaCameraMjpegSource implements VideoSource {
     _generation++;
     _retry?.cancel();
     _retry = null;
+    _telemetryTimer?.cancel();
+    _telemetryTimer = null;
+    _telemetryClient?.close();
+    _telemetryClient = null;
+    remoteStatusNotifier.value = null;
     _client?.close(force: true);
     _client = null;
     _decoding = false;
@@ -178,6 +227,7 @@ class MinhaCameraMjpegSource implements VideoSource {
     await stop();
     _disposed = true;
     _preview.dispose();
+    remoteStatusNotifier.dispose();
     await _frames.close();
     await _statuses.close();
   }

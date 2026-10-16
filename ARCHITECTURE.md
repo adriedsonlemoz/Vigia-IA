@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.265+265
+# Arquitetura — Vigia IA 1.0.266+266
+
+**Ao vivo (1.0.266):** a composição empilhada expande verticalmente pelo aspecto do vídeo mesmo com mapa ativo, usando rolagem externa. Pré-visualizações MJPEG ficam em `BoxFit.contain`. Diagnóstico é uma sessão `Stopwatch` no estado do Monitor, com timer leve de 1 s, eventos de alterações de modelo e segmentos com contadores antes/depois. Telemetria MCRP usa outra conexão HTTP/5 s ao endpoint de status e notificadores por fonte, nunca desacopla a recepção MJPEG; cabeçalhos podem faltar.
 
 **Teste Flutter APK 219 (1.0.265):** modelo YOLO26s exportado com sucesso no runner, com saída NCHW 1×84×8400. Corrigida a expectativa antiga do teste `detector_model_preference_test.dart` que exigia Automático como default apesar de `MonitorSettings` usar YOLO26s. A opção Automático continua válida. Nenhuma alteração na arquitetura de vídeo ou inferência.
 

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.265', build: 265);
+      AppBuildVersion(version: '1.0.266', build: 266);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.265', build: 265),
+      version: AppBuildVersion(version: '1.0.266', build: 266),
       changes: <String>[
-        'YOLO26s segue como modelo principal, com exportação LiteRT validada no CI.',
-        'YOLO26s foi exportado e validado no CI; modelo Automático permanece disponível.'
+        'Duas câmeras com visores maiores e imagem sem cortes no retrato.',
+        'Diagnóstico contínuo com trocas de modelo e telemetria das câmeras.'
       ],
     ),
   ]);

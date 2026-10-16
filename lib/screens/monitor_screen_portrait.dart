@@ -24,10 +24,20 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
+        // Duas fontes horizontais precisam de altura própria, mesmo com mapa
+        // ativo. A tela já é rolável: não espremer 2 vídeos no espaço de 1.
+        final dualRatio = previewRatio != null && previewRatio > 0.7
+            ? previewRatio
+            : 16 / 9;
+        final dualNaturalHeight = (width / dualRatio * 2 + 4)
+            .clamp(440.0, 780.0).toDouble();
         final cameraHeight = secondary != null &&
-                _primaryContentMode == _MonitorPrimaryContentMode.camera &&
-                !showMap
-            ? (constraints.maxHeight * 0.83).clamp(460.0, 780.0).toDouble()
+                _primaryContentMode == _MonitorPrimaryContentMode.camera
+            ? (showMap
+                ? dualNaturalHeight
+                : (constraints.maxHeight * 0.83 > dualNaturalHeight
+                    ? constraints.maxHeight * 0.83
+                    : dualNaturalHeight).clamp(460.0, 780.0).toDouble())
             : _primaryContentMode == _MonitorPrimaryContentMode.map
             ? (constraints.maxHeight * 0.58).clamp(330.0, 620.0).toDouble()
             : showMap
@@ -73,6 +83,11 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                             embedded: true,
                           ),
                   ),
+                  if (_aiDiagnostic != null || _lastAiDiagnostic != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 7, 10, 0),
+                      child: _buildAiDiagnosticBanner(context),
+                    ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),

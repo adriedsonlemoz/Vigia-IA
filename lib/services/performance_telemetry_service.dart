@@ -651,7 +651,7 @@ class PerformanceTelemetryService extends ChangeNotifier {
 
   void startDeepTrace(Duration duration) {
     final normalized = Duration(
-      seconds: duration.inSeconds.clamp(10, 120).toInt(),
+      seconds: duration.inSeconds.clamp(10, 600).toInt(),
     );
     _deepTraceTimer?.cancel();
     _deepTraceSamples.clear();

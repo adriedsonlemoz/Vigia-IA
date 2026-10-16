@@ -748,14 +748,14 @@ extension _MonitorMulticamera on _MonitorScreenState {
               detections: _controller.detections,
               trackedDetections: _controller.trackedDetections,
               previewAspectRatio: _controller.previewAspectRatio,
-              fillPreview: true,
+              fillPreview: _fillPreview && _fullscreen,
             ),
           if (!_controller.initializing)
             MonitoringZoneOverlay(
               zones: _controller.monitoringZones,
               editingZoneId: _editingZoneId,
               previewAspectRatio: _controller.previewAspectRatio,
-              fillPreview: true,
+              fillPreview: _fillPreview && _fullscreen,
               onChanged: _applyZone,
             ),
           Positioned(
@@ -802,21 +802,13 @@ extension _MonitorMulticamera on _MonitorScreenState {
     SecondaryCameraController secondary,
   ) {
     final preview = secondary.buildPreview();
-    if (MediaQuery.orientationOf(context) != Orientation.portrait) {
+    // Não ampliar/cortar para preencher um painel alto: BoxFit.contain já
+    // preserva a proporção do JPEG dentro do próprio VideoSource.
+    if (MediaQuery.orientationOf(context) == Orientation.portrait &&
+        !_fullscreen) {
       return preview;
     }
-    final ratio = secondary.previewAspectRatio;
-    if (ratio == null || ratio <= 0) return preview;
-    return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
-        return preview;
-      }
-      final containerRatio = constraints.maxWidth / constraints.maxHeight;
-      final scale = containerRatio > ratio
-          ? containerRatio / ratio
-          : ratio / containerRatio;
-      return ClipRect(child: Transform.scale(scale: scale, child: preview));
-    });
+    return preview;
   }
 
   Widget _buildSecondaryCameraTile(

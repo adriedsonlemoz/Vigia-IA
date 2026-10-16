@@ -20,6 +20,7 @@ import '../models/map_route_point.dart';
 import '../models/route_explorer_models.dart';
 import '../models/offline_map_package.dart';
 import '../models/remote_phone_status.dart';
+import '../models/session_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
 import '../services/performance_telemetry_service.dart';
@@ -52,7 +53,6 @@ part 'monitor_screen_portrait.dart';
 part 'monitor_screen_ai_tools.dart';
 part 'monitor_screen_landscape_dashboard.dart';
 part 'monitor_screen_map_explorer.dart';
-
 enum _MonitorPrimaryContentMode { camera, cameraOff, map }
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({
@@ -61,15 +61,12 @@ class MonitorScreen extends StatefulWidget {
     required this.settings,
     this.secondarySource,
   });
-
   final VideoSourceConfig initialSource;
   final MonitorSettings settings;
   final VideoSourceConfig? secondarySource;
-
   @override
   State<MonitorScreen> createState() => _MonitorScreenState();
 }
-
 class _MonitorScreenState extends State<MonitorScreen>
     with WidgetsBindingObserver {
   late final MonitorController _controller;
@@ -88,7 +85,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   // Mapa, mosaicos offline e GPS não pertencem ao ciclo de vida da câmera.
   // Só são inicializados após interação explícita com a área do mapa.
   bool _monitorMapActivated = false;
-
   List<MapRoutePoint> get _miniMapRoute => _mapRoute.route;
   List<List<MapRoutePoint>> get _miniMapSegments => _mapRoute.routeSegments;
   MapRoutePoint? get _miniMapCurrent => _mapRoute.current;
@@ -103,6 +99,9 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _fullscreenControlsVisible = true;
   bool _fillBeforeFullscreen = false;
   Timer? _fullscreenControlsTimer;
+  _AiDiagnosticRun? _aiDiagnostic;
+  _AiDiagnosticResult? _lastAiDiagnostic;
+  Timer? _aiDiagnosticTicker;
   bool _landscapePanelExpanded = false; _MonitorPrimaryContentMode _primaryContentMode = _MonitorPrimaryContentMode.camera;
   @override
   void initState() {
@@ -128,16 +127,12 @@ class _MonitorScreenState extends State<MonitorScreen>
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
   }
-
   void _updateFullscreenState(VoidCallback update) => setState(update);
-
   void _updateMulticameraState(VoidCallback update) => setState(update);
-
   void _refresh() {
     if (!mounted) return;
     setState(() {});
   }
-
   void _onMapRouteChanged() {
     if (!mounted) return;
     setState(() {});
@@ -153,7 +148,6 @@ class _MonitorScreenState extends State<MonitorScreen>
       }
     }
   }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -177,6 +171,9 @@ class _MonitorScreenState extends State<MonitorScreen>
 
   @override
   void dispose() {
+    _aiDiagnosticTicker?.cancel();
+    _aiDiagnostic?.watch.stop();
+    if (_aiDiagnostic != null) PerformanceTelemetryService.instance.stopDeepTrace();
     _fullscreenControlsTimer?.cancel();
     unawaited(AppOrientationService.lockPortrait());
     WidgetsBinding.instance.removeObserver(this);
@@ -1178,7 +1175,7 @@ class _MonitorScreenState extends State<MonitorScreen>
     final forceFill =
         _fullscreen ||
         MediaQuery.orientationOf(context) == Orientation.landscape ||
-        _secondaryController != null;
+        (_secondaryController != null && _fillPreview);
     if (!_fillPreview && !forceFill) return preview;
     final ratio = _controller.previewAspectRatio;
     if (ratio == null || ratio <= 0) return preview;

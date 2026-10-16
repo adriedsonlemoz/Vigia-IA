@@ -53,6 +53,7 @@ import '../services/shared_local_camera_service.dart';
 import '../services/runtime_health_service.dart';
 import '../services/speech_service.dart';
 import '../sources/local_camera_source.dart';
+import '../sources/minha_camera_mjpeg_source.dart';
 import '../sources/rtsp_camera_source.dart';
 import '../sources/remote_phone_camera_source.dart';
 import '../sources/remote_phone_source_factory.dart';
@@ -250,7 +251,9 @@ class MonitorController extends ChangeNotifier {
   bool get isRemotePhoneSource => sourceConfig.type == VideoSourceType.remotePhone || sourceConfig.type == VideoSourceType.esp32;
   RemotePhoneStatus? get remotePhoneStatus {
     final source = _source;
-    return source is RemotePhoneCameraSource ? source.remoteStatus : null;
+    if (source is RemotePhoneCameraSource) return source.remoteStatus;
+    if (source is MinhaCameraMjpegSource) return source.remoteStatus;
+    return null;
   }
   int get remotePhoneWarningCount => remotePhoneStatus?.warnings().length ?? 0;
   DeviceTelemetrySnapshot? get localDeviceTelemetry => _localDeviceTelemetry;
@@ -269,20 +272,16 @@ class MonitorController extends ChangeNotifier {
       error: _lanPermissionError ?? _lanStream.error,
     );
   }
-
   void _notify() {
     _syncLanHealth();
     if (!_disposed) notifyListeners();
   }
-
   void _onLanStreamChanged() => _notify();
-
   void _onRemotePhoneStatusChanged() => _notify();
   void _onBikeModeChanged() {
     if (_disposed || _bikePolicyChangeInProgress) return;
     unawaited(_applyBikeModeChange());
   }
-
   Future<void> _applyBikeModeChange() async {
     if (_disposed || _bikePolicyChangeInProgress) return;
     _bikePolicyChangeInProgress = true;
@@ -327,21 +326,15 @@ class MonitorController extends ChangeNotifier {
       _bikePolicyChangeInProgress = false;
     }
   }
-
   Future<void> _applyBikeScreenPolicy() => _native.setBikeScreenBrightness(
         _source != null ? _bikeConfig.rearScreenBrightness : null,
       );
-
   void _startSessionTelemetryTimer() => _startSessionTelemetryTimerImpl();
-
   void _configureBikeTelemetryTimer() => _configureBikeTelemetryTimerImpl();
-
   Future<void> _refreshBikeTelemetry() => _refreshBikeTelemetryImpl();
-
   Future<bool> ensureLanStreaming({bool requestPermission = false}) async {
     if (_disposed || _source == null || !_scheduleActive) return false;
     _lanPermissionError = null;
-
     final permission = await _native.localNetworkPermissionStatus();
     if (permission.required && !permission.granted) {
       final granted = await _native.requestLocalNetworkPermission();
@@ -360,7 +353,6 @@ class MonitorController extends ChangeNotifier {
         return false;
       }
     }
-
     var started = await _lanStream.start();
     if (!started && _lanStream.likelyPermissionError) {
       final granted = await _native.requestLocalNetworkPermission();
@@ -380,7 +372,6 @@ class MonitorController extends ChangeNotifier {
     _notify();
     return started;
   }
-
   Future<void> initialize() async {
     if (_disposed || _baseReady) return;
     _initializing = true;
@@ -622,6 +613,8 @@ class MonitorController extends ChangeNotifier {
     _source = source;
     sourceConfig = config;
     if (source is RemotePhoneCameraSource) {
+      source.remoteStatusNotifier.addListener(_onRemotePhoneStatusChanged);
+    } else if (source is MinhaCameraMjpegSource) {
       source.remoteStatusNotifier.addListener(_onRemotePhoneStatusChanged);
     }
     _sourceStatus = const VideoSourceStatus(VideoSourceState.connecting);
@@ -1666,6 +1659,8 @@ class MonitorController extends ChangeNotifier {
 
     final source = _source;
     if (source is RemotePhoneCameraSource) {
+      source.remoteStatusNotifier.removeListener(_onRemotePhoneStatusChanged);
+    } else if (source is MinhaCameraMjpegSource) {
       source.remoteStatusNotifier.removeListener(_onRemotePhoneStatusChanged);
     }
     _source = null;

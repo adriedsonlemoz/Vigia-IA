@@ -1,3 +1,10 @@
+## 1.0.266+266: monitores proporcionais e diagnóstico de IA interativo (2026-10-16)
+
+- Ao vivo: layout vertical com duas câmeras não comprime os quadros quando o mapa aparece; imagens preservam proporções originais.
+- Diagnóstico em segundo plano na própria tela, sem bloquear controles e com opções 15/30/60/120/300/600 s; detecta troca de preferência/modelo ativo, fallback final, quedas de fonte e falhas observadas, com FPS e quadros por segmento.
+- Consulta opcional e periódica ao status MCRP do Minha Câmera, integrando `x-battery-level` e `x-battery-temp-tenths` no cartão compacto; não interfere no MJPEG e mostra traço se ausente.
+- Rastreamento profundo aceita 600 segundos mantendo limite de 900 amostras, sem armazenar tudo em memória.
+
 ## 1.0.265+265: correção do teste Flutter do YOLO26s (APK 219, 2026-10-16)
 
 - Corrigido `test/detector_model_preference_test.dart`: configuração padrão de IA agora espera `YOLO26s`, conforme a preferência real, mantendo o modo Automático opcional.

@@ -1,3 +1,9 @@
+## 1.0.266+266: Ao vivo, diagnóstico livre e telemetria Minha Câmera (2026-10-16)
+
+- Duas câmeras usam painéis altos em retrato, inclusive com mapa, sem recortar/esticar o MJPEG; a tela permite rolar.
+- Diagnóstico da IA sem modal durante a medição: até 10 minutos, troca de modelo durante o teste, linhas de tempo, FPS por segmento, fonte desconectada/falhas observadas e relatório acessível.
+- Minha Câmera consulta `/control/<token>/status` a cada cinco segundos para bateria e temperatura (décimos de °C); ausência do cabeçalho é exibida como indisponível, sem falsificar dados.
+
 ## 1.0.265+265: ajuste do teste Flutter do modelo padrão (APK 219, 2026-10-16)
 
 - O workflow 219 exportou e validou o YOLO26s real (38.319.452 bytes, entrada NCHW 1×3×640×640, saída 1×84×8400); a etapa Flutter Analyze também passou.
@@ -139,7 +145,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.265+265`
+**Versão atual:** `1.0.266+266`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.265',
+          version: '1.0.266',
           current: true,
+          changes: [
+            'Ao vivo com duas câmeras maiores, preservando proporção e mantendo o mapa rolável.',
+            'Diagnóstico de IA não bloqueia controles, registra trocas de modelos e admite até 10 minutos.',
+            'Bateria e temperatura do Minha Câmera agora são consultadas pela telemetria MCRP.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.265',
           changes: [
             'Corrigido o teste Flutter do modelo YOLO26s padrão no APK 219.',
             'YOLO26s exportado no GitHub Actions; modelo Automático preservado.',

@@ -19,10 +19,12 @@ class AiControls258Tests(unittest.TestCase):
         self.assertIn('models.removeRange(0, index)', assets)
         self.assertNotIn('models.insert(0, models.removeAt(index))', assets)
 
-    def test_export_only_after_finished_test(self):
+    def test_nonmodal_diagnostic_preserves_controls(self):
         controls = (ROOT/'lib/screens/monitor_screen_ai_tools.dart').read_text()
-        self.assertIn('if (!mounted || !completed) return;', controls)
-        self.assertIn('PerformanceTelemetryService.instance', controls)
+        self.assertNotIn('barrierDismissible: false', controls)
+        self.assertIn('_buildAiDiagnosticBanner', controls)
+        self.assertIn('_sampleAiDiagnostic()', controls)
+        self.assertIn('for (final seconds in const <int>[15, 30, 60, 120, 300, 600])', controls)
         self.assertIn('telemetry.createReport().deepTraceSamples', controls)
 
     def test_build212_regression(self):

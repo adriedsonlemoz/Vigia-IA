@@ -10,6 +10,7 @@ import '../models/video_source_config.dart';
 import '../services/monitor_ai_status_resolver.dart';
 import '../sources/front_camera_preview_source.dart';
 import '../sources/local_camera_source.dart';
+import '../sources/minha_camera_mjpeg_source.dart';
 import '../sources/remote_phone_camera_source.dart';
 import '../sources/remote_phone_source_factory.dart';
 import '../sources/rtsp_camera_source.dart';
@@ -60,7 +61,9 @@ class SecondaryCameraController extends ChangeNotifier {
 
   RemotePhoneStatus? get remoteStatus {
     final source = _source;
-    return source is RemotePhoneCameraSource ? source.remoteStatus : null;
+    if (source is RemotePhoneCameraSource) return source.remoteStatus;
+    if (source is MinhaCameraMjpegSource) return source.remoteStatus;
+    return null;
   }
 
   Widget buildPreview() => _source?.buildPreview() ?? const SizedBox.expand();
@@ -101,6 +104,8 @@ class SecondaryCameraController extends ChangeNotifier {
     _source = source;
     if (source is RemotePhoneCameraSource) {
       source.remoteStatusNotifier.addListener(_onRemoteStatusChanged);
+    } else if (source is MinhaCameraMjpegSource) {
+      source.remoteStatusNotifier.addListener(_onRemoteStatusChanged);
     }
     _statusSubscription = source.statuses.listen((status) {
       if (_disposed) return;
@@ -124,6 +129,8 @@ class SecondaryCameraController extends ChangeNotifier {
       await _statusSubscription?.cancel();
       _statusSubscription = null;
       if (source is RemotePhoneCameraSource) {
+        source.remoteStatusNotifier.removeListener(_onRemoteStatusChanged);
+      } else if (source is MinhaCameraMjpegSource) {
         source.remoteStatusNotifier.removeListener(_onRemoteStatusChanged);
       }
       _source = null;
@@ -157,6 +164,8 @@ class SecondaryCameraController extends ChangeNotifier {
     final source = _source;
     _source = null;
     if (source is RemotePhoneCameraSource) {
+      source.remoteStatusNotifier.removeListener(_onRemoteStatusChanged);
+    } else if (source is MinhaCameraMjpegSource) {
       source.remoteStatusNotifier.removeListener(_onRemoteStatusChanged);
     }
     if (source != null) await source.dispose();
