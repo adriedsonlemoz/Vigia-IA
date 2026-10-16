@@ -284,15 +284,6 @@ extension _HomeRedesign on _HomeScreenState {
           ),
           VigiaModeCard(
             compact: true,
-            icon: Icons.phonelink_ring_rounded,
-            imageAsset: 'assets/images/modes/remote.png',
-            title: 'Minha Câmera',
-            subtitle: 'MCRP · Controles e arquivos',
-            accent: VigiaColors.cyan,
-            onTap: () => _openScreen(const McrpCameraScreen()),
-          ),
-          VigiaModeCard(
-            compact: true,
             icon: Icons.memory_rounded,
             imageAsset: 'assets/images/modes/esp32.png',
             title: 'ESP32',

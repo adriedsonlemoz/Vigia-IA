@@ -30,7 +30,6 @@ import 'events_screen.dart';
 import 'esp32_settings_screen.dart';
 import 'launch_mode_screen.dart';
 import 'map_workspace_shell.dart';
-import 'mcrp_camera_screen.dart';
 import 'settings_screen.dart';
 import 'monitor_screen.dart';
 import 'monitor_connect_screen.dart';

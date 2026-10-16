@@ -1,3 +1,17 @@
+## 1.0.253+253: ajuste do analisador no monitor (2026-10-16)
+
+- Corrigido o único lint `curly_braces_in_flow_control_structures` identificado pelo workflow Android APK 207, em `lib/screens/monitor_screen_fullscreen.dart:56`.
+- O guard de visibilidade do minimapa agora usa chaves `{ return; }`, preservando exatamente a condição, estado e efeitos existentes.
+- Sem alteração dos cartões da Home, das câmeras, MCRP, IA ou serviços de GPS, mantendo a inicialização do mapa sob demanda.
+- Adicionados verificador e quatro testes Python de regressão; análise Flutter e build Android precisam ser executados novamente no GitHub Actions.
+
+## 1.0.252+252: modos principais consolidados (2026-10-15)
+
+- Removido o cartão Minha Câmera apenas da Home; a grade de Modos volta a ter quatro opções.
+- Painel MCRP mantido no botão **Controles e arquivos** da área **Câmeras**, junto às câmeras salvas e seus comandos.
+- Sem remoção de arquivos, credenciais, conexões MJPEG, IA ou funcionalidades do transmissor Minha Câmera.
+- Testes de regressão para tela inicial e continuidade do acesso MCRP.
+
 ## 1.0.251+251: câmera local direta e GPS sob demanda (2026-10-15)
 
 - Ao vivo da Home e barra inferior entra direto no monitor local, solicitando permissão de câmera se necessário.

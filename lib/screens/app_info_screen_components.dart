@@ -77,8 +77,25 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.251',
+          version: '1.0.253',
           current: true,
+          changes: [
+            'Ajustada a compatibilidade do monitor em tela cheia com a análise estática.',
+            'Ao vivo, mapa sob demanda e seleção de câmeras preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.252',
+          changes: [
+            'Home simplificada em quatro modos, sem cartão separado Minha Câmera.',
+            'Câmeras mantém vídeo remoto, controles MCRP e acesso aos arquivos.',
+            'Ao vivo local e mapa sob demanda continuam funcionando.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.251',
           changes: [
             'Ao vivo abre diretamente a câmera do próprio aparelho.',
             'GPS e mini-mapa só iniciam quando você abrir a área do mapa.',
@@ -2248,8 +2265,25 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.251',
+          version: '1.0.253',
           current: true,
+          changes: [
+            'Ajustada a compatibilidade do monitor em tela cheia com a análise estática.',
+            'Ao vivo, mapa sob demanda e seleção de câmeras preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.252',
+          changes: [
+            'Home simplificada em quatro modos, sem cartão separado Minha Câmera.',
+            'Câmeras mantém vídeo remoto, controles MCRP e acesso aos arquivos.',
+            'Ao vivo local e mapa sob demanda continuam funcionando.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.251',
           changes: [
             'Ao vivo abre diretamente a câmera do próprio aparelho.',
             'GPS e mini-mapa só iniciam quando você abrir a área do mapa.',

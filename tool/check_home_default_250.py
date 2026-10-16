@@ -15,12 +15,12 @@ assert ': const HomeScreen(),' in launch
 assert 'AppLaunchMode.bike => const MapWorkspaceShell()' in launch
 assert 'onTap: () => _openScreen(const MapWorkspaceShell()),' in home
 assert "import 'map_workspace_shell.dart';" in imports
-assert "import 'mcrp_camera_screen.dart';" in imports
-assert "onTap: () => _openScreen(const McrpCameraScreen())," in home
-assert "title: 'Minha Câmera'" in home
-for expected in ('Ao vivo', 'Transmissão', 'Remoto', 'Minha Câmera', 'ESP32',
+assert "import 'mcrp_camera_screen.dart';" not in imports
+assert "onTap: () => _openScreen(const McrpCameraScreen())," not in home
+assert "title: 'Minha Câmera'" not in home
+for expected in ('Ao vivo', 'Transmissão', 'Remoto', 'ESP32',
                  'Acessos rápidos', 'Monitoramento atual'):
     assert expected in home, expected
-assert home.count('VigiaModeCard(') == 5
+assert home.count('VigiaModeCard(') == 4
 assert home.count('VigiaQuickAction(') == 1  # lista de 5 produz os cards
-print('OK: Home, cinco modos, MCRP, atalho do mapa, Bike e retomada.')
+print('OK: Home, quatro modos, MCRP em Cameras, atalho do mapa, Bike e retomada.')

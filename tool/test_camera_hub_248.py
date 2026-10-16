@@ -6,10 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 class CameraHub248Tests(unittest.TestCase):
  def test_contract(self):
   subprocess.run(['python3',str(ROOT/'tool/check_camera_hub_248.py')], check=True, capture_output=True)
- def test_home_card_restored(self):
+ def test_no_duplicate_home_card_but_controls_remain(self):
   text=(ROOT/'lib/screens/home_screen_redesign.dart').read_text()
-  self.assertIn("title: 'Minha Câmera'", text)
-  self.assertIn("onTap: () => _openScreen(const McrpCameraScreen()),", text)
+  self.assertNotIn("title: 'Minha Câmera'", text)
+  self.assertNotIn('McrpCameraScreen()', text)
+  cameras=(ROOT/'lib/screens/multi_camera_screen.dart').read_text()
+  card=(ROOT/'lib/screens/multi_camera_screen_components.dart').read_text()
+  self.assertIn('onMcrpControls:', cameras)
+  self.assertIn("child: Text('Controles e arquivos')", card)
  def test_migration_not_losing_source_before_save(self):
   text=(ROOT/'lib/services/minha_camera_registry_migration.dart').read_text()
   self.assertLess(text.index('await cameras.save('), text.index('await legacy.remove('))

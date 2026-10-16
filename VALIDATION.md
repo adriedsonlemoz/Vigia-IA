@@ -5,7 +5,23 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.251+251
+# Validação Vigia IA 1.0.253+253
+
+## Build Android APK 207 (2026-10-16)
+
+- [x] Log conferido: 82 testes Python OK; `flutter analyze --fatal-infos --fatal-warnings` falhou unicamente em `monitor_screen_fullscreen.dart:56:76`.
+- [x] `if` com corpo `{ return; }`, sem alterar sua condição.
+- [x] Quatro testes de regressão Python e verificador preventivo, mantendo analyzer estrito.
+- [ ] Compilação, `flutter analyze`, `flutter test` e APK Android pendentes de execução GitHub Actions.
+
+## Registro anterior: 1.0.252+252
+
+## Home em quatro modos 1.0.252 (2026-10-15)
+
+- [x] Removido somente o cartão Minha Câmera da Home.
+- [x] Câmeras mantém lista de fontes cadastradas e acesso ao painel MCRP **Controles e arquivos**.
+- [x] Ao vivo local e GPS/mapa sob demanda preservados nos respectivos fluxos.
+- [ ] Flutter analyze/test/build Android e teste visual no aparelho.
 
 ## Ao vivo local / mapa sob demanda 1.0.251 (2026-10-15)
 

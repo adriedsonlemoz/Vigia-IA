@@ -9,7 +9,11 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.251+251
+# Arquitetura — Vigia IA 1.0.253+253
+
+**Buildfix 207 (1.0.253):** `MonitorScreen` mantém a mesma guarda de visibilidade do minimapa, agora com bloco de retorno que satisfaz o lint obrigatório `curly_braces_in_flow_control_structures`. Sem mudanças de inicialização ou de recursos de câmera, mapa e GPS.
+
+**Home consolidada (1.0.252):** `HomeScreen._buildModeCards` fornece somente Ao vivo, Transmissão, Remoto e ESP32. O cartão MCRP foi removido apenas dessa grade. `MultiCameraScreen` mantém a ação `onMcrpControls` para `McrpCameraScreen(initialLiveUrl: camera.address)` em câmeras Minha Câmera com URL válida, sem alterar armazenamento de câmeras, MJPEG, controle remoto, downloads ou histórico. A seleção de câmera remota se faz em Câmeras; Ao vivo da Home permanece local.
 
 **Entrada Ao vivo (1.0.251):** ações da Home e da navegação inferior usam `_startLocalCamera()` e fonte explícita local. A retomada de serviço usa `resumeMonitorOnLoad` / `_start()` e a fonte persistida. `MonitorScreen.initState` não inicia GPS, MBTiles nem RouteExplorer; `_activateMonitorMap()` aciona esses serviços apenas após gesto de mapa, e `_deactivateMonitorMap()` libera o consumidor sem cancelar a gravação ou a navegação iniciadas pelo usuário. O atalho Mapa da Home continua a criar o `MapWorkspaceShell` separadamente.
 

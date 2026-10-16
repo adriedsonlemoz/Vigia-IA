@@ -8,15 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.251', build: 251);
+      AppBuildVersion(version: '1.0.253', build: 253);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.251', build: 251),
+      version: AppBuildVersion(version: '1.0.253', build: 253),
       changes: <String>[
-        'Ao vivo abre diretamente a câmera deste aparelho.',
-        'Mapa e localização são iniciados apenas quando você pedir.',
-        'Percursos já iniciados e acesso às outras câmeras permanecem disponíveis.',
+        'Ajustada a compatibilidade do menu de mapa com o monitor em tela cheia.',
+        'Home em quatro modos, câmeras cadastradas e mapa sob demanda preservados.',
       ],
     ),
   ]);

@@ -11,7 +11,7 @@ monitor=read('lib/screens/monitor_screen.dart')
 selector=read('lib/models/camera_source_selector.dart')
 migration=read('lib/services/minha_camera_registry_migration.dart')
 checks={
- 'home com acesso MCRP e cadastro central': "title: 'Minha Câmera'" in home_ui and 'McrpCameraScreen' in cameras,
+ 'MCRP consolidado em Câmeras sem card na Home': "title: 'Minha Câmera'" not in home_ui and 'McrpCameraScreen' in cameras,
  'home preserva modos e atalhos': all(s in home_ui for s in ("title: 'Modos'", "label: 'Câmeras'", "title: 'Ao vivo'")),
  'ao vivo local com seletor legado disponível': 'Future<void> _chooseCameraForLive()' in home and 'onTap: () => unawaited(_startLocalCamera())' in home_ui,
  'não obriga URL RTSP antiga': 'if (camera == null) {\n          await _chooseCameraForLive();' in home,

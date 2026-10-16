@@ -1,3 +1,18 @@
+## 1.0.253+253: ajuste do analisador no monitor (2026-10-16)
+
+- Corrigido o único lint `curly_braces_in_flow_control_structures` identificado pelo workflow Android APK 207, em `lib/screens/monitor_screen_fullscreen.dart:56`.
+- O guard de visibilidade do minimapa agora usa chaves `{ return; }`, preservando exatamente a condição, estado e efeitos existentes.
+- Sem alteração dos cartões da Home, das câmeras, MCRP, IA ou serviços de GPS, mantendo a inicialização do mapa sob demanda.
+- Adicionados verificador e quatro testes Python de regressão; análise Flutter e build Android precisam ser executados novamente no GitHub Actions.
+
+## 1.0.252+252: Home com quatro modos e Minha Câmera em Câmeras (2026-10-15)
+
+- Home exibe somente **Ao vivo**, **Transmissão**, **Remoto** e **ESP32**. O cartão separado **Minha Câmera** foi removido para evitar caminhos duplicados.
+- A seção **Câmeras** continua cadastrando Minha Câmera via QR e oferecendo **Controles e arquivos** para câmeras compatíveis. Nenhum MCRP, vídeo MJPEG, gravação, download ou registro foi removido.
+- O botão **Ao vivo** permanece dedicado à câmera deste aparelho; para outra câmera cadastrada, abra **Câmeras** e selecione a fonte.
+- Mapas/GPS continuam sob demanda, sem alteração de permissões ou inicialização.
+- Testar tela em celular e confirmar Flutter analyze/test/build no GitHub Actions.
+
 ## 1.0.251+251: Ao vivo local e mapa sob demanda (2026-10-15)
 
 - O cartão e o botão **Ao vivo** da Home e das abas principais abrem o monitor na câmera deste aparelho sem abrir seletor de fontes.
@@ -35,7 +50,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.251+251`
+**Versão atual:** `1.0.253+253`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

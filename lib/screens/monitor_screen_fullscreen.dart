@@ -53,7 +53,9 @@ extension _MonitorFullscreen on _MonitorScreenState {
     MonitorMapVisibilityMode mode,
   ) async {
     if (_mapRoute.monitorVisibility == mode &&
-        (mode == MonitorMapVisibilityMode.hidden || _monitorMapActivated)) return;
+        (mode == MonitorMapVisibilityMode.hidden || _monitorMapActivated)) {
+      return;
+    }
     _miniMapReady = false;
     if (mode == MonitorMapVisibilityMode.hidden) _deactivateMonitorMap();
     await _mapRoute.setMonitorVisibility(mode);
