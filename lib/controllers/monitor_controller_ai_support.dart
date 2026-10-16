@@ -48,7 +48,6 @@ void _clearMonitorControllerAiState(MonitorController controller) {
 extension MonitorControllerAiSupport on MonitorController {
   String get activeDetectorModel => _detector.activeModel;
   DetectorModelPreference get detectorModelPreference => _settings.detectorModel;
-  String get activeDetectorModel => _detector.activeModel;
   void setAiEnabled(bool enabled) {
     _aiEnabled = enabled;
     _settings = _settings.copyWith(aiEnabled: enabled);

@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.258+258
+# Arquitetura — Vigia IA 1.0.259+259
+
+**Correção do APK 213 (1.0.259):** `activeDetectorModel` exposto uma única vez no `MonitorControllerAiSupport`, sem modificar o runtime do detector nem o fluxo de recepção/telemetria. Teste estático protege contra getters duplicados.
 
 **Ferramentas de IA no Ao vivo (1.0.258):** ações compactas na faixa do monitor para escolher DetectorModelPreference, trocar o worker sem fechar a fonte, executar telemetria profunda temporizada e exportar o ZIP já existente. Padrão Automático; fallback identificado pelo modelo efetivo, configuração persistida. Transmissor não executa detector.
 

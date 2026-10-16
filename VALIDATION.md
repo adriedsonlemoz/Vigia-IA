@@ -5,7 +5,18 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.258+258
+# Validação Vigia IA 1.0.259+259
+
+## APK 213: getter duplicado na IA (2026-10-16)
+
+- [x] Log do workflow confirmou um erro `duplicate_definition` em `lib/controllers/monitor_controller_ai_support.dart:51`.
+- [x] Duplicação removida sem alterar troca de modelo, exportação de diagnóstico, transmissão ou análise.
+- [x] Adicionado `check_analyzer_213_259.py` e três testes de regressão.
+- [x] `python3 -m unittest discover -s tool -p "test_*.py" -q`: 114 testes aprovados.
+- [x] `check_import_targets.py`, `check_ci_contract.py`, `check_version_sync.py` e `bash -n tool/verify_project.sh` aprovados.
+- [x] Teste histórico YOLO atualizado para validar a estrutura de versão, sem fixar a versão 1.0.258.
+- [ ] `tool/verify_project.sh` avançou pelos primeiros contratos, mas excedeu 180 segundos no ambiente local sem conclusão.
+- [ ] `flutter analyze --fatal-infos --fatal-warnings`, `flutter test` e APK devem ser confirmados no GitHub Actions.
 
 ## Diagnóstico e seleção de modelo no Ao vivo
 

@@ -1,3 +1,10 @@
+## 1.0.259+259: análise estática do APK 213 (2026-10-16)
+
+- Removida declaração duplicada do getter `activeDetectorModel` em `monitor_controller_ai_support.dart`, motivo da falha no `flutter analyze` do workflow Android APK 213.
+- Incluído verificador preventivo e três testes para evitar que a duplicação volte.
+- Mantidos painel de modelo Automático, diagnóstico de 15/30/60 segundos, recepção de vídeo e modo Transmissão sem IA.
+- Flutter analyze/test e build Android completos permanecem dependentes do GitHub Actions.
+
 ## 1.0.258+258: modelos e diagnóstico diretamente no Ao vivo (2026-10-16)
 
 - Faixa Receptor IA / Local ganha dois botões quadrados compactos: escolher modelo e iniciar diagnóstico.

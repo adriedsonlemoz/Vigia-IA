@@ -1,3 +1,10 @@
+## 1.0.259+259: análise estática do APK 213 (2026-10-16)
+
+- Removida declaração duplicada do getter `activeDetectorModel` em `monitor_controller_ai_support.dart`, motivo da falha no `flutter analyze` do workflow Android APK 213.
+- Incluído verificador preventivo e três testes para evitar que a duplicação volte.
+- Mantidos painel de modelo Automático, diagnóstico de 15/30/60 segundos, recepção de vídeo e modo Transmissão sem IA.
+- Flutter analyze/test e build Android completos permanecem dependentes do GitHub Actions.
+
 ## 1.0.258+258: modelos e diagnóstico diretamente no Ao vivo (2026-10-16)
 
 - Faixa Receptor IA / Local ganha dois botões quadrados compactos: escolher modelo e iniciar diagnóstico.
@@ -88,7 +95,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.258+258`
+**Versão atual:** `1.0.259+259`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

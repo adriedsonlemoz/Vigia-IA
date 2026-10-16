@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.258',
+          version: '1.0.259',
           current: true,
+          changes: [
+            'Escolha de modelo e diagnóstico do Ao vivo com estabilidade aprimorada.',
+            'Seleção automática e relatórios de análise preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.258',
           changes: [
             'Ao vivo: seleção de modelo com Automático como padrão.',
             'Diagnóstico de 15, 30 e 60 segundos com relatório exportável.',
@@ -2306,8 +2314,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.258',
+          version: '1.0.259',
           current: true,
+          changes: [
+            'Escolha de modelo e diagnóstico do Ao vivo com estabilidade aprimorada.',
+            'Seleção automática e relatórios de análise preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.258',
           changes: [
             'Ao vivo: seleção de modelo com Automático como padrão.',
             'Diagnóstico de 15, 30 e 60 segundos com relatório exportável.',

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.258', build: 258);
+      AppBuildVersion(version: '1.0.259', build: 259);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.258', build: 258),
+      version: AppBuildVersion(version: '1.0.259', build: 259),
       changes: <String>[
-        'Ao vivo tem botões de modelo e diagnóstico na faixa superior.',
-        'Teste de 15, 30 ou 60 segundos e relatório de desempenho exportável.'
+        'Seleção de modelo e diagnóstico do Ao vivo estão mais estáveis.',
+        'A interface e os relatórios de análise continuam disponíveis.'
       ],
     ),
   ]);
