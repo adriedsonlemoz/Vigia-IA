@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.255', build: 255);
+      AppBuildVersion(version: '1.0.256', build: 256);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.255', build: 255),
+      version: AppBuildVersion(version: '1.0.256', build: 256),
       changes: <String>[
-        'Botão de IA do Ao vivo e indicadores de análise compatíveis com o Android.',
-        'Cores do monitor, mapa sob demanda e câmeras preservados.',
+        'Alertas de entrada e saída agora exigem cruzamento de área confirmado.',
+        'Oscilações e perdas temporárias de detecção não anunciam saída de pessoa.'
       ],
     ),
   ]);

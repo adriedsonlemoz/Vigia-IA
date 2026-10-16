@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.255',
+          version: '1.0.256',
           current: true,
+          changes: [
+            'Avisos de entrada e saída exigem movimento e cruzamento confirmados.',
+            'Perdas temporárias da detecção não são narradas como saídas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.255',
           changes: [
             'Botão de IA e métricas do Ao vivo compatíveis com o analisador Dart.',
             'Interface do monitor e cores de status preservadas.',
@@ -2282,8 +2290,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.255',
+          version: '1.0.256',
           current: true,
+          changes: [
+            'Avisos de entrada e saída exigem movimento e cruzamento confirmados.',
+            'Perdas temporárias da detecção não são narradas como saídas.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.255',
           changes: [
             'Botão de IA e métricas do Ao vivo compatíveis com o analisador Dart.',
             'Interface do monitor e cores de status preservadas.',

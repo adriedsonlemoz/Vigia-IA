@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.255+255
+# Arquitetura — Vigia IA 1.0.256+256
+
+**Eventos conservadores 1.0.256:** `ObjectTracker` mantém comportamento histórico como padrão para compatibilidade com testes existentes; `MonitorController` liga `verifiedZoneTransitionsOnly: true`, que exige transição observada de zona configurada e movimento local confirmado, verificação em dois quadros, confiança mínima, deslocamento e rejeição de detecção inferida. Oscilação ou desaparecimento do detector não vira entrada/saída, e zonas de tela inteira não têm cruzamento visível. Um cooldown por tipo de evento/classe/zona limita narrações duplicadas por troca de track. Alertas gerais de objetos e capacidades de IA são preservados. A filtragem é conservadora para evitar alarmes falsos, podendo perder eventos muito rápidos ou em cenas estáticas.
 
 **Buildfix 209 (1.0.255):** o getter `MonitorController.aiEnabled` expõe o estado persistido ao monitor; `dividerColor` fica restrita a `_DeviceStatusStrip`, e as métricas usam interpolações Dart sem chaves desnecessárias. Sem alterar a inicialização sob demanda do mapa e do GPS.
 

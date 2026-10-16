@@ -77,6 +77,7 @@ class MonitorController extends ChangeNotifier {
         _trackingEnabled = settings.trackingEnabled,
         _announceEntryExit = settings.announceEntryExit,
         _tracker = ObjectTracker(
+          verifiedZoneTransitionsOnly: true,
           maxMissing: settings.absenceReset.inMilliseconds < 1600
               ? const Duration(milliseconds: 1600)
               : settings.absenceReset,
@@ -1129,6 +1130,9 @@ class MonitorController extends ChangeNotifier {
               zones: _trackingZones(activeZones),
               now: now,
               observationWindow: observationWindow,
+              isMoving: (detection) => zoneFilteredMoving.any(
+                (moving) => _sameDetectionRegion(detection, moving),
+              ),
             )
           : const TrackingResult(
               active: <TrackedDetection>[],

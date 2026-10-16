@@ -5,7 +5,16 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.255+255
+# Validação Vigia IA 1.0.256+256
+
+## Anúncios de transição 1.0.256 (2026-10-16)
+
+- [x] Eventos de entrada e saída não são gerados pela simples perda de detecção, redetecção ou apresentação estática em tela inteira.
+- [x] Política conservadora de cruzamento integra movimento local, confirmação temporal e zona configurada.
+- [x] `bash tool/verify_project.sh` concluído com sucesso; 101 testes Python aprovados.
+- [x] Testes Flutter de cenários de estáticos, reaparições, oscilações e cruzamentos adicionados (execução pendente de SDK).
+- [ ] Validar a sensibilidade/precisão com câmera física, especialmente com mosquiteiro, móveis, portas e pessoas reais.
+- [ ] Flutter analyze, testes Flutter e Android APK dependem do GitHub Actions (SDK não disponível localmente).
 
 ## Android APK 209: regressões do analisador (2026-10-16)
 

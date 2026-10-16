@@ -12,12 +12,17 @@ class ObjectTracker {
     this.identityRetention = const Duration(seconds: 12),
     this.maxCenterDistance = 0.28,
     this.minimumIou = 0.02,
+    this.verifiedZoneTransitionsOnly = false,
   });
 
   final Duration maxMissing;
   final Duration identityRetention;
   final double maxCenterDistance;
   final double minimumIou;
+
+  /// Modo conservador para anúncios: só confirma cruzamentos observados,
+  /// evitando confundir perda momentânea do detector com saída de pessoa.
+  final bool verifiedZoneTransitionsOnly;
 
   final Map<int, _TrackState> _tracks = <int, _TrackState>{};
   int _nextId = 1;
@@ -27,6 +32,7 @@ class ObjectTracker {
     required List<MonitoringZoneProfile> zones,
     required DateTime now,
     Duration? observationWindow,
+    bool Function(Detection)? isMoving,
   }) {
     final retention = observationWindow != null && observationWindow > identityRetention
         ? observationWindow : identityRetention;
@@ -45,7 +51,7 @@ class ObjectTracker {
       if (track == null) continue;
       assignedDetections.add(detectionIndex);
       assignedTracks.add(track.id);
-      _updateTrack(track, detection, zones, now, transitions);
+      _updateTrack(track, detection, zones, now, transitions, isMoving: isMoving);
       active.add(TrackedDetection(trackId: track.id, detection: detection));
     }
 
@@ -54,7 +60,8 @@ class ObjectTracker {
       final detection = detections[i];
       final track = _createTrack(detection, now);
       assignedTracks.add(track.id);
-      _updateTrack(track, detection, zones, now, transitions, isNew: true);
+      _updateTrack(track, detection, zones, now, transitions,
+          isNew: true, isMoving: isMoving);
       active.add(TrackedDetection(trackId: track.id, detection: detection));
     }
 
@@ -67,7 +74,8 @@ class ObjectTracker {
       // A saida da area continua responsiva, mas a identidade visual fica em
       // memoria por mais tempo. Assim uma perda curta do detector nao cria um
       // novo ID e nao repete a mesma fala ao reaquirir a pessoa/veiculo/animal.
-      if (missingFor > missingWindow && track.zoneIds.isNotEmpty) {
+      if (!verifiedZoneTransitionsOnly &&
+          missingFor > missingWindow && track.zoneIds.isNotEmpty) {
         for (final zoneId in track.zoneIds) {
           transitions.add(
             ZoneTransition(
@@ -163,12 +171,37 @@ class ObjectTracker {
     DateTime now,
     List<ZoneTransition> transitions, {
     bool isNew = false,
+    bool Function(Detection)? isMoving,
   }) {
     final previousDetection = track.detection;
     final previousSeen = track.lastSeen;
     final previousZoneIds = <String>{...track.zoneIds};
     final currentZones = zones.where((zone) => zone.enabled && _inside(detection, zone.zone)).toList(growable: false);
     final currentZoneIds = currentZones.map((zone) => zone.id).toSet();
+
+    if (verifiedZoneTransitionsOnly) {
+      _updateVerifiedZones(
+        track,
+        detection,
+        currentZones,
+        currentZoneIds,
+        now,
+        transitions,
+        isNew: isNew,
+        moving: isMoving?.call(detection) ?? false,
+      );
+      if (!isNew) {
+        track.updateVelocity(
+          previousDetection.box,
+          detection.box,
+          now.difference(previousSeen),
+        );
+      }
+      track
+        ..detection = detection
+        ..lastSeen = now;
+      return;
+    }
 
     for (final zone in currentZones) {
       if (!previousZoneIds.contains(zone.id)) {
@@ -208,6 +241,108 @@ class ObjectTracker {
       ..zoneIds = currentZoneIds
       ..zoneNames = <String, String>{for (final zone in currentZones) zone.id: zone.name};
   }
+
+  void _updateVerifiedZones(
+    _TrackState track,
+    Detection detection,
+    List<MonitoringZoneProfile> currentZones,
+    Set<String> currentZoneIds,
+    DateTime now,
+    List<ZoneTransition> transitions, {
+    required bool isNew,
+    required bool moving,
+  }) {
+    // A primeira detecção define apenas o estado inicial. Não há como
+    // inferir que uma pessoa entrou só porque o modelo a enxergou.
+    if (isNew) {
+      track
+        ..zoneIds = currentZoneIds
+        ..zoneNames = <String, String>{
+          for (final zone in currentZones) zone.id: zone.name,
+        }
+        ..zoneAnchor = detection.box
+        ..zoneDefinitions = <String, MonitoringZone>{
+          for (final zone in currentZones) zone.id: zone.zone,
+        };
+      return;
+    }
+
+    if (_sameIds(track.zoneIds, currentZoneIds)) {
+      track.pendingZoneIds = null;
+      track.pendingZoneHits = 0;
+      track.pendingMotion = false;
+      return;
+    }
+    if (!_sameIds(track.pendingZoneIds, currentZoneIds)) {
+      track.pendingZoneIds = currentZoneIds;
+      track.pendingZoneHits = 1;
+      track.pendingMotion = moving;
+      return;
+    }
+    track.pendingZoneHits++;
+    track.pendingMotion = track.pendingMotion || moving;
+    if (track.pendingZoneHits < 2) return;
+
+    // Um evento precisa de movimento mensurável e dois quadros consistentes
+    // depois de cruzar a borda. Tremor/oscilações da caixa perto do limite
+    // não devem virar narração de entrada/saída.
+    final baseline = track.zoneAnchor ?? track.detection.box;
+    final displacement = _centerDistance(baseline, detection.box);
+    final reliable = track.pendingMotion &&
+        displacement >= 0.055 &&
+        !detection.inferred &&
+        detection.confidence >= 0.60;
+
+    final previous = <String>{...track.zoneIds};
+    final previousNames = <String, String>{...track.zoneNames};
+    track
+      ..zoneIds = currentZoneIds
+      ..zoneNames = <String, String>{
+        for (final zone in currentZones) zone.id: zone.name,
+      }
+      ..zoneAnchor = detection.box
+      ..zoneDefinitions = <String, MonitoringZone>{
+        ...track.zoneDefinitions,
+        for (final zone in currentZones) zone.id: zone.zone,
+      }
+      ..pendingZoneIds = null
+      ..pendingZoneHits = 0
+      ..pendingMotion = false;
+    if (!reliable) return;
+
+    // Tela inteira não possui borda interna observável; sumiço da inferência
+    // jamais significa automaticamente que a pessoa saiu do ambiente.
+    for (final zone in currentZones) {
+      if (zone.zone.isFullFrame || previous.contains(zone.id)) continue;
+      transitions.add(ZoneTransition(
+        type: ZoneTransitionType.entered,
+        trackId: track.id,
+        label: detection.label,
+        displayLabel: detection.displayLabel,
+        zoneId: zone.id,
+        zoneName: zone.name,
+        occurredAt: now,
+        detection: detection,
+      ));
+    }
+    for (final zoneId in previous.difference(currentZoneIds)) {
+      final zone = track.zoneDefinitions[zoneId];
+      if (zone == null || zone.isFullFrame) continue;
+      transitions.add(ZoneTransition(
+        type: ZoneTransitionType.exited,
+        trackId: track.id,
+        label: detection.label,
+        displayLabel: detection.displayLabel,
+        zoneId: zoneId,
+        zoneName: previousNames[zoneId] ?? 'Área',
+        occurredAt: now,
+        detection: detection,
+      ));
+    }
+  }
+
+  bool _sameIds(Set<String>? a, Set<String> b) =>
+      a != null && a.length == b.length && a.containsAll(b);
 
   _TrackState _createTrack(Detection detection, DateTime now) {
     final track = _TrackState(id: _nextId++, detection: detection, lastSeen: now);
@@ -277,6 +412,11 @@ class _TrackState {
   DateTime lastSeen;
   Set<String> zoneIds = <String>{};
   Map<String, String> zoneNames = <String, String>{};
+  Map<String, MonitoringZone> zoneDefinitions = <String, MonitoringZone>{};
+  NormalizedBox? zoneAnchor;
+  Set<String>? pendingZoneIds;
+  int pendingZoneHits = 0;
+  bool pendingMotion = false;
   double velocityX = 0;
   double velocityY = 0;
   bool hasVelocity = false;

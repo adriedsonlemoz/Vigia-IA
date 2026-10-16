@@ -791,7 +791,7 @@ class RouteExplorerService extends ChangeNotifier {
         final request = await client.postUrl(Uri.parse(endpoint))
             .timeout(const Duration(seconds: 8));
         request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-        request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.255 route-explorer');
+        request.headers.set(HttpHeaders.userAgentHeader, 'VigiaIA/1.0.256 route-explorer');
         request.headers.contentType = ContentType(
           'application', 'x-www-form-urlencoded', charset: 'utf-8',
         );

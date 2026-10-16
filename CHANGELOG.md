@@ -1,3 +1,12 @@
+## 1.0.256+256: alertas de entrada e saída com evidência (2026-10-16)
+
+- Impede que a perda temporária de uma pessoa detectada seja anunciada como saída e a redetecção, como entrada.
+- No monitor, eventos de zona exigem cruzamento de área **personalizada**, duas observações consistentes após a mudança, movimento local confirmado, deslocamento mínimo, confiança suficiente e detecção real (não pista sintética).
+- A área da tela inteira não produz evento de cruzamento sem uma fronteira observável. A detecção de objetos e alertas normais permanecem acessíveis.
+- Acrescenta resguardo de 20 segundos contra falas repetidas para o mesmo tipo de evento/classe/área, incluindo trocas indevidas de ID.
+- Testes Flutter cobrindo objetos estáticos, reaparições, oscilações na borda, cruzamentos reais e tela inteira; seis novos testes preventivos Python.
+- Falsos positivos do classificador (como móveis e mosquiteiro) ainda podem aparecer visualmente: a solução evita anúncios espúrios de transição, sem prometer correção do modelo.
+
 ## 1.0.255+255: correção do Android APK 209 (2026-10-16)
 
 - Corrigidos os 35 apontamentos do `flutter analyze` da 1.0.254: getter público `aiEnabled`, seis declarações indevidas de `dividerColor` e duas interpolações com chaves desnecessárias.

@@ -209,12 +209,16 @@ extension _MonitorControllerEventSupport on MonitorController {
     List<ZoneTransition> transitions,
   ) async {
     final session = _frameSession;
-    final initialTrackIds = transitions
-        .where((transition) =>
-            transition.type == ZoneTransitionType.entered &&
-            !_seenTrackIds.contains(transition.trackId))
-        .map((transition) => transition.trackId)
-        .toSet();
+    // A política verificada só produz entrada após observar um cruzamento;
+    // portanto não devemos suprimir a primeira entrada legítima do ID.
+    final initialTrackIds = _tracker.verifiedZoneTransitionsOnly
+        ? <int>{}
+        : transitions
+            .where((transition) =>
+                transition.type == ZoneTransitionType.entered &&
+                !_seenTrackIds.contains(transition.trackId))
+            .map((transition) => transition.trackId)
+            .toSet();
     _seenTrackIds.addAll(initialTrackIds);
 
     for (final transition in transitions) {
@@ -359,14 +363,21 @@ extension _MonitorControllerEventSupport on MonitorController {
     final now = transition.occurredAt;
     final key = '${transition.trackId}|${transition.zoneId}';
     final previous = _lastTransitionSpeechAt[key];
+    final group = ObjectFilterCatalog.groupKeyForLabel(transition.label) ??
+        transition.label;
+    final sharedKey = '${transition.zoneId}|$group|${transition.type.name}';
+    final sameZoneSpeech = _lastTransitionSpeechAt[sharedKey];
     _lastTransitionSpeechAt.removeWhere(
       (_, timestamp) => now.difference(timestamp) > const Duration(minutes: 2),
     );
-    if (previous != null &&
-        now.difference(previous) < const Duration(seconds: 5)) {
+    if ((previous != null &&
+            now.difference(previous) < const Duration(seconds: 5)) ||
+        (sameZoneSpeech != null &&
+            now.difference(sameZoneSpeech) < const Duration(seconds: 20))) {
       return false;
     }
     _lastTransitionSpeechAt[key] = now;
+    _lastTransitionSpeechAt[sharedKey] = now;
     return true;
   }
 
