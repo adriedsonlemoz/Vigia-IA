@@ -1,3 +1,10 @@
+## 1.0.250+250: retorno da Home como tela inicial (2026-10-15)
+
+- Entrada normal deixa de abrir o mapa automaticamente e volta a mostrar a Home visual anterior.
+- Restauração do cartão **Minha Câmera**, abrindo MCRP, ao lado dos cartões Ao vivo, Transmissão, Remoto e ESP32.
+- Acesso rápido **Mapa** abre o mapa completo com instrumentos de navegação e seletor de modos; entrada Bike continua abrindo diretamente o mapa.
+- Mantidas retomada de monitoramento, seleção de fontes, IA local, módulos e permissões existentes.
+
 ## 1.0.249+249 — 2026-10-15
 
 - Buildfix Android-APK-204: `flutter analyze` sem issues, porém `test/mcrp_saved_cameras_screen_test.dart` ultrapassou o timeout padrão de dez minutos ao acessar diretório/arquivo real dentro de `testWidgets` (fake async). Dos 530 testes, 529 passaram e 1 expirou.

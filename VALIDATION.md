@@ -5,7 +5,14 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.249+249
+# Validação Vigia IA 1.0.250+250
+
+## Home restaurada 1.0.250 (2026-10-15)
+
+- [x] Modo normal volta a `HomeScreen` nas duas entradas do aplicativo, sem alterar a retomada de monitoramento.
+- [x] Modo Bike continua em `MapWorkspaceShell`; atalho Mapa da Home abre o mesmo workspace completo.
+- [x] Quinto cartão Minha Câmera acessa MCRP e câmeras salvas.
+- [ ] Flutter analyze, flutter test e build Android precisam rodar no GitHub Actions se o SDK Flutter não estiver instalado localmente.
 
 ## Workflow Android-APK-204, 1.0.249 (2026-10-15)
 

@@ -170,7 +170,7 @@ class _StartupGateState extends State<_StartupGate> {
       final destination = switch (launchMode) {
         AppLaunchMode.normal => _resumeMonitoring
             ? const HomeScreen(startMonitorOnLoad: true)
-            : const MapWorkspaceShell(),
+            : const HomeScreen(),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
         AppLaunchMode.bike => const MapWorkspaceShell(),
         AppLaunchMode.transmission => const CameraModeScreen(),

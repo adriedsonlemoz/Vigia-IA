@@ -60,7 +60,7 @@ class _LaunchModeScreenState extends State<LaunchModeScreen> {
   Widget _screenFor(AppLaunchMode mode) => switch (mode) {
         AppLaunchMode.normal => widget.startMonitorOnLoad
             ? const HomeScreen(startMonitorOnLoad: true)
-            : const MapWorkspaceShell(),
+            : const HomeScreen(),
         AppLaunchMode.monitor => const MonitorConnectScreen(),
         AppLaunchMode.bike => const MapWorkspaceShell(),
         AppLaunchMode.transmission => const CameraModeScreen(),

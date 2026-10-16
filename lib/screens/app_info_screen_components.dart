@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.249',
+          version: '1.0.250',
           current: true,
+          changes: [
+            'Home volta a abrir primeiro, com os cinco modos do painel inicial.',
+            'Minha Câmera retorna à Home com acesso ao painel MCRP.',
+            'Mapa e navegação continuam disponíveis em Acessos rápidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.249',
           changes: [
             'Testes de interface mais rápidos e previsíveis.',
             'Cadastro de câmeras e monitoramento preservados.',
@@ -2230,8 +2239,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.249',
+          version: '1.0.250',
           current: true,
+          changes: [
+            'Home volta a abrir primeiro, com os cinco modos do painel inicial.',
+            'Minha Câmera retorna à Home com acesso ao painel MCRP.',
+            'Mapa e navegação continuam disponíveis em Acessos rápidos.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.249',
           changes: [
             'Testes de interface mais rápidos e previsíveis.',
             'Cadastro de câmeras e monitoramento preservados.',

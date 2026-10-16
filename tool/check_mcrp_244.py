@@ -19,7 +19,7 @@ checks={
 'QR do Minha Câmera':"MobileScanner" in screen and "McrpAddress.parse(raw)" in screen,
 'controles':all(x in screen for x in ('record/', 'eco/', 'photo', 'camera/', 'quality/', 'fps/', 'codec/')),
 'central multimídia':"_loadMedia" in screen and "_download" in screen,
-'entrada por Câmeras':"McrpCameraScreen" in (root/'lib/screens/multi_camera_screen.dart').read_text() and "McrpCameraScreen" not in home,
+'entrada por Câmeras':"McrpCameraScreen" in (root/'lib/screens/multi_camera_screen.dart').read_text() and "McrpCameraScreen" in home,
 'pareamento Vigia antigo':"static const String scheme = 'vigiaia';" in legacy,
 'especificação':"MCRP) v1" in protocol,
 }

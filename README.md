@@ -1,3 +1,10 @@
+## 1.0.250+250: Home principal restaurada (2026-10-15)
+
+- No modo normal, a primeira tela volta a ser a Home com **Modos**, **Acessos rápidos** e **Monitoramento atual**, como no layout anterior.
+- Os cinco cartões da referência (Ao vivo, Transmissão, Remoto, Minha Câmera, ESP32) voltam a aparecer. Minha Câmera abre o painel MCRP com QR e câmeras salvas.
+- O botão **Mapa** leva ao mapa completo (`MapWorkspaceShell`), com exploração, navegação e ferramentas; modo Bike ainda entra diretamente no mapa.
+- Retomada automática de monitoramento e entradas dedicadas de transmissão/recepção permanecem inalteradas.
+
 ## 1.0.249+249: builds sem espera de dez minutos (2026-10-15)
 
 - Workflow Android-APK-204: análise estática aprovada e 529 testes Flutter aprovados; um teste de interface com I/O real dentro do relógio simulado aguardou o timeout de 10 minutos. **O APK nem começou a compilar**.
@@ -20,7 +27,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.249+249`
+**Versão atual:** `1.0.250+250`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

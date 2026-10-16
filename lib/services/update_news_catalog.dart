@@ -8,14 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.249', build: 249);
+      AppBuildVersion(version: '1.0.250', build: 250);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.249', build: 249),
+      version: AppBuildVersion(version: '1.0.250', build: 250),
       changes: <String>[
-        'Maior agilidade nos testes antes de gerar novas versões.',
-        'Câmeras cadastradas e monitoramento com IA preservados.',
+        'A tela Início volta a ser a entrada padrão do Vigia IA.',
+        'Cinco modos na Home, incluindo acesso direto ao Minha Câmera.',
+        'Mapa completo continua no atalho Mapa, pronto para a cicloviagem.',
       ],
     ),
   ]);
