@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.256',
+          version: '1.0.257',
           current: true,
+          changes: [
+            'Análise no receptor preparada para YOLO26s, com fallback automático.',
+            'Câmeras remotas e transmissão permanecem sem IA no transmissor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.256',
           changes: [
             'Avisos de entrada e saída exigem movimento e cruzamento confirmados.',
             'Perdas temporárias da detecção não são narradas como saídas.',
@@ -2290,8 +2298,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.256',
+          version: '1.0.257',
           current: true,
+          changes: [
+            'Análise no receptor preparada para YOLO26s, com fallback automático.',
+            'Câmeras remotas e transmissão permanecem sem IA no transmissor.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.256',
           changes: [
             'Avisos de entrada e saída exigem movimento e cruzamento confirmados.',
             'Perdas temporárias da detecção não são narradas como saídas.',

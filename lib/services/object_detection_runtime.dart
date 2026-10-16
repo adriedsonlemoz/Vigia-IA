@@ -15,12 +15,13 @@ class _LoadedDetector {
 _LoadedDetector _loadDetector(Uint8List bytes, String name, {String reason = ''}) {
   final failures = <String>[];
   for (final accelerated in [true, false]) {
-    final options = InterpreterOptions()..threads = 2;
+    final threads = name.startsWith('YOLO26') ? 4 : 2;
+    final options = InterpreterOptions()..threads = threads;
     XNNPackDelegate? delegate;
     Interpreter? candidate;
     try {
       if (accelerated) {
-        final delegateOptions = XNNPackDelegateOptions(numThreads: 2);
+        final delegateOptions = XNNPackDelegateOptions(numThreads: threads);
         try {
           delegate = XNNPackDelegate(options: delegateOptions);
         } finally {
@@ -31,7 +32,7 @@ _LoadedDetector _loadDetector(Uint8List bytes, String name, {String reason = ''}
       candidate = Interpreter.fromBuffer(bytes, options: options);
       candidate.allocateTensors();
       final backend = accelerated ? 'XNNPACK solicitado; CPU para ops restantes' : 'CPU compatível';
-      final inspected = _inspectInterpreter(candidate, '$name; backend=$backend; threads=2; $reason');
+      final inspected = _inspectInterpreter(candidate, '$name; backend=$backend; threads=$threads; $reason');
       return _LoadedDetector(candidate, inspected, delegate);
     } catch (error) {
       candidate?.close();

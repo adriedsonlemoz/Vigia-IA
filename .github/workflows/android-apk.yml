@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: assets/models/*.tflite
-          key: vigiaia-models-v1
+          key: vigiaia-models-v2-yolo26s
 
       - name: Preparar projeto Android
         shell: bash
@@ -71,6 +71,16 @@ jobs:
 
       - name: Baixar modelo TensorFlow Lite
         run: bash ./tool/fetch_model.sh
+
+      - name: Preparar YOLO26s offline (fallback automático)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if timeout 600 bash ./tool/export_yolo26s.sh; then
+            echo "YOLO26s exportado e disponível para o receptor."
+          else
+            echo "AVISO: YOLO26s indisponível. O APK usará EfficientDet-Lite2/Lite0 como fallback."
+          fi
 
       - name: Testes
         # CI 204: um único testWidgets aguardou o timeout padrão de 10 minutos.

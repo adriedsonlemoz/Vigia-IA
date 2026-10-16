@@ -4,13 +4,23 @@ import 'detector_image_transform.dart';
 
 /// Reuses a flat tensor and fuses RGB resize, letterbox and normalization.
 /// ByteBuffer input keeps LiteRT's tensor shape fixed (no nested Dart lists).
+enum DetectorPixelNormalization { minusOneToOne, zeroToOne }
+
 class DetectorInputBuffer {
-  DetectorInputBuffer(this.width, this.height, {required this.floatingPoint})
+  DetectorInputBuffer(this.width, this.height, {
+    required this.floatingPoint,
+    this.normalization = DetectorPixelNormalization.minusOneToOne,
+    this.channelFirst = false,
+    this.padding = 0,
+  })
       : bytes = Uint8List(width * height * 3 * (floatingPoint ? 4 : 1));
 
   final int width;
   final int height;
   final bool floatingPoint;
+  final DetectorPixelNormalization normalization;
+  final bool channelFirst;
+  final int padding;
   final Uint8List bytes;
 
   DetectorImageTransform fill(Uint8List rgb, int sourceWidth, int sourceHeight) {
@@ -25,9 +35,10 @@ class DetectorInputBuffer {
     );
     final floats = floatingPoint ? bytes.buffer.asFloat32List() : null;
     if (floats != null) {
-      floats.fillRange(0, floats.length, -1.0);
+      floats.fillRange(0, floats.length, normalization == DetectorPixelNormalization.zeroToOne
+          ? padding / 255.0 : (padding - 127.5) / 127.5);
     } else {
-      bytes.fillRange(0, bytes.length, 0);
+      bytes.fillRange(0, bytes.length, padding);
     }
     final scaleX = sourceWidth / transform.resizedWidth;
     final scaleY = sourceHeight / transform.resizedHeight;
@@ -47,16 +58,19 @@ class DetectorInputBuffer {
         final b = (y0 * sourceWidth + x1) * 3;
         final c = (y1 * sourceWidth + x0) * 3;
         final d = (y1 * sourceWidth + x1) * 3;
-        final target = ((y + transform.offsetY) * width +
-                x + transform.offsetX) * 3;
+        final pixelIndex = (y + transform.offsetY) * width + x + transform.offsetX;
         for (var channel = 0; channel < 3; channel++) {
           final top = rgb[a + channel] * (1 - fx) + rgb[b + channel] * fx;
           final bottom = rgb[c + channel] * (1 - fx) + rgb[d + channel] * fx;
           final value = top * (1 - fy) + bottom * fy;
+          final index = channelFirst
+              ? channel * width * height + pixelIndex
+              : pixelIndex * 3 + channel;
           if (floats != null) {
-            floats[target + channel] = (value - 127.5) / 127.5;
+            floats[index] = normalization == DetectorPixelNormalization.zeroToOne
+                ? value / 255.0 : (value - 127.5) / 127.5;
           } else {
-            bytes[target + channel] = value.round().clamp(0, 255).toInt();
+            bytes[index] = value.round().clamp(0, 255).toInt();
           }
         }
       }

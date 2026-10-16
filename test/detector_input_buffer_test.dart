@@ -22,6 +22,21 @@ void main() {
     expect(input.bytes.buffer.asFloat32List(), [-1, 1, -1]);
   });
 
+  test('YOLO26 usa entrada RGB 0..1, padding 114 e suporte NCHW', () {
+    final input = DetectorInputBuffer(2, 2,
+      floatingPoint: true,
+      normalization: DetectorPixelNormalization.zeroToOne,
+      channelFirst: true,
+      padding: 114,
+    );
+    input.fill(Uint8List.fromList([255, 0, 128, 0, 255, 255]), 2, 1);
+    final values = input.bytes.buffer.asFloat32List();
+    expect(values[0], closeTo(1, 0.001));
+    expect(values[4], closeTo(0, 0.001));
+    expect(values[8], closeTo(128 / 255, 0.001));
+    expect(values[2], closeTo(114 / 255, 0.001));
+  });
+
   test('rejeita quantidade inválida de bytes', () {
     final input = DetectorInputBuffer(2, 2, floatingPoint: false);
     expect(() => input.fill(Uint8List(2), 2, 2), throwsArgumentError);

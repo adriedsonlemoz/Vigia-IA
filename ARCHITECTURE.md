@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.256+256
+# Arquitetura — Vigia IA 1.0.257+257
+
+**Detector receptor 1.0.257:** `ObjectDetectionService` carrega preferencialmente YOLO26s quando houver modelo exportado válido. `object_detection_worker` aceita saída end-to-end `[1,N,6]` e raw `[1,84,N]`/`[1,N,84]`, mapeando as classes COCO-80, aplicando NMS somente na saída raw. `DetectorInputBuffer` usa RGB normalizado 0..1 e padding 114 para YOLO, mantendo o preprocessamento anterior para EfficientDet. Fallback sequencial EfficientDet-Lite2/Lite0/SSD em inicialização, erro de inferência e lentidão sustentada. A fonte de vídeo (local, outro celular, MCRP, RTSP ou ESP32) entra pelo monitor; quem transmite não executa IA. Exportação YOLO26s acontece no runner do GitHub e não no Android. Licença Ultralytics AGPL-3.0 exige atenção antes de distribuição.
 
 **Eventos conservadores 1.0.256:** `ObjectTracker` mantém comportamento histórico como padrão para compatibilidade com testes existentes; `MonitorController` liga `verifiedZoneTransitionsOnly: true`, que exige transição observada de zona configurada e movimento local confirmado, verificação em dois quadros, confiança mínima, deslocamento e rejeição de detecção inferida. Oscilação ou desaparecimento do detector não vira entrada/saída, e zonas de tela inteira não têm cruzamento visível. Um cooldown por tipo de evento/classe/zona limita narrações duplicadas por troca de track. Alertas gerais de objetos e capacidades de IA são preservados. A filtragem é conservadora para evitar alarmes falsos, podendo perder eventos muito rápidos ou em cenas estáticas.
 

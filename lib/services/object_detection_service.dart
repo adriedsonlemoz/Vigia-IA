@@ -1,21 +1,27 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_litert/native.dart' hide Detection;
 import 'detector_input_buffer.dart';
 import 'detector_runtime_policy.dart';
+import 'yolo_detection_decoder.dart';
 import '../models/detection.dart';
 import '../models/rgb_frame.dart';
 import 'label_translator.dart';
 
+part 'object_detection_assets.dart';
 part 'object_detection_worker.dart';
 part 'object_detection_runtime.dart';
 part 'object_detection_metrics.dart';
 
 class ObjectDetectionService {
+  static const _yoloModelAsset = 'assets/models/yolo26s.tflite';
+  static const _lite2ModelAsset = 'assets/models/efficientdet_lite2.tflite';
   static const _primaryModelAsset = 'assets/models/efficientdet_lite0.tflite';
   static const _fallbackModelAsset = 'assets/models/ssd_mobilenet_v1.tflite';
+  static const _yoloLabelsAsset = 'assets/models/yolo_coco80.txt';
   static const _labelsAsset = 'assets/models/labelmap.txt';
 
   Isolate? _worker;
@@ -36,22 +42,7 @@ class ObjectDetectionService {
     if (isReady) return;
     if (_disposed) throw StateError('Detector ja descartado.');
 
-    final models = <Map<String, Object>>[];
-    for (final entry in const <(String, String)>[
-      ('EfficientDet-Lite0', _primaryModelAsset),
-      ('SSD MobileNet V1', _fallbackModelAsset),
-    ]) {
-      final modelData = await rootBundle.load(entry.$2);
-      if (modelData.lengthInBytes < 1024 * 1024) continue;
-      final bytes = modelData.buffer.asUint8List(
-        modelData.offsetInBytes,
-        modelData.lengthInBytes,
-      );
-      models.add(<String, Object>{
-        'name': entry.$1,
-        'bytes': TransferableTypedData.fromList([bytes]),
-      });
-    }
+    final models = await _loadDetectorAssets();
     if (models.isEmpty) {
       throw StateError(
         'Modelos TensorFlow Lite ausentes. Execute tool/fetch_model.sh antes de compilar.',
@@ -64,6 +55,15 @@ class ObjectDetectionService {
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
         .toList(growable: false);
+
+    final yoloLabels = (await rootBundle.loadString(_yoloLabelsAsset))
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList(growable: false);
+    if (yoloLabels.length != 80) {
+      throw StateError('YOLO26 exige 80 rótulos COCO em ordem.');
+    }
 
     final responses = ReceivePort();
     final ready = Completer<void>();
@@ -79,6 +79,7 @@ class ObjectDetectionService {
         'replyPort': responses.sendPort,
         'models': models,
         'labels': labels,
+        'yoloLabels': yoloLabels,
       },
       debugName: 'object-detector-worker',
     );

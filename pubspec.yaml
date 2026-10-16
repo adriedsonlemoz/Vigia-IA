@@ -1,7 +1,7 @@
 name: vigiaia
 description: Vigia IA para monitoramento local com camera, RTSP e deteccao de objetos offline.
 publish_to: "none"
-version: 1.0.256+256
+version: 1.0.257+257
 environment:
   sdk: ">=3.12.0 <4.0.0"
   flutter: ">=3.44.0"
@@ -33,6 +33,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/models/yolo26s.tflite
+    - assets/models/efficientdet_lite2.tflite
+    - assets/models/yolo_coco80.txt
     - assets/models/efficientdet_lite0.tflite
     - assets/models/ssd_mobilenet_v1.tflite
     - assets/models/labelmap.txt

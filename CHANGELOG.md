@@ -1,3 +1,11 @@
+## 1.0.257+257: adaptação de detecção YOLO26s no receptor (2026-10-16)
+
+- Suporte a saída YOLO26s (uma saída de 6 colunas ou predições COCO-80), letterbox, NMS e rótulos adequados.
+- Análise permanece somente no receptor; transmissores não executam o detector.
+- Exportação opt-in automatizada no CI antes do build; modelos EfficientDet-Lite2, Lite0 e SSD são alternativas automáticas para indisponibilidade ou lentidão sustentada.
+- Scripts de exportação verificam os tensores após conversão; diagnóstico informa o modelo real em execução.
+- Pendente: confirmar exportação YOLO26s, flutter analyze/test, APK e velocidade/temperatura no Dimensity 920.
+
 ## 1.0.256+256: alertas de entrada e saída com evidência (2026-10-16)
 
 - Impede que a perda temporária de uma pessoa detectada seja anunciada como saída e a redetecção, como entrada.

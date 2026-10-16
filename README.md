@@ -1,3 +1,11 @@
+## 1.0.257+257: YOLO26s no receptor com fallback e análise offline (2026-10-16)
+
+- Adicionada compatibilidade ao detector YOLO26s no monitor, incluindo entradas RGB/255 NHWC/NCHW, formatos raw e end-to-end e classes COCO-80.
+- Exportação oficial do YOLO26s preparada para o GitHub Actions; se falhar, o APK usa EfficientDet-Lite2/Lite0/SSD sem desativar a vigilância.
+- Transmissão de imagem continua sem análise local; a IA permanece no receptor para câmera própria, outro celular, MCRP, RTSP e ESP32.
+- O nome do detector efetivamente carregado permanece no diagnóstico, para distinguir YOLO26s de fallback. Não há resultados de benchmark no Dimensity 920 ainda.
+- YOLO26s é AGPL-3.0. A distribuição requer cumprimento da licença ou licença comercial válida da Ultralytics.
+
 ## 1.0.256+256: alertas de entrada e saída com evidência (2026-10-16)
 
 - Impede que a perda temporária de uma pessoa detectada seja anunciada como saída e a redetecção, como entrada.
@@ -72,7 +80,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.256+256`
+**Versão atual:** `1.0.257+257`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.256', build: 256);
+      AppBuildVersion(version: '1.0.257', build: 257);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.256', build: 256),
+      version: AppBuildVersion(version: '1.0.257', build: 257),
       changes: <String>[
-        'Alertas de entrada e saída agora exigem cruzamento de área confirmado.',
-        'Oscilações e perdas temporárias de detecção não anunciam saída de pessoa.'
+        'Monitor passa a preferir YOLO26s para analisar vídeo no aparelho receptor.',
+        'EfficientDet-Lite2, Lite0 e SSD permanecem como opções automáticas para diferentes aparelhos.'
       ],
     ),
   ]);

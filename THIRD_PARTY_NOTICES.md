@@ -2,7 +2,9 @@
 
 Este projeto usa pacotes Flutter e bibliotecas nativas de terceiros. Antes de distribuir publicamente o APK, revise e cumpra as licencas de todas as dependencias resolvidas pelo `pub` e, em especial, os requisitos de redistribuicao do VLC/libVLC usados por `vlc_player`.
 
-Os modelos de detecção usados pelo projeto são o EfficientDet-Lite0 com metadata, como opção principal, e o SSD MobileNet V1 com metadata como fallback de inicialização e alternativa automática após lentidão persistente. Ambos são obtidos de artefatos publicados pelo Google para TensorFlow Lite/LiteRT por `tool/fetch_model.sh`.
+A partir da 1.0.257, o detector prefere o **YOLO26s** quando o arquivo foi exportado e validado no GitHub Actions. Modelos EfficientDet-Lite2/Lite0 e SSD MobileNet V1 continuam como alternativas compatíveis, baixadas de fontes Google AI Edge via `tool/fetch_model.sh`.
+
+**Atenção à licença do YOLO26s:** os pesos, arquitetura e biblioteca de exportação Ultralytics são oferecidos em **AGPL-3.0** ou sob licença Enterprise. Integrá-los a um APK distribuído pode exigir disponibilizar o código-fonte completo do aplicativo sob AGPL-3.0, ou uma licença alternativa válida. Consulte https://www.ultralytics.com/license antes de distribuir. O projeto-fonte não redistribui o checkpoint YOLO nem um TFLite já convertido; o runner baixa e converte no build. A aprovação de uma licença não é automática pelo funcionamento técnico.
 
 A inferencia local usa o pacote `flutter_litert` fixado em `3.8.0`, com Interpreter nativo e solicitação do delegate XNNPACK, mantendo compatibilidade com modelos `.tflite` e a API Interpreter usada pelo projeto.
 

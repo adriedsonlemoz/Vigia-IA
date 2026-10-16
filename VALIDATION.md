@@ -5,7 +5,17 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.256+256
+# Validação Vigia IA 1.0.257+257
+
+## YOLO26s e Dimensity 920 — 1.0.257 (2026-10-16)
+
+- [x] Suporte de código para decodificar saída YOLO26s e preservar modelos anteriores.
+- [x] Pipeline de transmissão sem inferência mantido.
+- [x] Scripts de exportação de modelo e checagem de tensores adicionados; formato real será confirmado no runner.
+- [x] 106 testes Python locais aprovados (`unittest discover`), imports locais, contrato de CI e versionamento sincronizados.
+- [ ] Verificação preventiva integral excedeu o limite local (~300 s) após aprovar diversos contratos; não equivale a aprovação completa.
+- [ ] Exportação do modelo e execução real em Android dependem de internet/Flutter/TFLite no GitHub Actions.
+- [ ] Benchmark no Dimensity 920, aquecimento e taxa de falsos positivos em cenários reais pendentes.
 
 ## Anúncios de transição 1.0.256 (2026-10-16)
 
