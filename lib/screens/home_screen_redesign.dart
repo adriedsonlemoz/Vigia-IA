@@ -4,7 +4,7 @@ extension _HomeRedesign on _HomeScreenState {
   void _navigateMain(int index) {
     if (index == 0) return;
     if (index == 2) {
-      unawaited(_chooseCameraForLive());
+      unawaited(_startLocalCamera());
       return;
     }
     if (index == 4) {
@@ -262,7 +262,7 @@ extension _HomeRedesign on _HomeScreenState {
             title: 'Ao vivo',
             subtitle: 'Câmera + IA',
             accent: VigiaColors.cyan,
-            onTap: () => unawaited(_chooseCameraForLive()),
+            onTap: () => unawaited(_startLocalCamera()),
           ),
           VigiaModeCard(
             compact: true,

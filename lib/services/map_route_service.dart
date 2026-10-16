@@ -271,7 +271,9 @@ class MapRouteService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> setMonitorVisibility(MonitorMapVisibilityMode value) async {
-    await initialize(requestPermission: false);
+    // Preferência visual não deve reiniciar uma consulta GPS quando o mapa
+    // já foi inicializado e o usuário acaba de ocultá-lo no monitor.
+    if (!_initialized) await initialize(requestPermission: false);
     if (_monitorVisibility == value) return;
     _monitorVisibility = value;
     notifyListeners();

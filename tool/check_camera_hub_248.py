@@ -13,7 +13,7 @@ migration=read('lib/services/minha_camera_registry_migration.dart')
 checks={
  'home com acesso MCRP e cadastro central': "title: 'Minha Câmera'" in home_ui and 'McrpCameraScreen' in cameras,
  'home preserva modos e atalhos': all(s in home_ui for s in ("title: 'Modos'", "label: 'Câmeras'", "title: 'Ao vivo'")),
- 'ao vivo solicita escolha': 'Future<void> _chooseCameraForLive()' in home and 'onTap: () => unawaited(_chooseCameraForLive())' in home_ui,
+ 'ao vivo local com seletor legado disponível': 'Future<void> _chooseCameraForLive()' in home and 'onTap: () => unawaited(_startLocalCamera())' in home_ui,
  'não obriga URL RTSP antiga': 'if (camera == null) {\n          await _chooseCameraForLive();' in home,
  'fonte remota não é RTSP': 'CameraEndpointType.remotePhone => VideoSourceConfig(' in selector and 'type: VideoSourceType.remotePhone' in selector,
  'ao vivo salva fonte selecionada': 'sourceForRegisteredCamera(camera, current.source.analysisInterval)' in home,

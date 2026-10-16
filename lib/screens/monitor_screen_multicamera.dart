@@ -4,6 +4,11 @@ extension _MonitorMulticamera on _MonitorScreenState {
   Future<void> _setPrimaryContentMode(_MonitorPrimaryContentMode mode) async {
     if (_primaryContentMode == mode) return;
     _updateMulticameraState(() => _primaryContentMode = mode);
+    if (mode == _MonitorPrimaryContentMode.map) {
+      unawaited(_activateMonitorMap());
+    } else if (_mapRoute.monitorVisibility == MonitorMapVisibilityMode.hidden) {
+      _deactivateMonitorMap();
+    }
     if (mode == _MonitorPrimaryContentMode.camera) {
       await _controller.resume();
       await _secondaryController?.resume();

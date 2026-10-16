@@ -9,9 +9,11 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.250+250
+# Arquitetura — Vigia IA 1.0.251+251
 
-**Restauração Home (1.0.250):** `AppLaunchMode.normal` escolhe `HomeScreen` em `_StartupGate` e `LaunchModeScreen`; retomada com `startMonitorOnLoad` permanece. Modo Bike mantém `MapWorkspaceShell`. O atalho Mapa dentro da Home abre `MapWorkspaceShell` sob demanda, evitando inicializar GPS/mapa no início normal. O quinto cartão abre `McrpCameraScreen` sem forçar conexão quando não há câmera escolhida.
+**Entrada Ao vivo (1.0.251):** ações da Home e da navegação inferior usam `_startLocalCamera()` e fonte explícita local. A retomada de serviço usa `resumeMonitorOnLoad` / `_start()` e a fonte persistida. `MonitorScreen.initState` não inicia GPS, MBTiles nem RouteExplorer; `_activateMonitorMap()` aciona esses serviços apenas após gesto de mapa, e `_deactivateMonitorMap()` libera o consumidor sem cancelar a gravação ou a navegação iniciadas pelo usuário. O atalho Mapa da Home continua a criar o `MapWorkspaceShell` separadamente.
+
+**Restauração Home (1.0.250):** `AppLaunchMode.normal` escolhe `HomeScreen` em `_StartupGate` e `LaunchModeScreen`; retomada foi separada em `resumeMonitorOnLoad` na 1.0.251. Modo Bike mantém `MapWorkspaceShell`. O atalho Mapa dentro da Home abre `MapWorkspaceShell` sob demanda, evitando inicializar GPS/mapa no início normal. O quinto cartão abre `McrpCameraScreen` sem forçar conexão quando não há câmera escolhida.
 
 **Buildfix 204:** somente testes e configuração de CI. O widget-test de lista MCRP usa store de memória para não aguardar I/O de disco no ambiente de tempo simulado. A suite real do serviço de armazenamento permanece separada. No workflow, cada teste limita-se a 2 minutos; a etapa completa a 7 minutos. Código de produção, MJPEG, QR, IA e mapas sem alterações.
 

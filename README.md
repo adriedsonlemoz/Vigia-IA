@@ -1,3 +1,11 @@
+## 1.0.251+251: Ao vivo local e mapa sob demanda (2026-10-15)
+
+- O cartão e o botão **Ao vivo** da Home e das abas principais abrem o monitor na câmera deste aparelho sem abrir seletor de fontes.
+- Câmeras RTSP/MCRP/ESP32 continuam disponíveis na área **Câmeras**; retorno de sessão em segundo plano preserva a fonte persistida.
+- Tela Ao vivo não inicializa GPS, exploração de rotas nem MBTiles na entrada; só depois de ativar/abrir o mapa. O mapa da Home continua acessível no atalho **Mapa**.
+- GPS de gravação/navegação iniciado pelo usuário não é desligado ao fechar o monitor.
+- Testar no aparelho e no GitHub Actions para confirmar permissões, retorno e consumo de bateria.
+
 ## 1.0.250+250: Home principal restaurada (2026-10-15)
 
 - No modo normal, a primeira tela volta a ser a Home com **Modos**, **Acessos rápidos** e **Monitoramento atual**, como no layout anterior.
@@ -27,7 +35,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.250+250`
+**Versão atual:** `1.0.251+251`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

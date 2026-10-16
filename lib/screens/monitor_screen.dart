@@ -83,6 +83,9 @@ class _MonitorScreenState extends State<MonitorScreen>
   int _miniOfflineMinZoom = 0;
   int _miniOfflineMaxZoom = 19;
   bool _miniMapReady = false;
+  // Mapa, mosaicos offline e GPS não pertencem ao ciclo de vida da câmera.
+  // Só são inicializados após interação explícita com a área do mapa.
+  bool _monitorMapActivated = false;
 
   List<MapRoutePoint> get _miniMapRoute => _mapRoute.route;
   List<List<MapRoutePoint>> get _miniMapSegments => _mapRoute.routeSegments;
@@ -120,11 +123,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     _mapRoute.addListener(_onMapRouteChanged);
     _offlineMaps.addListener(_onOfflineMapsChanged);
     _routeExplorer.addListener(_refresh);
-    unawaited(_initializeOfflineMiniMap());
-    unawaited(_routeExplorer.initialize());
     unawaited(_bikeSensors.initialize());
     unawaited(_controller.initialize());
-    unawaited(_initializeMiniMap(requestPermission: false));
   }
 
   void _updateFullscreenState(VoidCallback update) => setState(update);

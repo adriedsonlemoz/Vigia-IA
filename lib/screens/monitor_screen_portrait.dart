@@ -689,8 +689,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
           showSelectedIcon: false,
           onSelectionChanged: (selection) {
             if (selection.isEmpty) return;
-            _miniMapReady = false;
-            unawaited(_mapRoute.setMonitorVisibility(selection.first));
+            unawaited(_setMonitorMapVisibilityQuick(selection.first));
           },
         ),
         if (mode == MonitorMapVisibilityMode.automatic) ...[

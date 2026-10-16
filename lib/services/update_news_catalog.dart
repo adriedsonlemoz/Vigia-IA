@@ -8,15 +8,15 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.250', build: 250);
+      AppBuildVersion(version: '1.0.251', build: 251);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.250', build: 250),
+      version: AppBuildVersion(version: '1.0.251', build: 251),
       changes: <String>[
-        'A tela Início volta a ser a entrada padrão do Vigia IA.',
-        'Cinco modos na Home, incluindo acesso direto ao Minha Câmera.',
-        'Mapa completo continua no atalho Mapa, pronto para a cicloviagem.',
+        'Ao vivo abre diretamente a câmera deste aparelho.',
+        'Mapa e localização são iniciados apenas quando você pedir.',
+        'Percursos já iniciados e acesso às outras câmeras permanecem disponíveis.',
       ],
     ),
   ]);

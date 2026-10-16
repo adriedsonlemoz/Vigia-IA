@@ -52,10 +52,16 @@ extension _MonitorFullscreen on _MonitorScreenState {
   Future<void> _setMonitorMapVisibilityQuick(
     MonitorMapVisibilityMode mode,
   ) async {
-    if (_mapRoute.monitorVisibility == mode) return;
+    if (_mapRoute.monitorVisibility == mode &&
+        (mode == MonitorMapVisibilityMode.hidden || _monitorMapActivated)) return;
     _miniMapReady = false;
+    if (mode == MonitorMapVisibilityMode.hidden) _deactivateMonitorMap();
     await _mapRoute.setMonitorVisibility(mode);
     if (!mounted) return;
+    if (mode != MonitorMapVisibilityMode.hidden) {
+      await _activateMonitorMap();
+      if (!mounted) return;
+    }
     final message = switch (mode) {
       MonitorMapVisibilityMode.always =>
         'Mapa configurado para aparecer no monitor.',

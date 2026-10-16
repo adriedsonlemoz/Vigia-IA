@@ -524,8 +524,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                               selected: mapMode ==
                                   MonitorMapVisibilityMode.automatic,
                               onSelected: () {
-                                _miniMapReady = false;
-                                unawaited(_mapRoute.setMonitorVisibility(
+                                unawaited(_setMonitorMapVisibilityQuick(
                                   MonitorMapVisibilityMode.automatic,
                                 ));
                               },
@@ -536,8 +535,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                               selected:
                                   mapMode == MonitorMapVisibilityMode.always,
                               onSelected: () {
-                                _miniMapReady = false;
-                                unawaited(_mapRoute.setMonitorVisibility(
+                                unawaited(_setMonitorMapVisibilityQuick(
                                   MonitorMapVisibilityMode.always,
                                 ));
                               },
@@ -548,8 +546,7 @@ extension _MonitorScreenMapExplorer on _MonitorScreenState {
                               selected:
                                   mapMode == MonitorMapVisibilityMode.hidden,
                               onSelected: () {
-                                _miniMapReady = false;
-                                unawaited(_mapRoute.setMonitorVisibility(
+                                unawaited(_setMonitorMapVisibilityQuick(
                                   MonitorMapVisibilityMode.hidden,
                                 ));
                               },

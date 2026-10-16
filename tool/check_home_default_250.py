@@ -7,6 +7,7 @@ launch = (root / 'lib/screens/launch_mode_screen.dart').read_text()
 home = (root / 'lib/screens/home_screen_redesign.dart').read_text()
 imports = (root / 'lib/screens/home_screen.dart').read_text()
 assert 'AppLaunchMode.normal => _resumeMonitoring' in app
+assert '? const HomeScreen(resumeMonitorOnLoad: true)' in app
 assert ': const HomeScreen(),' in app
 assert 'AppLaunchMode.bike => const MapWorkspaceShell()' in app
 assert 'AppLaunchMode.normal => widget.startMonitorOnLoad' in launch

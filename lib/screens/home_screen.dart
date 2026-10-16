@@ -42,9 +42,16 @@ part 'home_screen_source_panel.dart';
 part 'home_screen_redesign.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.startMonitorOnLoad = false});
+  const HomeScreen({
+    super.key,
+    this.startMonitorOnLoad = false,
+    this.resumeMonitorOnLoad = false,
+  });
 
+  /// Ação explícita Ao vivo: seleciona somente a câmera deste aparelho.
   final bool startMonitorOnLoad;
+  /// Solicitação explícita do serviço: retoma a fonte persistida da sessão.
+  final bool resumeMonitorOnLoad;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -154,15 +161,16 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     final resumeRequested = await BackgroundMonitorService.consumeResumeRequest();
     if (!mounted) return;
-    if ((widget.startMonitorOnLoad || resumeRequested) && !_autoStartTriggered) {
+    if ((widget.startMonitorOnLoad || widget.resumeMonitorOnLoad ||
+            resumeRequested) && !_autoStartTriggered) {
       _autoStartTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (widget.startMonitorOnLoad) {
-          unawaited(_chooseCameraForLive());
-        } else {
-          // Retomar serviço em segundo plano mantém a fonte da sessão anterior.
+        if (widget.resumeMonitorOnLoad || resumeRequested) {
+          // Retomada de serviço preserva a câmera e a configuração anteriores.
           unawaited(_start());
+        } else {
+          unawaited(_startLocalCamera());
         }
       });
     }
@@ -417,6 +425,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Ação Ao vivo da Home e navegação: ignora a fonte persistida, iniciando
+  /// diretamente a câmera local com a permissão já tratada por _start().
+  Future<void> _startLocalCamera() => _start(
+        camera: const CameraEndpoint(
+          id: '__local__',
+          name: 'Câmera deste aparelho',
+          type: CameraEndpointType.local,
+        ),
+      );
+
+  /// Seletor legado mantido para fluxos de cadastro/seleção explícita.
   /// Ao vivo nunca presume que um endereço RTSP antigo seja a câmera desejada.
   /// O cadastro e a exclusão são gerenciados exclusivamente na área Câmeras.
   Future<void> _chooseCameraForLive() async {

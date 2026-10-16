@@ -2,14 +2,43 @@ part of 'monitor_screen.dart';
 
 extension _MonitorLandscapeDashboard on _MonitorScreenState {
   Future<void> _initializeMiniMap({required bool requestPermission}) async {
-    await _mapRoute.acquireLocationConsumer(
-      this,
-      requestPermission: requestPermission,
-    );
+    if (!mounted || !_monitorMapActivated) return;
+    try {
+      await _mapRoute.acquireLocationConsumer(
+        this,
+        requestPermission: requestPermission,
+      );
+    } catch (error) {
+      debugPrint('Vigia IA: mapa do monitor indisponível: $error');
+    }
+    // Evita reativação tardia do GPS se o monitor foi fechado/ocultado.
+    if (!mounted || !_monitorMapActivated) {
+      _mapRoute.releaseLocationConsumer(this);
+      return;
+    }
+    _updateMulticameraState(() {});
+  }
+
+  Future<void> _activateMonitorMap({bool requestPermission = true}) async {
+    if (!mounted) return;
+    if (!_monitorMapActivated) {
+      _updateMulticameraState(() => _monitorMapActivated = true);
+      unawaited(_initializeOfflineMiniMap());
+      unawaited(_routeExplorer.initialize());
+    }
+    await _initializeMiniMap(requestPermission: requestPermission);
+  }
+
+  void _deactivateMonitorMap() {
+    if (!_monitorMapActivated) return;
+    _monitorMapActivated = false;
+    _miniMapReady = false;
+    _mapRoute.releaseLocationConsumer(this);
     if (mounted) _updateMulticameraState(() {});
   }
 
-  bool get _shouldShowMonitorMap => _mapRoute.shouldShowInMonitor(
+  bool get _shouldShowMonitorMap => _monitorMapActivated &&
+      _mapRoute.shouldShowInMonitor(
         bikeConnected: _effectiveBikeSnapshot?.connected == true,
       );
 

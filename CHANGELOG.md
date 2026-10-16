@@ -1,3 +1,11 @@
+## 1.0.251+251: câmera local direta e GPS sob demanda (2026-10-15)
+
+- Ao vivo da Home e barra inferior entra direto no monitor local, solicitando permissão de câmera se necessário.
+- Modo de retomada em segundo plano conserva a origem configurada, sem substituição silenciosa por câmera local.
+- Monitor não carrega mapas offline nem rota exploratória e não solicita/ativa localização ao abrir; o mapa pode ser ativado manualmente.
+- Alternância de mapa pelo painel do monitor habilita dados/mapa local sob demanda; ocultar libera consumidor do GPS sem interromper gravações/navegações em curso.
+- Novos testes preventivos do fluxo Ao vivo/GPS e versionamento sequencial.
+
 ## 1.0.250+250: retorno da Home como tela inicial (2026-10-15)
 
 - Entrada normal deixa de abrir o mapa automaticamente e volta a mostrar a Home visual anterior.

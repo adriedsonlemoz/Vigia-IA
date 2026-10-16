@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.250',
+          version: '1.0.251',
           current: true,
+          changes: [
+            'Ao vivo abre diretamente a câmera do próprio aparelho.',
+            'GPS e mini-mapa só iniciam quando você abrir a área do mapa.',
+            'Outras câmeras continuam no gerenciamento de Câmeras.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.250',
           changes: [
             'Home volta a abrir primeiro, com os cinco modos do painel inicial.',
             'Minha Câmera retorna à Home com acesso ao painel MCRP.',
@@ -2239,8 +2248,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.250',
+          version: '1.0.251',
           current: true,
+          changes: [
+            'Ao vivo abre diretamente a câmera do próprio aparelho.',
+            'GPS e mini-mapa só iniciam quando você abrir a área do mapa.',
+            'Outras câmeras continuam no gerenciamento de Câmeras.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.250',
           changes: [
             'Home volta a abrir primeiro, com os cinco modos do painel inicial.',
             'Minha Câmera retorna à Home com acesso ao painel MCRP.',

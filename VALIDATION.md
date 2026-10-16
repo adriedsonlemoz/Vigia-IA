@@ -5,7 +5,16 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.250+250
+# Validação Vigia IA 1.0.251+251
+
+## Ao vivo local / mapa sob demanda 1.0.251 (2026-10-15)
+
+- [x] Home e barra inferior encaminham Ao vivo à câmera local, sem diálogo de seleção de fonte.
+- [x] Retomada de monitoramento explicitamente solicitada usa a fonte anterior.
+- [x] Monitor Ao vivo evita carga de MBTiles, RouteExplorer e GPS na entrada, mesmo que a preferência anterior exiba mapa automaticamente.
+- [x] Ativação de mapa por interação mantém recurso disponível; ocultar libera consumidor sem encerrar viagens ou navegação ativas.
+- [ ] Teste físico: permissão da câmera, monitor, retorno, sessão remota, gravação de percurso, GPS, consumo.
+- [ ] Flutter analyze/test/build Android por CI (SDK não disponível localmente).
 
 ## Home restaurada 1.0.250 (2026-10-15)
 
