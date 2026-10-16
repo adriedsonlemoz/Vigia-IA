@@ -15,10 +15,10 @@ def check():
     screen = read('lib/screens/monitor_screen_ai_tools.dart')
     top = read('lib/screens/monitor_screen_components.dart')
     portrait = read('lib/screens/monitor_screen_portrait.dart')
-    assert 'this.detectorModel = DetectorModelPreference.automatic' in models
+    assert 'this.detectorModel = DetectorModelPreference.yolo26s' in models
     assert 'DetectorModelPreference values' not in models
     assert "'detectorModel': settings.detectorModel.name" in store
-    assert "orElse: () => DetectorModelPreference.automatic" in store
+    assert "orElse: () => DetectorModelPreference.yolo26s" in store
     assert 'ObjectDetectionService(preference: preference)' in control
     assert '_baseReady = false' in control and '_waitForProcessing()' in control
     assert 'await replacement.initialize()' in control

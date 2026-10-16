@@ -310,7 +310,7 @@ class AppSettingsService {
         aiEnabled: settingsJson['aiEnabled'] as bool? ?? true,
         detectorModel: DetectorModelPreference.values.firstWhere(
           (value) => value.name == settingsJson['detectorModel'],
-          orElse: () => DetectorModelPreference.automatic,
+          orElse: () => DetectorModelPreference.yolo26s,
         ),
         trackingEnabled: settingsJson['trackingEnabled'] as bool? ?? true,
         announceEntryExit: settingsJson['announceEntryExit'] as bool? ?? true,

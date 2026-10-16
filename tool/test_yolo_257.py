@@ -42,7 +42,7 @@ class YoloReceiverContracts(unittest.TestCase):
         ci = read('.github/workflows/android-apk.yml')
         self.assertIn('validate(source)', exporter)
         self.assertIn("YOLO('yolo26s.pt')", exporter)
-        self.assertIn('timeout 600 bash ./tool/export_yolo26s.sh', ci)
+        self.assertIn('timeout 900 bash ./tool/export_yolo26s.sh', ci)
         self.assertIn('flutter analyze --fatal-infos --fatal-warnings', ci)
 
     def test_version_and_license(self):

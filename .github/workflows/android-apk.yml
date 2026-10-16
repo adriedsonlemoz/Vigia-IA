@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v7
 
@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: assets/models/*.tflite
-          key: vigiaia-models-v2-yolo26s
+          key: vigiaia-models-v3-yolo26s-litert
 
       - name: Preparar projeto Android
         shell: bash
@@ -72,15 +72,16 @@ jobs:
       - name: Baixar modelo TensorFlow Lite
         run: bash ./tool/fetch_model.sh
 
-      - name: Preparar YOLO26s offline (fallback automático)
+      - name: Preparar YOLO26s offline (obrigatório na release)
         shell: bash
         run: |
           set -euo pipefail
-          if timeout 600 bash ./tool/export_yolo26s.sh; then
-            echo "YOLO26s exportado e disponível para o receptor."
-          else
-            echo "AVISO: YOLO26s indisponível. O APK usará EfficientDet-Lite2/Lite0 como fallback."
-          fi
+          timeout 900 bash ./tool/export_yolo26s.sh
+          # Validar o arquivo real, jamais aceitar o stub presente no fonte.
+          python3 tool/export_yolo26s.py
+          test "$(wc -c < assets/models/yolo26s.tflite)" -ge 3000000
+          sha256sum assets/models/yolo26s.tflite
+          echo "YOLO26s LiteRT validado. A release terá o modelo principal."
 
       - name: Testes
         # CI 204: um único testWidgets aguardou o timeout padrão de 10 minutos.
@@ -194,6 +195,21 @@ jobs:
           missing = sorted(expected - found)
           if missing:
               raise SystemExit('APKs esperadas nao geradas em uma unica compilacao: ' + ', '.join(missing))
+          # Impede publicar APK que tenha apenas o arquivo de 24 bytes do fonte.
+          from zipfile import ZipFile
+          import hashlib
+          expected_sha = hashlib.sha256(Path('assets/models/yolo26s.tflite').read_bytes()).hexdigest()
+          for apk in sorted(release_dir.glob('*.apk')):
+              with ZipFile(apk) as zip_file:
+                  matches = [item for item in zip_file.infolist()
+                             if item.filename.endswith('/assets/models/yolo26s.tflite')]
+                  if len(matches) != 1 or matches[0].file_size < 3_000_000:
+                      raise SystemExit(f'APK sem YOLO26s real: {apk.name}')
+                  with zip_file.open(matches[0]) as stream:
+                      actual_sha = hashlib.file_digest(stream, 'sha256').hexdigest()
+                  if actual_sha != expected_sha:
+                      raise SystemExit(f'YOLO26s embutido diverge do validado: {apk.name}')
+                  print(f'YOLO26s no APK {apk.name}: {matches[0].file_size} bytes, SHA-256 OK')
           PY
           python3 - "$RELEASE_DIR" "$RELEASE_DIR/apk-size-report.txt" <<'PY'
           from collections import defaultdict

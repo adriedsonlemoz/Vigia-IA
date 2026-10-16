@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.262+262
+# Arquitetura — Vigia IA 1.0.263+263
+
+**YOLO26s como padrão (1.0.263):** `MonitorSettings` adota YOLO26s como preferência inicial. `ObjectDetectionService` continua carregando YOLO26s primeiro, recuando para EfficientDet ou SSD se houver erro ou custo excessivo. O CI gera um modelo LiteRT válido e verifica seu empacotamento em cada APK; falha de exportação impede a publicação. Os assets do ZIP fonte têm apenas stubs. Transmissão não executa IA.
 
 **Buildfix APK 215 (1.0.262):** somente a forma sintática da guarda em `MonitorMulticamera._selectLocalPrimarySource` mudou para chaves obrigatórias, mantendo lógica e sequenciamento de liberação do CameraController antes da alternância. O verificador impede regressão do lint, sem afrouxar `flutter analyze`.
 

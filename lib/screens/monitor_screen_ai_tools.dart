@@ -31,7 +31,9 @@ extension _MonitorAiTools on _MonitorScreenState {
                     ? Icons.radio_button_checked : Icons.radio_button_unchecked),
                 title: Text(preference.label),
                 subtitle: preference == DetectorModelPreference.automatic
-                    ? const Text('Seleciona a melhor opção disponível e faz fallback')
+                    ? const Text('Tenta YOLO26s primeiro e faz fallback')
+                    : preference == DetectorModelPreference.yolo26s
+                    ? const Text('Padrão do Vigia IA; recua se indisponível ou lento')
                     : null,
                 onTap: () async {
                   Navigator.of(sheetContext).pop();

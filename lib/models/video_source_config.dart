@@ -129,7 +129,7 @@ class MonitorSettings {
     this.clipDuration = const Duration(seconds: 8),
     this.clipFormatPreference = ClipFormatPreference.mp4WithGifFallback,
     this.aiEnabled = true,
-    this.detectorModel = DetectorModelPreference.automatic,
+    this.detectorModel = DetectorModelPreference.yolo26s,
     this.trackingEnabled = true,
     this.announceEntryExit = true,
     this.backgroundMonitoringEnabled = false,

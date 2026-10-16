@@ -5,7 +5,15 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.262+262
+# Validação Vigia IA 1.0.263+263
+
+## YOLO26s padrão e garantia de release 1.0.263
+
+- [x] Padrão YOLO26s atualizado em MonitorSettings e importação de configurações sem seleção prévia.
+- [x] Automático e modelos fallback preservados.
+- [x] Exportação modernizada para LiteRT e etapa de geração obrigatória na release, com teste de presença no APK.
+- [ ] Binário YOLO26s não convertido neste ambiente: precisa ser gerado no GitHub Actions.
+- [ ] Flutter analyze, flutter test, build Android e medições no aparelho dependem do workflow.
 
 ## Interface e diagnósticos 1.0.262
 

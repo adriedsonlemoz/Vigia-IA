@@ -54,7 +54,7 @@ def main() -> int:
     # As exportações do YOLO26 admitem cabeças diferentes. nms=False
     # solicita saída (N,300,6) end-to-end quando suportado. Em runtimes
     # que usam saída raw (1,84,8400), o decodificador do Vigia IA suporta NMS.
-    exported = model.export(format='tflite', imgsz=640, half=True, nms=False)
+    exported = model.export(format='litert', imgsz=640)
     source = Path(str(exported)).resolve()
     if source.is_dir():
         candidates = sorted(source.rglob('*.tflite'), key=lambda p: ('float16' not in p.name.lower(), p.name))

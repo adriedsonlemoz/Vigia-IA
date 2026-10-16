@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.262', build: 262);
+      AppBuildVersion(version: '1.0.263', build: 263);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.262', build: 262),
+      version: AppBuildVersion(version: '1.0.263', build: 263),
       changes: <String>[
-        'Ao vivo com duas câmeras grandes e empilhadas no retrato.',
-        'Faixa compacta com bateria e temperatura por câmera, e rótulos de detecção mais claros.'
+        'YOLO26s é o detector principal do receptor, com alternativas disponíveis.',
+        'Compilação exige modelo YOLO26s válido; diagnósticos mostram o detector ativo.'
       ],
     ),
   ]);

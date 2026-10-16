@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.262',
+          version: '1.0.263',
           current: true,
+          changes: [
+            'YOLO26s vira padrão na análise do receptor, com fallback preservado.',
+            'O APK deve conter o detector real para ser publicado.',
+            'Diagnósticos exibem o modelo realmente carregado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.262',
           changes: [
             'Duas câmeras aparecem em painéis grandes e empilhados.',
             'Nome, bateria e temperatura por câmera na faixa superior.',
@@ -2340,8 +2349,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.262',
+          version: '1.0.263',
           current: true,
+          changes: [
+            'YOLO26s vira padrão na análise do receptor, com fallback preservado.',
+            'O APK deve conter o detector real para ser publicado.',
+            'Diagnósticos exibem o modelo realmente carregado.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.262',
           changes: [
             'Duas câmeras aparecem em painéis grandes e empilhados.',
             'Nome, bateria e temperatura por câmera na faixa superior.',

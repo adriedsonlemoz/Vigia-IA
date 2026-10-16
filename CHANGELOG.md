@@ -1,3 +1,10 @@
+## 1.0.263+263: YOLO26s como padrão com validação obrigatória (2026-10-16)
+
+- YOLO26s se torna o modelo padrão da análise no receptor. Automático segue disponível, priorizando YOLO26s.
+- O workflow exige exportação LiteRT válida e confirma que cada APK contém um modelo real, impedindo publicação silenciosa só com EfficientDet.
+- Fallback em execução, seleção manual, diagnósticos, câmera remota e Transmissão sem IA preservados.
+- YOLO26s real ainda precisa ser gerado pelo CI; fonte carrega um marcador, não os pesos.
+
 ## 1.0.262+262: Ao vivo multicâmera e faixa compacta (2026-10-16)
 
 - Ao vivo no retrato mostra duas transmissões empilhadas e com tamanhos iguais, em vez de PiP sobreposto. Com uma só câmera, mantém o vídeo único.
