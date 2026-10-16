@@ -16,9 +16,9 @@ DEST = ROOT / 'assets/models/yolo26s.tflite'
 
 def validate(path: Path) -> None:
     import numpy as np
-    import tensorflow as tf
+    from ai_edge_litert.interpreter import Interpreter
 
-    detector = tf.lite.Interpreter(model_path=str(path), num_threads=2)
+    detector = Interpreter(model_path=str(path), num_threads=2)
     detector.allocate_tensors()
     inp = detector.get_input_details()
     out = detector.get_output_details()
@@ -43,10 +43,36 @@ def validate(path: Path) -> None:
     print(f'YOLO26s validado: {input_shape} → {output_shape}, {path.stat().st_size} bytes')
 
 
+
+def ensure_legacy_cholesky_compatibility(torch_module) -> bool:
+    """Compatibilidade de importação para conversores LiteRT antigos.
+
+    Não reintroduz kernel obsoleto: apenas fornece ao catálogo de operadores
+    a referência moderna equivalente que o conversor usa como chave.
+    Retorna True quando precisou adaptar o ambiente.
+    """
+    aten = torch_module.ops.aten
+    if hasattr(aten, 'cholesky'):
+        return False
+    if not hasattr(aten, 'linalg_cholesky'):
+        raise RuntimeError('Nem cholesky nem linalg_cholesky disponíveis no PyTorch.')
+    aten.cholesky = aten.linalg_cholesky
+    return True
+
+
 def main() -> int:
     if DEST.exists() and DEST.stat().st_size >= 3_000_000:
         validate(DEST)
         return 0
+
+    # Compatibilidade limitada ao processo de exportação. No PyTorch 2.13,
+    # aten.cholesky foi removido, mas LiteRT Torch 0.9.4 ainda consulta a
+    # referência legada ao importar seu registro de conversores. Atribuir
+    # a operação moderna evita o erro de importação; o modelo YOLO26s não
+    # utiliza Cholesky em seu grafo. Não modifica a execução no Android.
+    import torch
+    if ensure_legacy_cholesky_compatibility(torch):
+        print('Compatibilidade de exportação: aten.cholesky → aten.linalg_cholesky')
 
     from ultralytics import YOLO
 

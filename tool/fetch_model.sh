@@ -32,7 +32,7 @@ fetch_model() {
 # exportado ou não seja compatível. Fonte Google AI Edge, Apache-2.0.
 if ! fetch_model \
   "$MODEL_DIR/efficientdet_lite2.tflite" \
-  "https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/object_detection/rpi/lite-model_efficientdet_lite2_detection_metadata_1.tflite" \
+  "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float32/1/efficientdet_lite2.tflite" \
   20000000 \
   "EfficientDet-Lite2"; then
   echo "Aviso: EfficientDet-Lite2 indisponível; permanecerão Lite0 e SSD." >&2

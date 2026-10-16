@@ -1,3 +1,10 @@
+## 1.0.264+264: correção da exportação YOLO26s (APK 218, 2026-10-16)
+
+- Corrigida compatibilidade entre PyTorch 2.13 / torchvision 0.28 e conversor LiteRT Torch 0.9.4, evitando a falha de acesso ao operador removido `aten.cholesky`.
+- Validação de tensores usa `ai-edge-litert`; falha de exportação ainda bloqueia publicação, sem substituição silenciosa do YOLO.
+- Atualizado URL oficial do EfficientDet-Lite2 após HTTP 403 no endpoint antigo.
+- Adicionados cinco testes de regressão para o exportador e workflow.
+
 ## 1.0.263+263: YOLO26s como padrão com validação obrigatória (2026-10-16)
 
 - YOLO26s se torna o modelo padrão da análise no receptor. Automático segue disponível, priorizando YOLO26s.

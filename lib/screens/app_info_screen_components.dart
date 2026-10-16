@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.263',
+          version: '1.0.264',
           current: true,
+          changes: [
+            'Corrigida a compatibilidade do exportador YOLO26s no APK 218.',
+            'Dependências PyTorch harmonizadas e verificação LiteRT preservada.',
+            'Atualizado o endereço de download do EfficientDet-Lite2.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.263',
           changes: [
             'YOLO26s vira padrão na análise do receptor, com fallback preservado.',
             'O APK deve conter o detector real para ser publicado.',
@@ -2349,8 +2358,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.263',
+          version: '1.0.264',
           current: true,
+          changes: [
+            'Corrigida a compatibilidade do exportador YOLO26s no APK 218.',
+            'Dependências PyTorch harmonizadas e verificação LiteRT preservada.',
+            'Atualizado o endereço de download do EfficientDet-Lite2.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.263',
           changes: [
             'YOLO26s vira padrão na análise do receptor, com fallback preservado.',
             'O APK deve conter o detector real para ser publicado.',

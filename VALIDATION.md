@@ -5,7 +5,19 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.263+263
+# Validação Vigia IA 1.0.264+264
+
+## Falha exportação YOLO26s no Android APK 218 (2026-10-16)
+
+- [x] `flutter analyze` passou no workflow 218, sem falhas Dart.
+- [x] Corrigida a incompatibilidade do `aten.cholesky` removido do PyTorch 2.13 e ainda consultado pelo exportador LiteRT Torch.
+- [x] Pareamento estável de `torch==2.13.0` e `torchvision==0.28.0`, com `litert-torch==0.9.4`.
+- [x] `ai-edge-litert` usado para validar os tensores sem precisar carregar TensorFlow completo.
+- [x] Substituído endereço EfficientDet-Lite2 que respondeu HTTP 403.
+- [x] 138 testes Python locais aprovados, incluindo cinco regressões novas de exportação; versionamento, imports, shell e contrato CI verificados.
+- [ ] Verificação preventiva integral excedeu o tempo limite local, tendo aprovado a primeira parte dos contratos históricos.
+- [ ] Conversão real do YOLO26s ainda precisa ser confirmada no runner GitHub Actions.
+- [ ] `flutter test` e APK release não foram executados localmente.
 
 ## YOLO26s padrão e garantia de release 1.0.263
 

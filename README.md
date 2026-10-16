@@ -1,3 +1,10 @@
+## 1.0.264+264: compatibilidade da exportação YOLO26s no CI (2026-10-16)
+
+- Corrige a falha do APK 218: PyTorch 2.13 removeu `aten.cholesky`, ainda referenciado pelo LiteRT Torch durante a exportação. Adicionada compatibilidade restrita ao exportador, sem alterar a IA no Android.
+- Exportador instala par PyTorch 2.13 / torchvision 0.28, LiteRT Torch 0.9.4 e usa `ai-edge-litert` para validação do modelo.
+- Download EfficientDet-Lite2 usa URL oficial do MediaPipe em substituição ao endpoint com HTTP 403.
+- Publicação continua bloqueada se o YOLO26s real não for validado e incluído no APK.
+
 ## 1.0.263+263: YOLO26s como padrão com validação obrigatória (2026-10-16)
 
 - YOLO26s se torna o modelo padrão da análise no receptor. Automático segue disponível, priorizando YOLO26s.
@@ -125,7 +132,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.263+263`
+**Versão atual:** `1.0.264+264`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 
