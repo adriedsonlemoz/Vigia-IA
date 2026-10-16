@@ -775,6 +775,8 @@ extension _MonitorMulticamera on _MonitorScreenState {
     secondaryLabel: secondary.displayName,
     embedded: embedded,
     aiEnabled: _controller.aiEnabled,
+    onModelTap: embedded ? () => unawaited(_showAiModelPicker()) : null,
+    onDiagnosticTap: embedded ? () => unawaited(_showAiTestOptions()) : null,
     onTap: () => unawaited(_showSessionStatus()),
   );
 

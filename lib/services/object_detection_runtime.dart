@@ -44,3 +44,11 @@ _LoadedDetector _loadDetector(Uint8List bytes, String name, {String reason = ''}
   }
   throw StateError('$name: ${failures.join(' | ')}');
 }
+
+extension ObjectDetectionModelInfo on ObjectDetectionService {
+  String get activeModel {
+    final raw = _diagnostics ?? '';
+    return RegExp(r'modelo=([^;]+)').firstMatch(raw)?.group(1)?.trim() ??
+        'Aguardando modelo';
+  }
+}

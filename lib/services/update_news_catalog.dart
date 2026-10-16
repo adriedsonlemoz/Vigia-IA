@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.257', build: 257);
+      AppBuildVersion(version: '1.0.258', build: 258);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.257', build: 257),
+      version: AppBuildVersion(version: '1.0.258', build: 258),
       changes: <String>[
-        'Monitor passa a preferir YOLO26s para analisar vídeo no aparelho receptor.',
-        'EfficientDet-Lite2, Lite0 e SSD permanecem como opções automáticas para diferentes aparelhos.'
+        'Ao vivo tem botões de modelo e diagnóstico na faixa superior.',
+        'Teste de 15, 30 ou 60 segundos e relatório de desempenho exportável.'
       ],
     ),
   ]);

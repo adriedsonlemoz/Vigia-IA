@@ -46,7 +46,7 @@ class YoloReceiverContracts(unittest.TestCase):
         self.assertIn('flutter analyze --fatal-infos --fatal-warnings', ci)
 
     def test_version_and_license(self):
-        self.assertIn('version: 1.0.257+257', read('pubspec.yaml'))
+        self.assertIn('version: 1.0.258+258', read('pubspec.yaml'))
         self.assertIn('AGPL-3.0', read('THIRD_PARTY_NOTICES.md'))
         self.assertIn('YOLO26s', read('RELEASE-1.0.257.md'))
 

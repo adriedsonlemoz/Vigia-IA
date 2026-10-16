@@ -83,12 +83,13 @@ class MonitorController extends ChangeNotifier {
               : settings.absenceReset,
           identityRetention: const Duration(seconds: 12),
         ) {
+    _detector = ObjectDetectionService(preference: settings.detectorModel);
     _lanStream.addListener(_onLanStreamChanged);
     _bikeMode.addListener(_onBikeModeChanged);
   }
   MonitorSettings _settings;
   VideoSourceConfig sourceConfig;
-  ObjectDetectionService _detector = ObjectDetectionService();
+  late ObjectDetectionService _detector;
   final GlobalAudioService _speech = GlobalAudioService.instance;
   final MotionDetectionService _motion = MotionDetectionService();
   final DetectionCadencePolicy _cadence = DetectionCadencePolicy();
@@ -258,7 +259,6 @@ class MonitorController extends ChangeNotifier {
   void _sampleSessionHealth() => _sampleSessionHealthImpl();
   Duration get effectiveAnalysisInterval =>
       _bikeConfig.effectiveAnalysisInterval(sourceConfig.analysisInterval);
-
   Widget buildPreview() =>
       _source?.buildPreview() ?? const SizedBox.expand();
   void _syncLanHealth() {
@@ -501,7 +501,7 @@ class MonitorController extends ChangeNotifier {
     await _enqueueTransition(_stopSourceUnlocked);
     await _waitForProcessing();
     final oldDetector = _detector;
-    _detector = ObjectDetectionService();
+    _detector = ObjectDetectionService(preference: _settings.detectorModel);
     try {
       await oldDetector.dispose();
     } catch (_) {}

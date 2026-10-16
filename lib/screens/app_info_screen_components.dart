@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.257',
+          version: '1.0.258',
           current: true,
+          changes: [
+            'Ao vivo: seleção de modelo com Automático como padrão.',
+            'Diagnóstico de 15, 30 e 60 segundos com relatório exportável.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.257',
           changes: [
             'Análise no receptor preparada para YOLO26s, com fallback automático.',
             'Câmeras remotas e transmissão permanecem sem IA no transmissor.',
@@ -2298,8 +2306,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.257',
+          version: '1.0.258',
           current: true,
+          changes: [
+            'Ao vivo: seleção de modelo com Automático como padrão.',
+            'Diagnóstico de 15, 30 e 60 segundos com relatório exportável.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.257',
           changes: [
             'Análise no receptor preparada para YOLO26s, com fallback automático.',
             'Câmeras remotas e transmissão permanecem sem IA no transmissor.',

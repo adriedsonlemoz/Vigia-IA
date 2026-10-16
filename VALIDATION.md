@@ -5,7 +5,18 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.257+257
+# Validação Vigia IA 1.0.258+258
+
+## Diagnóstico e seleção de modelo no Ao vivo
+
+- [x] Faixa superior com controles compactos de modelo e diagnóstico.
+- [x] Configuração de preferência e fallback persistidos.
+- [x] Testes temporizados e ZIP com amostras de desempenho.
+- [x] Dois lints do APK #212 corrigidos na base entregue.
+- [x] 111 testes Python e validadores de imports, CI e versão passaram.
+- [ ] Verificação preventiva integral excedeu o limite de tempo local após passar pelos primeiros grupos.
+- [ ] Novos testes Flutter `detector_model_preference_test.dart` aguardam o CI.
+- [ ] flutter analyze/test/build e aparência em aparelho: validar no GitHub Actions/Android.
 
 ## YOLO26s e Dimensity 920 — 1.0.257 (2026-10-16)
 

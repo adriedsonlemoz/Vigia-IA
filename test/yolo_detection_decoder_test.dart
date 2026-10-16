@@ -33,7 +33,7 @@ void main() {
   test('saida raw channels-first aplica confiança e NMS por classe', () {
     final raw = List.generate(84, (_) => List<double>.filled(2, 0));
     for (var i = 0; i < 2; i++) {
-      raw[0][i] = 320 + i;
+      raw[0][i] = (320 + i).toDouble();
       raw[1][i] = 320;
       raw[2][i] = 320;
       raw[3][i] = 320;

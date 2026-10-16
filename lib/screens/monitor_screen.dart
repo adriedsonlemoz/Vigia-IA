@@ -22,6 +22,7 @@ import '../models/offline_map_package.dart';
 import '../models/remote_phone_status.dart';
 import '../models/video_source_config.dart';
 import '../services/native_platform_service.dart';
+import '../services/performance_telemetry_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/map_route_service.dart';
 import '../services/offline_map_service.dart';
@@ -48,6 +49,7 @@ part 'monitor_screen_fullscreen.dart';
 part 'monitor_screen_multicamera.dart';
 part 'monitor_screen_offline_map.dart';
 part 'monitor_screen_portrait.dart';
+part 'monitor_screen_ai_tools.dart';
 part 'monitor_screen_landscape_dashboard.dart';
 part 'monitor_screen_map_explorer.dart';
 

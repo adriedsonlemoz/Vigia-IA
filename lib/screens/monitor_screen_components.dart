@@ -258,6 +258,8 @@ class _DeviceStatusStrip extends StatelessWidget {
     this.secondaryLabel,
     this.embedded = false,
     this.aiEnabled = true,
+    this.onModelTap,
+    this.onDiagnosticTap,
   });
 
   final DeviceTelemetrySnapshot? localDevice;
@@ -273,6 +275,8 @@ class _DeviceStatusStrip extends StatelessWidget {
   final String? secondaryLabel;
   final bool embedded;
   final bool aiEnabled;
+  final VoidCallback? onModelTap;
+  final VoidCallback? onDiagnosticTap;
 
   @override
   Widget build(BuildContext context) {
@@ -343,7 +347,8 @@ class _DeviceStatusStrip extends StatelessWidget {
             children: [
               Expanded(
                 child: _DeviceStatusItem(
-                  label: embedded ? 'Receptor (IA)' : 'Receptor',
+                  label: embedded && onModelTap != null ? 'Receptor IA'
+                      : embedded ? 'Receptor (IA)' : 'Receptor',
                   telemetry: localDevice,
                   online: receiverActive,
                   detail: receiverActive
@@ -391,8 +396,26 @@ class _DeviceStatusStrip extends StatelessWidget {
                   ),
                 ),
               ],
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
+              if (onModelTap != null) ...[
+                _AiStripAction(
+                  icon: Icons.tune_rounded,
+                  tooltip: 'Escolher modelo de IA',
+                  onTap: onModelTap!,
+                  embedded: embedded,
+                ),
+                const SizedBox(width: 3),
+              ],
+              if (onDiagnosticTap != null) ...[
+                _AiStripAction(
+                  icon: Icons.monitor_heart_outlined,
+                  tooltip: 'Testar e diagnosticar IA',
+                  onTap: onDiagnosticTap!,
+                  embedded: embedded,
+                ),
+                const SizedBox(width: 3),
+              ],
+              if (onModelTap == null && onDiagnosticTap == null) Padding(
+                padding: const EdgeInsets.only(right: 2),
                 child: Icon(
                   Icons.chevron_right_rounded,
                   size: 16,
@@ -1315,6 +1338,42 @@ class _CameraErrorCard extends StatelessWidget {
           ),
           TextButton(onPressed: onRetry, child: const Text('Repetir')),
         ],
+      ),
+    );
+  }
+}
+
+class _AiStripAction extends StatelessWidget {
+  const _AiStripAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    required this.embedded,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final bool embedded;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: embedded ? scheme.primaryContainer : Colors.white12,
+        borderRadius: BorderRadius.circular(11),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            width: 38,
+            height: 38,
+            child: Icon(icon, size: 20,
+                color: embedded ? scheme.onPrimaryContainer : Colors.white),
+          ),
+        ),
       ),
     );
   }

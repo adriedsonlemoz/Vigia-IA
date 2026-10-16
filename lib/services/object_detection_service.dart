@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_litert/native.dart' hide Detection;
 import 'detector_input_buffer.dart';
@@ -9,14 +8,16 @@ import 'detector_runtime_policy.dart';
 import 'yolo_detection_decoder.dart';
 import '../models/detection.dart';
 import '../models/rgb_frame.dart';
+import '../models/video_source_config.dart';
 import 'label_translator.dart';
-
 part 'object_detection_assets.dart';
 part 'object_detection_worker.dart';
 part 'object_detection_runtime.dart';
 part 'object_detection_metrics.dart';
-
 class ObjectDetectionService {
+  ObjectDetectionService({this.preference = DetectorModelPreference.automatic});
+  final DetectorModelPreference preference;
+
   static const _yoloModelAsset = 'assets/models/yolo26s.tflite';
   static const _lite2ModelAsset = 'assets/models/efficientdet_lite2.tflite';
   static const _primaryModelAsset = 'assets/models/efficientdet_lite0.tflite';
@@ -42,7 +43,7 @@ class ObjectDetectionService {
     if (isReady) return;
     if (_disposed) throw StateError('Detector ja descartado.');
 
-    final models = await _loadDetectorAssets();
+    final models = await _loadDetectorAssets(preference);
     if (models.isEmpty) {
       throw StateError(
         'Modelos TensorFlow Lite ausentes. Execute tool/fetch_model.sh antes de compilar.',

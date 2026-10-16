@@ -1,3 +1,11 @@
+## 1.0.258+258: modelos e diagnóstico diretamente no Ao vivo (2026-10-16)
+
+- Faixa Receptor IA / Local ganha dois botões quadrados compactos: escolher modelo e iniciar diagnóstico.
+- Escolha persistida, Automático como padrão; exibido sempre o detector realmente carregado e seu eventual fallback.
+- Teste de 15, 30 ou 60 segundos com contagem regressiva, resumo de FPS, latência, quadros, resolução, temperatura disponível e exportação ZIP via seletor do Android.
+- Troca de modelo conserva a fonte de vídeo e não adiciona IA ao modo Transmissão.
+- Lints de imports e tipo numérico do workflow Android APK #212 ajustados.
+
 ## 1.0.257+257: adaptação de detecção YOLO26s no receptor (2026-10-16)
 
 - Suporte a saída YOLO26s (uma saída de 6 colunas ou predições COCO-80), letterbox, NMS e rótulos adequados.

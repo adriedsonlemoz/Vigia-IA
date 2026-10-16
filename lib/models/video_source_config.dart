@@ -13,6 +13,18 @@ const String frontCameraTestId = '__front_test__';
 
 enum ClipFormatPreference { mp4WithGifFallback, gifOnly }
 
+enum DetectorModelPreference {
+  automatic('Automático'),
+  yolo26s('YOLO26s'),
+  efficientDetLite2('EfficientDet-Lite2'),
+  efficientDetLite0('EfficientDet-Lite0'),
+  ssdMobileNetV1('SSD MobileNet V1');
+
+  const DetectorModelPreference(this.label);
+  final String label;
+}
+
+
 class VideoSourceConfig {
   const VideoSourceConfig({
     required this.type,
@@ -117,6 +129,7 @@ class MonitorSettings {
     this.clipDuration = const Duration(seconds: 8),
     this.clipFormatPreference = ClipFormatPreference.mp4WithGifFallback,
     this.aiEnabled = true,
+    this.detectorModel = DetectorModelPreference.automatic,
     this.trackingEnabled = true,
     this.announceEntryExit = true,
     this.backgroundMonitoringEnabled = false,
@@ -143,6 +156,7 @@ class MonitorSettings {
   final Duration clipDuration;
   final ClipFormatPreference clipFormatPreference;
   final bool aiEnabled;
+  final DetectorModelPreference detectorModel;
   final bool trackingEnabled;
   final bool announceEntryExit;
   final bool backgroundMonitoringEnabled;
@@ -169,6 +183,7 @@ class MonitorSettings {
     Duration? clipDuration,
     ClipFormatPreference? clipFormatPreference,
     bool? aiEnabled,
+    DetectorModelPreference? detectorModel,
     bool? trackingEnabled,
     bool? announceEntryExit,
     bool? backgroundMonitoringEnabled,
@@ -195,6 +210,7 @@ class MonitorSettings {
         clipDuration: clipDuration ?? this.clipDuration,
         clipFormatPreference: clipFormatPreference ?? this.clipFormatPreference,
         aiEnabled: aiEnabled ?? this.aiEnabled,
+        detectorModel: detectorModel ?? this.detectorModel,
         trackingEnabled: trackingEnabled ?? this.trackingEnabled,
         announceEntryExit: announceEntryExit ?? this.announceEntryExit,
         backgroundMonitoringEnabled: backgroundMonitoringEnabled ?? this.backgroundMonitoringEnabled,

@@ -59,6 +59,8 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                             aiEnabled: _controller.aiEnabled,
                             onTap: () => unawaited(_showSessionStatus()),
                             embedded: true,
+                            onModelTap: () => unawaited(_showAiModelPicker()),
+                            onDiagnosticTap: () => unawaited(_showAiTestOptions()),
                           )
                         : _buildDeviceStrip(
                             status: status,

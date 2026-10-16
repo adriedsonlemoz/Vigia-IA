@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.257+257
+# Arquitetura — Vigia IA 1.0.258+258
+
+**Ferramentas de IA no Ao vivo (1.0.258):** ações compactas na faixa do monitor para escolher DetectorModelPreference, trocar o worker sem fechar a fonte, executar telemetria profunda temporizada e exportar o ZIP já existente. Padrão Automático; fallback identificado pelo modelo efetivo, configuração persistida. Transmissor não executa detector.
 
 **Detector receptor 1.0.257:** `ObjectDetectionService` carrega preferencialmente YOLO26s quando houver modelo exportado válido. `object_detection_worker` aceita saída end-to-end `[1,N,6]` e raw `[1,84,N]`/`[1,N,84]`, mapeando as classes COCO-80, aplicando NMS somente na saída raw. `DetectorInputBuffer` usa RGB normalizado 0..1 e padding 114 para YOLO, mantendo o preprocessamento anterior para EfficientDet. Fallback sequencial EfficientDet-Lite2/Lite0/SSD em inicialização, erro de inferência e lentidão sustentada. A fonte de vídeo (local, outro celular, MCRP, RTSP ou ESP32) entra pelo monitor; quem transmite não executa IA. Exportação YOLO26s acontece no runner do GitHub e não no Android. Licença Ultralytics AGPL-3.0 exige atenção antes de distribuição.
 

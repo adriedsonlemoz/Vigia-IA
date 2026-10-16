@@ -1,3 +1,11 @@
+## 1.0.258+258: modelos e diagnóstico diretamente no Ao vivo (2026-10-16)
+
+- Faixa Receptor IA / Local ganha dois botões quadrados compactos: escolher modelo e iniciar diagnóstico.
+- Escolha persistida, Automático como padrão; exibido sempre o detector realmente carregado e seu eventual fallback.
+- Teste de 15, 30 ou 60 segundos com contagem regressiva, resumo de FPS, latência, quadros, resolução, temperatura disponível e exportação ZIP via seletor do Android.
+- Troca de modelo conserva a fonte de vídeo e não adiciona IA ao modo Transmissão.
+- Lints de imports e tipo numérico do workflow Android APK #212 ajustados.
+
 ## 1.0.257+257: YOLO26s no receptor com fallback e análise offline (2026-10-16)
 
 - Adicionada compatibilidade ao detector YOLO26s no monitor, incluindo entradas RGB/255 NHWC/NCHW, formatos raw e end-to-end e classes COCO-80.
@@ -80,7 +88,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.257+257`
+**Versão atual:** `1.0.258+258`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

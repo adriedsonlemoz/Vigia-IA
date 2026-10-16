@@ -46,6 +46,9 @@ void _clearMonitorControllerAiState(MonitorController controller) {
 }
 
 extension MonitorControllerAiSupport on MonitorController {
+  String get activeDetectorModel => _detector.activeModel;
+  DetectorModelPreference get detectorModelPreference => _settings.detectorModel;
+  String get activeDetectorModel => _detector.activeModel;
   void setAiEnabled(bool enabled) {
     _aiEnabled = enabled;
     _settings = _settings.copyWith(aiEnabled: enabled);
@@ -55,6 +58,62 @@ extension MonitorControllerAiSupport on MonitorController {
     }
     _notify();
     unawaited(_persistRuntime());
+  }
+
+
+  Future<void> changeDetectorModel(DetectorModelPreference preference) async {
+    if (_disposed || _initializing || !_baseReady ||
+        preference == _settings.detectorModel) {
+      return;
+    }
+    // A câmera continua transmitindo e exibindo a imagem enquanto a IA troca.
+    _baseReady = false;
+    _health.aiReady = false;
+    _notify();
+    await _waitForProcessing();
+    final old = _detector;
+    try {
+      await old.dispose();
+      final replacement = ObjectDetectionService(preference: preference);
+      _detector = replacement;
+      await replacement.initialize();
+      _settings = _settings.copyWith(detectorModel: preference);
+      _baseReady = true;
+      _health.aiReady = replacement.isReady;
+      await _logs.record(
+        level: ErrorLogLevel.info,
+        source: 'Detector',
+        message: 'Seleção de modelo de IA aplicada.',
+        context: <String, Object?>{
+          'preferência': preference.label,
+          'modeloEfetivo': replacement.activeModel,
+          'fallback': preference != DetectorModelPreference.automatic &&
+              replacement.activeModel != preference.label,
+        },
+      );
+      unawaited(_persistRuntime());
+    } catch (error, stackTrace) {
+      // Até a recuperação não pode desligar a recepção da câmera.
+      final recovery = ObjectDetectionService();
+      _detector = recovery;
+      try {
+        await recovery.initialize();
+        _baseReady = true;
+        _health.aiReady = true;
+      } catch (_) {
+        _baseReady = false;
+        _error = 'Não foi possível recuperar o detector de IA.';
+      }
+      unawaited(_logs.recordException(
+        source: 'Seleção do detector',
+        error: error,
+        stackTrace: stackTrace,
+        message: 'Troca de modelo falhou; tentativa de recuperação automática.',
+      ));
+      rethrow;
+    } finally {
+      _notify();
+    }
   }
 
   void setTrackingEnabled(bool enabled) {

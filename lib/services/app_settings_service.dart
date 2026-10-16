@@ -197,6 +197,7 @@ class AppSettingsService {
         'clipDurationMs': settings.clipDuration.inMilliseconds,
         'clipFormatPreference': settings.clipFormatPreference.name,
         'aiEnabled': settings.aiEnabled,
+        'detectorModel': settings.detectorModel.name,
         'trackingEnabled': settings.trackingEnabled,
         'announceEntryExit': settings.announceEntryExit,
         'backgroundMonitoringEnabled': settings.backgroundMonitoringEnabled,
@@ -307,6 +308,10 @@ class AppSettingsService {
         clipDuration: Duration(milliseconds: ((settingsJson['clipDurationMs'] as num?)?.toInt() ?? 8000).clamp(3000, 20000).toInt()),
         clipFormatPreference: clipFormat,
         aiEnabled: settingsJson['aiEnabled'] as bool? ?? true,
+        detectorModel: DetectorModelPreference.values.firstWhere(
+          (value) => value.name == settingsJson['detectorModel'],
+          orElse: () => DetectorModelPreference.automatic,
+        ),
         trackingEnabled: settingsJson['trackingEnabled'] as bool? ?? true,
         announceEntryExit: settingsJson['announceEntryExit'] as bool? ?? true,
         backgroundMonitoringEnabled: settingsJson['backgroundMonitoringEnabled'] as bool? ?? false,
