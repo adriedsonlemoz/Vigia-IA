@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.261',
+          version: '1.0.262',
           current: true,
+          changes: [
+            'Duas câmeras aparecem em painéis grandes e empilhados.',
+            'Nome, bateria e temperatura por câmera na faixa superior.',
+            'Etiquetas de objetos sem números de rastreio ou porcentagens.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.261',
           changes: [
             'Corrigida a analise estatica do seletor de camera principal (APK 215).',
             'Frontal em tela cheia e ajustes de fluidez preservados.',
@@ -2331,8 +2340,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.261',
+          version: '1.0.262',
           current: true,
+          changes: [
+            'Duas câmeras aparecem em painéis grandes e empilhados.',
+            'Nome, bateria e temperatura por câmera na faixa superior.',
+            'Etiquetas de objetos sem números de rastreio ou porcentagens.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.261',
           changes: [
             'Corrigida a analise estatica do seletor de camera principal (APK 215).',
             'Frontal em tela cheia e ajustes de fluidez preservados.',

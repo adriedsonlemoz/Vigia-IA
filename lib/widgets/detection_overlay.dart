@@ -84,7 +84,7 @@ class _DetectionPainter extends CustomPainter {
       ..color = Colors.lightGreenAccent;
     final labelBackground = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.black.withValues(alpha: 0.78);
+      ..color = Colors.lightGreenAccent;
 
     for (final detection in detections) {
       final box = detection.box;
@@ -101,14 +101,11 @@ class _DetectionPainter extends CustomPainter {
       if (rect.width <= 1 || rect.height <= 1) continue;
       canvas.drawRect(rect, border);
 
-      final trackId = trackIds[detection];
       final textPainter = TextPainter(
         text: TextSpan(
-          text: '${trackId == null ? '' : '#$trackId · '}'
-              '${detection.displayLabel} '
-              '${(detection.confidence * 100).round()}%',
+          text: detection.displayLabel,
           style: const TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),

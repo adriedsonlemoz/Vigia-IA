@@ -256,6 +256,7 @@ class _DeviceStatusStrip extends StatelessWidget {
     this.secondarySourceStatus,
     this.secondaryRemoteStatus,
     this.secondaryLabel,
+    this.primaryLabel,
     this.embedded = false,
     this.aiEnabled = true,
     this.onModelTap,
@@ -273,6 +274,7 @@ class _DeviceStatusStrip extends StatelessWidget {
   final VideoSourceStatus? secondarySourceStatus;
   final RemotePhoneStatus? secondaryRemoteStatus;
   final String? secondaryLabel;
+  final String? primaryLabel;
   final bool embedded;
   final bool aiEnabled;
   final VoidCallback? onModelTap;
@@ -324,6 +326,13 @@ class _DeviceStatusStrip extends StatelessWidget {
         ? 'Imagem ativa'
         : 'Sem imagem';
 
+    if (embedded) {
+      return _buildCompactCameraStrip(context,
+          transmitterTelemetry: transmitterTelemetry,
+          transmitterOnline: transmitterOnline,
+          secondaryTelemetry: secondaryTelemetry,
+          secondaryOnline: secondaryOnline);
+    }
     final scheme = Theme.of(context).colorScheme;
     final dividerColor = embedded
         ? scheme.outlineVariant.withValues(alpha: 0.56)
@@ -422,6 +431,150 @@ class _DeviceStatusStrip extends StatelessWidget {
                   color: embedded ? scheme.onSurfaceVariant : Colors.white70,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactCameraStrip(
+    BuildContext context, {
+    required DeviceTelemetrySnapshot? transmitterTelemetry,
+    required bool transmitterOnline,
+    required DeviceTelemetrySnapshot? secondaryTelemetry,
+    required bool secondaryOnline,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final firstName = primaryLabel?.trim();
+    final cameraName = firstName != null && firstName.isNotEmpty && firstName != 'Local'
+        ? firstName
+        : switch (sourceType) {
+            VideoSourceType.localCamera => 'Câmera local',
+            VideoSourceType.rtsp => 'Câmera RTSP',
+            VideoSourceType.remotePhone => 'Minha Câmera',
+            VideoSourceType.esp32 => 'Câmera ESP32',
+          };
+    return Container(
+      height: 59,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.26)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _CompactCameraTelemetryCard(
+              label: cameraName,
+              telemetry: transmitterTelemetry,
+              online: transmitterOnline,
+              local: sourceType == VideoSourceType.localCamera,
+              onTap: onTap,
+            ),
+          ),
+          if (secondarySourceType != null) ...[
+            const SizedBox(width: 4),
+            Expanded(
+              child: _CompactCameraTelemetryCard(
+                label: secondaryLabel ?? 'Câmera 2',
+                telemetry: secondaryTelemetry,
+                online: secondaryOnline,
+                local: secondarySourceType == VideoSourceType.localCamera,
+                onTap: onTap,
+              ),
+            ),
+          ],
+          if (onModelTap != null) ...[
+            const SizedBox(width: 4),
+            _AiStripAction(
+              icon: Icons.tune_rounded,
+              tooltip: 'Escolher modelo de IA',
+              onTap: onModelTap!,
+              embedded: true,
+            ),
+          ],
+          if (onDiagnosticTap != null) ...[
+            const SizedBox(width: 3),
+            _AiStripAction(
+              icon: Icons.monitor_heart_outlined,
+              tooltip: 'Testar e diagnosticar IA',
+              onTap: onDiagnosticTap!,
+              embedded: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactCameraTelemetryCard extends StatelessWidget {
+  const _CompactCameraTelemetryCard({
+    required this.label,
+    required this.telemetry,
+    required this.online,
+    required this.local,
+    required this.onTap,
+  });
+
+  final String label;
+  final DeviceTelemetrySnapshot? telemetry;
+  final bool online;
+  final bool local;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final battery = telemetry?.batteryPercent;
+    final temp = telemetry?.batteryTemperatureC;
+    final batteryText = battery == null ? '—' : '$battery%';
+    // Temperatura corresponde à bateria informada pela telemetria Android,
+    // não à temperatura da lente/câmera. Não inventar valor indisponível.
+    final temperatureText = temp == null ? '—' : '${temp.toStringAsFixed(0)}°C';
+    return Material(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: [
+                Icon(Icons.circle, color: online ? const Color(0xFF69D59C) : scheme.error, size: 7),
+                const SizedBox(width: 4),
+                Icon(Icons.videocam_rounded, size: 13, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 3),
+                Expanded(child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: scheme.onSurface, fontSize: 10, fontWeight: FontWeight.w800),
+                )),
+              ]),
+              const SizedBox(height: 3),
+              Row(children: [
+                Icon(telemetry?.batteryCharging == true ? Icons.battery_charging_full_rounded : Icons.battery_std_rounded,
+                     size: 12, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 2),
+                Text(batteryText, style: TextStyle(fontSize: 9, color: scheme.onSurface)),
+                const SizedBox(width: 5),
+                Icon(Icons.thermostat_rounded, size: 12, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 2),
+                Text(temperatureText, style: TextStyle(fontSize: 9, color: scheme.onSurface)),
+                const Spacer(),
+                Icon(local ? Icons.phone_android_rounded : Icons.wifi_rounded,
+                     size: 12, color: scheme.primary),
+              ]),
             ],
           ),
         ),
@@ -800,19 +953,12 @@ class _MiniStatus extends StatelessWidget {
 }
 
 class _DetectionCard extends StatelessWidget {
-  const _DetectionCard({
-    required this.label,
-    required this.confidence,
-    this.trackId,
-  });
+  const _DetectionCard({required this.label});
 
   final String label;
-  final double confidence;
-  final int? trackId;
 
   @override
   Widget build(BuildContext context) {
-    final percent = (confidence * 100).round();
     final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
@@ -822,49 +968,11 @@ class _DetectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.16)),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: scheme.primary.withValues(alpha: 0.12),
-            child: trackId == null
-                ? Icon(
-                    Icons.center_focus_strong,
-                    color: scheme.primary,
-                    size: 18,
-                  )
-                : Text(
-                    '#$trackId',
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$percent%',
-              style: TextStyle(
-                color: scheme.primary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Icon(Icons.center_focus_strong, color: scheme.primary, size: 22),
+        const SizedBox(width: 10),
+        Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800))),
+      ]),
     );
   }
 }

@@ -1,3 +1,10 @@
+## 1.0.262+262: Ao vivo multicâmera e faixa compacta (2026-10-16)
+
+- Ao vivo no retrato mostra duas transmissões empilhadas e com tamanhos iguais, em vez de PiP sobreposto. Com uma só câmera, mantém o vídeo único.
+- Faixa superior mostra nome da câmera, bateria e temperatura reais da telemetria (traço quando indisponíveis), sem cartão Receptor IA; controles compactos de modelo e diagnóstico mantidos.
+- Rótulos de detecção e cartão Detectados mostram nomes sem IDs de rastreio e porcentagens.
+- Relatórios 1.0.261 inspecionados: modelo ativo EfficientDet-Lite0, maior custo na decodificação/conversão da Minha Câmera MJPEG 1920×1080. Melhoria de configuração da resolução remota indicada.
+
 ## 1.0.261+261: correção do lint no seletor de câmera (APK 215, 2026-10-16)
 
 - Corrigido o lint `curly_braces_in_flow_control_structures` de `monitor_screen_multicamera.dart:249` usando um bloco `{ return; }` sem alterar a condição de escolha da câmera.
@@ -111,7 +118,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.261+261`
+**Versão atual:** `1.0.262+262`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

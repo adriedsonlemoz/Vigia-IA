@@ -104,7 +104,6 @@ class _MonitorScreenState extends State<MonitorScreen>
   bool _fillBeforeFullscreen = false;
   Timer? _fullscreenControlsTimer;
   bool _landscapePanelExpanded = false; _MonitorPrimaryContentMode _primaryContentMode = _MonitorPrimaryContentMode.camera;
-  Offset? _portraitPipOffset;
   @override
   void initState() {
     super.initState();
@@ -1178,7 +1177,8 @@ class _MonitorScreenState extends State<MonitorScreen>
     final preview = _controller.buildPreview();
     final forceFill =
         _fullscreen ||
-        MediaQuery.orientationOf(context) == Orientation.landscape;
+        MediaQuery.orientationOf(context) == Orientation.landscape ||
+        _secondaryController != null;
     if (!_fillPreview && !forceFill) return preview;
     final ratio = _controller.previewAspectRatio;
     if (ratio == null || ratio <= 0) return preview;
@@ -1372,15 +1372,12 @@ class _MonitorScreenState extends State<MonitorScreen>
           ..._controller.trackedDetections.map(
             (trackedDetection) => _DetectionCard(
               label: trackedDetection.detection.displayLabel,
-              confidence: trackedDetection.detection.confidence,
-              trackId: trackedDetection.trackId,
             ),
           )
         else
           ..._controller.detections.map(
             (detection) => _DetectionCard(
               label: detection.displayLabel,
-              confidence: detection.confidence,
             ),
           ),
       ],

@@ -484,153 +484,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
     if (secondary == null) {
       return _buildCameraStage(context, portraitEmbedded: portraitEmbedded);
     }
-    final portrait =
-        MediaQuery.orientationOf(context) == Orientation.portrait;
-    if (portraitEmbedded && portrait) {
-      return _buildPortraitPictureInPictureStage(context, secondary);
-    }
     return _buildDualCameraStage(context, portraitEmbedded: portraitEmbedded);
-  }
-
-  Widget _buildPortraitPictureInPictureStage(
-    BuildContext context,
-    SecondaryCameraController secondary,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final pipWidth = (constraints.maxWidth * 0.30)
-            .clamp(92.0, 122.0)
-            .toDouble();
-        final pipHeight = (constraints.maxHeight * 0.38)
-            .clamp(72.0, 104.0)
-            .toDouble();
-        final streaming =
-            secondary.status.state == VideoSourceState.streaming;
-        final maxLeft = (constraints.maxWidth - pipWidth - 6)
-            .clamp(6.0, constraints.maxWidth)
-            .toDouble();
-        final maxTop = (constraints.maxHeight - pipHeight - 6)
-            .clamp(6.0, constraints.maxHeight)
-            .toDouble();
-        final fallbackPosition = Offset(maxLeft, maxTop);
-        final requestedPosition = _portraitPipOffset ?? fallbackPosition;
-        final pipPosition = Offset(
-          requestedPosition.dx.clamp(6.0, maxLeft).toDouble(),
-          requestedPosition.dy.clamp(6.0, maxTop).toDouble(),
-        );
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildCameraStage(context, portraitEmbedded: true),
-            Positioned(
-              left: pipPosition.dx,
-              top: pipPosition.dy,
-              width: pipWidth,
-              height: pipHeight,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanUpdate: (details) {
-                  final current = _portraitPipOffset ?? fallbackPosition;
-                  _updateMulticameraState(() {
-                    _portraitPipOffset = Offset(
-                      (current.dx + details.delta.dx)
-                          .clamp(6.0, maxLeft)
-                          .toDouble(),
-                      (current.dy + details.delta.dy)
-                          .clamp(6.0, maxTop)
-                          .toDouble(),
-                    );
-                  });
-                },
-                child: Material(
-                  color: Colors.black,
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(14),
-                  clipBehavior: Clip.antiAlias,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.72),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        secondary.buildPreview(),
-                        if (secondary.initializing)
-                          const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        if (secondary.error != null)
-                          Padding(
-                            padding: const EdgeInsets.all(7),
-                            child: Center(
-                              child: Text(
-                                'Frontal indisponível\nem simultâneo',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ),
-                        Positioned(
-                          left: 4,
-                          right: 4,
-                          bottom: 4,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.68),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 3,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: streaming
-                                          ? const Color(0xFF69D59C)
-                                          : const Color(0xFFFFB4AB),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      secondary.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 8.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Widget _buildDualCameraStage(
@@ -783,6 +637,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
     bool embedded = false,
   }) => _DeviceStatusStrip(
     localDevice: _controller.localDeviceTelemetry,
+    primaryLabel: _controller.sourceConfig.displayName,
     remoteStatus: _controller.remotePhoneStatus,
     sourceType: _controller.sourceConfig.type,
     sourceStatus: status,
@@ -905,10 +760,10 @@ extension _MonitorMulticamera on _MonitorScreenState {
             ),
           Positioned(
             left: 8,
-            bottom: 8,
+            top: 8,
             child: _CameraPaneLabel(
               title: switch (_controller.sourceConfig.type) {
-                VideoSourceType.localCamera => 'Local',
+                VideoSourceType.localCamera => 'Câmera local',
                 VideoSourceType.rtsp =>
                   _controller.sourceConfig.displayName ?? 'RTSP',
                 VideoSourceType.remotePhone =>
@@ -916,11 +771,15 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 VideoSourceType.esp32 =>
                   _controller.sourceConfig.displayName ?? 'ESP32',
               },
-              detail: 'Principal',
+              detail: null,
               active:
                   _controller.sourceStatus.state == VideoSourceState.streaming,
             ),
           ),
+          if (MediaQuery.orientationOf(context) == Orientation.portrait && !_fullscreen)
+            Positioned(right: 8, top: 8, child: _buildAiToggleChip()),
+          if (MediaQuery.orientationOf(context) == Orientation.portrait && !_fullscreen)
+            Positioned(right: 8, bottom: 8, child: _buildAnalysisMetricsChip()),
           if (_controller.error != null)
             Positioned(
               left: 8,
@@ -938,6 +797,28 @@ extension _MonitorMulticamera on _MonitorScreenState {
     );
   }
 
+  Widget _buildSecondaryFilledPreview(
+    BuildContext context,
+    SecondaryCameraController secondary,
+  ) {
+    final preview = secondary.buildPreview();
+    if (MediaQuery.orientationOf(context) != Orientation.portrait) {
+      return preview;
+    }
+    final ratio = secondary.previewAspectRatio;
+    if (ratio == null || ratio <= 0) return preview;
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
+        return preview;
+      }
+      final containerRatio = constraints.maxWidth / constraints.maxHeight;
+      final scale = containerRatio > ratio
+          ? containerRatio / ratio
+          : ratio / containerRatio;
+      return ClipRect(child: Transform.scale(scale: scale, child: preview));
+    });
+  }
+
   Widget _buildSecondaryCameraTile(
     BuildContext context,
     SecondaryCameraController secondary,
@@ -950,15 +831,15 @@ extension _MonitorMulticamera on _MonitorScreenState {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          secondary.buildPreview(),
+          _buildSecondaryFilledPreview(context, secondary),
           if (secondary.initializing)
             const Center(child: CircularProgressIndicator()),
           Positioned(
             left: 8,
-            bottom: 8,
+            top: 8,
             child: _CameraPaneLabel(
               title: secondary.displayName,
-              detail: 'Visualização · IA na principal',
+              detail: null,
               active: streaming,
             ),
           ),

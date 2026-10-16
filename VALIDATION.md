@@ -5,7 +5,16 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.261+261
+# Validação Vigia IA 1.0.262+262
+
+## Interface e diagnósticos 1.0.262
+
+- [x] Removida a miniatura PiP do modo Ao vivo com duas câmeras; layout de vídeo empilhado com partes iguais.
+- [x] Faixa embutida exibe somente fontes ativas e valores reais de bateria/temperatura da bateria quando disponíveis.
+- [x] Etiquetas de detecção sem identificadores de rastreamento ou porcentagens.
+- [x] Relatórios 1.0.261 analisados: fonte MJPEG 1080p tem P50 de conversão de 198 ms; modelo utilizado EfficientDet-Lite0.
+- [x] `bash tool/verify_project.sh` passou integralmente, incluindo 127 testes da suíte Python e regressões adicionais do layout.
+- [ ] Flutter analyze, flutter test e compilação Android devem ser confirmados no GitHub Actions.
 
 ## Android APK 215: bloco obrigatório do seletor principal (2026-10-16)
 

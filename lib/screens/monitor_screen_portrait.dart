@@ -24,7 +24,11 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
             : bikeSnapshot == null
             ? (constraints.maxHeight * 0.36).clamp(260.0, 420.0).toDouble()
             : (constraints.maxHeight * 0.31).clamp(220.0, 340.0).toDouble();
-        final cameraHeight = _primaryContentMode == _MonitorPrimaryContentMode.map
+        final cameraHeight = secondary != null &&
+                _primaryContentMode == _MonitorPrimaryContentMode.camera &&
+                !showMap
+            ? (constraints.maxHeight * 0.83).clamp(460.0, 780.0).toDouble()
+            : _primaryContentMode == _MonitorPrimaryContentMode.map
             ? (constraints.maxHeight * 0.58).clamp(330.0, 620.0).toDouble()
             : showMap
                 ? baseCameraHeight
@@ -48,6 +52,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                     child: secondary == null
                         ? _DeviceStatusStrip(
                             localDevice: _controller.localDeviceTelemetry,
+                            primaryLabel: _controller.sourceConfig.displayName,
                             remoteStatus: _controller.remotePhoneStatus,
                             sourceType: _controller.sourceConfig.type,
                             sourceStatus: status,
@@ -585,34 +590,23 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
         ? _controller.trackedDetections.length
         : _controller.detections.length;
 
-    String? primaryLabel;
-    double? primaryConfidence;
-    int? primaryTrackId;
-
-    if (tracked) {
-      for (final item in _controller.trackedDetections) {
-        final confidence = item.detection.confidence;
-        if (primaryConfidence == null || confidence > primaryConfidence) {
-          primaryLabel = item.detection.displayLabel;
-          primaryConfidence = confidence;
-          primaryTrackId = item.trackId;
+    final labels = <String>{};
+    if (aiEnabled) {
+      if (tracked) {
+        for (final item in _controller.trackedDetections) {
+          labels.add(item.detection.displayLabel);
         }
-      }
-    } else {
-      for (final item in _controller.detections) {
-        final confidence = item.confidence;
-        if (primaryConfidence == null || confidence > primaryConfidence) {
-          primaryLabel = item.displayLabel;
-          primaryConfidence = confidence;
+      } else {
+        for (final item in _controller.detections) {
+          labels.add(item.displayLabel);
         }
       }
     }
-
     final detail = !aiEnabled
         ? 'Análise de imagem desativada'
-        : primaryLabel == null
-        ? 'Nenhum objeto no momento'
-        : '${primaryTrackId == null ? '' : '#$primaryTrackId · '}$primaryLabel · ${((primaryConfidence ?? 0) * 100).round()}%';
+        : labels.isEmpty
+            ? 'Nenhum objeto no momento'
+            : labels.take(3).join(' · ');
 
     return Material(
       color: Colors.transparent,
