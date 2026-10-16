@@ -77,8 +77,17 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.253',
+          version: '1.0.254',
           current: true,
+          changes: [
+            'Ao vivo ganha botão sobre o vídeo para ligar ou desligar a IA local.',
+            'Cores do strip embutido, selo do mapa e resumo Detectados foram ajustadas.',
+            'Rodapé discreto mostra resolução e FPS da análise.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.253',
           changes: [
             'Ajustada a compatibilidade do monitor em tela cheia com a análise estática.',
             'Ao vivo, mapa sob demanda e seleção de câmeras preservados.',
@@ -2265,8 +2274,17 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.253',
+          version: '1.0.254',
           current: true,
+          changes: [
+            'Ao vivo ganha botão sobre o vídeo para ligar ou desligar a IA local.',
+            'Cores do strip embutido, selo do mapa e resumo Detectados foram ajustadas.',
+            'Rodapé discreto mostra resolução e FPS da análise.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.253',
           changes: [
             'Ajustada a compatibilidade do monitor em tela cheia com a análise estática.',
             'Ao vivo, mapa sob demanda e seleção de câmeras preservados.',

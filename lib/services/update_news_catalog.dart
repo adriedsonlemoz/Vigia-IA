@@ -8,11 +8,11 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.253', build: 253);
+      AppBuildVersion(version: '1.0.254', build: 254);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.253', build: 253),
+      version: AppBuildVersion(version: '1.0.254', build: 254),
       changes: <String>[
         'Ajustada a compatibilidade do menu de mapa com o monitor em tela cheia.',
         'Home em quatro modos, câmeras cadastradas e mapa sob demanda preservados.',

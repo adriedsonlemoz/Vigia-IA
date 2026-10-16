@@ -59,6 +59,7 @@ import '../sources/remote_phone_source_factory.dart';
 part 'monitor_controller_session_support.dart';
 part 'monitor_controller_event_support.dart';
 part 'monitor_controller_state_support.dart';
+part 'monitor_controller_ai_support.dart';
 class MonitorController extends ChangeNotifier {
   MonitorController({
     required this.sourceConfig,
@@ -72,6 +73,7 @@ class MonitorController extends ChangeNotifier {
         _backgroundMonitoringEnabled = settings.backgroundMonitoringEnabled,
         _schedule = settings.schedule,
         _clipRecordingEnabled = settings.clipRecordingEnabled,
+        _aiEnabled = settings.aiEnabled,
         _trackingEnabled = settings.trackingEnabled,
         _announceEntryExit = settings.announceEntryExit,
         _tracker = ObjectTracker(
@@ -115,6 +117,7 @@ class MonitorController extends ChangeNotifier {
   bool _backgroundMonitoringEnabled;
   MonitorSchedule _schedule;
   bool _clipRecordingEnabled;
+  bool _aiEnabled;
   bool _trackingEnabled;
   bool _announceEntryExit;
   bool _scheduleActive = true;
@@ -794,6 +797,14 @@ class MonitorController extends ChangeNotifier {
     }
 
     _previewAspectRatio = frame.width / frame.height;
+    if (!_aiEnabled) {
+      _clearMonitorControllerAiState(this);
+      _health
+        ..aiReady = false
+        ..updateFrame(receivedAt, 0);
+      _notify();
+      return;
+    }
     final processingWatch = Stopwatch()..start();
     final inferenceWatch = Stopwatch();
     final postprocessWatch = Stopwatch();
@@ -1575,22 +1586,6 @@ class MonitorController extends ChangeNotifier {
     unawaited(_persistRuntime());
   }
 
-  void setTrackingEnabled(bool enabled) {
-    _trackingEnabled = enabled;
-    _settings = _settings.copyWith(trackingEnabled: enabled);
-    _tracker.reset();
-    _detectionFilter.reset();
-    _recentMotionByTrackId.clear();
-    _lastIdleInferenceAt = null;
-    _lastDetailScanAt = null;
-    _detailTileIndex = 0;
-    _seenTrackIds.clear();
-    _lastTransitionSpeechAt.clear();
-    _trackedDetections = const <TrackedDetection>[];
-    _notify();
-    unawaited(_persistRuntime());
-  }
-
   void setAnnounceEntryExit(bool enabled) {
     _announceEntryExit = enabled;
     _settings = _settings.copyWith(announceEntryExit: enabled);
@@ -1721,6 +1716,7 @@ class MonitorController extends ChangeNotifier {
             List<MonitoringZoneProfile>.unmodifiable(_monitoringZones),
         smartAlertRules: _smartAlertRules,
         clipRecordingEnabled: _clipRecordingEnabled,
+        aiEnabled: _aiEnabled,
         trackingEnabled: _trackingEnabled,
         announceEntryExit: _announceEntryExit,
         backgroundMonitoringEnabled: _backgroundMonitoringEnabled,

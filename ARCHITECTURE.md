@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.253+253
+# Arquitetura — Vigia IA 1.0.254+254
+
+**Ao vivo com IA comutável (1.0.254):** `MonitorController` passa a manter `aiEnabled` persistido em `MonitorSettings`, permitindo desligar a análise local sem interromper a prévia da câmera. Quando desligada, a pipeline limpa detecções e métricas de inferência, e a UI do Ao vivo mostra um chip de alternância sobre o vídeo, rodapé discreto com resolução/FPS da análise e texto explícito de estado no cartão Detectados. `DeviceStatusStrip` embutido e o selo do mapa usam cores do tema claro para evitar contraste incorreto no modo principal.
 
 **Buildfix 207 (1.0.253):** `MonitorScreen` mantém a mesma guarda de visibilidade do minimapa, agora com bloco de retorno que satisfaz o lint obrigatório `curly_braces_in_flow_control_structures`. Sem mudanças de inicialização ou de recursos de câmera, mapa e GPS.
 

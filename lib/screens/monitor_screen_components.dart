@@ -80,6 +80,7 @@ class _CompactMonitorTopHud extends StatelessWidget {
     required this.fullscreen,
     required this.fullscreenChanging,
     required this.voiceEnabled,
+    required this.aiEnabled,
     required this.detectionDelayed,
     required this.processing,
     required this.onClose,
@@ -98,6 +99,7 @@ class _CompactMonitorTopHud extends StatelessWidget {
   final bool fullscreen;
   final bool fullscreenChanging;
   final bool voiceEnabled;
+  final bool aiEnabled;
   final bool detectionDelayed;
   final bool processing;
   final VoidCallback onClose;
@@ -194,13 +196,17 @@ class _CompactMonitorTopHud extends StatelessWidget {
                         active: streaming,
                       ),
                       _HudPill(
-                        icon: Icons.psychology_alt_outlined,
-                        label: detectionDelayed
+                        icon: aiEnabled
+                            ? Icons.psychology_alt_outlined
+                            : Icons.psychology_outlined,
+                        label: !aiEnabled
+                            ? 'IA desligada'
+                            : detectionDelayed
                             ? 'IA atrasada'
                             : processing
                             ? 'IA analisando'
                             : 'IA ativa',
-                        active: true,
+                        active: aiEnabled,
                       ),
                       _HudPill(
                         icon: Icons.radar_rounded,
@@ -251,6 +257,7 @@ class _DeviceStatusStrip extends StatelessWidget {
     this.secondaryRemoteStatus,
     this.secondaryLabel,
     this.embedded = false,
+    this.aiEnabled = true,
   });
 
   final DeviceTelemetrySnapshot? localDevice;
@@ -265,6 +272,7 @@ class _DeviceStatusStrip extends StatelessWidget {
   final RemotePhoneStatus? secondaryRemoteStatus;
   final String? secondaryLabel;
   final bool embedded;
+  final bool aiEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +321,9 @@ class _DeviceStatusStrip extends StatelessWidget {
         : 'Sem imagem';
 
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     return Material(
       color: embedded
           ? scheme.surfaceContainerLow
@@ -335,14 +346,17 @@ class _DeviceStatusStrip extends StatelessWidget {
                   label: embedded ? 'Receptor (IA)' : 'Receptor',
                   telemetry: localDevice,
                   online: receiverActive,
-                  detail: receiverActive ? 'IA ativa' : 'Verificando',
+                  detail: receiverActive
+                      ? (aiEnabled ? 'IA ativa' : 'IA desligada')
+                      : 'Verificando',
                   showBattery: true,
+                  embedded: embedded,
                 ),
               ),
               Container(
                 width: 1,
                 height: 24,
-                color: Colors.white.withValues(alpha: 0.18),
+                color: dividerColor,
               ),
               Expanded(
                 child: _DeviceStatusItem(
@@ -355,13 +369,14 @@ class _DeviceStatusStrip extends StatelessWidget {
                       latency ??
                       (transmitterOnline ? 'Imagem ativa' : 'Sem imagem'),
                   showBattery: remoteSource,
+                  embedded: embedded,
                 ),
               ),
               if (secondaryType != null) ...[
                 Container(
                   width: 1,
                   height: 24,
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: dividerColor,
                 ),
                 Expanded(
                   child: _DeviceStatusItem(
@@ -372,12 +387,17 @@ class _DeviceStatusStrip extends StatelessWidget {
                     showBattery:
                         secondaryType == VideoSourceType.remotePhone ||
                         secondaryType == VideoSourceType.esp32,
+                    embedded: embedded,
                   ),
                 ),
               ],
-              const Padding(
-                padding: EdgeInsets.only(right: 6),
-                child: Icon(Icons.chevron_right_rounded, size: 16),
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: embedded ? scheme.onSurfaceVariant : Colors.white70,
+                ),
               ),
             ],
           ),
@@ -394,6 +414,7 @@ class _DeviceStatusItem extends StatelessWidget {
     required this.online,
     required this.detail,
     required this.showBattery,
+    this.embedded = false,
   });
 
   final String label;
@@ -401,14 +422,24 @@ class _DeviceStatusItem extends StatelessWidget {
   final bool online;
   final String detail;
   final bool showBattery;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final battery = telemetry?.batteryPercent;
     final charging = telemetry?.batteryCharging == true;
     final statusColor = online
         ? const Color(0xFF69D59C)
         : const Color(0xFFFFB4AB);
+    final titleColor = embedded ? scheme.onSurface : Colors.white;
+    final detailColor = embedded
+        ? scheme.onSurfaceVariant
+        : Colors.white.withValues(alpha: 0.72);
+    final iconColor = embedded ? scheme.onSurfaceVariant : Colors.white70;
+    final batteryColor = embedded
+        ? (battery == null ? scheme.onSurfaceVariant : scheme.onSurface)
+        : (battery == null ? Colors.white54 : Colors.white);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 9),
       child: Row(
@@ -431,9 +462,10 @@ class _DeviceStatusItem extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
+                    color: titleColor,
                   ),
                 ),
                 Text(
@@ -442,7 +474,7 @@ class _DeviceStatusItem extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 9,
-                    color: Colors.white.withValues(alpha: 0.72),
+                    color: detailColor,
                   ),
                 ),
               ],
@@ -455,18 +487,22 @@ class _DeviceStatusItem extends StatelessWidget {
                   ? Icons.battery_charging_full_rounded
                   : Icons.battery_5_bar_rounded,
               size: 15,
-              color: battery == null ? Colors.white54 : Colors.white,
+              color: batteryColor,
             ),
             const SizedBox(width: 2),
             Text(
               battery == null ? '—' : '$battery%',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: titleColor,
+              ),
             ),
           ] else
-            const Icon(
+            Icon(
               Icons.videocam_outlined,
               size: 16,
-              color: Colors.white70,
+              color: iconColor,
             ),
         ],
       ),
@@ -490,6 +526,9 @@ class _MonitorActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     final content = Material(
       color: scheme.primary.withValues(alpha: 0.10),
       borderRadius: BorderRadius.circular(dense ? 11 : 14),
@@ -548,6 +587,9 @@ class _SourceOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     return Material(
       color: selected ? scheme.primary.withValues(alpha: 0.10) : scheme.surface,
       borderRadius: BorderRadius.circular(18),
@@ -755,6 +797,9 @@ class _DetectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = (confidence * 100).round();
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.all(11),
@@ -950,6 +995,9 @@ class _DashboardMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 116, maxWidth: 158),
       child: DecoratedBox(
@@ -1043,6 +1091,9 @@ class _DashboardActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     final style = FilledButton.styleFrom(
       backgroundColor: accent
           ? scheme.primary.withValues(alpha: 0.24)
@@ -1120,6 +1171,9 @@ class _DashboardCameraBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dividerColor = embedded
+        ? scheme.outlineVariant.withValues(alpha: 0.56)
+        : Colors.white.withValues(alpha: 0.18);
     final accent = active ? scheme.primary : Colors.white70;
     return DecoratedBox(
       decoration: BoxDecoration(

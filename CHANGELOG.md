@@ -1,3 +1,10 @@
+## 1.0.254+254: controles de IA e ajustes visuais no Ao vivo (2026-10-16)
+
+- Corrigidas as cores do strip embutido no Ao vivo, incluindo Receptor (IA), bateria e o selo do mapa.
+- Adicionado chip sobre o vídeo para ativar ou desativar a IA local durante a visualização.
+- Adicionado rodapé discreto com resolução e FPS da análise.
+- O selo da câmera local passa a mostrar "Ao vivo" e o resumo Detectados informa quando a análise está desligada.
+
 ## 1.0.253+253: ajuste do analisador no monitor (2026-10-16)
 
 - Corrigido o único lint `curly_braces_in_flow_control_structures` identificado pelo workflow Android APK 207, em `lib/screens/monitor_screen_fullscreen.dart:56`.

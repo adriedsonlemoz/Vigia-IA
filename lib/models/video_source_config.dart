@@ -116,6 +116,7 @@ class MonitorSettings {
     this.clipRecordingEnabled = true,
     this.clipDuration = const Duration(seconds: 8),
     this.clipFormatPreference = ClipFormatPreference.mp4WithGifFallback,
+    this.aiEnabled = true,
     this.trackingEnabled = true,
     this.announceEntryExit = true,
     this.backgroundMonitoringEnabled = false,
@@ -141,6 +142,7 @@ class MonitorSettings {
   final bool clipRecordingEnabled;
   final Duration clipDuration;
   final ClipFormatPreference clipFormatPreference;
+  final bool aiEnabled;
   final bool trackingEnabled;
   final bool announceEntryExit;
   final bool backgroundMonitoringEnabled;
@@ -166,6 +168,7 @@ class MonitorSettings {
     bool? clipRecordingEnabled,
     Duration? clipDuration,
     ClipFormatPreference? clipFormatPreference,
+    bool? aiEnabled,
     bool? trackingEnabled,
     bool? announceEntryExit,
     bool? backgroundMonitoringEnabled,
@@ -191,6 +194,7 @@ class MonitorSettings {
         clipRecordingEnabled: clipRecordingEnabled ?? this.clipRecordingEnabled,
         clipDuration: clipDuration ?? this.clipDuration,
         clipFormatPreference: clipFormatPreference ?? this.clipFormatPreference,
+        aiEnabled: aiEnabled ?? this.aiEnabled,
         trackingEnabled: trackingEnabled ?? this.trackingEnabled,
         announceEntryExit: announceEntryExit ?? this.announceEntryExit,
         backgroundMonitoringEnabled: backgroundMonitoringEnabled ?? this.backgroundMonitoringEnabled,

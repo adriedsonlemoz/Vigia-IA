@@ -1072,7 +1072,9 @@ class _MonitorScreenState extends State<MonitorScreen>
     );
   }
 
-  int get _currentDetectionCount => _controller.trackingEnabled
+  int get _currentDetectionCount => !_controller.aiEnabled
+      ? 0
+      : _controller.trackingEnabled
       ? _controller.trackedDetections.length
       : _controller.detections.length;
 
@@ -1305,8 +1307,10 @@ class _MonitorScreenState extends State<MonitorScreen>
     bool showHeader = true,
     ScrollController? scrollController,
   }) {
-    final tracked = _controller.trackingEnabled;
-    final count = tracked
+    final tracked = _controller.aiEnabled && _controller.trackingEnabled;
+    final count = !_controller.aiEnabled
+        ? 0
+        : tracked
         ? _controller.trackedDetections.length
         : _controller.detections.length;
     return ListView(

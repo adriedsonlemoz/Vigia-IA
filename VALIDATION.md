@@ -5,7 +5,18 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.253+253
+# Validação Vigia IA 1.0.254+254
+
+## Ajustes visuais e controle rápido de IA — 1.0.254 (2026-10-16)
+
+- [x] Cores do strip embutido ajustadas para o tema claro da tela principal, incluindo Receptor (IA), bateria e selo do mapa.
+- [x] Adicionado chip sobre o vídeo para ligar/desligar a IA local e rodapé discreto com resolução/FPS da análise.
+- [x] Selo da câmera local agora mostra "Ao vivo" e o cartão Detectados informa quando a análise está desativada.
+- [x] `python3 tool/check_version_sync.py` aprovado com `1.0.254+254`.
+- [x] `bash tool/verify_project.sh` iniciou e passou por múltiplas suítes/contratos preventivos e regressões Python até o limite de tempo do ambiente, sem falhas funcionais reportadas antes do timeout.
+- [ ] Flutter analyze, flutter test e APK Android pendentes no ambiente com SDK Flutter (SDK indisponível localmente).
+
+## Registro anterior: 1.0.253+253
 
 ## Build Android APK 207 (2026-10-16)
 

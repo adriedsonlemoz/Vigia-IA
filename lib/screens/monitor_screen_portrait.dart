@@ -56,6 +56,7 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                                 _controller.error == null,
                             networkLatencyMs:
                                 _controller.sessionStatus.networkLatencyMs,
+                            aiEnabled: _controller.aiEnabled,
                             onTap: () => unawaited(_showSessionStatus()),
                             embedded: true,
                           )
@@ -323,30 +324,38 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
                         child: IgnorePointer(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.68),
+                              color: scheme.surface.withValues(alpha: 0.94),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
+                                color: scheme.outline.withValues(alpha: 0.18),
                               ),
                             ),
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.map_outlined, size: 14),
-                                  SizedBox(width: 6),
+                                  Icon(
+                                    Icons.map_outlined,
+                                    size: 14,
+                                    color: scheme.onSurface,
+                                  ),
+                                  const SizedBox(width: 6),
                                   Text(
                                     'Mapa',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w900,
+                                      color: scheme.onSurface,
                                     ),
                                   ),
                                   SizedBox(width: 6),
                                   Text(
                                     '• Ao vivo',
-                                    style: TextStyle(fontSize: 10),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -566,8 +575,11 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
 
   Widget _buildPortraitDetectionSummary(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final tracked = _controller.trackingEnabled;
-    final count = tracked
+    final aiEnabled = _controller.aiEnabled;
+    final tracked = aiEnabled && _controller.trackingEnabled;
+    final count = !aiEnabled
+        ? 0
+        : tracked
         ? _controller.trackedDetections.length
         : _controller.detections.length;
 
@@ -594,7 +606,9 @@ extension _MonitorPortraitLayout on _MonitorScreenState {
       }
     }
 
-    final detail = primaryLabel == null
+    final detail = !aiEnabled
+        ? 'Análise de imagem desativada'
+        : primaryLabel == null
         ? 'Nenhum objeto no momento'
         : '${primaryTrackId == null ? '' : '#$primaryTrackId · '}$primaryLabel · ${((primaryConfidence ?? 0) * 100).round()}%';
 

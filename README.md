@@ -1,3 +1,10 @@
+## 1.0.254+254: controles de IA e ajustes visuais no Ao vivo (2026-10-16)
+
+- Corrige as cores do strip embutido no Ao vivo, incluindo Receptor (IA), bateria e selo do mapa.
+- Adiciona um botão sobre o vídeo para ligar ou desligar a IA local sem trocar a câmera.
+- Mostra no canto inferior da imagem a resolução e o FPS da análise, de forma discreta.
+- O selo da câmera local volta a exibir "Ao vivo" e o cartão Detectados informa quando a análise está desativada.
+
 ## 1.0.253+253: ajuste do analisador no monitor (2026-10-16)
 
 - Corrigido o único lint `curly_braces_in_flow_control_structures` identificado pelo workflow Android APK 207, em `lib/screens/monitor_screen_fullscreen.dart:56`.
@@ -50,7 +57,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.253+253`
+**Versão atual:** `1.0.254+254`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

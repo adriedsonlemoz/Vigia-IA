@@ -681,6 +681,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 fullscreen: _fullscreen,
                 fullscreenChanging: _fullscreenChanging,
                 voiceEnabled: _controller.voiceEnabled,
+                aiEnabled: _controller.aiEnabled,
                 detectionDelayed: _controller.detectionDelayed,
                 processing: _controller.processing,
                 onClose: () => unawaited(_closeMonitor()),
@@ -713,11 +714,15 @@ extension _MonitorMulticamera on _MonitorScreenState {
                       runSpacing: 7,
                       children: [
                         _HudPill(
-                          icon: Icons.psychology_alt_outlined,
-                          label: _controller.processing
+                          icon: _controller.aiEnabled
+                              ? Icons.psychology_alt_outlined
+                              : Icons.psychology_outlined,
+                          label: !_controller.aiEnabled
+                              ? 'IA desligada'
+                              : _controller.processing
                               ? 'IA analisando'
                               : 'IA na principal',
-                          active: true,
+                          active: _controller.aiEnabled,
                         ),
                         _HudPill(
                           icon: Icons.video_collection_outlined,
@@ -769,8 +774,87 @@ extension _MonitorMulticamera on _MonitorScreenState {
     secondaryRemoteStatus: secondary.remoteStatus,
     secondaryLabel: secondary.displayName,
     embedded: embedded,
+    aiEnabled: _controller.aiEnabled,
     onTap: () => unawaited(_showSessionStatus()),
   );
+
+  Widget _buildAiToggleChip() {
+    final enabled = _controller.aiEnabled;
+    return Material(
+      color: Colors.black.withValues(alpha: 0.72),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _controller.setAiEnabled(!enabled),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                enabled
+                    ? Icons.psychology_alt_outlined
+                    : Icons.psychology_outlined,
+                size: 16,
+                color: enabled ? const Color(0xFF69D59C) : Colors.white70,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                enabled ? 'IA ligada' : 'IA desligada',
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalysisMetricsChip() {
+    final status = _controller.sessionStatus;
+    final analysisWidth = status.analysisWidth ?? status.frameWidth;
+    final analysisHeight = status.analysisHeight ?? status.frameHeight;
+    final hasResolution = analysisWidth != null && analysisHeight != null;
+    final fpsText = _controller.aiEnabled
+        ? status.analyzedFps.toStringAsFixed(status.analyzedFps >= 10 ? 0 : 1)
+        : null;
+    final segments = <String>[];
+    if (_controller.aiEnabled && hasResolution) {
+      segments.add('Análise ${analysisWidth}×${analysisHeight}');
+    }
+    if (_controller.aiEnabled && fpsText != null) {
+      segments.add('$fpsText FPS');
+    }
+    if (!_controller.aiEnabled) {
+      segments.add('IA desligada');
+    }
+    final label = segments.isEmpty ? 'Análise aguardando imagem' : segments.join(' • ');
+    return IgnorePointer(
+      ignoring: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.64),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              color: Colors.white70,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildPrimaryCameraTile(BuildContext context) {
     return DecoratedBox(
@@ -943,12 +1027,14 @@ extension _MonitorMulticamera on _MonitorScreenState {
                   receiverActive:
                       !_controller.initializing && _controller.error == null,
                   networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+                  aiEnabled: _controller.aiEnabled,
                   onTap: () => unawaited(_showSessionStatus()),
                 ),
                 fillPreview: _fillPreview || landscape || _fullscreen,
                 fullscreen: _fullscreen,
                 fullscreenChanging: _fullscreenChanging,
                 voiceEnabled: _controller.voiceEnabled,
+                aiEnabled: _controller.aiEnabled,
                 detectionDelayed: _controller.detectionDelayed,
                 processing: _controller.processing,
                 onClose: () => unawaited(_closeMonitor()),
@@ -995,6 +1081,7 @@ extension _MonitorMulticamera on _MonitorScreenState {
                 receiverActive:
                     !_controller.initializing && _controller.error == null,
                 networkLatencyMs: _controller.sessionStatus.networkLatencyMs,
+                aiEnabled: _controller.aiEnabled,
                 onTap: () => unawaited(_showSessionStatus()),
               ),
             ),
@@ -1018,13 +1105,17 @@ extension _MonitorMulticamera on _MonitorScreenState {
                         active: status.state == VideoSourceState.streaming,
                       ),
                       _HudPill(
-                        icon: Icons.psychology_alt_outlined,
-                        label: _controller.detectionDelayed
+                        icon: _controller.aiEnabled
+                            ? Icons.psychology_alt_outlined
+                            : Icons.psychology_outlined,
+                        label: !_controller.aiEnabled
+                            ? 'IA desligada'
+                            : _controller.detectionDelayed
                             ? 'IA atrasada'
                             : _controller.processing
                             ? 'IA analisando'
                             : 'IA ativa',
-                        active: !_controller.initializing,
+                        active: _controller.aiEnabled && !_controller.initializing,
                       ),
                       _HudPill(
                         icon: _hudExpanded
@@ -1103,10 +1194,21 @@ extension _MonitorMulticamera on _MonitorScreenState {
                   VideoSourceType.esp32 =>
                     _controller.sourceConfig.displayName ?? 'ESP32',
                 },
-                detail: null,
+                detail: 'Ao vivo',
                 active: status.state == VideoSourceState.streaming,
               ),
             ),
+          if (portraitEmbedded)
+            Positioned(
+              right: 10,
+              top: 10,
+              child: _buildAiToggleChip(),
+            ),
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: _buildAnalysisMetricsChip(),
+          ),
           if (_controller.detectionDelayed)
             Positioned(
               left: 12 + insets.left,
