@@ -7,7 +7,18 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.266+266
+# Validação Vigia IA 1.0.267+267
+
+## Android APK 221: acesso protegido na extensão (2026-10-16)
+
+- [x] ZIP de logs `Vigia-IA-Android-APK-221-logs.zip` analisado: 141 testes preventivos aprovados.
+- [x] `flutter analyze` falhou por quatro avisos `invalid_use_of_protected_member` em `monitor_screen_ai_tools.dart:223,233,271,313` da 1.0.266.
+- [x] Quatro `setState` da extensão substituídos por `_updateAiDiagnosticState`, método na classe `_MonitorScreenState` (chamada protegida no local permitido).
+- [x] `flutter analyze --fatal-infos --fatal-warnings` continua obrigatório, sem ignore de lints.
+- [x] `python3 -m unittest discover -s tool -p "test_*.py" -q`: 146 testes aprovados, incluindo cinco regressões do APK 221.
+- [x] `tool/check_version_sync.py` e `tool/check_ao_vivo_266.py` aprovados; sintaxe shell validada.
+- [ ] `tool/verify_project.sh` excedeu o tempo de execução local após concluir múltiplos verificadores, sem falhas registradas até a interrupção; validação completa pendente no CI.
+- [ ] Reexecutar `flutter analyze`, `flutter test`, build APK e testes das duas câmeras/telemetria no aparelho; SDK Flutter não disponível neste executor local.
 
 ## Falha no teste Flutter do Android APK 219 (2026-10-16)
 

@@ -1,3 +1,9 @@
+## 1.0.267+267: compilação do diagnóstico interativo (APK 221, 2026-10-16)
+
+- Corrige quatro avisos `invalid_use_of_protected_member` no `flutter analyze` do APK 221. As extensões de `monitor_screen_ai_tools.dart` passam a atualizar a interface por método pertencente a `_MonitorScreenState`, sem chamar `setState` protegido diretamente.
+- O diagnóstico continua não modal, troca modelos durante a medição, registra segmentos e oferece relatório; preservados os visores de duas câmeras e os valores de bateria/temperatura MCRP da versão anterior.
+- 141 testes preventivos passaram no workflow 221; o build Android completo precisa ser repetido com esta versão.
+
 ## 1.0.266+266: Ao vivo, diagnóstico livre e telemetria Minha Câmera (2026-10-16)
 
 - Duas câmeras usam painéis altos em retrato, inclusive com mapa, sem recortar/esticar o MJPEG; a tela permite rolar.
@@ -145,7 +151,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.266+266`
+**Versão atual:** `1.0.267+267`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

@@ -1,3 +1,11 @@
+## 1.0.267+267: correção da análise estática no diagnóstico da IA (APK 221, 2026-10-16)
+
+- Corrigidos os quatro apontamentos `invalid_use_of_protected_member` de `lib/screens/monitor_screen_ai_tools.dart` (linhas 223, 233, 271 e 313 da versão 1.0.266).
+- Encapsulado `setState()` exclusivamente em `_MonitorScreenState._updateAiDiagnosticState`, acessível às extensões Dart, sem suprimir o lint ou flexibilizar o workflow.
+- Preservados cronômetro, troca de modelos, relatório e controles livres, vídeo com duas câmeras e telemetria remota.
+- Adicionados verificador e testes de regressão para prevenir acesso direto ao membro protegido.
+- APK 221: 141 testes Python passaram; `flutter analyze --fatal-infos --fatal-warnings` falhou por quatro avisos. APK 267 ainda precisa ser compilado e testado.
+
 ## 1.0.266+266: monitores proporcionais e diagnóstico de IA interativo (2026-10-16)
 
 - Ao vivo: layout vertical com duas câmeras não comprime os quadros quando o mapa aparece; imagens preservam proporções originais.

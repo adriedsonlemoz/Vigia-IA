@@ -220,7 +220,7 @@ extension _MonitorAiTools on _MonitorScreenState {
     );
     PerformanceTelemetryService.instance.startDeepTrace(Duration(seconds: seconds));
     _aiDiagnosticTicker?.cancel();
-    setState(() {
+    _updateAiDiagnosticState(() {
       _aiDiagnostic = run;
       _lastAiDiagnostic = null;
     });
@@ -230,7 +230,7 @@ extension _MonitorAiTools on _MonitorScreenState {
       if (run.remaining == 0) {
         _finishAiDiagnostic();
       } else {
-        setState(() {});
+        _updateAiDiagnosticState(() {});
       }
     });
   }
@@ -268,7 +268,7 @@ extension _MonitorAiTools on _MonitorScreenState {
       batteryTemperature: samples.isEmpty ? null : samples.last.batteryTemperatureC,
     );
     if (!mounted) return;
-    setState(() {
+    _updateAiDiagnosticState(() {
       _aiDiagnostic = null;
       _lastAiDiagnostic = result;
     });
@@ -310,7 +310,7 @@ extension _MonitorAiTools on _MonitorScreenState {
                 IconButton(
                   tooltip: 'Dispensar relatório',
                   icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => setState(() => _lastAiDiagnostic = null),
+                  onPressed: () => _updateAiDiagnosticState(() => _lastAiDiagnostic = null),
                 ),
             ]),
             if (run != null) ...[

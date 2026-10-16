@@ -9,7 +9,9 @@ Vigia IA 1.0.247+247 — atualização de arquitetura: armazenamento local de c�
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Arquitetura — Vigia IA 1.0.266+266
+# Arquitetura — Vigia IA 1.0.267+267
+
+**Lint APK 221 (1.0.267):** callbacks de UI das ferramentas IA, definidas como `extension` sobre o estado do Monitor, chamam `_updateAiDiagnosticState` implementado dentro do `State`. Isto preserva o acesso legítimo ao método protegido `setState` e mantém os controles interativos durante o teste.
 
 **Ao vivo (1.0.266):** a composição empilhada expande verticalmente pelo aspecto do vídeo mesmo com mapa ativo, usando rolagem externa. Pré-visualizações MJPEG ficam em `BoxFit.contain`. Diagnóstico é uma sessão `Stopwatch` no estado do Monitor, com timer leve de 1 s, eventos de alterações de modelo e segmentos com contadores antes/depois. Telemetria MCRP usa outra conexão HTTP/5 s ao endpoint de status e notificadores por fonte, nunca desacopla a recepção MJPEG; cabeçalhos podem faltar.
 

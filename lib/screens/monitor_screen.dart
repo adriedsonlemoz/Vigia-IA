@@ -129,6 +129,12 @@ class _MonitorScreenState extends State<MonitorScreen>
   }
   void _updateFullscreenState(VoidCallback update) => setState(update);
   void _updateMulticameraState(VoidCallback update) => setState(update);
+  // Chamado pelas extensoes de ferramentas da IA: somente o State pode
+  // acessar setState (protected), mantendo flutter analyze estrito.
+  void _updateAiDiagnosticState(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+  }
   void _refresh() {
     if (!mounted) return;
     setState(() {});

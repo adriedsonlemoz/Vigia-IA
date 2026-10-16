@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.266',
+          version: '1.0.267',
           current: true,
+          changes: [
+            'Análise estática do diagnóstico interativo estabilizada para a compilação Android.',
+            'Trocas de modelos e painel em tempo real preservados sem bloquear os controles.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.266',
           changes: [
             'Ao vivo com duas câmeras maiores, preservando proporção e mantendo o mapa rolável.',
             'Diagnóstico de IA não bloqueia controles, registra trocas de modelos e admite até 10 minutos.',

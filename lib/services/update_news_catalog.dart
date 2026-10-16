@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.266', build: 266);
+      AppBuildVersion(version: '1.0.267', build: 267);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.266', build: 266),
+      version: AppBuildVersion(version: '1.0.267', build: 267),
       changes: <String>[
-        'Duas câmeras com visores maiores e imagem sem cortes no retrato.',
-        'Diagnóstico contínuo com trocas de modelo e telemetria das câmeras.'
+        'O diagnóstico interativo agora mantém o painel atualizado com maior estabilidade.',
+        'Duas câmeras, troca de modelo e dados de bateria e temperatura continuam disponíveis.'
       ],
     ),
   ]);
