@@ -1,3 +1,9 @@
+## 1.0.261+261: correção do lint no seletor de câmera (APK 215, 2026-10-16)
+
+- Corrigido o lint `curly_braces_in_flow_control_structures` de `monitor_screen_multicamera.dart:249` usando um bloco `{ return; }` sem alterar a condição de escolha da câmera.
+- Preservada a frontal como vídeo principal, a captura local limitada para análise e os controles de modelo/diagnóstico da IA no receptor.
+- Adicionado verificador do APK 215 e quatro testes preventivos; compilação Flutter e validação física seguem pendentes.
+
 ## 1.0.260+260: frontal como principal e fluidez do Ao vivo (2026-10-16)
 
 - Ao selecionar **Câmera frontal**, ela substitui a câmera principal e ocupa toda a área de vídeo, com análise de IA nessa fonte; a frontal não é mais aberta como miniatura PiP usando outro CameraController.
@@ -105,7 +111,7 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-**Versão atual:** `1.0.260+260`
+**Versão atual:** `1.0.261+261`
 
 **Buildfix 1.0.246:** o workflow Android-APK-201 identificou um `if` sem chaves na guarda de inferência do painel MCRP. Corrigida a sintaxe sem mudar o comportamento do detector; QR, MJPEG, controles, modo legado e Galeria preservados. Acrescentados cinco testes preventivos. [BUILD-201-REPORT-1.0.246.md](BUILD-201-REPORT-1.0.246.md).
 

@@ -8,14 +8,14 @@ class UpdateNewsCatalog {
   /// A popup de Novidades e exclusiva da versao empacotada atual.
   /// O historico completo continua na tela Sobre > Mudancas.
   static const currentVersion =
-      AppBuildVersion(version: '1.0.260', build: 260);
+      AppBuildVersion(version: '1.0.261', build: 261);
 
   static const current = UpdateNewsCatalog(<UpdateRelease>[
     UpdateRelease(
-      version: AppBuildVersion(version: '1.0.260', build: 260),
+      version: AppBuildVersion(version: '1.0.261', build: 261),
       changes: <String>[
-        'Frontal agora ocupa a imagem principal sem disputa de CameraX com a traseira.',
-        'Reduzida a carga de conversão RGB para favorecer a fluidez do Ao vivo.'
+        'Troca de camera principal preservada para frontal e traseira.',
+        'Frontal em tela cheia, controles da IA e diagnosticos mantidos.'
       ],
     ),
   ]);

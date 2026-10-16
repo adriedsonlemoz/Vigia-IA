@@ -246,7 +246,9 @@ extension _MonitorMulticamera on _MonitorScreenState {
 
   Future<void> _selectLocalPrimarySource(VideoSourceConfig source) async {
     if (_sameSource(_controller.sourceConfig, source) &&
-        _secondaryController == null) return;
+        _secondaryController == null) {
+      return;
+    }
     if (!await _ensureLocalCameraPermission()) return;
     // Front + back simultaneos nao sao garantidos pelo CameraX do aparelho.
     // Desliga a segunda camera ANTES de trocar o pipeline fisico da principal.

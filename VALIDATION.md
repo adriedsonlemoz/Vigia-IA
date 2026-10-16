@@ -5,7 +5,17 @@
 - Lista limitada a 20 entradas e URL validada novamente ao abrir; arquivo JSON armazenado somente no diretório de suporte privado do aplicativo. Como o QR contém token de acesso, proteger backups do aparelho.
 - Transmissão MJPEG, IA local opcional, MCRP, QR e módulos de mapas não foram alterados.
 
-# Validação Vigia IA 1.0.260+260
+# Validação Vigia IA 1.0.261+261
+
+## Android APK 215: bloco obrigatório do seletor principal (2026-10-16)
+
+- [x] Log do APK 215 conferido: verificação preventiva e 119 testes Python aprovados; `flutter analyze` falhou apenas por `curly_braces_in_flow_control_structures` em `monitor_screen_multicamera.dart:249`.
+- [x] Colocado `{ return; }` na guarda, sem modificar fluxo de frontal/traseira, IA ou modo Transmissão.
+- [x] Acrescentados `check_build215_camera_lint_261.py` e quatro testes de regressão.
+- [x] 123 testes Python (`unittest discover -s tool -p "test_*.py" -q`) passaram, incluindo os 4 novos do APK 215.
+- [x] Imports locais, contrato de CI, versionamento e sintaxe do shell verificados.
+- [ ] `tool/verify_project.sh` completo excedeu 240 segundos de execução após aprovar a primeira parte dos contratos, sem conclusão. O workflow 215 original tinha passado nesse passo.
+- [ ] `flutter analyze`, `flutter test` e compilação Android ainda devem ser confirmados no runner ou aparelho.
 
 ## Câmera frontal principal e desempenho local (2026-10-16)
 

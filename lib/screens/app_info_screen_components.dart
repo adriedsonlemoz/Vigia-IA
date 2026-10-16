@@ -77,8 +77,16 @@ class AllChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.260',
+          version: '1.0.261',
           current: true,
+          changes: [
+            'Corrigida a analise estatica do seletor de camera principal (APK 215).',
+            'Frontal em tela cheia e ajustes de fluidez preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.260',
           changes: [
             'Frontal troca a câmera principal em tela cheia, sem segunda lente concorrente.',
             'Conversão local de quadros mais econômica para preservar a fluidez.',
@@ -2323,8 +2331,16 @@ class _ChangesPanel extends StatelessWidget {
     return const Column(
       children: [
         _ReleaseCard(
-          version: '1.0.260',
+          version: '1.0.261',
           current: true,
+          changes: [
+            'Corrigida a analise estatica do seletor de camera principal (APK 215).',
+            'Frontal em tela cheia e ajustes de fluidez preservados.',
+          ],
+        ),
+        SizedBox(height: 10),
+        _ReleaseCard(
+          version: '1.0.260',
           changes: [
             'Frontal troca a câmera principal em tela cheia, sem segunda lente concorrente.',
             'Conversão local de quadros mais econômica para preservar a fluidez.',
